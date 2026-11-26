@@ -30,7 +30,8 @@ function world() {
   PAGE_LOAD.runAsPage(FILE, win);
   const D = win.spirit.required.spirit.data;
   let n = 0;
-  const I = ((D || {}).icons || {}).data;
+  // The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.icons'].
+  const I = ((D || {})['spirit.app.icons'] || {}).data;
   return { D: D, I: I,
     // A run's publish as the stream hands it: a job of module spirit.app.icons whose app is the row.
     job: function (app, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.icons', data: {}, app: app }, SENDER); } };

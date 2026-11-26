@@ -478,7 +478,7 @@ test.run('the provider editor\'s fields in order: label, url, API key as a secre
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
-// node that served them, and is read through spirit.required.spirit.data.agent.data.
+// node that served them, and is read through spirit.required.spirit.data['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require the agent branch\'s interface, spirit/app/agent/api.js', 0.2, function () {
   if (!P.made) return false;
@@ -488,14 +488,14 @@ test.run('its page files require no data script, as only an api.js requires its 
   if (!P.made) return false;
   return !P.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent branch\'s data.js is loaded with its api.js, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
+test.run('the agent branch\'s data.js is loaded with its api.js, and its provider branch is the home node\'s spirit.app.agent/provider path', 0.2, function () {
   if (!P.made) return false;
   const DATA = global.window.spirit.required.spirit.data;
-  const AD = P.AD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
-  P.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/provider';
+  const AD = P.AD = ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
+  P.BRANCH = DATA.nodeId(HOME_KEY) + '/spirit.app.agent/provider';
   return !!AD && typeof AD.branch === 'function' && AD.branch('provider') === P.BRANCH ? true : false;
 }, test.limit.quick);
-test.run('a provider row on the stream lands under the node\'s agent/provider path at its id, and the branch\'s watcher hears it', 0.2, function () {
+test.run('a provider row on the stream lands under the node\'s spirit.app.agent/provider path at its id, and the branch\'s watcher hears it', 0.2, function () {
   if (!P.AD) return false;
   const DATA = global.window.spirit.required.spirit.data, AD = P.AD, BRANCH = P.BRANCH;
   const heard = [];

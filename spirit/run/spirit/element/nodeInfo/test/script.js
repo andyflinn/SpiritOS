@@ -795,13 +795,14 @@ function rotatePart() {
     await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
     shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function (shellAnswer) { window.__shell = shellAnswer.create(b); return "made"; }, function () { return false; }); }())');
-    return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
+    // A tile's key is its app's id, its folder's path in dots (goal/G49.19).
+    return (shell === 'made' && await waitFor('tiles().indexOf("spirit.app.file") !== -1', 10000)) ? true : false;
   }, test.limit.quick);
   test.run('Info opens from its tile, showing its name field and its rotate button', 0.2, async function () {
     if (!N || !N.up) return false;
     if (!where) return false;
     if (!c || c.error) return false;
-    infoOpen = (await waitFor('tiles().indexOf("info") !== -1', 6000)) && (await T('tile("info")')) && await waitFor('count("[data-field=label]") === 1 && buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 10000);
+    infoOpen = (await waitFor('tiles().indexOf("spirit.app.info") !== -1', 6000)) && (await T('tile("spirit.app.info")')) && await waitFor('count("[data-field=label]") === 1 && buttons().some(function (b) { return /^Rotate this node.s cipher key$/.test(b); })', 10000);
     return (infoOpen) ? true : false;
   }, test.limit.quick);
   test.run('the rotate button opens the dialog, and its explanation shows', 0.2, async function () {

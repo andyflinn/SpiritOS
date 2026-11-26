@@ -19,12 +19,13 @@ const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spi
 
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'app', 'list', 'script.js');
 
-// THE TREE'S APPS: which may be a shell (shell.true), which show a tile (shell.mount), which only run (node.run alone).
+// THE TREE'S APPS: which may be a shell (shell.true), which show a tile (shell.mount), which only run (node.run alone). Each
+// keyed by its id, its folder's path in dots, spirit.app.desk (goal/G49.19).
 const APPS = path.join(RUN, 'spirit', 'app');
 const TREE = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
   const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8'));
   const sh = j.shell || {}, nd = j.node || {};
-  return { key: n, shell: sh.true === true, tile: sh.mount === true, run: nd.run === true && nd.mount !== true && sh.mount !== true };
+  return { key: 'spirit.app.' + n, shell: sh.true === true, tile: sh.mount === true, run: nd.run === true && nd.mount !== true && sh.mount !== true };
 });
 const keysOf = function (f) { return TREE.filter(f).map(function (a) { return a.key; }).sort(); };
 
@@ -84,8 +85,8 @@ test.run('as a pane each row has the icon, the label, and the active cell at its
 }, test.limit.quick);
 test.run('a press on a row hands the row and its key to pick', 0.2, async function () {
   if (made !== true) return false;
-  await chrome.evaluate('(function () { var r = document.getElementById("pane").querySelector("tr[data-key=\\"grants\\"] td[data-field=\\"label\\"]"); if (r) r.click(); return !!r; }())');
-  const ok = await until(function () { return chrome.evaluate('window.picks.length > 0 && window.picks[0].key === "grants"'); }, 3000);
+  await chrome.evaluate('(function () { var r = document.getElementById("pane").querySelector("tr[data-key=\\"spirit.app.grants\\"] td[data-field=\\"label\\"]"); if (r) r.click(); return !!r; }())');
+  const ok = await until(function () { return chrome.evaluate('window.picks.length > 0 && window.picks[0].key === "spirit.app.grants"'); }, 3000);
   return !!ok || false;
 }, test.limit.slow);
 test.run('refresh asks app.search again', 0.2, async function () {

@@ -23,6 +23,8 @@ const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function tracked(dir) { return execSync('git ls-files -- "' + dir + '"', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }
 const DESK = path.join(RUN, 'spirit', 'app', 'desk');
+// The app is known by its id, its folder's path in dots (goal/G49.19): its pipe from its folder, its row and its calls by its id.
+const ID = 'spirit.app.desk';
 
 const W = {};
 // One of the folders: gone from git and from the disk.
@@ -81,18 +83,18 @@ test.run('a scratch desk answers api with its verbs, item.get among them', 0.2, 
   const scratch = W.scratch = ownTemp('spn');
   const state = path.join(scratch, 'state');
   fs.mkdirSync(state, { recursive: true });
-  const pipe = appClient.pipePathFor(scratch, 'desk', process.platform, 'process');
+  const pipe = appClient.pipePathFor(scratch, 'spirit/app/desk', process.platform);
   // The node makes the folder of a server's door before it starts it; so does the test.
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   W.kid = spawn(process.execPath, [path.join(DESK, 'desk.js'), '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   const client2 = appClient.createAppClient({ rootDir: scratch });
-  if (typeof client2.register === 'function') client2.register('desk', pipe);
+  if (typeof client2.register === 'function') client2.register(ID, pipe);
   const ask = W.ask = function (body) { return client2.ask(body).then(function (r) { return r || {}; }, function () { return {}; }); };
   let api = {};
   const until = Date.now() + 15000;
   // Asked until the desk listens: before that the client answers app-not-running for it.
-  while (Date.now() < until) { const r = await ask('api'); const b = r && r.body && (r.body.desk || r.body); if (b && typeof b === 'object' && b.ok !== false && Object.keys(b).length) { api = b; break; } await new Promise(function (r2) { setTimeout(r2, 200); }); }
-  W.api = api.desk || api;
+  while (Date.now() < until) { const r = await ask('api'); const b = r && r.body && (r.body[ID] || r.body); if (b && typeof b === 'object' && b.ok !== false && Object.keys(b).length) { api = b; break; } await new Promise(function (r2) { setTimeout(r2, 200); }); }
+  W.api = api[ID] || api;
   const verbs = W.verbs = Object.keys(W.api);
   return (verbs.length > 5 && verbs.indexOf('item.get') !== -1) || false;
 }, test.limit.slow);
@@ -109,7 +111,7 @@ test.run('its api serves no search of an item\'s box versions', 0.2, function ()
 test.run('a fresh desk holds no goal/G0', 0.2, async function () {
   const verbs = W.verbs || [];
   if (!(verbs.length > 5) || !W.ask) return false;
-  const g0 = await W.ask({ desk: { 'item.get': { id: 'goal/G0' } } });
+  const g0 = await W.ask({ [ID]: { 'item.get': { id: 'goal/G0' } } });
   const held = !!(g0.body && g0.body.item);
   return !held || false;
 }, test.limit.quick);

@@ -101,9 +101,10 @@ test.run('the json is read as it is on disc, so once it is turned to intrinsic t
 // goal/G43.14: Contacts moved to spirit/app/contact/ and says intrinsic in its own json.
 test.run('in this tree spirit/app/contact/ is core, its json saying intrinsic true', 0.2, function () { return (core.isCore('spirit/run/spirit/app/contact/contact.json') === true && core.isCore('spirit/run/spirit/app/contact/element.js') === true) ? true : false; }, test.limit.quick);
 
-// goal/G43.24: Info and Grants moved to spirit/app/ and say it in their own json.
-test.run('spirit/app/info/info.json says intrinsic true', 0.2, function () { return (core.appIntrinsic(path.resolve(RUN, '..', '..'), 'info') === true) ? true : false; }, test.limit.quick);
-test.run('spirit/app/grants/grants.json says intrinsic true', 0.2, function () { return (core.appIntrinsic(path.resolve(RUN, '..', '..'), 'grants') === true) ? true : false; }, test.limit.quick);
+// goal/G43.24: Info and Grants moved to spirit/app/ and say it in their own json. appIntrinsic takes the app's folder
+// (goal/G49.19).
+test.run('spirit/app/info/info.json says intrinsic true', 0.2, function () { return (core.appIntrinsic(path.resolve(RUN, '..', '..'), 'spirit/app/info') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/app/grants/grants.json says intrinsic true', 0.2, function () { return (core.appIntrinsic(path.resolve(RUN, '..', '..'), 'spirit/app/grants') === true) ? true : false; }, test.limit.quick);
 
 // THE DEPENDENCY PART, once coreFiles-dependency.js.
 // Once spirit/run/spirit/test/coreFiles-dependency.js.
@@ -191,9 +192,9 @@ test.run('no coded INTRINSIC list names shell/info or shell/grants, because ther
 }, test.limit.quick);
 test.run('coreFiles.appIntrinsic reads info intrinsic from its own info.json', 0.2, function () {
   if (!G.core || typeof G.core.appIntrinsic !== 'function') return false;
-  return G.core.appIntrinsic(REPO, 'info') === true ? true : false;
+  return G.core.appIntrinsic(REPO, 'spirit/app/info') === true ? true : false;
 }, test.limit.quick);
 test.run('coreFiles.appIntrinsic reads grants intrinsic from its own grants.json', 0.2, function () {
   if (!G.core || typeof G.core.appIntrinsic !== 'function') return false;
-  return G.core.appIntrinsic(REPO, 'grants') === true ? true : false;
+  return G.core.appIntrinsic(REPO, 'spirit/app/grants') === true ? true : false;
 }, test.limit.quick);

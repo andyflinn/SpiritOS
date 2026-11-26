@@ -51,9 +51,9 @@ test.run('a scratch node comes up with chat switched on and its face page open i
   const page = await H.chromePage(chrome);
   if (!page || page.error) { if (page && page.kid) X.page = page; return false; }
   X.page = page;
-  await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: 'chat', active: true } }) });
+  await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: 'spirit.app.chat', active: true } }) });
   await H.until(function () {
-    return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'chat.chats.search', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
+    return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.chat.chats.search', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
   }, 40000);
   await page.send('Page.navigate', { url: node.base + '/' });
   X.ready = await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
@@ -90,11 +90,11 @@ test.run('it draws its contacts pane, the contact search', 0.2, async function (
     ? true : false;
 }, test.limit.quick);
 
-// ── it asks its server through spirit, as the branch chat ──
-test.run('at mount it asks chat.chats.search', 0.2, async function () {
+// ── it asks its server through spirit, as the branch spirit.app.chat (goal/G49.19: an app is called by its id) ──
+test.run('at mount it asks spirit.app.chat.chats.search', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
-  return await H.until(function () { return page.evaluate('window.sent.some(function (b) { return /"chat\\.chats\\.search"/.test(b); })'); }, 10000)
+  return await H.until(function () { return page.evaluate('window.sent.some(function (b) { return /"spirit\\.app\\.chat\\.chats\\.search"/.test(b); })'); }, 10000)
     ? true : false;
 }, test.limit.quick);
 test.run('it never asks a verb of chatClerver', 0.2, async function () {
@@ -103,10 +103,10 @@ test.run('it never asks a verb of chatClerver', 0.2, async function () {
   return await page.evaluate('!window.sent.some(function (b) { return /chatClerver/.test(b); })')
     ? true : false;
 }, test.limit.quick);
-test.run('its lines are the branch chat\'s cache, spirit.required.spirit.data.chat', 0.2, async function () {
+test.run('its lines are the branch spirit.app.chat\'s cache, spirit.required.spirit.data[\'spirit.app.chat\']', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
-  return await H.until(function () { return page.evaluate('!!(spirit.required.spirit.data && spirit.required.spirit.data.chat && spirit.required.spirit.data.chat.data)'); }, 10000) ? true : false;
+  return await H.until(function () { return page.evaluate('!!(spirit.required.spirit.data && spirit.required.spirit.data[\"spirit.app.chat\"] && spirit.required.spirit.data[\"spirit.app.chat\"].data)'); }, 10000) ? true : false;
 }, test.limit.quick);
 
 // ── destroy ──

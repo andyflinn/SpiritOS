@@ -128,7 +128,9 @@ function scratchTree(port) {
   return { root: root, run: run };
 }
 
-// The fake node: its door, /spirit, answering testicle's interface and keeping each testicle.testicle.set.
+// testicle's branch on the wire is its id, its folder's path in dots (goal/G49.19).
+const TESTICLE = 'spirit.app.testicle';
+// The fake node: its door, /spirit, answering testicle's interface and keeping each spirit.app.testicle.testicle.set.
 function fakeNode() {
   const sets = [];
   const asked = [];
@@ -145,9 +147,9 @@ function fakeNode() {
       asked.push(msg && msg.call);
       const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
       if (req.method !== 'POST' || req.url !== '/spirit' || !msg) return send(404, { ok: false, code: 'not-found' });
-      if (msg.call === 'api' && msg.args && msg.args.branch === 'testicle') return send(200, { branch: 'testicle', interface: iface });
-      if (msg.call === 'testicle.testicle.set') { sets.push(msg.args); order.push({ verb: 'set', args: msg.args }); return send(200, { ok: true }); }
-      if (msg.call === 'testicle.suite.success') { successes.push(msg.args); order.push({ verb: 'success', args: msg.args }); return send(200, { ok: true }); }
+      if (msg.call === 'api' && msg.args && msg.args.branch === TESTICLE) return send(200, { branch: TESTICLE, interface: iface });
+      if (msg.call === TESTICLE + '.testicle.set') { sets.push(msg.args); order.push({ verb: 'set', args: msg.args }); return send(200, { ok: true }); }
+      if (msg.call === TESTICLE + '.suite.success') { successes.push(msg.args); order.push({ verb: 'success', args: msg.args }); return send(200, { ok: true }); }
       return send(404, { ok: false, code: 'no-such-verb' });
     });
   });
@@ -255,7 +257,7 @@ test.run('the completion line counts every test, and the exit code says a test f
 }, test.limit.quick);
 
 // ── THE REPORT ──
-test.run('each test is reported to testicle.testicle.set of the node of its checkout, once', 0.2, function () {
+test.run('each test is reported to spirit.app.testicle.testicle.set of the node of its checkout, once', 0.2, function () {
   const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
   const counts = titles.map(function (t) { return setOf(t).length; });
   return counts.every(function (n) { return n === 1; }) || false;
@@ -301,7 +303,7 @@ test.run('a general test reports the file it judges as its script', 0.4, functio
 // new verb testicle.suite.success {script, suite, success}, a general test once per script, at the time it knows"; Andy:
 // "any suite, including general ones know at the TIME if it was a success") ──
 const successOf = function (suite) { return ((W.node && W.node.successes) || []).filter(function (x) { return x && x.suite === suite; }); };
-test.run('a suite reports its success or failure for its script once, through testicle.suite.success', 0.4, function () {
+test.run('a suite reports its success or failure for its script once, through spirit.app.testicle.suite.success', 0.4, function () {
   const got = successOf('probe/test/probe.js');
   return (got.length === 1 && got[0].script === 'probe/probe.js' && got[0].success === false) || false;
 }, test.limit.quick);
@@ -390,10 +392,10 @@ function slowNode(ms) {
       try { msg = JSON.parse(body); } catch (e) { msg = null; }
       const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
       if (!msg) return send(404, { ok: false });
-      if (msg.call === 'api' && msg.args && msg.args.branch === 'testicle') return send(200, { branch: 'testicle', interface: iface });
+      if (msg.call === 'api' && msg.args && msg.args.branch === TESTICLE) return send(200, { branch: TESTICLE, interface: iface });
       // When the suite's success came (goal/G49.8, below): after every report of its tests, or before some.
       if (/(^|\.)suite\.success$/.test(String(msg.call)) && landed.success === undefined) landed.success = Date.now();
-      if (msg.call === 'testicle.testicle.set' && msg.args && /^flood \d+$/.test(String(msg.args.test))) {
+      if (msg.call === TESTICLE + '.testicle.set' && msg.args && /^flood \d+$/.test(String(msg.args.test))) {
         if (landed[msg.args.test] === undefined) landed[msg.args.test] = Date.now();
         return setTimeout(function () { send(200, { ok: true }); }, ms);
       }

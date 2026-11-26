@@ -27,10 +27,12 @@ const W = {};
 let n = 0;
 // A row as the stream hands it: a job of module spirit.app.testicle whose app is testicle's publish (testicle.js).
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.testicle', data: {}, app: app }, from || HOME_KEY); };
-const at = function (table, key, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/testicle/' + table + '/' + key); };
+// The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.testicle'], its rows under <node>/spirit.app.testicle/.
+const FAMILY = 'spirit.app.testicle';
+const at = function (table, key, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/' + FAMILY + '/' + table + '/' + key); };
 const suiteRow = function (script, suite, more) { return Object.assign({ key: script + '|' + suite, script: script, suite: suite, test: false, status: 'green', deleted: false, outcome: 'green', changed: 1 }, more || {}); };
 
-test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data.testicle.data', 0.2, function () {
+test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data[\'spirit.app.testicle\'].data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -42,16 +44,16 @@ test.run('in a window, beside the real spirit.required.spirit.data, it stands at
     vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   } catch (e) { return false; }
   W.D = win.spirit.required.spirit.data;
-  W.T = ((W.D || {}).testicle || {}).data;
+  W.T = ((W.D || {})[FAMILY] || {}).data;
   return !!W.T || false;
 }, test.limit.quick);
 test.run('its tables are script, suite and testicle', 0.2, function () {
   if (!W.T) return false;
   return JSON.stringify(W.T.tables) === JSON.stringify(TABLES) || false;
 }, test.limit.quick);
-test.run('the branch of a table is the table\'s whole path, <node>/testicle/<table>, and the empty string for any other', 0.2, function () {
+test.run('the branch of a table is the table\'s whole path, <node>/spirit.app.testicle/<table>, and the empty string for any other', 0.2, function () {
   if (!W.T) return false;
-  const wrong = TABLES.filter(function (t) { return W.T.branch(t) !== W.D.nodeId(HOME_KEY) + '/testicle/' + t; });
+  const wrong = TABLES.filter(function (t) { return W.T.branch(t) !== W.D.nodeId(HOME_KEY) + '/' + FAMILY + '/' + t; });
   return (wrong.length === 0 && W.T.branch('monitor') === '') || false;
 }, test.limit.quick);
 test.run('before the stream has said anything, the monitor\'s get answers an empty object', 0.2, function () {
@@ -203,10 +205,10 @@ test.run('a row from another node is kept under that node', 0.2, function () {
 }, test.limit.quick);
 
 // ── in node, loaded by its api.js, the one script that requires it (goal/G47.1) ──
-test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at spirit.required.spirit.data.testicle.data', 0.2, async function () {
+test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at spirit.required.spirit.data[\'spirit.app.testicle\'].data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { require(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js')); } catch (e) { return false; }
-  const T = s.required.spirit.data && s.required.spirit.data.testicle && s.required.spirit.data.testicle.data;
+  const T = s.required.spirit.data && s.required.spirit.data[FAMILY] && s.required.spirit.data[FAMILY].data;
   return (!!T && typeof T.keep === 'function' && !!T.monitor) || false;
 }, test.limit.quick);

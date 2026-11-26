@@ -29,9 +29,10 @@ const W = {};
 let n = 0;
 // A row as the stream hands it: a job of module spirit.app.agent whose app is the agent server's publish (rowTable.js).
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.agent', data: {}, app: app }, from || HOME_KEY); };
-const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/agent/' + table + '/' + id); };
+// The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.agent'], its rows at <node>/spirit.app.agent/<table>.
+const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/spirit.app.agent/' + table + '/' + id); };
 
-test.run('loaded in a window beside the real data set, the agent branch\'s cache stands at spirit.required.spirit.data.agent.data', 0.2, function () {
+test.run('loaded in a window beside the real data set, the agent branch\'s cache stands at spirit.required.spirit.data[\'spirit.app.agent\'].data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -43,7 +44,7 @@ test.run('loaded in a window beside the real data set, the agent branch\'s cache
     PAGE_LOAD.runAsPage(FILE, win);
   } catch (e) { return false; }
   W.D = win.spirit.required.spirit.data;
-  W.A = ((W.D || {}).agent || {}).data;
+  W.A = ((W.D || {})['spirit.app.agent'] || {}).data;
   return !!W.A || false;
 }, test.limit.quick);
 test.run('its tables are job, model, persona and provider', 0.2, function () {
@@ -79,7 +80,7 @@ test.run('a row published as removed, by its table and id, is taken out of its b
 test.run('another table\'s rows write nothing', 0.2, function () {
   if (!W.A) return false;
   job({ agent: { table: 'bundle', row: { id: 'B1' } } });
-  return Object.keys(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/agent/bundle')).length === 0 || false;
+  return Object.keys(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/spirit.app.agent/bundle')).length === 0 || false;
 }, test.limit.quick);
 test.run('another module\'s rows write nothing', 0.2, function () {
   if (!W.A) return false;
@@ -88,9 +89,9 @@ test.run('another module\'s rows write nothing', 0.2, function () {
 }, test.limit.quick);
 test.run('a row with no id writes nothing', 0.2, function () {
   if (!W.A) return false;
-  const before = JSON.stringify(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/agent/model'));
+  const before = JSON.stringify(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/spirit.app.agent/model'));
   job({ agent: { table: 'model', row: { label: 'nameless' } } });
-  return JSON.stringify(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/agent/model')) === before || false;
+  return JSON.stringify(W.D.branchAt(W.D.nodeId(HOME_KEY) + '/spirit.app.agent/model')) === before || false;
 }, test.limit.quick);
 test.run('a row from another node is kept under that node, not the page\'s', 0.2, function () {
   if (!W.A) return false;
@@ -100,9 +101,9 @@ test.run('a row from another node is kept under that node, not the page\'s', 0.2
 }, test.limit.quick);
 
 // ── the reads ──
-test.run('the branch of a table is the table\'s whole path, <node>/agent/<table>', 0.2, function () {
+test.run('the branch of a table is the table\'s whole path, <node>/spirit.app.agent/<table>', 0.2, function () {
   if (!W.A) return false;
-  const wrong = TABLES.filter(function (t) { return W.A.branch(t) !== W.D.nodeId(HOME_KEY) + '/agent/' + t; });
+  const wrong = TABLES.filter(function (t) { return W.A.branch(t) !== W.D.nodeId(HOME_KEY) + '/spirit.app.agent/' + t; });
   return wrong.length === 0 || false;
 }, test.limit.quick);
 test.run('the branch of a table the agent server does not have is the empty string', 0.2, function () {
@@ -163,10 +164,10 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
 }, test.limit.quick);
 
 // ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
-test.run('in node, requiring the agent interface brings its data.js, at spirit.required.spirit.data.agent.data with row and branch', 0.2, async function () {
+test.run('in node, requiring the agent interface brings its data.js, at spirit.required.spirit.data[\'spirit.app.agent\'].data with row and branch', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/agent/api.js')); } catch (e) { return false; }
-  const A = s.required.spirit.data && s.required.spirit.data.agent && s.required.spirit.data.agent.data;
+  const A = s.required.spirit.data && s.required.spirit.data['spirit.app.agent'] && s.required.spirit.data['spirit.app.agent'].data;
   return (!!A && typeof A.row === 'function' && typeof A.branch === 'function') || false;
 }, test.limit.quick);

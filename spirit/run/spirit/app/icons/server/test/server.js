@@ -38,7 +38,7 @@ const icon = async function (args) {
 const items = function (r) { return ((r.body && r.body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }); };
 
 test.run('a scratch node of its own comes up with Icons switched on', 0.2, async function () {
-  W.node = await scratchNode({ servers: ['icons'] });
+  W.node = await scratchNode({ servers: ['spirit.app.icons'] });
   W.up = !!(W.node.up && W.node.root);
   return W.up || false;
 }, test.limit.slow);

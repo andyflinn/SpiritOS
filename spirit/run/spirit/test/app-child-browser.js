@@ -35,6 +35,8 @@ const TARGETS = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', '
 const owed = function (app) { return ['api', 'data'].filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'app', app, n + '.js')); }); };
 // A MOUNTABLE SERVER: its manifest mounts one (spirit/app/<name>/<name>.json node.mount true, as testicle's); an app whose
 // <name>.js is a program it runs (publishData, pushOrigin: node.run) mounts none, and serves no interface to wait for.
+// AN APP ON THE WIRE IS ITS ID, its folder's path in dots, spirit.app.testicle (goal/G49.19): its branch, its key, its row.
+const idOf = function (app) { return S.dottedPath('spirit/app/' + app); };
 const hasServer = function (app) { try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', app, app + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', app, app + '.js')); } catch (e) { return false; } };
 
 const W = { node: null, page: null, fail: false, reports: {} };
@@ -78,7 +80,7 @@ async function world() {
   W.answered = {};
   for (const a of apps) {
     const ok = await until(function () {
-      return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: a } }) })
+      return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: idOf(a) } }) })
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
     W.answered[a] = !!ok;
@@ -167,12 +169,12 @@ async function appsPhase(chrome) {
   const want = apps.map(function (a) { return Object.assign({ key: a }, declared(a)); });
   const labels = JSON.stringify(want.map(function (a) { return a.label; }));
   // Every app with no shell.mount true, and not run only, made active: by the verb, else on its disc in the scratch run.
-  const off = want.filter(function (a) { return !a.shell && !a.run; }).map(function (a) { return a.key; });
+  const off = want.filter(function (a) { return !a.shell && !a.run; }).map(function (a) { return idOf(a.key); });
   const activeRows = function () { return P.evaluate('(function () { var r = (spirit.required.spirit.data.app && spirit.required.spirit.data.app.data) ? spirit.required.spirit.data.app.data.rows() : {}; return JSON.stringify(' + JSON.stringify(off) + '.filter(function (k) { return r[k] && r[k].active === true; })); }())').then(function (x) { try { return JSON.parse(x); } catch (e) { return []; } }); };
   await P.evaluate('(function () { var a = spirit.app && spirit.required.spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(off) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* its disc below */ } }); return true; }())');
   await until(function () { return activeRows().then(function (on) { return on.length === off.length; }); }, 10000);
   const onNow = await activeRows();
-  off.filter(function (k) { return onNow.indexOf(k) === -1; }).forEach(function (k) { const d = path.join(W.node.run, 'spirit', 'state', k); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, 'node.json'), JSON.stringify({ active: true })); });
+  off.filter(function (k) { return onNow.indexOf(k) === -1; }).forEach(function (k) { const d = path.join(W.node.run, ...S.statePath(S.slashedPath(k)).split('/')); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, 'node.json'), JSON.stringify({ active: true })); });
   if (onNow.length !== off.length) await until(function () { return activeRows().then(function (on) { return on.length === off.length; }); }, 10000);
   W.activeOff = await activeRows();
   // What an element under a box draws of the judged apps' labels: its visible leaves.
@@ -200,7 +202,7 @@ async function appsPhase(chrome) {
   W.detail = {};
   for (const a of want.filter(function (x) { return x.run; })) {
     await box('zz-detail');
-    await P.evaluate('(function () { window.zzDetail = spirit.required.spirit.element.search.app.detail.create(document.getElementById("zz-detail"), { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())');
+    await P.evaluate('(function () { window.zzDetail = spirit.required.spirit.element.search.app.detail.create(document.getElementById("zz-detail"), { row: ' + JSON.stringify({ key: idOf(a.key), label: a.label, icon: a.icon }) + ', panel: true }); return true; }())');
     const RUN_BTN = 'Array.prototype.filter.call(document.querySelectorAll("#zz-detail button"), function (b) { return /\\bRun\\b/.test(String(b.textContent || "")); })[0]';
     const hasRun = !!(await until(function () { return P.evaluate('!!(' + RUN_BTN + ')'); }, SETTLE_LIMIT_MS * 3));
     const activates = await P.evaluate('Array.prototype.filter.call(document.querySelectorAll("#zz-detail *"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length');
@@ -233,7 +235,7 @@ function judgeApp(a) {
         return (!!W.answered && W.answered[a.key] === true) || false;
       }, test.limit.quick);
       test.run('its manifest says node.mount true: its folder in spirit/state/ holds only node.json, cache/, data/ and on Linux door.sock', 0.4, function () {
-        const dir = W.node && W.node.run ? path.join(W.node.run, 'spirit', 'state', a.key) : '';
+        const dir = W.node && W.node.run ? path.join(W.node.run, ...S.statePath('spirit/app/' + a.key).split('/')) : '';
         if (!dir || !fs.existsSync(dir)) return false;
         const may = ['node.json', 'cache', 'data'].concat(process.platform === 'win32' ? [] : ['door.sock']);
         return fs.readdirSync(dir).every(function (e) { return may.indexOf(e) !== -1; }) || false;
@@ -242,7 +244,7 @@ function judgeApp(a) {
     if (!a.shell) {
       test.run('its manifest says no shell.mount true: the app selector, mounted with no options, shows no tile of it, though it is made active', 0.4, function () {
         if (!ok() || !Array.isArray(W.tiles)) return false;
-        if (!a.run && (W.activeOff || []).indexOf(a.key) === -1) return false;
+        if (!a.run && (W.activeOff || []).indexOf(idOf(a.key)) === -1) return false;
         return !shown(W.tiles) || false;
       }, test.limit.quick);
     }

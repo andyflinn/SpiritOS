@@ -127,6 +127,8 @@ const SERVERS = (function () {
     catch (e) { return false; }
   });
 }());
+// Each one's id, the key the api tree names it by: its folder's path in dots, spirit.app.desk (goal/G49.19).
+const SERVER_IDS = SERVERS.map(function (n) { return LOADER.dottedPath('spirit/app/' + n); });
 // A throw is answered within this, or it hung; the plain call after a batch within PLAIN_MS.
 const ASK_MS = 10000;
 const PLAIN_MS = 3000;
@@ -277,12 +279,12 @@ async function upNode() {
   let t = null;
   for (let i = 0; i < 60; i++) {
     t = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
-    if (t && SERVERS.every(function (s) { return t[s]; })) break;
+    if (t && SERVER_IDS.every(function (s) { return t[s]; })) break;
     await sleep(500);
   }
   // A SERVER NOT UP JUDGES NOTHING: its verbs would answer "no such verb", which is no crash, and pass on nothing. So
   // every server it turned on must be in the api answer, or the run says which is not.
-  const missing = SERVERS.filter(function (s) { return !(t && t[s]); });
+  const missing = SERVER_IDS.filter(function (s) { return !(t && t[s]); });
   return { node: node, base: base, plain: plain, missing: missing };
 }
 const G = { node: null, base: '', plain: null, tree: null, asks: [], RAWS: [], readingAsks: [], actingAsks: [], actingVerbs: [], killer: false, made: [] };
@@ -300,7 +302,7 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
     const r = await call(base, { call: 'api', args: {} });
     try { tree = JSON.parse(r.text.trim() ? r.text : '{}'); } catch (e) { tree = null; }
     if (!tree || !r.status) { await sleep(500); continue; }
-    if (SERVERS.every(function (s) { return tree[s]; })) break;
+    if (SERVER_IDS.every(function (s) { return tree[s]; })) break;
     await sleep(500);
   }
   // The api answer can be longer than the first 300 bytes kept: ask it whole once.
@@ -349,7 +351,7 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
   G.actingAsks = G.asks.filter(function (a) { return a.acts; });
   G.readingAsks = G.asks.filter(function (a) { return !a.acts; });
   G.actingVerbs = G.actingAsks.map(function (a) { return a.name; }).filter(function (n, k, l) { return l.indexOf(n) === k; });
-  const missingServers = SERVERS.filter(function (s) { return !tree[s]; });
+  const missingServers = SERVER_IDS.filter(function (s) { return !tree[s]; });
   return !missingServers.length || false;
 }, test.limit.long);
 

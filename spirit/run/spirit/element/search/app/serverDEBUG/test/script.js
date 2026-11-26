@@ -23,6 +23,8 @@ function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } ca
 
 const NAME = 'zzdebug';
 const LABEL = 'Zz Debug';
+// The app is known by its id, its folder's path in dots (goal/G49.19): its key, its calls and its job are spirit.app.zzdebug.
+const ID = 'spirit.app.' + NAME;
 
 // A throwaway server app, in the box's shape, that answers its pid, so a restart can be told.
 function scratch() {
@@ -60,15 +62,17 @@ async function jobOf(base, module) {
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let s, N, c, loaded, pid, v0, detail, gaps;
 const live = [];
-const nodeJson = function () { return readJson(path.join(s.run, 'spirit', 'state', NAME, 'node.json')) || {}; };
+// Its node.json in its state folder, spirit.statePath of its folder (goal/G49.17, goal/G49.19).
+const nodeJson = function () { return readJson(path.join(s.run, ...LOADER.statePath(LOADER.slashedPath(ID)).split('/'), 'node.json')) || {}; };
 const open = async function () {
   await c.send('Page.navigate', { url: N.base + '/' });
   return until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000);
 };
-// One serverDEBUG per app, each in a box of its own.
-const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + key + '"; document.body.appendChild(b); window["dbg_' + key + '"] = spirit.required.spirit.element.search.app.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + key + '"]; }())'); };
-const view = function (key) { return c.evaluate('(function () { var b = document.getElementById("dbg-' + key + '"); if (!b) return null; var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height, buttons: b.querySelectorAll("button").length }; }())'); };
-const pressIn = function (key) { return c.evaluate('(function () { var b = document.querySelector("#dbg-' + key + ' button"); if (!b) return false; b.click(); return true; }())'); };
+// One serverDEBUG per app, each in a box of its own, named by the id's last word.
+const tag = function (key) { return key.slice(key.lastIndexOf('.') + 1); };
+const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + tag(key) + '"; document.body.appendChild(b); window["dbg_' + tag(key) + '"] = spirit.required.spirit.element.search.app.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + tag(key) + '"]; }())'); };
+const view = function (key) { return c.evaluate('(function () { var b = document.getElementById("dbg-' + tag(key) + '"); if (!b) return null; var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height, buttons: b.querySelectorAll("button").length }; }())'); };
+const pressIn = function (key) { return c.evaluate('(function () { var b = document.querySelector("#dbg-' + tag(key) + ' button"); if (!b) return false; b.click(); return true; }())'); };
 const hidden = function (v) { return !!v && v.height === 0 && v.text === ''; };
 // The box: "changeAppIcon and changeAppLabel ... The appSelector's detail uses them": the page asks for both files.
 const asked = function () { return c.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent'; }).map(function (m) { return String(m.params.request.url); }); };
@@ -92,61 +96,63 @@ test.run('a scratch node comes up', 0.2, async function () {
 // the box: a server app, activated, runs (the world for what follows)
 test.run('once its app is activated, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, 'app.active', { key: NAME, active: true });
-  const up = await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200 && r.body && r.body.pid > 0; }); }, 30000);
+  // The job asks the fs cache, never the disc (goal/G49.19): the planted folder is an app once app.search lists it.
+  await until(function () { return call(N.base, 'app.search', { q: '' }).then(function (r) { return ((r.body && r.body.items) || []).some(function (i) { return i.key === ID; }); }); }, 30000);
+  await call(N.base, 'app.active', { key: ID, active: true });
+  const up = await until(function () { return call(N.base, ID + '.pid').then(function (r) { return r.status === 200 && r.body && r.body.pid > 0; }); }, 30000);
   return up ? true : false;
 }, test.limit.quick);
 
 // the box: "DEBUG puts its state on the server's own job, in the job's data, at start and on every change"
 test.run('with DEBUG switched on, the server\'s job data says debug true', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, NAME + '.DEBUG', { on: true });
-  const j1 = await jobOf(N.base, 'spirit.app.' + NAME);
+  await call(N.base, ID + '.DEBUG', { on: true });
+  const j1 = await jobOf(N.base, ID);
   return !!j1 && j1.data && j1.data.debug === true ? true : false;
 }, test.limit.quick);
 test.run('with DEBUG switched off, the server\'s job data says debug false', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, NAME + '.DEBUG', { on: false });
-  const j2 = await jobOf(N.base, 'spirit.app.' + NAME);
+  await call(N.base, ID + '.DEBUG', { on: false });
+  const j2 = await jobOf(N.base, ID);
   return !!j2 && j2.data && j2.data.debug === false ? true : false;
 }, test.limit.quick);
 test.run('the job\'s data keeps debug false past the server\'s next call', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, NAME + '.pid', {});
+  await call(N.base, ID + '.pid', {});
   await sleep(500);
-  const j3 = await jobOf(N.base, 'spirit.app.' + NAME);
+  const j3 = await jobOf(N.base, ID);
   return !!j3 && j3.data && j3.data.debug === false ? true : false;
 }, test.limit.quick);
 
 // Q2: "i think we should persist it, always": the node keeps it in spirit/state/<name>/node.json and hands it over at start
 test.run('with DEBUG switched on, node.json says debug true', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, NAME + '.DEBUG', { on: true });
+  await call(N.base, ID + '.DEBUG', { on: true });
   return (await until(function () { return Promise.resolve(nodeJson().debug === true); }, 8000)) ? true : false;
 }, test.limit.quick);
 test.run('the server, killed, comes back', 0.2, async function () {
   if (!nodeUp()) return false;
-  pid = Number(((await call(N.base, NAME + '.pid', {})).body || {}).pid);
+  pid = Number(((await call(N.base, ID + '.pid', {})).body || {}).pid);
   if (!(pid > 0)) return false;
   process.kill(pid, 'SIGKILL');
   await until(function () { return Promise.resolve(!alive(pid)); }, 5000);
-  return (await until(function () { return call(N.base, NAME + '.pid', {}).then(function (r) { return r.status === 200 && r.body && r.body.pid > 0 && r.body.pid !== pid; }); }, 30000)) ? true : false;
+  return (await until(function () { return call(N.base, ID + '.pid', {}).then(function (r) { return r.status === 200 && r.body && r.body.pid > 0 && r.body.pid !== pid; }); }, 30000)) ? true : false;
 }, test.limit.slow);
 test.run('the server comes back with DEBUG on, as kept', 0.2, async function () {
   if (!nodeUp()) return false;
-  return (((await call(N.base, NAME + '.DEBUG', {})).body) || {}).debug === true ? true : false;
+  return (((await call(N.base, ID + '.DEBUG', {})).body) || {}).debug === true ? true : false;
 }, test.limit.quick);
 test.run('the server starts with DEBUG on after the node restarts too', 0.2, async function () {
   if (!nodeUp()) return false;
   await stop(N.child);
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
-  await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200; }); }, 30000);
-  return (((await call(N.base, NAME + '.DEBUG', {})).body) || {}).debug === true ? true : false;
+  await until(function () { return call(N.base, ID + '.pid').then(function (r) { return r.status === 200; }); }, 30000);
+  return (((await call(N.base, ID + '.DEBUG', {})).body) || {}).debug === true ? true : false;
 }, test.limit.slow);
 test.run('with DEBUG switched off, node.json says debug false', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, NAME + '.DEBUG', { on: false });
+  await call(N.base, ID + '.DEBUG', { on: false });
   return (await until(function () { return Promise.resolve(nodeJson().debug === false); }, 8000)) ? true : false;
 }, test.limit.quick);
 
@@ -167,50 +173,50 @@ test.run('serverDEBUG.js loads through spirit.requireScript and puts its create 
 // the box: "when the app is NOT mountable by the node (node.mount==false) it hides itself"
 test.run('for Contacts, which has no server, the DEBUG row shows nothing and takes no space', 0.2, async function () {
   if (loaded !== true) return false;
-  await make('contact');
+  await make('spirit.app.contact');
   await sleep(2000);
-  return hidden(await view('contact')) ? true : false;
+  return hidden(await view('spirit.app.contact')) ? true : false;
 }, test.limit.slow);
 
 // the box: "hides while its server is not running"
 test.run('for Zz Debug with its server switched off, the DEBUG row shows nothing', 0.2, async function () {
   if (loaded !== true) return false;
-  await call(N.base, 'app.active', { key: NAME, active: false });
-  await until(function () { return jobOf(N.base, 'spirit.app.' + NAME).then(function (j) { return !j; }); }, 15000);
-  await make(NAME);
+  await call(N.base, 'app.active', { key: ID, active: false });
+  await until(function () { return jobOf(N.base, ID).then(function (j) { return !j; }); }, 15000);
+  await make(ID);
   await sleep(2000);
-  return hidden(await view(NAME)) ? true : false;
+  return hidden(await view(ID)) ? true : false;
 }, test.limit.slow);
 test.run('once its app is activated again, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, 'app.active', { key: NAME, active: true });
-  return (await until(function () { return call(N.base, NAME + '.pid').then(function (r) { return r.status === 200; }); }, 30000)) ? true : false;
+  await call(N.base, 'app.active', { key: ID, active: true });
+  return (await until(function () { return call(N.base, ID + '.pid').then(function (r) { return r.status === 200; }); }, 30000)) ? true : false;
 }, test.limit.quick);
 // the box: "when the app is a server (node.mount==true), configured text: "turn on|off DEBUG <app-label>""
 test.run('with the server running and DEBUG off, the row says turn on DEBUG Zz Debug', 0.2, async function () {
   if (loaded !== true) return false;
-  return (await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text) && v.text.indexOf(LABEL) !== -1; }); }, 10000)) ? true : false;
+  return (await until(function () { return view(ID).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text) && v.text.indexOf(LABEL) !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 test.run('the row has one button to press', 0.2, async function () {
   if (loaded !== true) return false;
-  v0 = await view(NAME);
+  v0 = await view(ID);
   return !!v0 && v0.buttons === 1 ? true : false;
 }, test.limit.quick);
 
 // the box: "it will use the OWNER-ONLYE VERB DEBUG in the appServer to do that."
 test.run('once the button is pressed, the server\'s DEBUG verb says true', 0.2, async function () {
   if (loaded !== true) return false;
-  await pressIn(NAME);
-  return (await until(function () { return call(N.base, NAME + '.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
+  await pressIn(ID);
+  return (await until(function () { return call(N.base, ID + '.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
 }, test.limit.quick);
 test.run('the row then says turn off DEBUG Zz Debug', 0.2, async function () {
   if (loaded !== true) return false;
-  return (await until(function () { return view(NAME).then(function (v) { return !!v && /turn off DEBUG/i.test(v.text); }); }, 8000)) ? true : false;
+  return (await until(function () { return view(ID).then(function (v) { return !!v && /turn off DEBUG/i.test(v.text); }); }, 8000)) ? true : false;
 }, test.limit.quick);
 test.run('with DEBUG switched off elsewhere, the page follows with no reload and says turn on DEBUG again', 0.2, async function () {
   if (loaded !== true) return false;
-  await call(N.base, NAME + '.DEBUG', { on: false });
-  return (await until(function () { return view(NAME).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text); }); }, 8000)) ? true : false;
+  await call(N.base, ID + '.DEBUG', { on: false });
+  return (await until(function () { return view(ID).then(function (v) { return !!v && /turn on DEBUG/i.test(v.text); }); }, 8000)) ? true : false;
 }, test.limit.quick);
 
 // the box: "It sits in the appSelector's detail, under the Activate row"
@@ -220,7 +226,7 @@ test.run('the page opens again', 0.2, async function () {
 }, test.limit.quick);
 test.run('the detail of Zz Debug is made', 0.2, async function () {
   if (!c || c.error) return false;
-  detail = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/detail/script.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.required.spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
+  detail = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/detail/script.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.required.spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(ID) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
   return detail === true ? true : false;
 }, test.limit.quick);
 test.run('the detail loads changeAppIcon.js and changeAppLabel.js', 0.2, async function () {

@@ -85,7 +85,8 @@ const HANDS = '(function () {' +
   '  markedShown: function (name) { return all("[data-zz-" + name + "]").length; },' +
   '}; return "hands"; }())';
 
-// What the tests make, shared by the tests after them.
+// What the tests make, shared by the tests after them. An app's tile, row and key are its id, its folder's path in dots,
+// spirit.app.file (goal/G49.19).
 let pushing, s, live, c, heardBefore, N, where, bars, marks, detail, agent, off, loaded, planted, found, people,
   relay, contact, D, planted2, listBar, a, b, thrown;
 test.run('spirit/element/panel/script.js is there', 0.2, function () {
@@ -161,13 +162,13 @@ test.run('the tiles show Files', 0.2, async function () {
   // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
   // the box: "An element mounts over ALL of the one that mounts it, its title bar too", under "its own title bar [icon] <label> [✕]"
   await selector('tiles');
-  return (await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
+  return (await waitFor('tiles().indexOf("spirit.app.file") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
 test.run('Files opens', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
-  await T('press("file")');
+  await T('press("spirit.app.file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
 test.run('Files opens over the tiles under one bar, with its icon, its label and ✕', 0.2, async function () {
@@ -241,13 +242,13 @@ test.run('Files\' ✕ goes one more, to the tiles', 0.2, async function () {
   if (!where) return false;
   if (!c || c.error) return false;
   await T('close("Files")');
-  return (await waitFor('bars().length === 0 && tiles().indexOf("file") !== -1')) ? true : false;
+  return (await waitFor('bars().length === 0 && tiles().indexOf("spirit.app.file") !== -1')) ? true : false;
 }, test.limit.quick);
 test.run('the Files tile opens Files again', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
-  await T('press("file")');
+  await T('press("spirit.app.file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
 test.run('Files reopened in the same session shows what was there, with its words kept', 0.2, async function () {
@@ -258,7 +259,7 @@ test.run('Files reopened in the same session shows what was there, with its word
   await sleep(500);
   await T('close("Files")');
   await waitFor('bars().length === 0');
-  await T('press("file")');
+  await T('press("spirit.app.file")');
   return (await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && words() === "notes"', 10000)) ? true : false;
 }, test.limit.slow);
 test.run('after a reload Files opens with no words', 0.2, async function () {
@@ -268,8 +269,8 @@ test.run('after a reload Files opens with no words', 0.2, async function () {
   // the box: "a reload starts clean"
   await open();
   await selector('tiles');
-  await waitFor('tiles().indexOf("file") !== -1', 10000);
-  await T('press("file")');
+  await waitFor('tiles().indexOf("spirit.app.file") !== -1', 10000);
+  await T('press("spirit.app.file")');
   return (await waitFor('rows().indexOf("zzFiles") !== -1', 10000) && (await T('words()')) === '') ? true : false;
 }, test.limit.quick);
 test.run('the pane lists the Agent', 0.2, async function () {
@@ -278,14 +279,14 @@ test.run('the pane lists the Agent', 0.2, async function () {
   if (!c || c.error) return false;
   // the box: "The appSelector's ✕ hides too (Q3)"
   await selector('pane');
-  return (await waitFor('rows().indexOf("agent") !== -1', 10000)) ? true : false;
+  return (await waitFor('rows().indexOf("spirit.app.agent") !== -1', 10000)) ? true : false;
 }, test.limit.quick);
 test.run('the Agent\'s detail opens under one bar', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   await T('markBefore()');
-  await T('press("agent")');
+  await T('press("spirit.app.agent")');
   return (await waitFor('bars().length === 1', 10000)) ? true : false;
 }, test.limit.quick);
 test.run('the Agent\'s ✕ hides the detail, which stays on the page, out of view', 0.2, async function () {
@@ -295,13 +296,13 @@ test.run('the Agent\'s ✕ hides the detail, which stays on the page, out of vie
   await sleep(1000);
   detail = await T('markLayer("detail")');
   await T('close("Agent")');
-  return (await waitFor('bars().length === 0 && rows().indexOf("agent") !== -1') && detail > 0 && (await T('marked("detail")')) > 0) ? true : false;
+  return (await waitFor('bars().length === 0 && rows().indexOf("spirit.app.agent") !== -1') && detail > 0 && (await T('marked("detail")')) > 0) ? true : false;
 }, test.limit.slow);
 test.run('when the Agent is pressed again, the same detail shows', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
-  await T('press("agent")');
+  await T('press("spirit.app.agent")');
   return (await waitFor('markedShown("detail") > 0', 10000)) ? true : false;
 }, test.limit.quick);
 test.run('the Agent, made active, has its tile', 0.2, async function () {
@@ -309,16 +310,16 @@ test.run('the Agent, made active, has its tile', 0.2, async function () {
   if (!where) return false;
   if (!c || c.error) return false;
   // the box: "A deactivated app's layer only leaves the view; it stays loaded until the shell boots again, and is not loaded then (Q11)"
-  await call(N.base, 'app.active', { key: 'agent', active: true });
+  await call(N.base, 'app.active', { key: 'spirit.app.agent', active: true });
   await selector('tiles');
-  return (await waitFor('tiles().indexOf("agent") !== -1', 15000)) ? true : false;
+  return (await waitFor('tiles().indexOf("spirit.app.agent") !== -1', 15000)) ? true : false;
 }, test.limit.quick);
 test.run('the Agent\'s tile opens the Agent', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
   await T('markBefore()');
-  await T('press("agent")');
+  await T('press("spirit.app.agent")');
   return (await waitFor('bars().length === 1', 15000)) ? true : false;
 }, test.limit.quick);
 test.run('app.active switches the Agent off', 0.2, async function () {
@@ -329,7 +330,7 @@ test.run('app.active switches the Agent off', 0.2, async function () {
   agent = await T('markLayer("agent")');
   // What threw is judged up to here: after the switch-off the Agent's kept layer is the Agent's own (Q11: it stays loaded).
   heardBefore = c.heard.length;
-  off = await call(N.base, 'app.active', { key: 'agent', active: false });
+  off = await call(N.base, 'app.active', { key: 'spirit.app.agent', active: false });
   return (off.status === 200) ? true : false;
 }, test.limit.slow);
 test.run('the Agent\'s open layer leaves the view', 0.2, async function () {
@@ -348,7 +349,7 @@ test.run('the Agent\'s tile is gone, so it cannot be reopened', 0.2, async funct
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
-  return ((await T('tiles()')).indexOf('agent') === -1) ? true : false;
+  return ((await T('tiles()')).indexOf('spirit.app.agent') === -1) ? true : false;
 }, test.limit.quick);
 test.run('after the shell boots again none of the Agent is loaded', 0.2, async function () {
   if (!N || !N.up) return false;
@@ -356,7 +357,7 @@ test.run('after the shell boots again none of the Agent is loaded', 0.2, async f
   if (!c || c.error) return false;
   await open();
   await selector('tiles');
-  await waitFor('tiles().indexOf("file") !== -1', 10000);
+  await waitFor('tiles().indexOf("spirit.app.file") !== -1', 10000);
   await sleep(2000);
   loaded = await c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }).filter(function (n) { return /\\/spirit\\/app\\/agent\\//.test(n); })');
   return (Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app && window.spirit.required.spirit.app.agent)'))) ? true : false;
@@ -382,8 +383,8 @@ const pickKind = async function (label) {
 const detailsOf = async function (who) {
   const d = {};
   await selector('tiles');
-  await waitFor('tiles().indexOf("contact") !== -1', 10000);
-  await T('press("contact")');
+  await waitFor('tiles().indexOf("spirit.app.contact") !== -1', 10000);
+  await T('press("spirit.app.contact")');
   await pickKind(kindOf(who));
   d.listed = await waitFor('bars().length === 1 && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000);
   const contacts = (await T('bars()'))[0];
@@ -473,8 +474,8 @@ test.run('Contacts lists both people', 0.2, async function () {
   if (!where) return false;
   if (!c || c.error) return false;
   await selector('tiles');
-  await waitFor('tiles().indexOf("contact") !== -1', 10000);
-  await T('press("contact")');
+  await waitFor('tiles().indexOf("spirit.app.contact") !== -1', 10000);
+  await T('press("spirit.app.contact")');
   // Both people are blocked (their panels offer Unblock), so they are listed under ❌ Blocked.
   await pickKind('❌ Blocked');
   return (await waitFor('rows().indexOf(' + JSON.stringify(zzKey) + ') !== -1 && rows().indexOf(' + JSON.stringify(zzKey2) + ') !== -1', 10000)) ? true : false;

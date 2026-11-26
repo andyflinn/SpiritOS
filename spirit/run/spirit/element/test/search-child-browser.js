@@ -54,7 +54,7 @@ const ROWS = 60;
 // WHAT A SEARCH NEEDS TO DRAW A LIST AT ALL, mounted alone (cw, checking these reds: "suite: its list shows one script's
 // suites and needs a script; mounted alone with none, it draws nothing. testicle and grant list from their servers
 // (testicle, grants), and the scratch node does not run testicle. the world should give a script and turn testicle on").
-const SERVERS = { servers: ['testicle', 'grants'] };
+const SERVERS = { servers: ['spirit.app.testicle', 'spirit.app.grants'] };
 const OPTIONS = { suite: { script: 'spirit/script.js' } };
 // Judged by its list, its selector drawing no pane (api: two dropdowns side by side, Andy's G29.7).
 const VIA_LIST = { api: true };

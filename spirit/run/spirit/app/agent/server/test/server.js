@@ -33,7 +33,8 @@ function readJson(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8'))
 // What the tests make, for the tests after them.
 const X = { family: null, scratch: '', state: '', pipe: '', client: null, kid: null, up: false, db: '' };
 const API = path.join(DIR, 'api.js');
-const ask = function (verb, args) { const q = {}; q[verb] = args; return X.client.ask({ agent: q }, { owner: true, key: 'MCowBQYDK2VwAyEAagentTestOwnerAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' }).then(function (r) { return r || {}; }, function (e) { return { refused: e && (e.code || e.message) }; }); };
+// The agent is known by its id, spirit.app.agent, its pipe by its folder, spirit/app/agent (goal/G49.19).
+const ask = function (verb, args) { const q = {}; q[verb] = args; return X.client.ask({ 'spirit.app.agent': q }, { owner: true, key: 'MCowBQYDK2VwAyEAagentTestOwnerAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' }).then(function (r) { return r || {}; }, function (e) { return { refused: e && (e.code || e.message) }; }); };
 const stop = function () { return new Promise(function (r) { const kid = X.kid; X.kid = null; if (!kid || kid.exitCode !== null) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); };
 test.after(async function () {
   await stop();
@@ -71,9 +72,9 @@ test.run('the agent server starts and answers on its pipe', 0.2, async function 
   const scratch = X.scratch = ownTemp('spirit-agent');
   const state = X.state = path.join(scratch, 'state');
   fs.mkdirSync(state, { recursive: true });
-  const pipe = X.pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'agent', 'win32', 'process') : path.join(scratch, 'door.sock');
+  const pipe = X.pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'spirit/app/agent', 'win32') : path.join(scratch, 'door.sock');
   X.client = appClient.createAppClient({ rootDir: scratch });
-  X.client.register('agent', pipe);
+  X.client.register('spirit.app.agent', pipe);
   const env = Object.assign({}, process.env); delete env.SPIRIT_JOB_ID;
   const kid = X.kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'pipe', 'ipc'], env: env });
   kid.stderr.resume();

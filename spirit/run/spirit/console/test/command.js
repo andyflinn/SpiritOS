@@ -416,12 +416,12 @@ test.run('wait remove takes the stored string out of wait list', 0.4, async func
 
 // THE VERB'S FUNCTION (goal/G48.8, wsl: "at spirit.app, active key=desk active=true is refused, branch[verb] is not a
 // function"; Andy: "cw, fix the console. push it"): a branch whose api.js names a function for a verb (spirit.app: active is
-// activeApp) answers it from the console.
-test.run('at spirit.app, "active key=icons active=true" answers ok, through the function its api.js names', 0.4, async function () {
+// activeApp) answers it from the console. The key is the app's id, spirit.app.icons (goal/G49.19).
+test.run('at spirit.app, "active key=spirit.app.icons active=true" answers ok, through the function its api.js names', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
   await go('path app');
-  const p = await go('active key=icons active=true');
+  const p = await go('active key=spirit.app.icons active=true');
   await go('path <<');
   const o = json(p.out);
   return (p.ended && p.code === 0 && !!o && o.ok === true) || false;

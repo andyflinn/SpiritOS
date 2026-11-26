@@ -219,8 +219,10 @@ async function scratchNode(o) {
   const run = lab.run;
   trees.set(path.resolve(run), lab);
   (opts.servers || []).forEach(function (name) {
-    // Its switch where the node reads it, the app's state folder by spirit.statePath (goal/G49.17).
-    const dir = path.join(run, ...require('../script.js').statePath('spirit/app/' + name).split('/'));
+    // Its switch where the node reads it, the app's state folder by spirit.statePath (goal/G49.17). A server is named by its
+    // id, its folder in dots (goal/G49.19: spirit.app.desk), and its folder is that id in slashes, never built from a word.
+    const S = require('../script.js');
+    const dir = path.join(run, ...S.statePath(S.slashedPath(name)).split('/'));
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
   });

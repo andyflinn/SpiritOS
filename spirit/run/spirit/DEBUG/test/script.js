@@ -82,6 +82,8 @@ const PAGE = '/DEBUG/spirit/element/workBench/headLessBrowser.html';
 // A server whose api the node serves: testicle, an app of spirit/app/, turned on in the scratch copy (goal/G43.20: every
 // server is an app, and none runs until its owner turns it on).
 const GARBAGE = '/DEBUG/spirit/app/testicle/testicle/garbageArguments.json';
+// Its branch on the wire is its id, its folder's path in dots (goal/G49.19).
+const TESTICLE = 'spirit.app.testicle';
 
 // THE GARBAGE ITSELF (goal/G41.30, the box v12): what the generator makes for one verb's request prototype, asked in
 // memory of its make(), over a stand-in server whose api is that one verb. "EVERY ARGUMENT gets tested with EVERY
@@ -392,7 +394,7 @@ test.run('the node\'s DEBUG page names the module it mounts, spirit/element/work
 // garbage is asked once the node's api names them, not while its server is still starting.
 test.run('the node\'s api names the testicle server\'s verbs', 0.2, async function () {
   if (!node || !node.up) return false;
-  upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t.testicle || {}).length > 1; }); }, 30000);
+  upNow = await until(function () { return call(N, 'api').then(function (r) { const t = json(r) || {}; return Object.keys(t[TESTICLE] || {}).length > 1; }); }, 30000);
   return (upNow) ? true : false;
 }, test.limit.quick);
 
@@ -406,13 +408,13 @@ test.run('the garbage address is answered with 200 and a JSON list', 0.2, async 
 test.run('the node\'s api lists the testicle server\'s verbs', 0.2, async function () {
   if (!node || !node.up) return false;
   tree = json(await call(N, 'api')) || {};
-  verbs = Object.keys(tree.testicle || {});
+  verbs = Object.keys(tree[TESTICLE] || {});
   return (verbs.length > 0) ? true : false;
 }, test.limit.quick);
 
 test.run('every verb of its api has garbage of its own', 0.2, async function () {
   if (!node || !node.up) return false;
-  namedIn = function (v) { return Array.isArray(list) && list.some(function (e) { return e && typeof e === 'object' && e.call === 'testicle.' + v; }); };
+  namedIn = function (v) { return Array.isArray(list) && list.some(function (e) { return e && typeof e === 'object' && e.call === TESTICLE + '.' + v; }); };
   unasked = verbs.filter(function (v) { return !namedIn(v); });
   return (verbs.length && !unasked.length) ? true : false;
 }, test.limit.quick);
@@ -433,7 +435,7 @@ test.run('each entry that breaks the shape is refused with a code: a 4xx, never 
     if (proto === null) return v === null;
     return typeof v === typeof proto;
   };
-  kept = function (entry) { const verb = String(entry.call || '').replace(/^testicle\./, ''); const d = tree.testicle && tree.testicle[verb]; return !!d && sameShape(d.request, entry.args); };
+  kept = function (entry) { const verb = String(entry.call || '').slice(TESTICLE.length + 1); const d = tree[TESTICLE] && tree[TESTICLE][verb]; return !!d && sameShape(d.request, entry.args); };
   wrong = []; lone = [];
   keptCount = 0;
   for (const entry of (Array.isArray(list) ? list : [])) {

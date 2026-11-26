@@ -34,6 +34,9 @@ const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : ''
 // own, a shed that drops the newest rows instead, so the family's own shed is seen to be the one asked.
 const FAMILY = 'zzstream';
 const SHED_FAMILY = 'zzshed';
+// Each app by its id, its folder's path in dots, as the wire and its data set know it (goal/G49.19): spirit.app.zzstream.
+const idOf = function (n) { return LOADER.dottedPath('spirit/app/' + n); };
+const FAMILY_ID = idOf(FAMILY);
 // The translator by its run path, as the app server requires it since goal/G49.13 ("the app server requires its app's script and a
 // stream's translator by the run path it is handed").
 const TRANSLATOR = 'spirit/app/' + FAMILY + '/data.js';
@@ -45,11 +48,11 @@ function plantFamilies() {
   fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
     "const D = require('../../script.js').requireScript('spirit/data/script.js');",
-    "D.makeFamily('" + FAMILY + "', function () {",
-    "  const HOME = D.viewAt(null, '" + FAMILY + "');",
+    "D.makeFamily('" + FAMILY_ID + "', function () {",
+    "  const HOME = D.viewAt(null, '" + FAMILY_ID + "');",
     "  D.addTranslator({ onJob: function (job) {",
-    "    if (!(job && job.module === 'spirit.app." + FAMILY + "' && job.app && job.app.item && job.app.item.id)) return;",
-    "    D.viewAt(job.fromNode || null, '" + FAMILY + "').set('rows/' + job.app.item.id, job.app.item);",
+    "    if (!(job && job.module === '" + FAMILY_ID + "' && job.app && job.app.item && job.app.item.id)) return;",
+    "    D.viewAt(job.fromNode || null, '" + FAMILY_ID + "').set('rows/' + job.app.item.id, job.app.item);",
     "  } });",
     "  return { item: function (id) { return id ? HOME.get('rows/' + id) || null : null; } };",
     "});",
@@ -83,6 +86,8 @@ const SELF = 'KEY-CLIENT';
 const TMP = CHILD ? String(process.argv[4]) : ownTemp('appServer-test-');
 // A server name of the test's own, so its cache folder is no real server's.
 const NAME = CHILD ? String(process.argv[5]) : 'streamProbe';
+// Its id, which the app server takes from its script's folder (goal/G49.19): its script named in spirit/app/<NAME>/.
+const ID = idOf(NAME);
 // ITS STATE FOLDER IS THE NODE'S TO NAME (goal/G49.17: the app server takes its folder from the --state the node hands it,
 // never from its name): each server of this test is handed one in the test's own temp, at the app layout, state/app/<name>/.
 const stateOf = function (name) { return path.join(TMP, 'state', 'app', name); };
@@ -171,6 +176,9 @@ const fake = {
   eventStream: { published: [], publish: function (e) { fake.eventStream.published.push(e); }, subscribe: function () {} },
   // A server reports its DEBUG on its job (goal/G43.15); the stand-in node takes the report and keeps nothing.
   processJob: { report: function () { return Promise.resolve({ ok: true }); } },
+  // A path in its two writings, the spirit object's own (goal/G49.19): the app server names apps by their ids with them.
+  dottedPath: LOADER.dottedPath,
+  slashedPath: LOADER.slashedPath,
   // Its DEBUG flag, as spirit.js keeps one: read with no argument, set with a boolean.
   debugLog: (function () { let on = false; return function (v) { if (typeof v === 'boolean') on = v; return on; }; }()),
 };
@@ -187,9 +195,9 @@ Module._load = function (request, parent) {
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
-if (process.platform === 'win32') PIPE = LOADER.requireScript('spirit/appClient/script.js').pipePathFor(TMP, NAME, 'win32');
+if (process.platform === 'win32') PIPE = LOADER.requireScript('spirit/appClient/script.js').pipePathFor(TMP, 'spirit/app/' + NAME, 'win32');
 const childArgv = process.argv.slice();
-process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE, '--state', path.join(stateOf(NAME), 'data')];
+process.argv = [process.argv[0], path.join(RUN, 'spirit', 'app', NAME, NAME + '.js'), '--pipe', PIPE, '--state', path.join(stateOf(NAME), 'data')];
 
 let bootstrap = [];
 let bootstraps = 0;
@@ -217,14 +225,14 @@ function start(streamOpts, publisherOpts) {
   // whoami answers what the server was told of its caller (goal/G47.5, Q8: the shared server code tells a server loopback beside owner).
   const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } },
     whoami: { request: {}, reply: { owner: false, loopback: false }, handler: function (a, caller) { return { owner: !!(caller && caller.owner === true), loopback: !!(caller && caller.loopback === true) }; } } }, {
-    stream: Object.assign({ module: 'spirit.app.' + FAMILY, translator: TRANSLATOR }, streamOpts || {}),
+    stream: Object.assign({ module: FAMILY_ID, translator: TRANSLATOR }, streamOpts || {}),
     publisher: Object.assign({ family: NAME, bootstrap: function () { bootstraps += 1; return bootstrap.slice(); }, waitMs: 5000 }, publisherOpts || {}),
   });
   return { A: A, s: s, D: A.data };
 }
 // What the client's cache holds, asked of the family's data.js, which alone names its branches (goal/G41.28; Andy:
 // "the client manager should keep that cache"): spirit.required.spirit.data.<family>.data, attached by appServer to the process's spirit.
-const kept = function () { return (globalThis.spirit && ((globalThis.spirit.required.spirit.data || {})[FAMILY] || {}).data) || null; };
+const kept = function () { return (globalThis.spirit && ((globalThis.spirit.required.spirit.data || {})[FAMILY_ID] || {}).data) || null; };
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
 const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 
@@ -236,7 +244,7 @@ const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 async function selfSubscribe() {
   const publishedAt = fake.eventStream.published.length;
   const postsAt = posts.length;
-  const status = (await post('subscribe', { branch: NAME }, SELF)).status;
+  const status = (await post('subscribe', { branch: ID }, SELF)).status;
   await tick(800);
   const ids = function (list) { const out = []; list.forEach(function (e) { (Array.isArray(e) ? e : [e]).forEach(function (x) { const r = x && (x.row || x); if (r && r.item && r.item.id) out.push(r.item.id); }); }); return out; };
   return { selfStatus: status, toPages: ids(fake.eventStream.published.slice(publishedAt)), byPost: ids(posts.slice(postsAt)) };
@@ -246,7 +254,7 @@ const allOf = function (list) { return Array.isArray(list) && ['head', 'a1', 'a2
 // ── a child: one process of a restart, or of a cache switch ────────────────────────────────────────────────────────
 async function child(mode) {
   const out = {};
-  const FAM = childArgv[6] || FAMILY;
+  const FAM = idOf(childArgv[6] || FAMILY);
   if (mode === 'first') {
     // Cache on: the first run of a client, its push landed.
     const { s, D } = start({ cache: true });
@@ -355,7 +363,7 @@ async function child(mode) {
     const A = LOADER.requireScript(SUBJECT);
     const one = mode === 'publisherOnly'
       ? { publisher: { family: NAME, bootstrap: function () { return []; }, waitMs: 5000 } }
-      : { stream: { module: 'spirit.app.' + FAM, translator: TRANSLATOR } };
+      : { stream: { module: FAM, translator: TRANSLATOR } };
     A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, one);
     await tick(300);
     out.verbs = await new Promise(function (resolve) {
@@ -521,7 +529,7 @@ function gateSection() {
     const src = [
       "require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
       "const A = spirit.requireScript('spirit/server/app/script.js');",
-      "const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(process.argv[1], 'zzStatusZero', process.platform);",
+      "const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(process.argv[1], 'spirit/app/zzStatusZero', process.platform);",
       "require('fs').mkdirSync(require('path').dirname(pipe), { recursive: true });",
       "const s = A.createAppServer({ zero: { request: {}, reply: {}, handler: function () { return {}; } }, ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } },",
       "  { gate: function (verb) { return verb === 'zero' ? Promise.resolve({ status: 0, body: { ok: false, code: 'peer-unreachable' } }) : null; } });",
@@ -602,6 +610,8 @@ function stateCachePart() {
   // beside the follower (goal/G47.4: a test names no app of the tree as its fixture).
   const SENDER = 'MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=';
   const FAMILY = 'zzkept';
+  // The family a kept file names is the app's id, spirit.app.zzkept (goal/G49.19).
+  const KEPT_ID = LOADER.dottedPath('spirit/app/' + FAMILY);
 
   // appServer-stateCache: appServer reads and writes its cache in spirit/state/<name>/cache/, and nowhere else (goal/G43.20)
   let root = '', run = '', id = '', state = '', cache = '';
@@ -615,12 +625,12 @@ function stateCachePart() {
   const startWith = async function (where) {
     fs.rmSync(state, { recursive: true, force: true });
     fs.mkdirSync(where, { recursive: true });
-    fs.writeFileSync(path.join(where, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: where }] }));
+    fs.writeFileSync(path.join(where, id + '.json'), JSON.stringify({ key: SENDER, family: KEPT_ID, run: 'r', n: 1, rows: [{ kept: where }] }));
     const seen = path.join(root, 'seen-' + kids.length + '.json');
     const saved = path.join(root, 'saved-' + kids.length + '.json');
     // A door of its own in a short temp folder: under the scratch tree's spirit/state/app/follower/ the path passes the
     // 107 bytes a unix socket may name, and the follower cannot listen (EINVAL).
-    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
+    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, 'spirit/app/' + NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
     if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
     const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe, '--state', path.join(state, 'data')], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
     kids.push(kid);
@@ -693,7 +703,7 @@ function stateCachePart() {
     const saved = path.join(root, 'saved-x' + kids.length + '.json');
     // A door of its own in a short temp folder: under the scratch tree's spirit/state/app/follower/ the path passes the
     // 107 bytes a unix socket may name, and the follower cannot listen (EINVAL).
-    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
+    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, 'spirit/app/' + NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
     if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
     const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe, '--state', path.join(state, 'data')], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
     kids.push(kid);
@@ -706,13 +716,13 @@ function stateCachePart() {
   // the attacker: a file named for one sender, holding another's key
   test.run('a cache file named for one sender but holding another\'s key is not read, because a file is read only under its own sender\'s name', 0.8, async function () {
     if (noTree()) return false;
-    const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
+    const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: KEPT_ID, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
     return (swapped.up && !swapped.seen) || false;
   }, test.limit.slow);
   // the attacker: only a half-written .tmp, as a kill leaves it
   test.run('a .tmp is never read back', 0.2, async function () {
     if (noTree()) return false;
-    const half = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json.tmp'), JSON.stringify({ key: SENDER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'half' }] })); });
+    const half = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json.tmp'), JSON.stringify({ key: SENDER, family: KEPT_ID, run: 'r', n: 1, rows: [{ kept: 'half' }] })); });
     return (half.up && !half.seen) || false;
   }, test.limit.slow);
   // the attacker: a cache file that is no JSON, and one that is JSON of the wrong shape
@@ -723,7 +733,7 @@ function stateCachePart() {
   }, test.limit.slow);
   test.run('with cached rows that are no list, nothing is read back and the server saves on', 0.2, async function () {
     if (noTree()) return false;
-    const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 7, n: -3, rows: 'not a list' })); });
+    const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: KEPT_ID, run: 7, n: -3, rows: 'not a list' })); });
     return (shape.up && !shape.seen && Array.isArray(shape.saved)) || false;
   }, test.limit.slow);
   test.run('after all of it spirit/state/follower/ holds nothing beside cache/ and its socket', 0.2, function () {
@@ -741,10 +751,10 @@ function ownPart() {
     const A0 = LOADER.requireScript(SUBJECT);
     return typeof A0.appApiPath === 'function' || false;
   }, test.limit.quick);
-  test.run('the appApiPath of an app named <name> is spirit/app/<name>/api.js', 0.2, function () {
+  test.run('the appApiPath of an app by its id spirit.app.<name> is spirit/app/<name>/api.js', 0.2, function () {
     const A0 = LOADER.requireScript(SUBJECT);
     // The planted family, an app of spirit/app/ for this run (goal/G47.4: no app of the tree named as a fixture).
-    const fp = typeof A0.appApiPath === 'function' ? A0.appApiPath(FAMILY) : null;
+    const fp = typeof A0.appApiPath === 'function' ? A0.appApiPath(FAMILY_ID) : null;
     return fp === 'spirit/app/' + FAMILY + '/api.js' || false;
   }, test.limit.quick);
   // Apps of spirit/app/ since goal/G43.27: the family's interface at the top of the app folder, no family/ left. Every
@@ -815,7 +825,7 @@ function ownPart() {
   test.run('a subscribe follows the publisher\'s key and asks its branch to subscribe it', 0.2, async function () {
     if (noServer()) return false;
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
-    const first = await O.s.subscribe(PUBLISHER, NAME);
+    const first = await O.s.subscribe(PUBLISHER, ID);
     await tick(300);
     return (first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }))
       || false;
@@ -863,7 +873,7 @@ function ownPart() {
     await tick(100);
     // The new bootstrap holds no item 2: a full push would sweep it.
     bootstrap = [row(GOAL), row(item(1))];
-    again = await O.s.subscribe(PUBLISHER, NAME);
+    again = await O.s.subscribe(PUBLISHER, ID);
     await tick(500);
     return (again === true && has(30) && has(31) && has(32)) || false;
   }, test.limit.slow);
@@ -908,7 +918,7 @@ function ownPart() {
     for (let i = 41; i < 50; i++) O.A.publish(row(item(i)));
     await tick(100);
     bootstrap = [row(GOAL), row(item(1, { title: 'item 1, pushed' }))];
-    await O.s.subscribe(PUBLISHER, NAME);
+    await O.s.subscribe(PUBLISHER, ID);
     await tick(600);
     return bootstraps === before + 1 || false;
   }, test.limit.slow);
@@ -931,7 +941,7 @@ function ownPart() {
     if (noServer()) return false;
     const pushedAt = bootstraps;
     const subsBefore = asked.filter(function (a) { return a.verb === 'subscribe'; }).length;
-    await O.s.subscribe(PUBLISHER, NAME);
+    await O.s.subscribe(PUBLISHER, ID);
     await tick(400);
     const lastSub = asked.filter(function (a) { return a.verb === 'subscribe'; }).map(function (a) { return a.args; }).pop() || {};
     // The push's own end, as the sender sent it: { run, n, full, end }.
@@ -1216,7 +1226,8 @@ function ownPart() {
   }, test.limit.quick);
   test.run('under the sender\'s key its spirit.required.spirit.data holds the branch, as <key>.<branch>', 0.2, function () {
     const one = C.one || {};
-    return (Array.isArray(one.family) && one.family.indexOf(FAMILY) !== -1) || false;
+    // The branch by its id, spirit.app.zzstream (goal/G49.19: an app's data-set family is its id).
+    return (Array.isArray(one.family) && one.family.indexOf(FAMILY_ID) !== -1) || false;
   }, test.limit.quick);
   test.run('started again, it reads its cache back before it subscribes', 0.2, function () {
     C.two = runChild('restart', 'cacheProbe');

@@ -51,9 +51,10 @@ function answer(b) {
   const c = b.call;
   const a = b.args;
   if (c === 'api' && a.branch === 'demo') return [200, { interface: DEMO }];
-  // An app's branch, zapp, its api.js at spirit/app/zapp/api.js (goal/G49.6, the one place).
-  if (c === 'api' && a.branch === 'zapp') return [200, { interface: DEMO }];
-  if (c === 'zapp.hello') return [200, { ok: true, said: 'zapp ' + a.name }];
+  // An app's branch, zapp, its api.js at spirit/app/zapp/api.js (goal/G49.6, the one place), asked and called by its id,
+  // spirit.app.zapp, its folder's path in dots (goal/G49.19).
+  if (c === 'api' && a.branch === 'spirit.app.zapp') return [200, { interface: DEMO }];
+  if (c === 'spirit.app.zapp.hello') return [200, { ok: true, said: 'zapp ' + a.name }];
   // The event branch, which processJob reports through (goal/G49.19): this tree's own spirit/event/api.js, as a node answers it.
   if (c === 'api' && a.branch === 'event') return [200, { interface: fs.readFileSync(path.join(RUN, 'spirit', 'event', 'api.js'), 'utf8') }];
   if (c === 'api' && a.branch) return [404, { ok: false, code: 'no-branch', error: 'no branch ' + a.branch }];
@@ -987,14 +988,15 @@ test.run('on a real page, using the branch the page has not used yet for the fir
 // it asks desk itself and draws its list, never "the desk server did not answer".
 test.run('desk, off at load, is switched on from the page with app.active', 0.2, async function () {
   if (!L.atLoad) return false;
-  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/api.js')).then(function (app) { return app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
+  // desk by its id, spirit.app.desk, and its verbs under it (goal/G49.19: desk.items.search is no verb).
+  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/api.js')).then(function (app) { return app.activeApp({ key: 'spirit.app.desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
 test.run('the desk server answers the page once switched on', 0.2, async function () {
   let up = '';
   if (L.on === true) {
     await H.until(async function () {
-      up = await L.page.evaluate("fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: 'desk.items.search', args: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false } }) }).then(function (r) { return String(r.status); })");
+      up = await L.page.evaluate("fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.desk.items.search', args: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false } }) }).then(function (r) { return String(r.status); })");
       return up === '200';
     }, 40000);
   }
@@ -1011,10 +1013,10 @@ test.run('on a real page, the Desk element opens on the page that loaded before 
   let got = {};
   try { got = JSON.parse(drawn); } catch (e) { got = { refused: String(drawn) !== '' }; }
   L.got = got;
-  L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/spirit$/.test(m.params.request.url) && /"call":"desk\.items\.search"/.test(m.params.request.postData || ''); });
+  L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/spirit$/.test(m.params.request.url) && /"call":"spirit\.app\.desk\.items\.search"/.test(m.params.request.postData || ''); });
   return (!got.refused && got.nodes > 0) || false;
 }, test.limit.long);
-test.run('on a real page, the Desk element asks desk itself with desk.items.search, and no reload', 0.2, function () {
+test.run('on a real page, the Desk element asks desk itself with spirit.app.desk.items.search, and no reload', 0.2, function () {
   if (!L.got) return false;
   return L.deskAsked.length > 0 || false;
 }, test.limit.quick);

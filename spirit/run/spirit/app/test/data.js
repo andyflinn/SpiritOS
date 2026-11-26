@@ -14,6 +14,8 @@ const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until, sleep } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
 const APPS = path.join(RUN, 'spirit', 'app');
+// An app's key is its id, its folder's path in dots (goal/G49.19): spirit.app.publishData for spirit/app/publishData.
+const idOf = function (n) { return 'spirit.app.' + n; };
 
 // data.js: a node:run app shows no tile and no Activate once the apps job has replaced its row (goal/G43.23, item 9).
 // One test.run per test (goal/G47.2). What the world made, for the tests after it.
@@ -53,7 +55,7 @@ test.run('publishData and pushOrigin are only run, and agent mounts and may be a
     try { j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); } catch (e) { j = {}; }
     const run = !!(j.node && j.node.run === true);
     const shell = !!(j.shell && j.shell.mount === true);
-    return { key: n, label: String((j.identity && j.identity.label) || n), run: run, shell: shell, intrinsic: !!(j.identity && j.identity.intrinsic === true),
+    return { key: idOf(n), label: String((j.identity && j.identity.label) || n), run: run, shell: shell, intrinsic: !!(j.identity && j.identity.intrinsic === true),
       runOnly: run && !(j.node && j.node.mount === true) && !shell };
   });
   W.only = own.filter(function (a) { return a.runOnly; });
@@ -141,20 +143,20 @@ test.run('the apps job reached the page, and agent\'s held row now says its new 
 // the box: "app/data.js drops run and runOnly"
 test.run('the apps job wrote publishData\'s row', 0.2, function () {
   if (!W.seen) return false;
-  return rowsOf('publishData').values.length > 0 || false;
+  return rowsOf(idOf('publishData')).values.length > 0 || false;
 }, test.limit.quick);
 test.run('every row of publishData the app cache held after the job keeps run and runOnly', 0.2, function () {
   if (!W.seen) return false;
-  const ro = rowsOf('publishData');
+  const ro = rowsOf(idOf('publishData'));
   return ro.values.length > 0 && !ro.lost.length ? true : false;
 }, test.limit.quick);
 test.run('the apps job wrote pushOrigin\'s row', 0.2, function () {
   if (!W.seen) return false;
-  return rowsOf('pushOrigin').values.length > 0 || false;
+  return rowsOf(idOf('pushOrigin')).values.length > 0 || false;
 }, test.limit.quick);
 test.run('every row of pushOrigin the app cache held after the job keeps run and runOnly', 0.2, function () {
   if (!W.seen) return false;
-  const ro = rowsOf('pushOrigin');
+  const ro = rowsOf(idOf('pushOrigin'));
   return ro.values.length > 0 && !ro.lost.length ? true : false;
 }, test.limit.quick);
 
@@ -187,12 +189,12 @@ test.run('with no list on the page, a second apps job reached it', 0.2, async fu
 }, test.limit.slow);
 test.run('publishData\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
   if (!W.after) return false;
-  const r = W.after['publishData'] || {};
+  const r = W.after[idOf('publishData')] || {};
   return r.run === true && r.runOnly === true ? true : false;
 }, test.limit.quick);
 test.run('pushOrigin\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
   if (!W.after) return false;
-  const r = W.after['pushOrigin'] || {};
+  const r = W.after[idOf('pushOrigin')] || {};
   return r.run === true && r.runOnly === true ? true : false;
 }, test.limit.quick);
 test.run('agent\'s detail shows Activate', 0.2, async function () {
@@ -202,9 +204,9 @@ test.run('agent\'s detail shows Activate', 0.2, async function () {
 }, test.limit.quick);
 test.run('Publish Data\'s detail shows no Activate', 0.2, async function () {
   if (!W.after) return false;
-  return await noActivate('publishData', 'Publish Data');
+  return await noActivate(idOf('publishData'), 'Publish Data');
 }, test.limit.slow);
 test.run('Push Origin\'s detail shows no Activate', 0.2, async function () {
   if (!W.after) return false;
-  return await noActivate('pushOrigin', 'Push Origin');
+  return await noActivate(idOf('pushOrigin'), 'Push Origin');
 }, test.limit.slow);

@@ -59,7 +59,7 @@ const armed = function () { return W.chrome.evaluate('(function () { var b = ' +
 const inSet = function () { return json(W.SET) || {}; };
 
 test.run('a scratch node comes up with Icons switched on, and a Chrome page opens', 0.2, async function () {
-  W.node = await scratchNode({ servers: ['icons'] });
+  W.node = await scratchNode({ servers: ['spirit.app.icons'] });
   W.chrome = await chromePage(findChrome());
   W.up = !!(W.node.up && !W.chrome.error && W.node.root);
   return W.up || false;

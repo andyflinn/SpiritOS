@@ -16,6 +16,8 @@ const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until } = S.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(__dirname, '..', 'api.js');
+// The branch is the app's id, its folder's path in dots (goal/G49.19): spirit.app.icons, its calls spirit.app.icons.<verb>.
+const ID = 'spirit.app.icons';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -65,7 +67,7 @@ test.run('the icons api.js handles nothing: it requires only its companion data.
 
 test.run('a scratch node comes up with Icons switched on, and a Chrome page opens', 0.2, async function () {
   if (!W.verbs || !W.verbs.length) return false;
-  W.node = await scratchNode({ servers: ['icons'] });
+  W.node = await scratchNode({ servers: ['spirit.app.icons'] });
   W.chrome = await chromePage(findChrome());
   W.up = !!(W.node.up && W.node.root && !W.chrome.error);
   return W.up || false;
@@ -74,7 +76,7 @@ test.run('a scratch node comes up with Icons switched on, and a Chrome page open
 // the node finds it at the app's top: api {family: icons} answers this file
 test.run('the api verb asked for the icons branch answers spirit/app/icons/api.js, word for word', 0.2, async function () {
   if (!W.up) return false;
-  const fam = await call('api', { branch: 'icons' });
+  const fam = await call('api', { branch: ID });
   return fam.status === 200 && fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8') ? true : false;
 }, test.limit.quick);
 
@@ -84,10 +86,10 @@ test.run('the api verb asked for the icons branch answers spirit/app/icons/api.j
 // goal/G43.32, decided 9: a call that breaks it is refused by a run of the app, appServer.js in front of it, not by the node
 test.run('a call the icons api allows starts a run, and the job names a new pid each time', 0.2, async function () {
   if (!W.up) return false;
-  const r0 = await call('icons.' + W.v, { op: 'search', text: '' });
+  const r0 = await call(ID + '.' + W.v, { op: 'search', text: '' });
   await sleep(300);
   const p1 = await lastRun();
-  const r1 = await call('icons.' + W.v, { op: 'search', text: '' });
+  const r1 = await call(ID + '.' + W.v, { op: 'search', text: '' });
   await sleep(300);
   const p2 = await lastRun();
   return r0.status === 200 && r1.status === 200 && !!p1 && !!p2 && p1 !== p2 ? true : false;
@@ -104,27 +106,27 @@ const crooked = async function (name, args) {
 };
 const byRun = function () { return !W.up ? false : !W.last ? false : W.last.byRun || false; };
 test.run('a verb the icons api does not name is refused', 0.2, async function () {
-  const c = await crooked('icons.zzNoSuchVerb', {});
+  const c = await crooked(ID + '.zzNoSuchVerb', {});
   return !c ? false : c.refused || false;
 }, test.limit.slow);
 test.run('a verb the icons api does not name is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('an argument the icons api does not name is refused', 0.2, async function () {
-  const c = await crooked('icons.' + W.v, { op: 'search', zzExtra: 1 });
+  const c = await crooked(ID + '.' + W.v, { op: 'search', zzExtra: 1 });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
 test.run('an argument the icons api does not name is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('a glyph that is no text is refused', 0.2, async function () {
-  const c = await crooked('icons.' + W.v, { op: 'add', glyph: 5 });
+  const c = await crooked(ID + '.' + W.v, { op: 'add', glyph: 5 });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
 test.run('a glyph that is no text is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('keywords that are no list are refused', 0.2, async function () {
-  const c = await crooked('icons.' + W.v, { op: 'add', glyph: 'x', keywords: '"not a list"' });
+  const c = await crooked(ID + '.' + W.v, { op: 'add', glyph: 'x', keywords: '"not a list"' });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
 test.run('keywords that are no list are refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('an op that is no id is refused', 0.2, async function () {
-  const c = await crooked('icons.' + W.v, { op: { nested: true } });
+  const c = await crooked(ID + '.' + W.v, { op: { nested: true } });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
 test.run('an op that is no id is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);

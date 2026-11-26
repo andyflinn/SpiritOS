@@ -22,6 +22,8 @@ const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = S.req
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const APP = path.join(RUN, 'spirit', 'app', 'icons');
+// The app is known by its id, its folder's path in dots (goal/G49.19): its key, its branch in the api tree, its calls.
+const ID = 'spirit.app.icons';
 
 // The code with its comments blanked, so a word in a comment is no call. Strings are kept whole.
 function code(src) {
@@ -102,7 +104,7 @@ test.run('api.js names its verbs', 0.2, function () {
 
 // Desk switched on beside it: a permanent server, so the process list is shown to find a running app script.
 test.run('a scratch node with its own disc comes up with Icons and Desk switched on, and a Chrome page opens', 0.2, async function () {
-  W.node = await scratchNode({ servers: ['icons', 'desk'] });
+  W.node = await scratchNode({ servers: ['spirit.app.icons', 'spirit.app.desk'] });
   W.chrome = await chromePage(findChrome());
   if (!W.node.up || W.chrome.error) return false;
   if (!W.node.root) return false;
@@ -146,7 +148,7 @@ test.run('switched on and idle, no process runs icons.js', 0.2, function () {
 test.run('the api tree holds the icons branch, answered from icons.js', 0.2, async function () {
   if (!W.ready) return false;
   const tree = await ask('api', {});
-  W.branch = tree.body && tree.body.icons;
+  W.branch = tree.body && tree.body[ID];
   return tree.status === 200 && !!W.branch ? true : false;
 }, test.limit.quick);
 // Its one verb, icon, written out so that its check has a plain title.
@@ -254,20 +256,20 @@ test.run('a page writing spirit/state/app/icons/data/iconSet.json itself is refu
 // the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"
 test.run('Icons is switched off', 0.2, async function () {
   if (!W.ready) return false;
-  const off = await ask('app.active', { key: 'icons', active: false });
+  const off = await ask('app.active', { key: ID, active: false });
   W.off = off.status === 200;
   return W.off || false;
 }, test.limit.quick);
-test.run('switched off, icons.icon answers app-not-served', 0.2, async function () {
+test.run('switched off, spirit.app.icons.icon answers app-not-served', 0.2, async function () {
   if (!W.ready) return false;
   await sleep(1500);
-  const asked = W.verbs.length ? await ask('icons.' + W.verbs[0], {}) : { text: '' };
+  const asked = W.verbs.length ? await ask(ID + '.' + W.verbs[0], {}) : { text: '' };
   return /app-not-served/.test(asked.text) || false;
 }, test.limit.slow);
 test.run('switched off, the api tree holds no icons branch', 0.2, async function () {
   if (!W.ready) return false;
   const tOff = await ask('api', {});
-  return tOff.status === 200 && !(tOff.body && tOff.body.icons) ? true : false;
+  return tOff.status === 200 && !(tOff.body && tOff.body[ID]) ? true : false;
 }, test.limit.quick);
 test.run('switched off, the spirit.app.icons job is no longer open', 0.2, async function () {
   if (!W.ready) return false;
@@ -281,11 +283,11 @@ test.run('switched off, nothing runs icons.js', 0.2, function () {
 }, test.limit.quick);
 test.run('Icons is switched on again', 0.2, async function () {
   if (!W.ready) return false;
-  const on = await ask('app.active', { key: 'icons', active: true });
+  const on = await ask('app.active', { key: ID, active: true });
   return on.status === 200 || false;
 }, test.limit.quick);
 test.run('switched on again, the icons branch is back with no restart of the node', 0.2, async function () {
   if (!W.ready) return false;
-  const back = await until(function () { return ask('api', {}).then(function (t) { return t.status === 200 && !!(t.body && t.body.icons); }); }, 10000);
+  const back = await until(function () { return ask('api', {}).then(function (t) { return t.status === 200 && !!(t.body && t.body[ID]); }); }, 10000);
   return back ? true : false;
 }, test.limit.quick);

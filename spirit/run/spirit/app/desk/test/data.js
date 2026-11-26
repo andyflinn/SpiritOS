@@ -30,7 +30,8 @@ function world() {
   PAGE_LOAD.runAsPage(FILE, win);
   const D = win.spirit.required.spirit.data;
   let n = 0;
-  const X = ((win.spirit.required.spirit.data || {}).desk || {}).data;
+  // The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.desk'].
+  const X = ((win.spirit.required.spirit.data || {})['spirit.app.desk'] || {}).data;
   // THE ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY SERVER-NODE-ID at
   // it's lowest level."): a row comes as appServer hands it, with its sender's key (take(job, key)); every read is
   // spirit.required.spirit.data.desk.data's, which alone names the desk's branches.

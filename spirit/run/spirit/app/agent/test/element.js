@@ -399,7 +399,7 @@ test.run('its mount loads spirit/element/search/app/serverDEBUG/script.js throug
 }, test.limit.quick);
 test.run('the server tool makes serverDEBUG for the agent', 0.2, function () {
   if (!SD.rb) return false;
-  return SD.debugs.length === 1 && SD.debugs[0].o.key === 'agent' ? true : false;
+  return SD.debugs.length === 1 && SD.debugs[0].o.key === 'spirit.app.agent' ? true : false;
 }, test.limit.quick);
 test.run('it draws no checkbox of its own', 0.2, function () {
   if (!SD.rb) return false;
@@ -497,18 +497,18 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
     };
-    // active is its one switch (goal/G43.13).
-    await home('app.active', { key: 'agent', active: true });
+    // active is its one switch (goal/G43.13); the app is known and called by its id, spirit.app.agent (goal/G49.19).
+    await home('app.active', { key: 'spirit.app.agent', active: true });
     P = null;
-    await until(function () { return home('agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
+    await until(function () { return home('spirit.app.agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
     return (!!(P && P.body && P.body.id)) ? true : false;
   }, test.limit.slow);
   test.run('a model, a persona and a job are added', 0.2, async function () {
     if (STOP) return false;
     if (!(P && P.body && P.body.id)) { STOP = true; return false; }
-    M = await home('agent.model', { op: 'add', icon: ICON.model, label: 'zzModel', providerId: P.body.id });
-    Pe = await home('agent.persona', { op: 'add', icon: ICON.persona, label: 'zzPersona', persona: 'zz', bundle: 'zz', provider: P.body.id });
-    J = await home('agent.job', { op: 'add', icon: ICON.job, label: 'zzJob', job: 'zz', bundle: 'zz', provider: P.body.id, persona: Pe.body && Pe.body.id });
+    M = await home('spirit.app.agent.model', { op: 'add', icon: ICON.model, label: 'zzModel', providerId: P.body.id });
+    Pe = await home('spirit.app.agent.persona', { op: 'add', icon: ICON.persona, label: 'zzPersona', persona: 'zz', bundle: 'zz', provider: P.body.id });
+    J = await home('spirit.app.agent.job', { op: 'add', icon: ICON.job, label: 'zzJob', job: 'zz', bundle: 'zz', provider: P.body.id, persona: Pe.body && Pe.body.id });
     return (M.status === 200 && Pe.status === 200 && J.status === 200) ? true : false;
   }, test.limit.quick);
   test.run('a bundle of the node\'s is added', 0.2, async function () {
@@ -616,7 +616,7 @@ async function tabOpens(kind, row) {
     // Who listens, listens once: a press on a row that has its tab adds no second listener, and closing a tab lets go of its own.
     // A row's listeners are counted where the tab and its editor ask for them: the agent family's cache, its table's watch(id, fn) (goal/G43.32:
     // a reader asks its family's cache, which alone names its addresses).
-    await c.evaluate('(function () { var A = window.spirit.required.spirit.data.agent.data; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.tables.forEach(function (t) { var B = A[t]; var made = B.watch; B.watch = function (id, fn) { var mine = typeof id === "string" && "/" + id === window.__rowPath; var off = made.call(B, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; }); return true; }())');
+    await c.evaluate('(function () { var A = window.spirit.required.spirit.data[\"spirit.app.agent\"].data; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.tables.forEach(function (t) { var B = A[t]; var made = B.watch; B.watch = function (id, fn) { var mine = typeof id === "string" && "/" + id === window.__rowPath; var off = made.call(B, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; }); return true; }())');
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     stacked = await c.evaluate('window.__live');
     return (stacked === 0) ? true : false;
@@ -663,7 +663,7 @@ async function tabOpens(kind, row) {
   test.run('the model\'s header follows its row', 0.2, async function () {
     if (STOP) return false;
 
-    await home('agent.model', { op: 'set', id: M.body.id, label: 'zzModelTwo' });
+    await home('spirit.app.agent.model', { op: 'set', id: M.body.id, label: 'zzModelTwo' });
     await waitTab(ICON.model + ' zzModelTwo');
     return ((await tabOf(ICON.model + ' zzModelTwo')).length === 1 && (await tabOf(ICON.model + ' zzModel')).length === 0) ? true : false;
   }, test.limit.quick);
@@ -677,7 +677,7 @@ async function tabOpens(kind, row) {
   }, test.limit.quick);
   test.run('the model is still there', 0.2, async function () {
     if (STOP) return false;
-    return ((await home('agent.model', { op: 'get', id: M.body.id })).status === 200) ? true : false;
+    return ((await home('spirit.app.agent.model', { op: 'get', id: M.body.id })).status === 200) ? true : false;
   }, test.limit.quick);
   // ── a closed tab listens no more ──
   test.run('a tab opened again has one listener for the tab and one for its editor', 0.2, async function () {
@@ -706,7 +706,7 @@ async function tabOpens(kind, row) {
     if (STOP) return false;
 
     hadJob = (await tabOf(ICON.job + ' zzJob')).length === 1;
-    await home('agent.job', { op: 'delete', id: J.body.id });
+    await home('spirit.app.agent.job', { op: 'delete', id: J.body.id });
     await until(function () { return tabOf(ICON.job + ' zzJob').then(function (t) { return !t.length; }); }, 5000);
     return (hadJob && (await tabOf(ICON.job + ' zzJob')).length === 0) ? true : false;
   }, test.limit.quick);
@@ -1074,7 +1074,7 @@ async function paneFills(t) {
   test.run('every list pane is handed its table\'s branch of the agent branch\'s cache', 0.2, async function () {
     if (STOP) return false;
 
-    AD = ((w.win.spirit.required.spirit.data || {}).agent || {}).data;
+    AD = ((w.win.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
     off = all.filter(function (p) { return !AD || !p.o.data || p.o.data !== AD.branch(p.o.verb); });
     return (!!AD && all.length >= 4 && !off.length) ? true : false;
   }, test.limit.quick);

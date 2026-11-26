@@ -63,8 +63,8 @@ test.run('chat.js draws nothing itself', 0.2, function () {
   return X.src !== '' && !/innerHTML|activateApp/.test(X.src) ? true : false;
 }, test.limit.quick);
 
-// ── switched on, the node runs chat.js, which serves the branch chat ──
-test.run('its server answers chat.chats.search', 0.2, async function () {
+// ── switched on, the node runs chat.js, which serves the branch spirit.app.chat, its id (goal/G49.19) ──
+test.run('its server answers spirit.app.chat.chats.search', 0.2, async function () {
   const node = X.node = await H.scratchNode();
   if (!node.up || !node.root) return false;
   X.call = async function (name, args) {
@@ -72,8 +72,8 @@ test.run('its server answers chat.chats.search', 0.2, async function () {
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };
-  await X.call('app.active', { key: 'chat', active: true });
-  const up = await H.until(function () { return X.call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
+  await X.call('app.active', { key: 'spirit.app.chat', active: true });
+  const up = await H.until(function () { return X.call('spirit.app.chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return up ? true : false;
 }, test.limit.slow);
 const jobOf = async function () { return ((await X.call('spirit.job.get', { key: 'spirit.app.chat' })).body || {}).job || {}; };

@@ -30,7 +30,7 @@ const post = function (call, args) {
 function noNode() { return !(W.N && W.N.up && W.N.root); }
 
 test.run('a scratch node comes up on a copy of the tree of its own', 0.2, async function () {
-  W.N = await scratchNode({ servers: ['desk'] });
+  W.N = await scratchNode({ servers: ['spirit.app.desk'] });
   if (!(W.N.up && !!W.N.root)) return false;
   W.run = path.join(W.N.root, 'spirit', 'run');
   return true;

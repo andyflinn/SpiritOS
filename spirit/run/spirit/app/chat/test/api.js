@@ -59,15 +59,15 @@ test.run('on a scratch node with the chat app switched on, the chat server answe
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };
-  await X.call('app.active', { key: 'chat', active: true });
-  const up = await H.until(function () { return X.call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
+  await X.call('app.active', { key: 'spirit.app.chat', active: true });
+  const up = await H.until(function () { return X.call('spirit.app.chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return up ? true : false;
 }, test.limit.slow);
 
-// ── the node finds it as the branch chat, the folder's name ──
-test.run('asked for the interface of the branch chat, the node answers spirit/app/chat/api.js word for word', 0.2, async function () {
+// ── the node finds it as the branch spirit.app.chat, its folder in dots (goal/G49.19) ──
+test.run('asked for the interface of the branch spirit.app.chat, the node answers spirit/app/chat/api.js word for word', 0.2, async function () {
   if (!X.call) return false;
-  const fam = await X.call('api', { branch: 'chat' });
+  const fam = await X.call('api', { branch: 'spirit.app.chat' });
   return fam.status === 200 && !!fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8') ? true : false;
 }, test.limit.quick);
 test.run('asked for the interface of the old branch chatClerver, the node answers none', 0.2, async function () {
@@ -76,32 +76,32 @@ test.run('asked for the interface of the old branch chatClerver, the node answer
   return !(old.status === 200 && old.body && old.body.interface) ? true : false;
 }, test.limit.quick);
 
-// ── every verb it lists is served as chat.<verb> ──
+// ── every verb it lists is served as spirit.app.chat.<verb> (goal/G49.19) ──
 // Each verb its interface lists, written out so that each check has a plain title of its own.
 const served = async function (v) {
   if (!X.call) return false;
-  const r = await X.call('chat.' + v, {});
+  const r = await X.call('spirit.app.chat.' + v, {});
   return r.status !== 404 && !/no.such.verb/i.test(r.text) ? true : false;
 };
-test.run('chat.chat.read is a verb of the node', 0.2, function () { return served('chat.read'); }, test.limit.quick);
-test.run('chat.chat.search is a verb of the node', 0.2, function () { return served('chat.search'); }, test.limit.quick);
-test.run('chat.chats.search is a verb of the node', 0.2, function () { return served('chats.search'); }, test.limit.quick);
-test.run('chat.line.receive is a verb of the node', 0.2, function () { return served('line.receive'); }, test.limit.quick);
-test.run('chat.line.write is a verb of the node', 0.2, function () { return served('line.write'); }, test.limit.quick);
+test.run('spirit.app.chat.chat.read is a verb of the node', 0.2, function () { return served('chat.read'); }, test.limit.quick);
+test.run('spirit.app.chat.chat.search is a verb of the node', 0.2, function () { return served('chat.search'); }, test.limit.quick);
+test.run('spirit.app.chat.chats.search is a verb of the node', 0.2, function () { return served('chats.search'); }, test.limit.quick);
+test.run('spirit.app.chat.line.receive is a verb of the node', 0.2, function () { return served('line.receive'); }, test.limit.quick);
+test.run('spirit.app.chat.line.write is a verb of the node', 0.2, function () { return served('line.write'); }, test.limit.quick);
 
 // ── the attacker: arguments its rules refuse, before the server hears them ──
 test.run('chat.read without the peer it requires is refused 400', 0.2, async function () {
   if (!X.call) return false;
-  const noPeer = await X.call('chat.chat.read', { before: 0, after: 0 });
+  const noPeer = await X.call('spirit.app.chat.chat.read', { before: 0, after: 0 });
   return noPeer.status === 400 ? true : false;
 }, test.limit.quick);
 test.run('line.write without the to it requires is refused 400', 0.2, async function () {
   if (!X.call) return false;
-  const noTo = await X.call('chat.line.write', { text: 'zz to nobody' });
+  const noTo = await X.call('spirit.app.chat.line.write', { text: 'zz to nobody' });
   return noTo.status === 400 ? true : false;
 }, test.limit.quick);
 test.run('an argument it does not list is refused 400', 0.2, async function () {
   if (!X.call) return false;
-  const stray = await X.call('chat.chats.search', { zz: 1 });
+  const stray = await X.call('spirit.app.chat.chats.search', { zz: 1 });
   return stray.status === 400 ? true : false;
 }, test.limit.quick);

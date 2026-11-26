@@ -49,7 +49,8 @@ function scratch() {
 // spirit/app/<name> is spirit/state/app/<name>/).
 test.run('an app\'s door is spirit/state/app/<name>/door.sock, spirit.statePath\'s place', 0.2, function () {
   const A = SPIRIT.requireScript('spirit/appClient/script.js');
-  return A.pipePathFor('/zzRoot', 'desk', 'linux') === path.join('/zzRoot', 'spirit', 'state', 'app', 'desk', 'door.sock') || false;
+  // The app by its folder, spirit/app/desk, never its bare word (goal/G49.19).
+  return A.pipePathFor('/zzRoot', 'spirit/app/desk', 'linux') === path.join('/zzRoot', 'spirit', 'state', 'app', 'desk', 'door.sock') || false;
 }, test.limit.quick);
 
 // What the tests share: the scratch copy, its node and the answers later tests judge.

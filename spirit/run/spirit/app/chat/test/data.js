@@ -36,7 +36,7 @@ function world() {
   PAGE_LOAD.runAsPage(FILE, win);
   const D = win.spirit.required.spirit.data;
   let n = 0;
-  return { D: D, C: ((D || {}).chat || {}).data,
+  return { D: D, C: ((D || {})['spirit.app.chat'] || {}).data,
     // A line the server published, as the stream hands it: a job of module spirit.app.chat whose app holds the line.
     job: function (line, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.chat', data: {}, app: { line: line } }, HOME); } };
 }
@@ -45,8 +45,8 @@ const line = function (peer, sent, seq, at, text) { return { peer: peer, sent: s
 // What the tests make, for the tests after them.
 const X = { w: null, told: [], off: null };
 
-// ── the branch is chat: spirit.required.spirit.data.chat ──
-test.run('it makes the chat branch in spirit.required.spirit.data, its reads on its data', 0.2, function () {
+// ── the branch is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.chat'] ──
+test.run('it makes the spirit.app.chat branch in spirit.required.spirit.data, its reads on its data', 0.2, function () {
   X.w = world();
   const w = X.w;
   return !!w.C && typeof w.C.lines === 'function' ? true : false;
@@ -127,8 +127,8 @@ test.run('a row whose label is no record is not kept', 0.2, function () {
   if (!w || !w.C) return false;
   return w.C.chat(OTHER) === null ? true : false;
 }, test.limit.quick);
-test.run('its lines live on a branch of chat, named so', 0.2, function () {
+test.run('its lines live on a branch of spirit.app.chat, named so', 0.2, function () {
   const w = X.w;
   if (!w || !w.C) return false;
-  return (/(^|\/)chat(\/|$)/).test(String(w.C.branch)) && !/chatClerver/.test(String(w.C.branch)) ? true : false;
+  return (/(^|\/)spirit\.app\.chat(\/|$)/).test(String(w.C.branch)) && !/chatClerver/.test(String(w.C.branch)) ? true : false;
 }, test.limit.quick);

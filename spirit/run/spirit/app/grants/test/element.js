@@ -339,7 +339,7 @@ test.run('the shell app is drawn', 0.2, async function () {
 }, test.limit.quick);
 test.run('the Grants app\'s tile is pressed', 0.2, async function () {
   if (!B.shell) return false;
-  B.tile = !!(await waitFor(function () { return B.chrome.evaluate('(function () { var t = document.querySelector("#zzBox .app-icon[data-key=grants]"); if (!t || t.offsetParent === null) return false; t.click(); return true; }())'); }, 15000));
+  B.tile = !!(await waitFor(function () { return B.chrome.evaluate('(function () { var t = document.querySelector("#zzBox .app-icon[data-key=\\"spirit.app.grants\\"]"); if (!t || t.offsetParent === null) return false; t.click(); return true; }())'); }, 15000));
   return B.tile || false;
 }, test.limit.quick);
 test.run('its Bundles tab is pressed', 0.2, async function () {
@@ -545,6 +545,9 @@ function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 const NAME = 'grants';
 const WANT = { label: 'Grants', icon: '🔒' };
 const APP_DIR = path.join(RUN, 'spirit', 'app', NAME);
+// An app is known by its id, its folder's path in dots (goal/G49.19): the key its row and its tile carry.
+const KEY = 'spirit.app.' + NAME;
+const FILE_KEY = 'spirit.app.file';
 async function wcall(base, verb, args) {
   try {
     const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
@@ -673,11 +676,11 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
     const listed = await wcall(R.N.base, 'app.search', { q: '' });
     R.rows = {};
     ((listed.body && listed.body.items) || []).forEach(function (i) { R.rows[i.key] = parsed(i.label) || {}; });
-    return !!R.rows.file && R.rows.file.intrinsic === true ? true : false;
+    return !!R.rows[FILE_KEY] && R.rows[FILE_KEY].intrinsic === true ? true : false;
   }, test.limit.quick);
   test.run('the node lists grants intrinsic, so always active', 0.2, function () {
     if (!R.rows) return false;
-    return !!R.rows[NAME] && R.rows[NAME].intrinsic === true && R.rows[NAME].active === true ? true : false;
+    return !!R.rows[KEY] && R.rows[KEY].intrinsic === true && R.rows[KEY].active === true ? true : false;
   }, test.limit.quick);
 
   test.run('the wrapper\'s Chrome page opens', 0.2, async function () {
@@ -709,17 +712,17 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   test.run('the shell draws its tiles, Files among them', 0.2, async function () {
     if (!R.page) return false;
     const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.create(b); return "made"; }, function () { return false; }); }())');
-    return shell === 'made' && await wwaitFor('tiles().indexOf("file") !== -1', 10000) ? true : false;
+    return shell === 'made' && await wwaitFor('tiles().indexOf("' + FILE_KEY + '") !== -1', 10000) ? true : false;
   }, test.limit.quick);
   test.run('Grants has its tile, with nothing pressed', 0.2, async function () {
     if (!R.page) return false;
-    return await wwaitFor('tiles().indexOf("' + NAME + '") !== -1', 6000) ? true : false;
+    return await wwaitFor('tiles().indexOf("' + KEY + '") !== -1', 6000) ? true : false;
   }, test.limit.quick);
 
   // Grants opens as it did: its Grants and Bundles tabs, the panel configured.
   test.run('Grants\' tile opens Grants with its Grants and Bundles tabs', 0.2, async function () {
     if (!R.page) return false;
-    const grPressed = await T('tile("grants")');
+    const grPressed = await T('tile("' + KEY + '")');
     R.grOpen = grPressed && await wwaitFor('tabs().indexOf("Grants") !== -1 && tabs().indexOf("Bundles") !== -1', 10000);
     return R.grOpen ? true : false;
   }, test.limit.quick);

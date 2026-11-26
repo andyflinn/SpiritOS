@@ -29,7 +29,7 @@ test.run('what it loads is its server, spirit/app/testicle/server/server.js, and
   return (loads.length === 1 && loads[0].indexOf(SERVER) !== -1) || false;
 }, test.limit.quick);
 test.run('on a node with testicle switched on, the server it loads answers its DEBUG verb', 0.4, async function () {
-  W.node = await H.scratchNode({ servers: ['testicle'] });
+  W.node = await H.scratchNode({ servers: ['spirit.app.testicle'] });
   if (!W.node || !W.node.up) return false;
   const ok = await H.until(function () {
     return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'testicle.DEBUG', args: {} }) })

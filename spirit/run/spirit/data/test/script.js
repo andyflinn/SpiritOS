@@ -578,6 +578,8 @@ test.run('appServer takes a branch\'s cache from the branch\'s own data.js', 0.2
 // ── 3. THE SAME ROWS, THE SAME CACHE: the same rows make the same spirit.required.spirit.data in node and in a page ──
 const DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 const DESK = path.join(RUN, managerOf('desk'));
+// The desk's family is its id (goal/G49.19).
+const DESK_FAMILY = 'spirit.app.desk';
 const ROWS = [
   { verb: 'goal.whole', change: 3, item: { id: 'goal/G9', goal: '', title: 'A goal', status: 'open' } },
   { verb: 'goal.whole', change: 3, item: { id: 'goal/G9.1', goal: 'goal/G9', title: 'An item', status: 'open', tags: ['a'] } },
@@ -600,8 +602,8 @@ function inNode() {
     const SD = S.requireScript('spirit/data/script.js');
     S.requireScript(path.relative(RUN, DESK).split(path.sep).join('/'));
     SD.homeNode(SERVER);
-    ROWS.forEach(function (row) { SD.desk.data.published(JSON.parse(JSON.stringify(row))); });
-    out = JSON.parse(JSON.stringify(SD.desk.cache));
+    ROWS.forEach(function (row) { SD[DESK_FAMILY].data.published(JSON.parse(JSON.stringify(row))); });
+    out = JSON.parse(JSON.stringify(SD[DESK_FAMILY].cache));
   } catch (e) { out = { threw: true }; }
   return out;
 }
@@ -613,17 +615,17 @@ function inPage() {
   try {
     vm.runInContext(fs.readFileSync(DATA, 'utf8'), win, { filename: 'spirit/data/script.js' });
     vm.runInContext(fs.readFileSync(DESK, 'utf8'), win, { filename: 'data.js' });
-    if (!win.spirit.required.spirit.data.desk) return { threw: true };
+    if (!win.spirit.required.spirit.data[DESK_FAMILY]) return { threw: true };
     win.spirit.required.spirit.data.homeNode(SERVER);
-    ROWS.forEach(function (row) { win.spirit.required.spirit.data.desk.data.published(JSON.parse(JSON.stringify(row))); });
-    return JSON.parse(JSON.stringify(win.spirit.required.spirit.data.desk.cache));
+    ROWS.forEach(function (row) { win.spirit.required.spirit.data[DESK_FAMILY].data.published(JSON.parse(JSON.stringify(row))); });
+    return JSON.parse(JSON.stringify(win.spirit.required.spirit.data[DESK_FAMILY].cache));
   } catch (e) { return { threw: true }; }
 }
-test.run('in node, as appServer runs it, the rows land in spirit.required.spirit.data.desk.cache', 0.2, function () {
+test.run('in node, as appServer runs it, the rows land in spirit.required.spirit.data[\'spirit.app.desk\'].cache', 0.2, function () {
   C.node = inNode();
   return !C.node.threw && Object.keys(C.node).length > 0 ? true : false;
 }, test.limit.quick);
-test.run('in a page, as a page runs it, the rows land in spirit.required.spirit.data.desk.cache', 0.2, function () {
+test.run('in a page, as a page runs it, the rows land in spirit.required.spirit.data[\'spirit.app.desk\'].cache', 0.2, function () {
   C.page = inPage();
   return !C.page.threw && Object.keys(C.page).length > 0 ? true : false;
 }, test.limit.quick);
@@ -632,7 +634,7 @@ test.run('the cache\'s top level is the serving node alone, its key in base64url
   return !node.threw && JSON.stringify(Object.keys(node)) === JSON.stringify([SERVER_ID]) && node[SERVER_ID] && typeof node[SERVER_ID] === 'object' ? true
     : false;
 }, test.limit.quick);
-test.run('the same rows make the same spirit.required.spirit.data.desk.cache in node and in a page', 0.2, function () {
+test.run('the same rows make the same spirit.required.spirit.data[\'spirit.app.desk\'].cache in node and in a page', 0.2, function () {
   const node = C.node || { threw: true };
   const page = C.page || { threw: true };
   return !node.threw && !page.threw && JSON.stringify(node) === JSON.stringify(page) ? true : false;
@@ -696,12 +698,13 @@ const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDO
 // spirit/fs is the first; its interface is its script.js.
 const newShape = function (dir) { return fs.existsSync(path.join(dir, 'script.js')) && fs.existsSync(path.join(dir, 'client', 'script.js')); };
 const NODE_FAMILIES = ['app'].concat(fs.readdirSync(path.join(RUN, 'spirit')).filter(function (n) { return n !== 'app' && n !== 'test' && (fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')) || newShape(path.join(RUN, 'spirit', n))); }));
-const SERVER_FAMILIES = fs.readdirSync(path.join(RUN, 'spirit', 'app')).filter(function (n) { return n !== 'test' && fs.existsSync(path.join(RUN, 'spirit', 'app', n, 'api.js')); });
+// An app's family is its id, its folder's path in dots, spirit.app.desk (goal/G49.19).
+const SERVER_FAMILIES = fs.readdirSync(path.join(RUN, 'spirit', 'app')).filter(function (n) { return n !== 'test' && fs.existsSync(path.join(RUN, 'spirit', 'app', n, 'api.js')); }).map(function (n) { return 'spirit.app.' + n; });
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 // Each family's interface, as a page requires it; its api.js brings its data.js (goal/G47.1: "every api.js requires it's
 // companion data.js, and is the only script to require that data.js"): the app family's spirit/app/api.js, a node
 // family's spirit/<name>/api.js, an app's spirit/app/<name>/api.js.
-const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/api.js' : NODE_FAMILIES.indexOf(n) !== -1 ? (newShape(path.join(RUN, 'spirit', n)) ? 'spirit/' + n + '/script.js' : 'spirit/' + n + '/api.js') : 'spirit/app/' + n + '/api.js'; });
+const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/api.js' : NODE_FAMILIES.indexOf(n) !== -1 ? (newShape(path.join(RUN, 'spirit', n)) ? 'spirit/' + n + '/script.js' : 'spirit/' + n + '/api.js') : S.slashedPath(n) + '/api.js'; });
 const F = {};
 
 // data-families: spirit.required.spirit.data: every family at spirit.required.spirit.data.<name>, through spirit/data/script.js (goal/G43.7)

@@ -16,6 +16,8 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let node, chrome, loaded, made, busyAt;
+// The Agent's key is its id, its folder's path in dots (goal/G49.19).
+const AGENT = 'spirit.app.agent';
 const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
 const labelOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).label : undefined; };
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("l"); var i = b.querySelector("input"); var btn = b.querySelector("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), input: i ? i.value : null, button: btn ? String(btn.textContent || "").trim() : null }; }())'); };
@@ -40,7 +42,7 @@ test.run('it loads through spirit.requireScript and is spirit.required.spirit.el
 }, test.limit.quick);
 test.run('create, given a host and an app\'s key, answers an object with destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.required.spirit.element.search.app.changeAppLabel.create(b, { key: "agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
+  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.required.spirit.element.search.app.changeAppLabel.create(b, { key: "spirit.app.agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 
@@ -59,7 +61,7 @@ test.run('the row form shows ✏️, the word Label, and a Change button', 0.2, 
 test.run('Change writes the new label, and the app\'s row says it', 0.2, async function () {
   if (made !== true) return false;
   try { busyAt = JSON.parse(await chrome.evaluate('(function () { var i = document.querySelector("#l input"); i.value = "Zz Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); var b = document.querySelector("#l button"); b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())')); } catch (e) { busyAt = null; }
-  return (await until(function () { return labelOf('agent').then(function (l) { return l === 'Zz Renamed'; }); }, 10000)) ? true : false;
+  return (await until(function () { return labelOf(AGENT).then(function (l) { return l === 'Zz Renamed'; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 
 // goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": read once the press itself is
@@ -73,7 +75,7 @@ test.run('pressed, Change stays busy while the node is asked: disabled, with its
 test.run('its box follows the row', 0.2, async function () {
   if (made !== true) return false;
   await chrome.evaluate('document.activeElement && document.activeElement.blur && document.activeElement.blur(); 1');
-  await ask('app.label', { key: 'agent', label: 'Zz From Elsewhere' });
+  await ask('app.label', { key: AGENT, label: 'Zz From Elsewhere' });
   return (await until(function () { return seen().then(function (v) { return v.input === 'Zz From Elsewhere'; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {

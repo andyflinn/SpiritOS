@@ -59,8 +59,9 @@ async function batch() {
     const mounted = function (name) {
       try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', name, name + '.js')); } catch (e) { return false; }
     };
-    const servers = ['agent'];
-    GIVEN.forEach(function (one) { const own = (/^(?:spirit\/run\/)?spirit\/app\/([^/]+)\//.exec(one.split(path.sep).join('/')) || [])[1]; if (own && mounted(own) && servers.indexOf(own) === -1) servers.push(own); });
+    // Servers by their ids, an app's folder in dots (goal/G49.19).
+    const servers = ['spirit.app.agent'];
+    GIVEN.forEach(function (one) { const own = (/^(?:spirit\/run\/)?spirit\/app\/([^/]+)\//.exec(one.split(path.sep).join('/')) || [])[1]; const id = own ? SPIRIT.dottedPath('spirit/app/' + own) : ''; if (own && mounted(own) && servers.indexOf(id) === -1) servers.push(id); });
     const env = Object.assign({}, process.env);
     let node = null, chrome = null;
     // THE NODE AND THE CHROME STARTED SIDE BY SIDE (goal/G47.1, box v144's 80%): neither needs the other, so a run waits for
@@ -170,7 +171,7 @@ const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
 // as they are used, not refused: scratchNode turns it on by active in spirit/state/app/agent/node.json (spirit/job/engine/script.js).
-const SERVERS = { servers: ['agent'] };
+const SERVERS = { servers: ['spirit.app.agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.
 const OWN_PROOF = {
@@ -795,12 +796,14 @@ async function session() {
   // Mountable: its manifest mounts it (node.mount true); a program app (publishData, pushOrigin: node.run) mounts none.
   let ownServer = false;
   try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', own, own + '.json'), 'utf8')); ownServer = !!own && !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', own, own + '.js')); } catch (e) { ownServer = false; }
-  const node = P.node = await scratchNode({ shared: true, servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(own) === -1 ? [own] : []) });
+  // Its server by its id, its folder in dots (goal/G49.19).
+  const ownId = own ? SPIRIT.dottedPath('spirit/app/' + own) : '';
+  const node = P.node = await scratchNode({ shared: true, servers: SERVERS.servers.concat(ownServer && SERVERS.servers.indexOf(ownId) === -1 ? [ownId] : []) });
   if (!node.up) { P.fail = true; return P; }
   if (!node.debug) { P.fail = true; return P; }
   if (ownServer) {
     const served = await until(function () {
-      return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: own } }) })
+      return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: ownId } }) })
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
     if (!served) { P.fail = true; return P; }

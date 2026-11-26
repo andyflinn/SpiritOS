@@ -40,6 +40,18 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/job/' + 
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/job'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const { scratchNode, sleep, until } = H;
+// AN APP IS KNOWN BY ITS ID, ITS FOLDER'S PATH IN DOTS (goal/G49.19): spirit/app/zzserve is spirit.app.zzserve, its key, its
+// branch in the api tree and the head of its calls.
+const appId = function (name) { return SPIRIT.dottedPath('spirit/app/' + name); };
+// THE JOB ASKS THE FS CACHE, NEVER THE DISC (goal/G49.19): an app planted while the node runs is started or switched only once
+// the node's app list, read from that cache, holds its folder as an app, under its id.
+function untilApp(base, name) {
+  const id = appId(name);
+  return until(function () {
+    return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.search', args: { q: '' } }) })
+      .then(function (r) { return r.json(); }).then(function (b) { return !!(b && Array.isArray(b.items) && b.items.some(function (i) { return i.key === id; })); }, function () { return false; });
+  }, 15000);
+}
 
 const WAIT_MS = 1500;
 function stop(node) {
@@ -82,11 +94,11 @@ const PLANTED = {
   'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
   'zzserve/zzserve.js': ["'use strict';", "require('../../script.js');", "spirit.requireScript('spirit/server/app/script.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
   'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/zzserve/data.js'); else window.spirit.requireScript('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
+  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzserve', function () { return {}; }); }());", ''].join('\n'),
   'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
   'zzshot/zzshot.js': ["'use strict';", "require('../../script.js');", ''].join('\n'),
   'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/zzshot/data.js'); else window.spirit.requireScript('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzshot', function () { return {}; }); }());", ''].join('\n'),
+  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzshot', function () { return {}; }); }());", ''].join('\n'),
 };
 function plantApps(run) {
   Object.keys(PLANTED).forEach(function (rel) { const p = path.join(run, 'spirit', 'app', rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, PLANTED[rel]); });
@@ -148,6 +160,7 @@ test.run('an app\'s own spirit/app/<name>/<name>.js, its json saying node run tr
   // An app's own script, of an app whose json says node run true: its job is its route, spirit.app.<name>.
   plant('spirit/app/zzRun/zzRun.js', mark('run'));
   fs.writeFileSync(path.join(J.run, 'spirit/app/zzRun/zzRun.json'), JSON.stringify({ identity: { label: 'zz' }, node: { run: true } }));
+  await untilApp(J.node.base, 'zzRun');
   const inc = await call({ command: process.execPath, args: ['spirit/app/zzRun/zzRun.js'] });
   await sleep(WAIT_MS);
   return inc.status === 201 && fs.existsSync(mark('run')) ? true : false;
@@ -237,6 +250,7 @@ const finished = async function (id) {
 };
 const logText = function (job) { return JSON.stringify((job && job.log) || []); };
 const start = async function (name) {
+  await untilApp(J.node.base, name);
   const a = await door('spirit.job.create', { command: process.execPath, args: ['spirit/app/' + name + '/' + name + '.js'] });
   return a.status === 201 && a.body && a.body.id ? a.body.id : '';
 };
@@ -324,29 +338,29 @@ test.run('the one-shot app\'s api.js names its verbs', 0.2, function () {
   return J.iconVerbs.length >= 1 ? true : false;
 }, test.limit.quick);
 test.run('the one-shot app, on in its node.json at boot, is in the api tree with no app.active asked', 0.2, async function () {
-  return (await branches()).indexOf('zzshot') !== -1 ? true : false;
+  return (await branches()).indexOf(appId('zzshot')) !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the planted server, a permanent one, is in the api tree beside the one-shot app', 0.2, async function () {
-  return (await branches()).indexOf('zzserve') !== -1 ? true : false;
+  return (await branches()).indexOf(appId('zzserve')) !== -1 ? true : false;
 }, test.limit.quick);
 
 // the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"; on again, it is back
 test.run('the one-shot app is switched off', 0.2, async function () {
-  return (await door('app.active', { key: 'zzshot', active: false })).status === 200 ? true : false;
+  return (await door('app.active', { key: appId('zzshot'), active: false })).status === 200 ? true : false;
 }, test.limit.quick);
 test.run('switched off, a call to the one-shot app answers app-not-served', 0.2, async function () {
   await sleep(WAIT_MS);
-  const offCall = J.iconVerbs && J.iconVerbs.length ? await door('zzshot.' + J.iconVerbs[0], {}) : { text: '' };
+  const offCall = J.iconVerbs && J.iconVerbs.length ? await door(appId('zzshot') + '.' + J.iconVerbs[0], {}) : { text: '' };
   return /app-not-served/.test(offCall.text) ? true : false;
 }, test.limit.slow);
 test.run('switched off, the one-shot app is not in the api tree', 0.2, async function () {
-  return (await branches()).indexOf('zzshot') === -1 ? true : false;
+  return (await branches()).indexOf(appId('zzshot')) === -1 ? true : false;
 }, test.limit.quick);
 test.run('the one-shot app is switched on again', 0.2, async function () {
-  return (await door('app.active', { key: 'zzshot', active: true })).status === 200 ? true : false;
+  return (await door('app.active', { key: appId('zzshot'), active: true })).status === 200 ? true : false;
 }, test.limit.quick);
 test.run('switched on again, the one-shot app is back in the tree, no restart of the node', 0.2, async function () {
-  return (await until(function () { return branches().then(function (b) { return b.indexOf('zzshot') !== -1; }); }, 10000)) ? true : false;
+  return (await until(function () { return branches().then(function (b) { return b.indexOf(appId('zzshot')) !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 
 // the box, 2: "node mount false or missing": a one-shot app's json with no node part is still one-shot
@@ -356,10 +370,10 @@ test.run('with node mount missing, the one-shot app is served', 0.2, async funct
   const noNode = JSON.parse(kept); delete noNode.node;
   fs.writeFileSync(shotJson, JSON.stringify(noNode, null, 2));
   try {
-    await door('app.active', { key: 'zzshot', active: false });
+    await door('app.active', { key: appId('zzshot'), active: false });
     await sleep(WAIT_MS);
-    await door('app.active', { key: 'zzshot', active: true });
-    return (await until(function () { return branches().then(function (b) { return b.indexOf('zzshot') !== -1; }); }, 10000)) ? true : false;
+    await door('app.active', { key: appId('zzshot'), active: true });
+    return (await until(function () { return branches().then(function (b) { return b.indexOf(appId('zzshot')) !== -1; }); }, 10000)) ? true : false;
   } finally { fs.writeFileSync(shotJson, kept); }
 }, test.limit.slow);
 
@@ -371,12 +385,13 @@ const notOneShot = async function (name, files) {
   fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ identity: { label: name, intrinsic: false }, shell: { true: false, mount: true, tile: true }, node: files.nodeMount === undefined ? { mount: false } : { mount: files.nodeMount } }));
   if (files.api) fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { zz: {} } };\n');
   if (files.data) fs.writeFileSync(path.join(dir, 'data.js'), '');
-  if (files.on !== false) await door('app.active', { key: name, active: true });
+  await untilApp(J.node.base, name);
+  if (files.on !== false) await door('app.active', { key: appId(name), active: true });
   await sleep(WAIT_MS);
-  const c = await door(name + '.zz', {});
+  const c = await door(appId(name) + '.zz', {});
   await door('api', {});
   await sleep(WAIT_MS);
-  const served = !/^2/.test(String(c.status)) && (await branches()).indexOf(name) === -1;
+  const served = !/^2/.test(String(c.status)) && (await branches()).indexOf(appId(name)) === -1;
   return { notServed: served, neverRan: !fs.existsSync(mark(name)) };
 };
 const NO = {};
@@ -432,7 +447,7 @@ test.run('the scratch node for the job routes comes up', 0.2, async function () 
 }, test.limit.slow);
 test.after(function () { if (RT.node && RT.node.child) RT.node.child.kill(); });
 test.run('the planted app server is switched on', 0.2, async function () {
-  const on = await rask('app.active', { key: 'zzserve', active: true });
+  const on = await rask('app.active', { key: appId('zzserve'), active: true });
   await H.sleep(5000);
   return on.status === 200 ? true : false;
 }, test.limit.slow);
@@ -485,6 +500,7 @@ test.run('another script, in no app folder, is refused', 0.8, async function () 
   fs.mkdirSync(path.join(RT.run, 'scratchScripts'), { recursive: true });
   fs.writeFileSync(path.join(RT.run, 'scratchScripts', 'zzOther.js'), 'setTimeout(function () {}, 100);\n');
   RT.runApp = path.join(RT.run, 'spirit', 'app', 'zzRun', 'zzRun.js');
+  await untilApp(RT.node.base, 'zzRun'); await untilApp(RT.node.base, 'zzMount');
   const other = await rask('spirit.job.create', { command: process.execPath, args: [path.join(RT.run, 'scratchScripts', 'zzOther.js')] });
   return other.status >= 400 ? true : false;
 }, test.limit.quick);
@@ -551,6 +567,7 @@ test.run('every crooked way to a run app\'s route is refused', 0.8, async functi
   // A run app's script with no json beside it.
   fs.mkdirSync(app('zzBare'), { recursive: true });
   fs.writeFileSync(path.join(app('zzBare'), 'zzBare.js'), 'setTimeout(function () {}, 100);\n');
+  await untilApp(RT.node.base, 'zzString');
   // A link outside every app folder pointing at the run app's script, and the mount app reached through the run app's folder.
   const link = path.join(run, 'scratchScripts', 'zzLink.js');
   try { fs.symlinkSync(runApp, link); } catch (e) { /* no links here: the case is judged as not made */ }
@@ -618,7 +635,7 @@ const sask = function (call, args) {
     .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 const answersApi = function (name) {
-  return H.until(function () { return sask('api', { branch: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
+  return H.until(function () { return sask('api', { branch: appId(name) }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
 };
 
 // stateLayout: spirit/state/app/<name>/ (spirit.statePath, goal/G49.17) holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)
@@ -649,7 +666,7 @@ test.after(async function () {
 
 // the node starts its apps with no process/ folder
 test.run('there are apps that say node.mount true', 0.2, async function () {
-  for (const name of SL.servers) await sask('app.active', { key: name, active: true });
+  for (const name of SL.servers) await sask('app.active', { key: appId(name), active: true });
   return SL.servers.length >= 1 ? true : false;
 }, test.limit.quick);
 // EACH APP SERVER STARTS AND ANSWERS ITS INTERFACE, AND ITS STATE FOLDER HOLDS ONLY WHAT IT MAY: rules about each app, so they
@@ -723,9 +740,9 @@ const layoutHolds = function () {
 test.run('after an app server is switched off and on, the state layout holds with nothing out of place', 0.2, async function () {
   const one = SL.servers[0];
   if (!one) return false;
-  await sask('app.active', { key: one, active: false });
+  await sask('app.active', { key: appId(one), active: false });
   await H.sleep(2000);
-  await sask('app.active', { key: one, active: true });
+  await sask('app.active', { key: appId(one), active: true });
   await answersApi(one);
   return layoutHolds();
 }, test.limit.slow);
@@ -838,7 +855,7 @@ function mountPart() {
       '(function family() {',
       "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data/script.js');",
       "  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(family); return; }",
-      "  D.makeFamily('" + name + "');",
+      "  D.makeFamily('" + appId(name) + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
       '}());',
     ].join('\n') + '\n');
@@ -919,7 +936,7 @@ function mountPart() {
     const item = ((r.body && r.body.items) || []).filter(function (i) { return i.key === name; })[0];
     return item ? parsed(item.label) : null;
   }
-  function pingOf(base, name) { return call(base, (name || NAME) + '.ping', {}); }
+  function pingOf(base, name) { return call(base, appId(name || NAME) + '.ping', {}); }
   function answers(r) { return r.status === 200 && !!r.body && Number(r.body.pid) > 0; }
   function upAgain(base) { return until(function () { return pingOf(base).then(answers); }, 30000); }
 
@@ -953,7 +970,7 @@ function mountPart() {
     return N.up || false;
   }, test.limit.slow);
   test.run('the throwaway app is a row of the app branch', 0.2, async function () {
-    return (!noNode() && !!(await rowOf(N.base, NAME))) || false;
+    return (!noNode() && !!(await rowOf(N.base, MODULE))) || false;
   }, test.limit.quick);
 
   // the goal box: "An app server cannot be booted until a user activates it."
@@ -983,7 +1000,7 @@ function mountPart() {
   test.run('app.active false does not stop the intrinsic server', 0.2, async function () {
     if (noNode()) return false;
     const alwaysPid = Number(((await pingOf(N.base, 'always')).body || {}).pid);
-    await call(N.base, 'app.active', { key: 'always', active: false });
+    await call(N.base, 'app.active', { key: appId('always'), active: false });
     await sleep(3000);
     return (answers(await pingOf(N.base, 'always')) && alive(alwaysPid)) || false;
   }, test.limit.slow);
@@ -1027,7 +1044,7 @@ function mountPart() {
   // the box: "It starts one only if its <name>.json says node.mount true and spirit/state/<name>/node.json says active true"
   test.run('an app with node.mount false is activated', 0.2, async function () {
     if (noNode()) return false;
-    const quietOn = await call(N.base, 'app.active', { key: 'quiet', active: true });
+    const quietOn = await call(N.base, 'app.active', { key: appId('quiet'), active: true });
     return quietOn.status === 200 || false;
   }, test.limit.quick);
   test.run('an active app with node.mount false and no data.js has no server job', 0.2, async function () {
@@ -1057,7 +1074,7 @@ function mountPart() {
     fs.writeFileSync(path.join(folder, id + '.json'), JSON.stringify({ key: SENDER, family: family, run: 'r', n: 1, rows: [{ kept: family }] }));
     const seen = path.join(s.root, 'row-seen.json');
     fs.rmSync(seen, { force: true });
-    const pipe = require(path.join(s.run, 'spirit', 'appClient', 'script.js')).pipePathFor(s.root, 'follower', process.platform);
+    const pipe = require(path.join(s.run, 'spirit', 'appClient', 'script.js')).pipePathFor(s.root, 'spirit/app/follower', process.platform);
     if (POSIX) fs.mkdirSync(path.dirname(pipe), { recursive: true });
     const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, 'follower.js'), '--pipe', pipe, '--state', path.join(s.run, 'spirit', 'state', 'app', 'follower', 'data')], { cwd: s.run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen }) });
     live.push(kid);
@@ -1077,14 +1094,15 @@ function mountPart() {
   }, test.limit.slow);
   test.run('a client gets back what it kept of the new branch', 0.2, async function () {
     if (!s) return false;
-    const keptNew = await kept(NAME);
-    return (!!keptNew && keptNew.kept === NAME) || false;
+    // The new branch by its id, spirit.app.probe (goal/G49.19).
+    const keptNew = await kept(MODULE);
+    return (!!keptNew && keptNew.kept === MODULE) || false;
   }, test.limit.quick);
 
   // the box: "active in node.json starts and stops it while the node runs"
   test.run('the app is activated by the verb its element presses', 0.2, async function () {
     if (noNode()) return false;
-    const on = await call(N.base, 'app.active', { key: NAME, active: true });
+    const on = await call(N.base, 'app.active', { key: MODULE, active: true });
     return on.status === 200 || false;
   }, test.limit.quick);
   test.run('activated, the server starts and answers its verb, with no restart of the node', 0.2, async function () {
@@ -1104,18 +1122,18 @@ function mountPart() {
   test.run('the flat table holds probe with its verb', 0.2, async function () {
     if (noNode()) return false;
     tree = (await call(N.base, 'api')).body || {};
-    return (!!tree[NAME] && !!tree[NAME].ping) || false;
+    return (!!tree[MODULE] && !!tree[MODULE].ping) || false;
   }, test.limit.quick);
   test.run('its interface is the api.js at the top of the app folder', 0.2, async function () {
     if (noNode()) return false;
-    const iface = (await call(N.base, 'api', { branch: NAME })).body || {};
+    const iface = (await call(N.base, 'api', { branch: MODULE })).body || {};
     return String(iface.interface || '').indexOf(INTERFACE) !== -1 || false;
   }, test.limit.quick);
   // No FS set (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID ... ARE the path to
   // all those files"): the app folder's files are spirit.fs's, by the path its id names.
   test.run('its branch carries no FS set', 0.2, function () {
-    if (!tree[NAME]) return false;
-    return !Object.keys(tree[NAME] || {}).some(function (v) { return /^FS\./.test(v); }) || false;
+    if (!tree[MODULE]) return false;
+    return !Object.keys(tree[MODULE] || {}).some(function (v) { return /^FS\./.test(v); }) || false;
   }, test.limit.quick);
   test.run('its folder is spirit/app/probe/, read through spirit.fs by that path', 0.2, async function () {
     if (noNode()) return false;
@@ -1226,7 +1244,7 @@ function mountPart() {
   // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.required.spirit.data.<family>, and
   // what the planted data.js marked.
   const inNode = function (family) {
-    const r = spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.required.spirit.data && global.spirit.required.spirit.data[" + JSON.stringify(family) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+    const r = spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.required.spirit.data && global.spirit.required.spirit.data[" + JSON.stringify(appId(family)) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
     return parsed(String(r.stdout || '').trim()) || {};
   };
   test.run('in a process, requiring a tree app\'s api.js loads its data.js', 0.2, function () {
@@ -1247,7 +1265,7 @@ function mountPart() {
   test.run('the app is deactivated', 0.2, async function () {
     if (noNode()) return false;
     before = Number(((await pingOf(N.base)).body || {}).pid);
-    const off = await call(N.base, 'app.active', { key: NAME, active: false });
+    const off = await call(N.base, 'app.active', { key: MODULE, active: false });
     return off.status === 200 || false;
   }, test.limit.quick);
   test.run('deactivated, the server process stops', 0.2, async function () {
@@ -1268,7 +1286,7 @@ function mountPart() {
   }, test.limit.slow);
   test.run('its row stays in the list, active false', 0.2, async function () {
     if (noNode()) return false;
-    const offRow = await rowOf(N.base, NAME);
+    const offRow = await rowOf(N.base, MODULE);
     return (!!offRow && offRow.active === false) || false;
   }, test.limit.quick);
   test.run('node.json says active false', 0.2, function () {
@@ -1277,7 +1295,7 @@ function mountPart() {
   }, test.limit.quick);
   test.run('activated again, it starts again', 0.2, async function () {
     if (noNode()) return false;
-    await call(N.base, 'app.active', { key: NAME, active: true });
+    await call(N.base, 'app.active', { key: MODULE, active: true });
     return (await upAgain(N.base)) || false;
   }, test.limit.quick);
 
@@ -1340,7 +1358,7 @@ function mountPart() {
 
   test.run('deactivated, a restarted node does not start it', 0.2, async function () {
     if (!s) return false;
-    await call(N.base, 'app.active', { key: NAME, active: false });
+    await call(N.base, 'app.active', { key: MODULE, active: false });
     await until(function () { return liveJob(N.base, MODULE).then(function (j) { return !j; }); }, 15000);
     await stop(N.child);
     fs.rmSync(started(), { force: true });

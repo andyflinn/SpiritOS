@@ -31,13 +31,14 @@ function world() {
   PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
   win.spirit.required.spirit.data.homeNode(HOME_KEY);
   PAGE_LOAD.runAsPage(FILE, win);
-  return { win: win, D: win.spirit.required.spirit.data, B: ((win.spirit.required.spirit.data || {}).backup || {}).data };
+  // The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.backup'], its branch at <node>/spirit.app.backup/.
+  return { win: win, D: win.spirit.required.spirit.data, B: ((win.spirit.required.spirit.data || {})['spirit.app.backup'] || {}).data };
 }
 const STATUS = { lastCheck: '2026-11-13T09:00:00.000Z', lastCopy: '2026-11-13T08:00:00.000Z', lastError: '' };
 
 const W = {};
 
-test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data.backup.data', 0.2, function () {
+test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data[\'spirit.app.backup\'].data', 0.2, function () {
   try { Object.assign(W, world()); } catch (e) { return false; }
   return !!W.B || false;
 }, test.limit.quick);
@@ -50,9 +51,9 @@ test.run('before anything is kept, status answers null', 0.2, function () {
   return W.B.status() === null || false;
 }, test.limit.quick);
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: backupStatus, under the node that served it.
-test.run('its branch is <node>/backup/backupStatus, under the node that served it', 0.2, function () {
+test.run('its branch is <node>/spirit.app.backup/backupStatus, under the node that served it', 0.2, function () {
   if (!W.B) return false;
-  return W.B.branch === W.D.nodeId(HOME_KEY) + '/backup/backupStatus' || false;
+  return W.B.branch === W.D.nodeId(HOME_KEY) + '/spirit.app.backup/backupStatus' || false;
 }, test.limit.quick);
 test.run('keep keeps what status.get answered, and status answers it', 0.2, function () {
   if (!W.B) return false;
@@ -96,15 +97,15 @@ test.run('it translates nothing: a job of the backup on the stream writes nothin
   if (!W.B) return false;
   const w = world();
   w.D.takeJob({ id: 'j1', module: 'spirit.app.backup', data: {}, app: { backup: { status: STATUS } } }, HOME_KEY);
-  const kept = w.D.branchAt(w.D.nodeId(HOME_KEY) + '/backup');
+  const kept = w.D.branchAt(w.D.nodeId(HOME_KEY) + '/spirit.app.backup');
   return (w.B.status() === null && Object.keys(kept).length === 0) || false;
 }, test.limit.quick);
 
 // ── in node, brought by its branch's interface, the one script that requires it ──
-test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at spirit.required.spirit.data.backup.data', 0.2, async function () {
+test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at spirit.required.spirit.data[\'spirit.app.backup\'].data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/backup/api.js')); } catch (e) { return false; }
-  const B = s.required.spirit.data && s.required.spirit.data.backup && s.required.spirit.data.backup.data;
+  const B = s.required.spirit.data && s.required.spirit.data['spirit.app.backup'] && s.required.spirit.data['spirit.app.backup'].data;
   return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || false;
 }, test.limit.quick);

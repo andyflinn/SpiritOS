@@ -30,7 +30,7 @@ test.run('Chrome is on this machine', 0.2, function () {
   return !!W.chrome || false;
 }, test.limit.quick);
 test.run('a scratch node comes up with its DEBUG on and testicle on', 0.2, async function () {
-  W.node = await H.scratchNode({ servers: ['testicle'] });
+  W.node = await H.scratchNode({ servers: ['spirit.app.testicle'] });
   return (W.node.up && W.node.debug) || false;
 }, test.limit.slow);
 test.run('a page loads the element by itself', 0.2, async function () {

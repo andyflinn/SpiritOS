@@ -60,7 +60,8 @@ function testicleBase() {
 async function newestTested(base, script) {
   try {
     const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ call: 'testicle.testicle.search', args: { script: script, suite: 'spirit/test/script-sibling-browser.js', text: '' } }) });
+      // testicle's branch is its id, spirit.app.testicle (goal/G49.19).
+      body: JSON.stringify({ call: 'spirit.app.testicle.testicle.search', args: { script: script, suite: 'spirit/test/script-sibling-browser.js', text: '' } }) });
     const b = await r.json();
     return ((b && b.items) || []).map(function (i) { try { return Number(JSON.parse(i.label).tested) || 0; } catch (e) { return 0; } }).reduce(function (a, c) { return Math.max(a, c); }, 0);
   } catch (e) { return 0; }

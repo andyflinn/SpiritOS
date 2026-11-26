@@ -64,7 +64,8 @@ test.run('a relay is planted on 127.0.0.1 port 0, with an app server on its pipe
   await new Promise(function (r) { W.relay.listen(0, '127.0.0.1', r); });
   W.base = 'http://127.0.0.1:' + W.relay.address().port;
   W.root = ownTemp('rr-');
-  W.pipe = pipePathFor(W.root, 'reqtest', process.platform);
+  // The app by its folder, never a bare name (goal/G49.19: appClient.pipePathFor(root, dir)).
+  W.pipe = pipePathFor(W.root, 'spirit/app/reqtest', process.platform);
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(W.pipe), { recursive: true });
   W.pipeServer = http.createServer(handler(W.pipeSeen));
   await new Promise(function (r) { W.pipeServer.listen(W.pipe, r); });
@@ -180,7 +181,7 @@ test.run('pipeRequest hands the server\'s background mark back as the kind backg
 }, test.limit.quick);
 test.run('pipeRequest refuses a pipe with nothing on it as app-not-running, and never throws', 0.2, async function () {
   if (!W.root) return false;
-  const r = await caught(R.pipeRequest(pipePathFor(W.root, 'nobody', process.platform), 'GET', '/'));
+  const r = await caught(R.pipeRequest(pipePathFor(W.root, 'spirit/app/nobody', process.platform), 'GET', '/'));
   return (r.value && r.value.refused === 'app-not-running') || false;
 }, test.limit.quick);
 test.run('pipeRequest refuses an app that does not finish in time as app-did-not-answer, whether it dribbles or stays silent', 0.2, async function () {

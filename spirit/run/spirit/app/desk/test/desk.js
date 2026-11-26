@@ -38,6 +38,10 @@ function runCopy(dir, port) {
   return path.join(dir, 'spirit', 'app', 'desk', 'desk.js');
 }
 
+// THE DESK IS KNOWN BY ITS ID (goal/G49.19): its folder's path in dots, spirit.app.desk; its pipe from its folder, its row, its
+// calls, its branch in the api tree and the branch a subscribe names by that id.
+const ID = 'spirit.app.desk';
+const DIR = 'spirit/app/desk';
 const CW = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestCW'.padEnd(43, 'A') + '=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEA' + 'deskProductTestOwner'.padEnd(43, 'A') + '=', label: 'andy' };
 
@@ -94,10 +98,10 @@ function plantOldRules(stateDir) {
 }
 // A branch's interface, as a node's door answers {api: {branch}}.
 function interfaceOf(body) {
-  if (!body || !body.api || typeof body.api.branch !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.branch)) return null;
+  if (!body || !body.api || typeof body.api.branch !== 'string' || !/^[A-Za-z]\w*(\.[A-Za-z]\w*)*$/.test(body.api.branch)) return null;
   const f = body.api.branch;
-  // A node family's, an app's (spirit/app/<name>/api.js, goal/G43.27), or a server's.
-  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, 'spirit', 'app', f, 'api.js')];
+  // A node family's, or an app's by its id, its folder's path in dots (spirit.app.desk is spirit/app/desk/api.js; goal/G49.19).
+  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, ...SPIRIT.slashedPath(f).split('/'), 'api.js')];
   for (const file of tried) if (fs.existsSync(file)) return { branch: f, interface: fs.readFileSync(file, 'utf8') };
   return { ok: false, code: 'no-interface' };
 }
@@ -129,7 +133,7 @@ function pretendNode() {
       const body = (ask && ask.body) || {};
       let answer = interfaceOf(body);
       // A subscriber is another node's desk in client mode (goal/G47.5): deskClient went with goal/G48.8.
-      const sl = body.desk && body.desk.listener;
+      const sl = body[ID] && body[ID].listener;
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
@@ -161,7 +165,7 @@ const PULL = { id: 'goal/G300', title: 'Pull test' };
 const PULL_ITEMS = ['goal/G300.1', 'goal/G300.2', 'goal/G300.3'];
 const pullSession = { goal: PULL, items: PULL_ITEMS.map(function (id) { return { id: id, title: 'Pull ' + id }; }) };
 
-const call = function (verb, args, caller) { const q = {}; q[verb] = args; return W.client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
+const call = function (verb, args, caller) { const q = {}; q[verb] = args; return W.client.ask({ [ID]: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
 const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
 
 // ── THE POSITION (goal/G41.11, 0ebb4abd; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)"
@@ -181,16 +185,16 @@ const startDesk = async function (name, values, sessions) {
   const server = W.SERVER;
   const st = path.join(root, 'state');
   seed(st, sessions || [pullSession]);
-  const p = appClient.pipePathFor(root, 'desk', process.platform, 'process');
+  const p = appClient.pipePathFor(root, DIR, process.platform);
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(p), { recursive: true });
   const c = appClient.createAppClient({ rootDir: root });
-  c.register('desk', p);
+  c.register(ID, p);
   W.pullKids.push(spawn(process.execPath, [server, JSON.stringify(values), '--pipe', p, '--state', st], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: name + '-job' }) }));
   let on = false;
-  for (let i = 0; i < 60 && !on; i++) { await sleep(150); try { const r = await c.ask('api'); on = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+  for (let i = 0; i < 60 && !on; i++) { await sleep(150); try { const r = await c.ask('api'); on = !!(r.body && r.body[ID] && r.body[ID].ok !== false); } catch (e) { /* not yet */ } }
   if (!on) return null;
-  return function (verb, args, caller) { const q = {}; q[verb] = args; return c.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
+  return function (verb, args, caller) { const q = {}; q[verb] = args; return c.ask({ [ID]: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
 };
 
 test.run('a desk server starts for this suite', 0.2, async function () {
@@ -207,10 +211,10 @@ test.run('a desk server starts for this suite', 0.2, async function () {
   plantOldRules(state);
   // THE PIPE BY appClient.pipePathFor ALONE (Andy, 2026-10-27: "don't use unix sockets in tests, use
   // appClient.pipePathFor"): a \\.\pipe\ name on Windows, the door's own place under the scratch folder elsewhere.
-  const pipe = appClient.pipePathFor(scratch, 'desk', process.platform, 'process');
+  const pipe = appClient.pipePathFor(scratch, DIR, process.platform);
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   W.client = appClient.createAppClient({ rootDir: scratch });
-  W.client.register('desk', pipe);
+  W.client.register(ID, pipe);
   const node = W.node = pretendNode();
   await new Promise(function (r) { node.server.listen(0, '127.0.0.1', r); });
   W.SERVER = runCopy(path.join(scratch, 'run'), node.server.address().port);
@@ -219,10 +223,10 @@ test.run('a desk server starts for this suite', 0.2, async function () {
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job' }),
   });
   let up = false;
-  for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await W.client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+  for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await W.client.ask('api'); up = !!(r.body && r.body[ID] && r.body[ID].ok !== false); } catch (e) { /* not yet */ } }
   if (!up) return false;
   W.up = true;
-  await call('subscribe', { branch: 'desk' }, CW);
+  await call('subscribe', { branch: ID }, CW);
   return true;
 }, test.limit.slow);
 
@@ -313,7 +317,7 @@ test.run('an item answers no rules and no phase rules', 0.2, async function () {
 test.run('the desk names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no streamListener', 0.2, async function () {
   if (!W.up) return false;
   let t = null; try { t = (await W.client.ask('api')).body; } catch (e) { t = null; }
-  const desk = (t && t.desk) || {};
+  const desk = (t && t[ID]) || {};
   return (['listener', 'subscribe', 'unsubscribe', 'remote'].every(function (v) { return v in desk; }) && !('streamListener' in desk)) || false;
 }, test.limit.quick);
 test.run('a goal answers no rules and no phase rules', 0.2, async function () {
@@ -403,7 +407,7 @@ const FRESH = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestFRESH'.padEnd(43, 'A')
 test.run('a subscribe with no since brings the current goal\'s facts whole, the goal and each of its six items', 0.2, async function () {
   if (!W.up) return false;
   const f0 = W.node.sent.length;
-  const plain = await call('subscribe', { branch: 'desk' }, FRESH);
+  const plain = await call('subscribe', { branch: ID }, FRESH);
   W.plainEnded = await waitEnd(FRESH.key, f0);
   W.plainRows = rowsTo(FRESH.key, f0);
   const plainIds = wholeOf(W.plainRows).map(function (r) { return String(r.item.id); });
@@ -417,7 +421,7 @@ test.run('a subscribe with no since brings no chat line, check or box, since it 
 test.run('a subscribe with since 0 is the same as one with no since', 0.2, async function () {
   if (!W.up) return false;
   const zero = W.node.sent.length;
-  await call('subscribe', { branch: 'desk', since: 0 }, FRESH);
+  await call('subscribe', { branch: ID, since: 0 }, FRESH);
   await waitEnd(FRESH.key, zero);
   return (sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length) || false;
 }, test.limit.quick);

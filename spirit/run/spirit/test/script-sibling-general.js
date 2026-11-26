@@ -92,8 +92,9 @@ TARGETS.forEach(function (b) {
   b.data = has(b.dir + '/data.js') ? b.dir + '/data.js' : '';
   try { b.mod = b.api ? require(path.join(RUN, b.api)) : null; } catch (e) { b.mod = { threw: true }; }
   b.verbs = b.mod && b.mod.verbs && typeof b.mod.verbs === 'object' && !Array.isArray(b.mod.verbs) ? b.mod.verbs : null;
-  // Its name, as a client asks it: the folder's name (spirit/app/api.js is the branch app).
-  b.family = b.name;
+  // Its name, as a client asks it: the folder's name (spirit/app/api.js is the branch app); an app's is its id, its folder's
+  // path in dots, spirit.app.desk (goal/G49.19; Andy: "no 'desk' on the wire when it MUST be spirit.app.desk").
+  b.family = b.kind === 'app' ? SPIRIT.dottedPath(b.dir) : b.name;
 });
 
 // On the node, in a process of its own: each api.js required as every script is (spirit.requireScript), and what that placed
@@ -287,7 +288,8 @@ if (withData.length) {
   // EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31; Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
   // motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names").
   test.run('its data.js makes the branch its folder is named', 0.4, function () {
-    return overAll(withData, function (b) { return b.made === b.name; });
+    // The name the wire knows it by, an app's its id (goal/G49.19: makeFamily('spirit.app.desk')).
+    return overAll(withData, function (b) { return b.made === b.family; });
   }, test.limit.quick);
   // Andy (goal/G47.1): "every api.js requires it's companion data.js, and is the only script to require that data.js".
   const apiAndData = withData.filter(function (b) { return !!b.api; });
@@ -432,7 +434,7 @@ if (served.length) {
       if (!up()) return false;
       let ok = true;
       for (const b of switched) {
-        const on = await raw('app.active', { key: b.name, active: true });
+        const on = await raw('app.active', { key: b.family, active: true });
         if (on.status !== 200) ok = false;
       }
       return ok;
@@ -1280,7 +1282,7 @@ const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
 // as they are used, not refused: scratchNode turns it on by active in spirit/state/app/agent/node.json (spirit/job/engine/script.js).
-const SERVERS = { servers: ['agent'] };
+const SERVERS = { servers: ['spirit.app.agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.
 const OWN_PROOF = {

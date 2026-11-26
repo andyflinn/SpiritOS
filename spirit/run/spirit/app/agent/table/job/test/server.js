@@ -257,20 +257,20 @@ test.run('the job editor\'s fields in order: label, loop flag, job code, bundle 
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
-// node that served them, and is read through spirit.required.spirit.data.agent.data.
+// node that served them, and is read through spirit.required.spirit.data['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.slice(X.made.from).some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the job page requires the agent interface, and the job branch it reads is the home node\'s <node>/agent/job', 0.2, function () {
+test.run('the job page requires the agent interface, and the job branch it reads is the home node\'s <node>/spirit.app.agent/job', 0.2, function () {
   if (!X.made || X.made.required.slice(X.made.from).indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = global.window.spirit.required.spirit.data;
-  const AD = X.AD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
-  X.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/job';
+  const AD = X.AD = ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
+  X.BRANCH = DATA.nodeId(HOME_KEY) + '/spirit.app.agent/job';
   return !!AD && typeof AD.branch === 'function' && AD.branch('job') === X.BRANCH ? true : false;
 }, test.limit.quick);
-test.run('a job row on the stream lands at <node>/agent/job/<id>, and the branch\'s watcher hears it', 0.2, function () {
+test.run('a job row on the stream lands at <node>/spirit.app.agent/job/<id>, and the branch\'s watcher hears it', 0.2, function () {
   if (!X.AD) return false;
   const DATA = global.window.spirit.required.spirit.data, AD = X.AD, BRANCH = X.BRANCH;
   const heard = [];

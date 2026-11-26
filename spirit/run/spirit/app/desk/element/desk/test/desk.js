@@ -18,6 +18,8 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'desk.js');
+// The desk is known by its id, its folder's path in dots (goal/G49.19): its key, its family, and its calls, spirit.app.desk.<verb>.
+const ID = 'spirit.app.desk';
 
 
 // What each step makes, for the tests after it, in order; every scratch node and Chrome page is stopped by test.after.
@@ -208,7 +210,7 @@ function deskWorld(goal, items) {
     ui: { elements: {} }, armUntilElsewhere: function () {},
     verb: function (name, args) {
       asked.push({ name: name, args: args });
-      if (name === 'desk.items.search') return Promise.resolve({ status: 200, body: { items: [goal].concat(items).map(label) } });
+      if (name === ID + '.items.search') return Promise.resolve({ status: 200, body: { items: [goal].concat(items).map(label) } });
       return Promise.resolve({ status: 200, body: { ok: true, chat: [], items: [], rules: [] } });
     } };
   const win = { document: document, setTimeout: setTimeout, clearTimeout: clearTimeout, setInterval: function () { return 0; }, clearInterval: function () {},
@@ -228,9 +230,11 @@ function deskWorld(goal, items) {
       required.push(rel);
       const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
       if (run && !ran[run]) { ran[run] = true; PAGE_LOAD.runAsPage(path.join(RUN, run), win); }
-      // A branch by its api.js path (goal/G49.6: never by a name): every verb of it reaches the recorder as <branch>.<verb>.
-      const b = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(rel));
-      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { return rest === 'then' ? undefined : function (args) { return api.verb(b[1] + '.' + String(rest), args); }; } }));
+      // A branch by its api.js path (goal/G49.6: never by a name): every verb of it reaches the recorder as <branch>.<verb>, an
+      // app's branch named by its id, its folder's path in dots (goal/G49.19: spirit.app.desk.items.search).
+      const b = /^spirit\/(app\/)?([^/]+)\/api\.js$/.exec(String(rel));
+      const bn = b ? (b[1] ? SPIRIT.dottedPath('spirit/app/' + b[2]) : b[2]) : '';
+      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { return rest === 'then' ? undefined : function (args) { return api.verb(bn + '.' + String(rest), args); }; } }));
       return Promise.resolve({});
     },
     // goal/G43.32: the parts stand where the page reads them, at spirit.required.<their path>.
@@ -261,7 +265,7 @@ function deskWorld(goal, items) {
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, named by its own current row
     // (goal/G49.8: "the \"current\" selection is just another streamed item"); the page reads it from there, never from a
     // search answer.
-    const K = ((win.spirit.required.spirit.data || {}).desk || {}).data;
+    const K = ((win.spirit.required.spirit.data || {})[ID] || {}).data;
     if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); K.published({ change: 1, current: goal.id }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {
@@ -277,7 +281,7 @@ function deskWorld(goal, items) {
     }
     await settle();
   };
-  w.presses = function () { return asked.filter(function (a) { return a.name === 'desk.press'; }); };
+  w.presses = function () { return asked.filter(function (a) { return a.name === ID + '.press'; }); };
   return w;
 }
 async function settle() { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); }
@@ -478,12 +482,12 @@ test.run('a goal and two items are put on the scratch desk', 0.2, async function
   await page.send('Page.navigate', { url: F2.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = caller(page);
-  await call('app.active', { key: 'desk', active: true });
-  await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
-  const g = await call('desk.goal.add', { title: 'Opening goal' });
-  await call('desk.press', { id: g.id, what: 'make-current' });
-  F2.one = await call('desk.item.add', { goal: g.id, title: 'First opened item' });
-  F2.two = await call('desk.item.add', { goal: g.id, title: 'Second opened item' });
+  await call('app.active', { key: ID, active: true });
+  await H.until(function () { return call(ID + '.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+  const g = await call(ID + '.goal.add', { title: 'Opening goal' });
+  await call(ID + '.press', { id: g.id, what: 'make-current' });
+  F2.one = await call(ID + '.item.add', { goal: g.id, title: 'First opened item' });
+  F2.two = await call(ID + '.item.add', { goal: g.id, title: 'Second opened item' });
   F2.ready = !!g.id && !!F2.one.id && !!F2.two.id;
   return F2.ready || false;
 }, test.limit.long);
@@ -543,19 +547,19 @@ test.run('the first item, opened again, is shown as it was left, in its own laye
 const F3 = W.f3 = {};
 const noF3 = function () { return !F3.ready; };
 const CLOSES = "Array.prototype.filter.call(document.querySelectorAll('#zzDesk [data-press=\"close\"]'), function (b) { return b.getClientRects().length && !b.closest('.app-container'); })";
-const state3 = async function () { const r = await F3.call('desk.item.get', { id: F3.it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
+const state3 = async function () { const r = await F3.call(ID + '.item.get', { id: F3.it.id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
 test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, async function () {
   if (!(await bootPage(F3, false))) return false;
   const page = F3.page;
   await page.send('Page.navigate', { url: F3.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = F3.call = caller(page);
-  await call('app.active', { key: 'desk', active: true });
-  await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
-  const g = await call('desk.goal.add', { title: 'Closing goal' });
-  await call('desk.press', { id: g.id, what: 'make-current' });
-  const it = F3.it = await call('desk.item.add', { goal: g.id, title: 'An item to close' });
-  await call('desk.press', { id: it.id, what: 'done' });
+  await call('app.active', { key: ID, active: true });
+  await H.until(function () { return call(ID + '.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+  const g = await call(ID + '.goal.add', { title: 'Closing goal' });
+  await call(ID + '.press', { id: g.id, what: 'make-current' });
+  const it = F3.it = await call(ID + '.item.add', { goal: g.id, title: 'An item to close' });
+  await call(ID + '.press', { id: it.id, what: 'done' });
   const before = await state3();
   F3.ready = !!g.id && !!it.id && before.status === 'done';
   return F3.ready || false;

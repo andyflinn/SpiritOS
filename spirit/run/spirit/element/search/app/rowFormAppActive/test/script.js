@@ -37,8 +37,10 @@ test.run('it loads through spirit.requireScript and is placed on spirit.required
 }, test.limit.quick);
 const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
 const activeOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).active : undefined; };
-const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + key + '"; document.body.appendChild(b); window["a_' + key + '"] = spirit.required.spirit.element.search.app.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + key + '"] && typeof window["a_' + key + '"].destroy === "function"; }())'); };
-const view = function (key) { return chrome.evaluate('(function () { var b = document.getElementById("a-' + key + '"); var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height }; }())'); };
+// An app's key is its id, its folder's path in dots, spirit.app.agent (goal/G49.19); its host is named by the id's last word.
+const tag = function (key) { return key.slice(key.lastIndexOf('.') + 1); };
+const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + tag(key) + '"; document.body.appendChild(b); window["a_' + tag(key) + '"] = spirit.required.spirit.element.search.app.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + tag(key) + '"] && typeof window["a_' + tag(key) + '"].destroy === "function"; }())'); };
+const view = function (key) { return chrome.evaluate('(function () { var b = document.getElementById("a-' + tag(key) + '"); var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height }; }())'); };
 // Each row of the pane, its text and the button it holds.
 const rows = function () { return chrome.evaluate('(function () { var out = {}; Array.prototype.slice.call(document.querySelectorAll("#pane tr, #pane [data-key]")).forEach(function (r) { var t = String(r.innerText || "").replace(/\\s+/g, " ").trim(); ["Contacts", "Agent"].forEach(function (n) { if (t.indexOf(n) !== -1 && !out[n]) out[n] = { text: t, forms: r.querySelectorAll(".shell-row-form").length, installers: r.querySelectorAll("button.app-installer").length, buttons: Array.prototype.map.call(r.querySelectorAll("button"), function (x) { return String(x.textContent || "").trim(); }) }; }); }); return out; }())'); };
 let madeContact, listed, r;
@@ -46,27 +48,27 @@ let madeContact, listed, r;
 // the box: "hidden when the app is intrinsic"
 test.run('create, handed a host and a key, answers an object with destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  madeContact = await make('contact');
+  madeContact = await make('spirit.app.contact');
   return madeContact === true || false;
 }, test.limit.quick);
 test.run('for Contacts, intrinsic, it shows nothing and takes no space', 0.2, async function () {
   if (loaded !== true) return false;
   await sleep(2000);
-  const c0 = await view('contact');
+  const c0 = await view('spirit.app.contact');
   return c0.text === '' && c0.height === 0 ? true : false;
 }, test.limit.slow);
 
 // for an app that is not intrinsic: Activate, then Deactivate
 test.run('for the Agent, off, it says Activate and the app\'s label', 0.2, async function () {
   if (loaded !== true) return false;
-  await make('agent');
-  return (await until(function () { return view('agent').then(function (v) { return /Activate/.test(v.text) && !/Deactivate/.test(v.text) && v.text.indexOf('Agent') !== -1; }); }, 10000)) ? true : false;
+  await make('spirit.app.agent');
+  return (await until(function () { return view('spirit.app.agent').then(function (v) { return /Activate/.test(v.text) && !/Deactivate/.test(v.text) && v.text.indexOf('Agent') !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 let busyAt = null;
 test.run('pressed, the Agent is active', 0.2, async function () {
   if (loaded !== true) return false;
   try { busyAt = JSON.parse(await chrome.evaluate('(function () { var b = document.querySelector("#a-agent button"); b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())')); } catch (e) { busyAt = null; }
-  return (await until(function () { return activeOf('agent').then(function (a) { return a === true; }); }, 10000)) ? true : false;
+  return (await until(function () { return activeOf('spirit.app.agent').then(function (a) { return a === true; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 // goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": read once the press itself is
 // done, while the node is still asked.
@@ -76,12 +78,12 @@ test.run('pressed, its button stays busy while the node is asked: disabled, with
 }, test.limit.quick);
 test.run('once the Agent is active it says Deactivate', 0.2, async function () {
   if (loaded !== true) return false;
-  return (await until(function () { return view('agent').then(function (v) { return /Deactivate/.test(v.text); }); }, 10000)) ? true : false;
+  return (await until(function () { return view('spirit.app.agent').then(function (v) { return /Deactivate/.test(v.text); }); }, 10000)) ? true : false;
 }, test.limit.quick);
 test.run('pressed again, the Agent is no longer active', 0.2, async function () {
   if (loaded !== true) return false;
   await chrome.evaluate('document.querySelector("#a-agent button").click(); 1');
-  return (await until(function () { return activeOf('agent').then(function (a) { return a === false; }); }, 10000)) ? true : false;
+  return (await until(function () { return activeOf('spirit.app.agent').then(function (a) { return a === false; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 
 // the box: "The appSelector's detail and its rows use them": no Activate on an intrinsic app's row

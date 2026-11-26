@@ -34,8 +34,11 @@ function scratchApp(...p) { return path.join(W.node.root, 'spirit', 'run', 'spir
 const stateFile = function (k) { return path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', k, 'node.json'); };
 const activeIn = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')).active; } catch (e) { return undefined; } };
 const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')); } catch (e) { return {}; } };
-// An intrinsic app is always active (goal/G43.14), so it is no app the user set.
-const intrinsicApp = function (k) { try { return JSON.parse(fs.readFileSync(scratchApp(k, k + '.json'), 'utf8')).identity.intrinsic === true; } catch (e) { return false; } };
+// AN APP IS KNOWN BY ITS ID (goal/G49.19): its folder's path in dots, spirit.app.agent for spirit/app/agent; every key app.search
+// answers and app.active, app.label and app.icon take is one.
+const idOf = function (n) { return 'spirit.app.' + n; };
+// An intrinsic app is always active (goal/G43.14), so it is no app the user set. id: the app's id, its manifest in its folder.
+const intrinsicApp = function (id) { const dir = SPIRIT.slashedPath(id).split('/'); try { return JSON.parse(fs.readFileSync(path.join(W.node.root, 'spirit', 'run', ...dir, dir[dir.length - 1] + '.json'), 'utf8')).identity.intrinsic === true; } catch (e) { return false; } };
 
 test.run('spirit/app/script.js is there, the branch\'s core module', 0.2, function () { return fs.existsSync(FILE) || false; }, test.limit.quick);
 test.run('spirit/app/api.js is there, as in every core branch', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'api.js')) || false; }, test.limit.quick);
@@ -137,9 +140,9 @@ test.run('a filter is refused at the door: there are none', 0.2, async function 
 // in one by one (goal/G43.13, G43.14); appSelector and test are not taken for apps.
 test.run('the plugins are the folders with their own json: appSelector and test are not taken for apps', 0.2, function () {
   if (noNode()) return false;
-  const onDisc = fs.readdirSync(scratchApp(), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && fs.existsSync(scratchApp(d.name, d.name + '.json')); }).map(function (d) { return d.name; }).sort().join();
+  const onDisc = fs.readdirSync(scratchApp(), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && fs.existsSync(scratchApp(d.name, d.name + '.json')); }).map(function (d) { return idOf(d.name); }).sort().join();
   const keys = (W.items || []).map(function (i) { return i.key; }).sort().join();
-  return (keys === onDisc && keys.split(',').indexOf('appSelector') === -1 && keys.split(',').indexOf('test') === -1) || false;
+  return (keys === onDisc && keys.split(',').indexOf(idOf('appSelector')) === -1 && keys.split(',').indexOf(idOf('test')) === -1) || false;
 }, test.limit.quick);
 // goal/G43.6; Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
 test.run('a folder named after the branch\'s verb is no app', 0.2, async function () {
@@ -191,13 +194,13 @@ test.run('an app with api.js and no data.js has a row with api false', 0.2, asyn
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'zzapiflag.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Zz Api Flag' } }));
   fs.writeFileSync(path.join(dir, 'api.js'), "'use strict';\nmodule.exports = { verbs: {} };\n");
-  const listed = await until(function () { return apiOf('zzapiflag').then(function (a) { return a !== undefined; }); }, 5000);
-  return (listed && (await apiOf('zzapiflag')) === false) || false;
+  const listed = await until(function () { return apiOf(idOf('zzapiflag')).then(function (a) { return a !== undefined; }); }, 5000);
+  return (listed && (await apiOf(idOf('zzapiflag'))) === false) || false;
 }, test.limit.slow);
 test.run('once its data.js comes, the same row says api true', 0.2, async function () {
   if (noNode()) return false;
   fs.writeFileSync(path.join(scratchApp('zzapiflag'), 'data.js'), "'use strict';\n");
-  const flipped = await until(function () { return apiOf('zzapiflag').then(function (a) { return a === true; }); }, 5000);
+  const flipped = await until(function () { return apiOf(idOf('zzapiflag')).then(function (a) { return a === true; }); }, 5000);
   fs.rmSync(scratchApp('zzapiflag'), { recursive: true, force: true });
   return flipped || false;
 }, test.limit.slow);
@@ -229,7 +232,7 @@ test.run('no row but an intrinsic app\'s says active before a press', 0.2, async
 // The box: "The node writes spirit/state/<key>/node.json".
 test.run('active true lands in spirit/state/app/agent/node.json', 0.2, async function () {
   if (noNode()) return false;
-  const on = await ask(W.node.base, 'app.active', { key: 'agent', active: true });
+  const on = await ask(W.node.base, 'app.active', { key: idOf('agent'), active: true });
   return (on.status === 200 && activeIn('agent') === true) || false;
 }, test.limit.quick);
 // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json", and on Q7: "it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"
@@ -245,17 +248,17 @@ test.run('after the first activate node.json holds label, icon and active, nothi
 }, test.limit.quick);
 test.run('a label the node chose first stays, and the rest is copied', 0.2, async function () {
   if (noNode()) return false;
-  await ask(W.node.base, 'app.label', { key: 'text', label: 'Chosen First' });
-  await ask(W.node.base, 'app.active', { key: 'text', active: true });
+  await ask(W.node.base, 'app.label', { key: idOf('text'), label: 'Chosen First' });
+  await ask(W.node.base, 'app.active', { key: idOf('text'), active: true });
   const chosen = stateRead('text');
-  await ask(W.node.base, 'app.active', { key: 'text', active: false });
+  await ask(W.node.base, 'app.active', { key: idOf('text'), active: false });
   return (chosen.label === 'Chosen First' && typeof chosen.icon === 'string' && chosen.icon !== '' && chosen.active === true) || false;
 }, test.limit.quick);
 test.run('active false lands in node.json too', 0.2, async function () {
   if (noNode()) return false;
-  const off = await ask(W.node.base, 'app.active', { key: 'agent', active: false });
+  const off = await ask(W.node.base, 'app.active', { key: idOf('agent'), active: false });
   const verdict = (off.status === 200 && activeIn('agent') === false) || false;
-  await ask(W.node.base, 'app.active', { key: 'agent', active: true });
+  await ask(W.node.base, 'app.active', { key: idOf('agent'), active: true });
   return verdict;
 }, test.limit.quick);
 // ── intrinsic (goal/G43.14) ──
@@ -263,11 +266,11 @@ test.run('active false lands in node.json too', 0.2, async function () {
 const rowFor = async function (k) { const got = rows(await ask(W.node.base, 'app.search', { q: '' })) || []; const r = got.filter(function (i) { return i.key === k; })[0]; return r ? parsed(r.label) : null; };
 test.run('contact.json says intrinsic true', 0.2, function () {
   if (noNode()) return false;
-  return intrinsicApp('contact') || false;
+  return intrinsicApp(idOf('contact')) || false;
 }, test.limit.quick);
 test.run('its row says active with no press, and nothing was written for it', 0.2, async function () {
   if (noNode()) return false;
-  const c0 = W.c0 = await rowFor('contact');
+  const c0 = W.c0 = await rowFor(idOf('contact'));
   return (!!c0 && c0.active === true && activeIn('contact') === undefined) || false;
 }, test.limit.quick);
 // goal/G43.15, the box: "an app's row carries intrinsic, the row shows no Activate/Deactivate for it, and app.active refuses an
@@ -277,12 +280,12 @@ test.run('its row carries intrinsic true', 0.2, function () {
 }, test.limit.quick);
 test.run('the Agent\'s row carries intrinsic false', 0.2, async function () {
   if (noNode()) return false;
-  const a0 = await rowFor('agent');
+  const a0 = await rowFor(idOf('agent'));
   return (!!a0 && a0.intrinsic === false) || false;
 }, test.limit.quick);
 test.run('app.active on an intrinsic app is refused, by name', 0.2, async function () {
   if (noNode()) return false;
-  const refused = await ask(W.node.base, 'app.active', { key: 'contact', active: false });
+  const refused = await ask(W.node.base, 'app.active', { key: idOf('contact'), active: false });
   return (refused.status !== 200 && !!refused.body && typeof refused.body.code === 'string' && refused.body.code !== '') || false;
 }, test.limit.quick);
 test.run('the refused app.active writes nothing for the intrinsic app', 0.2, function () {
@@ -291,7 +294,7 @@ test.run('the refused app.active writes nothing for the intrinsic app', 0.2, fun
 }, test.limit.quick);
 test.run('app.active false does not switch it off: its row still says active', 0.2, async function () {
   if (noNode()) return false;
-  const c1 = await rowFor('contact');
+  const c1 = await rowFor(idOf('contact'));
   return (!!c1 && c1.active === true) || false;
 }, test.limit.quick);
 
@@ -320,7 +323,7 @@ test.run('app.label names key and label, and has its file', 0.2, function () {
 test.run('app.label writes node.json', 0.2, async function () {
   if (noNode()) return false;
   W.sidecarBefore = fs.readFileSync(scratchApp('agent', 'agent.json'), 'utf8');
-  const named = await ask(W.node.base, 'app.label', { key: 'agent', label: 'Renamed Here' });
+  const named = await ask(W.node.base, 'app.label', { key: idOf('agent'), label: 'Renamed Here' });
   return (named.status === 200 && stateRead('agent').label === 'Renamed Here') || false;
 }, test.limit.quick);
 test.run('app.label keeps what else node.json holds', 0.2, function () {
@@ -336,7 +339,7 @@ test.run('app.icon names key and icon, and has its file', 0.2, function () {
 }, test.limit.quick);
 test.run('app.icon writes node.json', 0.2, async function () {
   if (noNode()) return false;
-  const iconed = await ask(W.node.base, 'app.icon', { key: 'agent', icon: '🧪' });
+  const iconed = await ask(W.node.base, 'app.icon', { key: idOf('agent'), icon: '🧪' });
   return (iconed.status === 200 && stateRead('agent').icon === '🧪') || false;
 }, test.limit.quick);
 // app.shell went (goal/G43.18, Q10): whether an app may be a shell is its <name>.json's alone; spirit/test/nodeShell.js.
@@ -379,8 +382,8 @@ async function nodeRefuses(key) {
   let own = null;
   try { own = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', key, key + '.json'), 'utf8')); } catch (e) { own = null; }
   if (!own || !own.node || own.node.run !== true || own.node.mount === true) return false;
-  const r = await ask(W.node.base, 'app.active', { key: key, active: true });
-  const row = (rows(await ask(W.node.base, 'app.search', { q: '' })) || []).filter(function (i) { return i.key === key; })[0];
+  const r = await ask(W.node.base, 'app.active', { key: idOf(key), active: true });
+  const row = (rows(await ask(W.node.base, 'app.search', { q: '' })) || []).filter(function (i) { return i.key === idOf(key); })[0];
   const now = row ? (parsed(row.label) || {}).active : undefined;
   return (r.status >= 400 && now !== true) || false;
 }

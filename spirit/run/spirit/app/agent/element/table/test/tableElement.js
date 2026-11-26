@@ -98,11 +98,11 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.nodeFacts.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
   // with it, the real file run once from disk, as the real api.js does. That data.js (spirit/app/agent/data.js) keeps the tables'
-  // branches, <node>/agent/<table>, and answers them through spirit.required.spirit.data.agent.data.
+  // branches, <node>/spirit.app.agent/<table>, and answers them through spirit.required.spirit.data['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   const ran = {};
-  BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
+  BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/spirit.app.agent/' + table; };
   global.window.spirit.readyPromise = Promise.resolve({});
   // EACH PART'S ANSWER IS requireScript's (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
@@ -198,7 +198,7 @@ test.run('fieldLine draws the label, a 1em gap, then the input to the right edge
   const rule = (/\.agent-line\s*\{([^}]*)\}/.exec(css) || [])[1] || '';
   return (/display:flex/).test(fl) && /class="agent-line"/.test(fl) && !/gap:/.test(fl) && /gap:\s*1em/.test(rule) && /flex:1 1 0/.test(fl) ? true : false;
 }, test.limit.quick);
-test.run('branchOf a table is the home node\'s <node>/agent/<table>, as the agent branch\'s cache names it', 0.2, function () {
+test.run('branchOf a table is the home node\'s <node>/spirit.app.agent/<table>, as the agent branch\'s cache names it', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   return AD.branchOf('job') === BRANCH('job') ? true : false;
 }, test.limit.quick);
@@ -206,11 +206,11 @@ test.run('branchOf a table is the home node\'s <node>/agent/<table>, as the agen
 // why: never a list drawn with no branch.
 test.run('with no agent branch\'s cache on the page, branchOf refuses and says why', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
-  const keptAD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
-  delete ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
+  const keptAD = ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
+  delete ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
   let why = null; let drawn;
   try { drawn = AD.branchOf('job'); } catch (e) { why = e; }
-  global.window.spirit.required.spirit.data.agent.data = keptAD;
+  global.window.spirit.required.spirit.data['spirit.app.agent'].data = keptAD;
   return !!why && /agent/.test(String(why.message)) && /cache/.test(String(why.message)) ? true : false;
 }, test.limit.quick);
 
@@ -257,7 +257,7 @@ test.run('its list is a probabilitySearch in its own box, searched as it is made
   T.list = w.searches[0];
   return T.list && T.list.host === the(T.left, 'list') && T.list.refreshed >= 1 ? true : false;
 }, test.limit.quick);
-test.run('it searches the agent server\'s provider verb, seated in the branch <node>/agent/provider of spirit.required.spirit.data', 0.2, function () {
+test.run('it searches the agent server\'s provider verb, seated in the branch <node>/spirit.app.agent/provider of spirit.required.spirit.data', 0.2, function () {
   if (!T.list) return false;
   return T.list.o.api === 'spirit/app/agent/api.js' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : false;
 }, test.limit.quick);

@@ -16,6 +16,8 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let node, chrome, loaded, made, v0, glyph, key, busyAt;
+// The Agent's key is its id, its folder's path in dots (goal/G49.19).
+const AGENT = 'spirit.app.agent';
 const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
 const iconOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).icon : undefined; };
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("i"); var bs = b.querySelectorAll("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), last: bs.length ? String(bs[bs.length - 1].textContent || "").trim() : null }; }())'); };
@@ -40,7 +42,7 @@ test.run('it loads through spirit.requireScript and is spirit.required.spirit.el
 }, test.limit.quick);
 test.run('create, given a host and an app\'s key, answers an object with a destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "i"; document.body.appendChild(b); window.__i = spirit.required.spirit.element.search.app.changeAppIcon.create(b, { key: "agent" }); return !!window.__i && typeof window.__i.destroy === "function"; }())');
+  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "i"; document.body.appendChild(b); window.__i = spirit.required.spirit.element.search.app.changeAppIcon.create(b, { key: "spirit.app.agent" }); return !!window.__i && typeof window.__i.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 
@@ -60,7 +62,7 @@ test.run('the app\'s icon stays 🤖', 0.2, async function () {
   if (made !== true) return false;
   await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); bs[bs.length - 1].click(); return 1; }())');
   await sleep(1500);
-  return (await iconOf('agent')) === '🤖' ? true : false;
+  return (await iconOf(AGENT)) === '🤖' ? true : false;
 }, test.limit.slow);
 
 // the box: "writing through the app family's iconApp": a glyph picked, then Change
@@ -75,7 +77,7 @@ test.run('Change writes the picked glyph, and the app\'s row says it', 0.2, asyn
   if (made !== true) return false;
   key = await chrome.evaluate('(function () { var rows = Array.prototype.filter.call(document.querySelectorAll("#i tr[data-key]"), function (r) { return r.getAttribute("data-key") !== "🤖"; }); if (!rows.length) return ""; rows[0].click(); return rows[0].getAttribute("data-key"); }())');
   try { busyAt = JSON.parse(await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); var b = bs[bs.length - 1]; b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())')); } catch (e) { busyAt = null; }
-  return !!key && await until(function () { return iconOf('agent').then(function (g) { return g === key; }); }, 10000) ? true : false;
+  return !!key && await until(function () { return iconOf(AGENT).then(function (g) { return g === key; }); }, 10000) ? true : false;
 }, test.limit.quick);
 
 // goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": read once the press itself is
@@ -88,7 +90,7 @@ test.run('pressed with a glyph picked, Change stays busy while the node is asked
 // an icon changed elsewhere shows, with no reload
 test.run('it shows the new icon', 0.2, async function () {
   if (made !== true) return false;
-  await ask('app.icon', { key: 'agent', icon: '🧩' });
+  await ask('app.icon', { key: AGENT, icon: '🧩' });
   return (await until(function () { return seen().then(function (v) { return v.text.indexOf('🧩') !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {

@@ -53,6 +53,8 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
 }, test.limit.slow);
 test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
+  // The job asks the fs cache, never the disc (goal/G49.19): both planted folders are apps once app.search lists them.
+  await until(function () { return call('app.search', { q: '' }).then(function (r) { const keys = ((r.body && r.body.items) || []).map(function (i) { return i.key; }); return keys.indexOf('spirit.app.zzFail') !== -1 && keys.indexOf('spirit.app.zzSleep') !== -1; }); }, 30000);
   const failed = await call('spirit.job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);

@@ -85,9 +85,9 @@ test.run('destroy empties its host', 0.2, async function () {
 // default."; Q4: "The programmer who uses app:search makes it visible", by create's servers: true (cw's 64c04fd2).
 // goal/G43.18: the server filter, hidden by default, shown by servers: true
 test.run('the tree has an app that runs on the node, and apps that do not', 0.2, function () {
-  // Which apps run on the node, from the tree: each <name>.json's node.mount.
+  // Which apps run on the node, from the tree: each <name>.json's node.mount. Each keyed by its id, spirit.app.<name> (goal/G49.19).
   const APPS = path.join(RUN, 'spirit', 'app');
-  own = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return { key: n, label: String((j.identity && j.identity.label) || n), mount: !!(j.node && j.node.mount === true) }; });
+  own = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return { key: 'spirit.app.' + n, label: String((j.identity && j.identity.label) || n), mount: !!(j.node && j.node.mount === true) }; });
   mounted = own.filter(function (a) { return a.mount; });
   MOUNT = mounted[0];
   return MOUNT && own.length > mounted.length ? true : false;
