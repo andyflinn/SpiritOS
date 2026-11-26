@@ -229,9 +229,10 @@ test.run('a script that builds no temp path is green on the temp check', 0.4, fu
     return up === SCRIPTS.length || false;
   }, test.limit.quick);
   // Each script's own: a run where the first used the handed node and the second booted its own would still have reached it
-  // (cw's review), so each branch must be named in what reached it, backup's calls and chat's.
-  test.run('each script uses the node it is handed, so calls naming backup and calls naming chat both reach it', 0.8, function () {
-    const named = ['backup', 'chat'].filter(function (b) { return new RegExp('"' + b + '[".]').test(H.bodies); });
+  // (cw's review), so each branch must be named in what reached it, backup's calls and chat's. Each named by its id, its
+  // folder in dots, spirit.app.backup (goal/G49.19).
+  test.run('each script uses the node it is handed, so calls naming spirit.app.backup and calls naming spirit.app.chat both reach it', 0.8, function () {
+    const named = ['spirit.app.backup', 'spirit.app.chat'].filter(function (b) { return new RegExp('"' + b.split('.').join('\\.') + '[".]').test(H.bodies); });
     return named.length === 2 || false;
   }, test.limit.quick);
 }
