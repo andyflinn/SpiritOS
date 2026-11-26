@@ -117,14 +117,15 @@ async function ownScratch() {
     let manifest = null;
     try { manifest = JSON.parse(fs.readFileSync(path.join(run, 'spirit', 'app', d.name, d.name + '.json'), 'utf8')); } catch (e) { return; }
     if (!(manifest && manifest.node && manifest.node.mount === true)) return;
-    const dir = path.join(run, 'spirit', 'state', d.name);
+    // The app's switch in its own state folder, spirit.statePath's place (goal/G49.17: spirit/state/app/<name>/).
+    const dir = path.join(run, ...SPIRIT.statePath('spirit/app/' + d.name).split('/'));
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
   });
   // A BARE PAGE OF ITS OWN, in the copy only (in a test folder, so its node, DEBUG on, serves it at /DEBUG/<path>): spirit.js by its script tag and nothing else (no data-spirit, so no shell
   // boots), every error the page meets kept from its first line on.
   fs.writeFileSync(path.join(run, 'spirit', 'test', BARE), '<!doctype html><html><head><meta charset="utf-8"><script>window.pageErrors = [];' +
-    ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit.js"></script></head><body></body></html>\n');
+    ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit/script.js"></script></head><body></body></html>\n');
   const port = await freePort();
   const child = LABH.startNodeOn(run, port, { windowsHide: true });
   const base = 'http://127.0.0.1:' + port;
@@ -151,7 +152,7 @@ async function handedScratch() {
     fs.copyFileSync(from, to);
   });
   fs.writeFileSync(path.join(run, 'spirit', 'test', BARE), '<!doctype html><html><head><meta charset="utf-8"><script>window.pageErrors = [];' +
-    ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit.js"></script></head><body></body></html>\n');
+    ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit/script.js"></script></head><body></body></html>\n');
   const post = function (call, args) {
     return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
       .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });

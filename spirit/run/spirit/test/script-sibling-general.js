@@ -2829,6 +2829,23 @@ if (!GIVEN.length) {
     if (files.length < 100) return false;
     return (!files.some(function (f) { return codeText(f).indexOf('spirit/client/packet.js') !== -1; }) && /require(Script|One)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js'))) || false;
   }, test.limit.quick);
+  // EVERY ARGUMENT OF A BRANCH IS A TYPE (goal/G49.21, box v25; Andy: "as always, and a permanent rule: a branche's script.js
+  // file must use spirit.type.* for ALL argument validation"): each verb of every new-shape branch's script.js (a folder holding
+  // script.js and client/script.js) names, for each argument, a type script by its path, spirit/type/... or an app's own
+  // <app>/type/... (goal/G49.20), never a word of its own like 'text?'.
+  test.run('every argument of every branch\'s verbs is a type script by its path', 0.4, function () {
+    const files = productCode().filter(function (f) { return /\/script\.js$/.test(f) && shFs.existsSync(shPath.join(SH.run, f.replace(/script\.js$/, 'client/script.js'))); });
+    if (files.length < 3) return false;
+    return files.every(function (f) {
+      let m = null;
+      try { m = require(shPath.join(SH.run, f)); } catch (e) { return false; }
+      const verbs = m && m.verbs;
+      if (!verbs || typeof verbs !== 'object') return false;
+      return Object.keys(verbs).every(function (v) {
+        return Object.keys(verbs[v] || {}).every(function (a) { return /^spirit\/(.+\/)?type\/.+\/script\.js\??$/.test(String(verbs[v][a])); });
+      });
+    }) || false;
+  }, test.limit.quick);
   test.run('no product script names the relabel verb or the auth peer verb', 0.2, function () {
     const files = productCode();
     if (files.length < 100) return false;
