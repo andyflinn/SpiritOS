@@ -1112,13 +1112,13 @@
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits/script.js).
     return Promise.resolve(requireOne('spirit/limits/script.js')).then(function () { return requireOne('spirit/peer/packet/script.js'); }).then(function () {
-      var made = self.required.spirit.client.packet.encode(app, body);
+      var made = self.required.spirit.peer.packet.encode(app, body);
       if (!made || !made.ok) return whole ? { ok: false, body: null, card: null, from: '', error: (made && made.error) || 'the ask could not be encoded' }
         : { ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' };
       return post('peer.post', { to: String(peer), text: made.text }).then(function (r) {
         var said = (r && r.body) || {};
         var text = typeof said.text === 'string' ? said.text : '';
-        var decoded = text ? self.required.spirit.client.packet.decode(text) : null;
+        var decoded = text ? self.required.spirit.peer.packet.decode(text) : null;
         var got = decoded ? decoded.body : null;
         if (whole) {
           var yes = !got || got.ok === undefined || !!got.ok;

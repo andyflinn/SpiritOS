@@ -6,7 +6,7 @@
 //   so one file per element, each adding itself to window.spirit.required,
 //   which the shell hands to apps at mount as api.ui.element.
 //
-// On the globals every shell script has (spirit, document, window.spirit.required.spirit.client.apiTreeIndex)
+// On the globals every shell script has (spirit, document, window.spirit.required.spirit.fuckingGarbage.apiTreeIndex)
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 //
