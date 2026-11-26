@@ -242,11 +242,13 @@ const WAIT_POLL_MS = 500;
 const WAIT_READ_MAX = 500;
 const WAIT_LOCK = path.join(RUN, 'spirit', 'state', 'console', 'wait.pid');
 
-// A wait-row as words: { branch, verb, filters: [[field, value]] }, or null when it is no api=<branch>.<verb> first.
+// A wait-row as words: { name, filters: [[field, value]] }, or null when it is no api=<branch>.<verb> first. The name is the
+// whole call, branch and verb: a branch named by its path holds dots of its own (goal/G49.19: spirit.app.desk.listener), so it
+// is split only against what arrived (callOf, below), never at its first dot.
 function waitRowOf(text) {
   const words = wordsOf(text);
   if (!words || !words.length) return null;
-  const m = /^api=([A-Za-z]\w*)\.(\S+)$/.exec(words[0]);
+  const m = /^api=([A-Za-z]\w*(?:\.[A-Za-z]\w*)*\.\S+)$/.exec(words[0]);
   if (!m) return null;
   const filters = [];
   for (let i = 1; i < words.length; i++) {
@@ -254,7 +256,16 @@ function waitRowOf(text) {
     if (eq < 1) return null;
     filters.push([words[i].slice(0, eq), words[i].slice(eq + 1)]);
   }
-  return { branch: m[1], verb: m[2], filters: filters };
+  return { name: m[1], filters: filters };
+}
+// The call of an arrived body a wait-row names: { branch, verb, call } for the body's branch the name starts with, followed by
+// a dot, the longest when more do; null when none does.
+function callOf(body, name) {
+  let best = '';
+  Object.keys(body).forEach(function (k) { if (k.length > best.length && name.length > k.length + 1 && name.indexOf(k + '.') === 0) best = k; });
+  if (!best || !body[best] || typeof body[best] !== 'object') return null;
+  const verb = name.slice(best.length + 1);
+  return Object.prototype.hasOwnProperty.call(body[best], verb) ? { branch: best, verb: verb, call: body[best][verb] } : null;
 }
 // A field of an object by its name, a dotted name reaching inside.
 function fieldOf(o, name) { return String(name).split('.').reduce(function (v, k) { return v !== null && typeof v === 'object' ? v[k] : undefined; }, o); }
@@ -268,11 +279,11 @@ function matchesOf(row, rows) {
   const out = [];
   rows.forEach(function (text) {
     const w = waitRowOf(text);
-    const call = w && env.body[w.branch] && typeof env.body[w.branch] === 'object' ? env.body[w.branch][w.verb] : undefined;
-    if (call === undefined) return;
-    const args = call && typeof call === 'object' ? call : {};
-    const base = { wait: text, at: row.at, peer: row.peer || '', app: env.app, api: w.branch + '.' + w.verb };
-    if (w.verb === 'listener' && typeof args.json === 'string') {
+    const c = w ? callOf(env.body, w.name) : null;
+    if (!c || c.call === undefined) return;
+    const args = c.call && typeof c.call === 'object' ? c.call : {};
+    const base = { wait: text, at: row.at, peer: row.peer || '', app: env.app, api: c.branch + '.' + c.verb };
+    if (c.verb === 'listener' && typeof args.json === 'string') {
       (spirit.requireScript('spirit/streamBundle/script.js').unpack(args.json) || []).forEach(function (e) {
         if (matches(e.row || {}, w.filters)) out.push(Object.assign({ entry: e }, base));
       });
