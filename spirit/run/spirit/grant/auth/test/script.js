@@ -32,7 +32,6 @@ test.after(function () {
 const { DatabaseSync } = require('node:sqlite');
 
 const FILE = path.join(RUN, 'spirit', 'grant', 'auth', 'script.js');
-const FAMILY = path.join(RUN, 'spirit', 'auth', 'api.js');
 function readJson(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; } }
 const isNum = function (k) { return typeof k === 'number' && Number.isInteger(k) && k > 0; };
 // One call, answered or refused, as server.js hands it on.
@@ -42,38 +41,57 @@ const parsed = function (item) { try { return JSON.parse(item.label); } catch (e
 // Every test's names, shared down the sequence: each test assigns what later ones read.
 let family, verbs, b, r, bj, createApiAuth, root, tree, auth, reader, desk, got, renamed, all, row, hit, whole, one, noVerb, g, keysOf, ofDesk, ofFiles, ofVerb, every, db, colsOf, names, idx, tables, del, left, gone, PEER, kept, told, tb, tr, tr2, n, toldG, GPEER, plain, asked, mine, mdb, afterSet, badIn, kdb, kept2, odb, wrote, outGet, outItem, owned, ofNode, every2, bootRoot, probeDir, bootTree, boot, ownedBy, settleBoot, a1, all1, records, heldMade, hdb, aU, heldRow, first, countOf, twice, other, twoCase, reborn, hb, addB, setB, delB, nb, nbr, nset, ndel, fsRoot, fsTree, fsAuth, fsBundle, keptId, addedloadFile, addedpath, addedsaveFile, moved, again;
 
-// The two verbs, declared.
-test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, a label, a search text, an optional owner, nothing more', 0.2, async function () {
-  family = require(FAMILY);
+// The two tables' verbs, declared. goal/G49.21 (box v24: the auth tables as branches of their own, "verbs: search, get,
+// add, delete"): auth.bundle {op} and auth.branch {op} of spirit/auth/api.js are spirit.bundle and spirit.branch, each
+// declared by its own spirit/<table>/script.js, one verb per op (set gone, goal/G41.26), its <verb>.json beside it.
+const BUNDLE = path.join(RUN, 'spirit', 'bundle');
+const BRANCH = path.join(RUN, 'spirit', 'branch');
+const FOUR = 'add,delete,get,search';
+const argsOf = function (v) { return Object.keys(v || {}).sort().join(','); };
+test.run('spirit/bundle/script.js declares search, get, add and delete, a numeric id, a label, a search text, an optional owner, nothing more', 0.2, async function () {
+  family = require(path.join(BUNDLE, 'script.js'));
   verbs = (family && family.verbs) || {};
   // Andy, box: "The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch,
   // akin to the <tableName> verbs of the agent app: op add, set, delete, get and search. Granted, no review."
-  b = verbs.bundle;
+  b = verbs;
   // goal/G41.25, box: "the bundle table gains 1 field: \"owner\"", and "changes to the auth.bundle verb for the addition
   // of the \"owner\" field are approved by andy and need no review."
-  // goal/G48.4: each argument names its type file by its full path (goal/G49.13): the op a table op, the id a number, the label a label, the search
-  // text a descriptionSelect, each but the op optional.
-  return (b && b.op === 'spirit/type/string/tableOp/script.js' && /^spirit\/type\/number\/[A-Za-z]+\/script\.js\?$/.test(b.id) && b.label === 'spirit/type/string/label/script.js?' && b.text === 'spirit/type/string/descriptionSelect/script.js?' && typeof b.owner === 'string' && /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js\?$/.test(b.owner) && Object.keys(b).length === 5) ? true : false;
+  // goal/G48.4: each argument names its type file by its full path (goal/G49.13): the id a number, the label a label, the search
+  // text a descriptionSelect, the owner and the search's text optional.
+  const num = /^spirit\/type\/number\/[A-Za-z]+\/script\.js$/;
+  const owner = /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js\?$/;
+  return (argsOf(b) === FOUR && argsOf(b.search) === 'owner,text' && b.search.text === 'spirit/type/string/descriptionSelect/script.js?' && owner.test(b.search.owner) &&
+    argsOf(b.get) === 'id' && num.test(b.get.id) && argsOf(b.add) === 'label,owner' && b.add.label === 'spirit/type/string/label/script.js' && owner.test(b.add.owner) &&
+    argsOf(b.delete) === 'id' && num.test(b.delete.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a branch, a verb and a search text, all flat', 0.2, async function () {
-  r = verbs.branch;
-  const num = /^spirit\/type\/number\/[A-Za-z]+\/script\.js\?$/;
-  const word = /^spirit\/type\/string\/word(Select)?\/script\.js\?$/;
-  return (r && r.op === 'spirit/type/string/tableOp/script.js' && num.test(r.id) && num.test(r.bundle) && word.test(r.family) && word.test(r.verb) && r.text === 'spirit/type/string/descriptionSelect/script.js?' && Object.keys(r).length === 6) ? true : false;
+test.run('spirit/branch/script.js declares search, get, add and delete, an id, a bundle, a branch, a verb and a search text, all flat', 0.2, async function () {
+  r = ((require(path.join(BRANCH, 'script.js')) || {}).verbs) || {};
+  const num = /^spirit\/type\/number\/[A-Za-z]+\/script\.js\??$/;
+  const word = /^spirit\/type\/string\/word(Select)?\/script\.js\??$/;
+  return (argsOf(r) === FOUR && argsOf(r.search) === 'bundle,family,text,verb' && r.search.text === 'spirit/type/string/descriptionSelect/script.js?' && num.test(r.search.bundle) && word.test(r.search.family) && word.test(r.search.verb) &&
+    argsOf(r.get) === 'id' && num.test(r.get.id) && argsOf(r.add) === 'bundle,family,verb' && num.test(r.add.bundle) && word.test(r.add.family) && word.test(r.add.verb) &&
+    argsOf(r.delete) === 'id' && num.test(r.delete.id)) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/bundle.json describes the verb and its request', 0.2, async function () {
-  return (!!(function (d) { return d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request; }(readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'))))) ? true : false;
+// Each verb's <verb>.json describes it, its request the verb's arguments as its script declares them.
+const describes = function (dir, declared) {
+  return FOUR.split(',').every(function (v) {
+    const d = readJson(path.join(dir, v + '.json'));
+    return !!(d && typeof d.description === 'string' && d.description && d.request && argsOf(d.request) === argsOf(declared[v]));
+  });
+};
+test.run('spirit/bundle/<verb>.json describes each verb and its request', 0.2, async function () {
+  return (argsOf(b) === FOUR && describes(BUNDLE, b)) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/branch.json describes the verb and its request', 0.2, async function () {
-  return (!!(function (d) { return d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request; }(readJson(path.join(RUN, 'spirit', 'auth', 'branch.json'))))) ? true : false;
+test.run('spirit/branch/<verb>.json describes each verb and its request', 0.2, async function () {
+  return (argsOf(r) === FOUR && describes(BRANCH, r)) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/bundle.json names the owner in its request and description, and offers no set op, though it may say a set is refused', 0.2, async function () {
-  bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
-  return (bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset \{/.test(String(bj.description || ''))) ? true : false;
+test.run('spirit/bundle/add.json names the owner in its request and description, and the bundle branch offers no set verb', 0.2, async function () {
+  bj = readJson(path.join(BUNDLE, 'add.json'));
+  return (bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !('set' in b) && !fs.existsSync(path.join(BUNDLE, 'set.json'))) ? true : false;
 }, test.limit.quick);
 
 test.run('createApiAuth answers a bundle function and a branch function beside grant and revoke', 0.2, async function () {

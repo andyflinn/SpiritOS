@@ -513,7 +513,8 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
   }, test.limit.quick);
   test.run('a bundle of the node\'s is added', 0.2, async function () {
     if (STOP) return false;
-    B = await home('auth.bundle', { op: 'add', label: 'zzNodeBundle' });
+    // goal/G49.21: auth.bundle {op: 'add'} is spirit.bundle.add, no op argument.
+    B = await home('spirit.bundle.add', { label: 'zzNodeBundle' });
     return (B.status === 200) ? true : false;
   }, test.limit.quick);
   test.run('the Agent app opens', 0.2, async function () {
@@ -713,7 +714,8 @@ async function tabOpens(kind, row) {
   test.run('the bundle\'s tab closes itself too when its bundle is deleted', 0.2, async function () {
     if (STOP) return false;
     hadBundle = (await tabOf('zzNodeBundle')).length === 1;
-    await home('auth.bundle', { op: 'delete', id: B.body.id });
+    // goal/G49.21: auth.bundle {op: 'delete'} is spirit.bundle.delete.
+    await home('spirit.bundle.delete', { id: B.body.id });
     await until(function () { return tabOf('zzNodeBundle').then(function (t) { return !t.length; }); }, 5000);
     return (hadBundle && (await tabOf('zzNodeBundle')).length === 0) ? true : false;
   }, test.limit.quick);

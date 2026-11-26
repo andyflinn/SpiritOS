@@ -3,9 +3,10 @@
 // spirit/run/spirit/element/search/branch/row/test/script.js
 // The tests of spirit/element/search/branch/row/script.js, and of no other module (spec: ./script.md; goal/G41.14). The
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
-// row element is put there real; the arming button is a stand-in that records what it was handed. The node's auth
-// family is the spirit object's, each call recorded. The page's data set is real, and so is the auth family's
-// data.js (goal/G41.28), brought by the auth family's api.js as the element requires it, the page's node known as
+// row element is put there real; the arming button is a stand-in that records what it was handed. The node's branch
+// branch is the spirit object's, each call recorded. The page's data set is real, and so is the branch branch's
+// client (goal/G41.28; goal/G49.21: the auth branch's branch table is spirit.branch, spirit/branch/script.js, its client
+// spirit/branch/client/script.js), brought by the branch's script.js as the element requires it, the page's node known as
 // spirit.startPage makes it known (spirit.nodeFacts.key, then data.homeNode).
 
 const fs = require('fs');
@@ -36,15 +37,17 @@ function cell() {
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let asked, required, loaded, armed, DATA, V, E, A, el, cells, allCells, del, live, lh;
-const hasA = function () { return !!(A && A.branches && typeof A.branches.row === 'function'); };
+const hasA = function () { return !!(A && typeof A.row === 'function'); };
 const hasRow = function () { return hasA() && !!(E.search && E.search.branch && E.search.branch.row && typeof E.search.branch.row.create === 'function'); };
 
-test.run('the branch row runs on a bare window, with the page\'s data set and the auth branch\'s data real', 0.2, async function () {
+test.run('the branch row runs on a bare window, with the page\'s data set and the branch branch\'s data real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
   armed = [];
-  const auth = { branch: function (a) { asked.push(a); return Promise.resolve({ id: a.id }); } };
+  // goal/G49.21: one verb per operation, spirit.branch.add/get/search/delete, no op argument; each call recorded with its verb as call.
+  const branchBranch = {};
+  ['add', 'get', 'search', 'delete'].forEach(function (v) { branchBranch[v] = function (a) { asked.push(Object.assign({ call: v }, a)); return Promise.resolve({ id: a.id }); }; });
   const STANDS = {
     'spirit/element/row/script.js': function () { PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
     'spirit/element/armingButton/script.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
@@ -61,13 +64,13 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // A branch's api.js brings its companion data.js, as the real api.js does (goal/G47.1: "every api.js requires it's
-  // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
-  // directly is only recorded.
+  // A branch's script.js brings its client, as the real one does (goal/G47.1: "every api.js requires it's
+  // companion data.js"; goal/G49.21: the new shape's <branch>/script.js and <branch>/client/script.js): the stand-in runs
+  // that client once, attaching itself to the data set. A client asked for directly is only recorded.
   const ran = {};
-  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); } };
-  // The direct writes below are the auth family's own view of the home node, as its data.js files them.
-  V = DATA.viewAt(null, 'auth');
+  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/script\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'client', 'script.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); } };
+  // The direct writes below are the branch branch's own view of the home node, its rows at rows/<id>, as its client files them.
+  V = DATA.viewAt(null, 'branch');
   // EACH STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
   // "spirit.requireScript must allways return either an object or a function... or fail/throw"): what the stand-in made for its
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
@@ -76,12 +79,12 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
     const v = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required);
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
-  // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : standIn(p)); };
+  // The branch branch is answered by its script.js path (goal/G49.6: never by a name; goal/G49.21).
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
-  A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
+  A = ((global.window.spirit.required.spirit.data || {}).branch || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;
@@ -92,9 +95,10 @@ test.run('it requires the shared row element and the arming button through spiri
   if (!required) return false;
   return ['spirit/element/row/script.js', 'spirit/element/armingButton/script.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the auth branch\'s interface, spirit/auth/api.js, and no data.js, and the auth data it brings is on the page', 0.2, function () {
+// goal/G49.21: the auth branch's interface is the branch branch's, spirit/branch/script.js; its client comes with it.
+test.run('it requires the branch branch\'s interface, spirit/branch/script.js, and no client script, and the branch data it brings is on the page', 0.2, function () {
   if (!loaded) return false;
-  return loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && hasA() ? true : false;
+  return loaded.indexOf('spirit/branch/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) && hasA() ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.required.spirit.element.search.branch.row.create', 0.2, function () {
   if (!hasA()) return false;
@@ -137,26 +141,27 @@ test.run('once mounted, its Delete is an arming button, and nothing is asked yet
   del = armed.filter(function (a) { return a.button && a.button.action === 'delete'; })[0];
   return !!del && typeof del.o.run === 'function' && asked.length === 0 ? true : false;
 }, test.limit.quick);
-test.run('the second press of Delete asks auth.branch to delete the branch by its id', 0.2, async function () {
+// goal/G49.21: auth.branch {op: 'delete'} is spirit.branch.delete {id}, no op argument.
+test.run('the second press of Delete asks spirit.branch.delete for the branch by its id', 0.2, async function () {
   if (!el) return false;
   if (del) { await del.o.run(); await settle(); }
-  return asked.length === 1 && asked[0].op === 'delete' && asked[0].id === 3 ? true : false;
+  return asked.length === 1 && asked[0].call === 'delete' && asked[0].op === undefined && asked[0].id === 3 ? true : false;
 }, test.limit.quick);
 
-// it repaints from the auth family's branches (goal/G41.14, G41.28)
+// it repaints from the branch branch's rows (goal/G41.14, G41.28, G49.21)
 // Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set".
 test.run('when its row in the branches changes, the row repaints and its verb now shows (ALL)', 0.2, async function () {
   if (!hasRow()) return false;
   live = E.search.branch.row.create({ id: 5, bundle: 7, family: 'files', verb: 'read' });
   lh = { family: cell(), verb: cell(), delete: cell() };
   live.mount(lh);
-  V.set('branches/5', { id: 5, bundle: 7, family: 'files', verb: '' });
+  V.set('rows/5', { id: 5, bundle: 7, family: 'files', verb: '' });
   await settle();
   return live.row.verb === '' && lh.verb.innerHTML === '(ALL)' ? true : false;
 }, test.limit.quick);
 test.run('another branch\'s row changes nothing here', 0.2, async function () {
   if (!live) return false;
-  V.set('branches/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
+  V.set('rows/6', { id: 6, bundle: 7, family: 'desk', verb: 'x' });
   await settle();
   return live.row.family === 'files' ? true : false;
 }, test.limit.quick);
@@ -167,27 +172,29 @@ test.run('another branch\'s row changes nothing here', 0.2, async function () {
 // auth family's data.js, which the api.js it requires brings. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
 // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
 // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-test.run('a branch row published lands in the auth branch\'s branches by its id, through the branch\'s data.js its api.js brings', 0.2, function () {
+// goal/G49.21: the rows come on the branch branch's own job, spirit.branch, { row }, gone when deleted.
+test.run('a branch row published lands in the branch branch\'s rows by its id, through the client its script.js brings', 0.2, function () {
   if (!hasA()) return false;
-  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
-  return JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) ? true : false;
+  DATA.takeJob({ id: 'spirit.branch', data: { row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
+  return JSON.stringify(A.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) ? true : false;
 }, test.limit.quick);
 test.run('a row published again replaces the one kept', 0.2, function () {
   if (!hasA()) return false;
-  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
-  const again = A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
+  DATA.takeJob({ id: 'spirit.branch', data: { row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
+  const again = A.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
   return again && again.verb === '' ? true : false;
 }, test.limit.quick);
 test.run('a row published gone is taken out', 0.2, function () {
   if (!hasA()) return false;
-  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
-  return A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === null ? true : false;
+  DATA.takeJob({ id: 'spirit.branch', data: { row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
+  return A.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === null ? true : false;
 }, test.limit.quick);
-test.run('the other table\'s rows, another job\'s rows and a row with no id write nothing in the branches', 0.2, function () {
+// goal/G49.21: the other table is the spirit.bundle branch, its rows on its own job.
+test.run('the bundle table\'s rows, another job\'s rows and a row with no id write nothing in the branches', 0.2, function () {
   if (!hasA()) return false;
-  const before = JSON.stringify(A.branches.rows());
-  DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
+  const before = JSON.stringify(A.rows());
+  DATA.takeJob({ id: 'spirit.bundle', data: { row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
   DATA.takeJob({ id: 'spirit.contact', data: { row: { id: 98 } } });
-  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { label: 'no id' } } });
-  return JSON.stringify(A.branches.rows()) === before ? true : false;
+  DATA.takeJob({ id: 'spirit.branch', data: { row: { label: 'no id' } } });
+  return JSON.stringify(A.rows()) === before ? true : false;
 }, test.limit.quick);

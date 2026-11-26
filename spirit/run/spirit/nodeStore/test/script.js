@@ -414,19 +414,16 @@ test.run('label is null with no grant, else myLabel, else the label the ID gave,
   return (W.a.auth.label('NOGRANT') === null && W.a.auth.label('P1') === 'Pat' && W.a.auth.label('P3') === 'Self named' &&
     W.a.auth.label('P4') === '') || false;
 }, test.limit.quick);
-test.run('peer and all answer the grants with their names', 0.4, function () {
-  const p = W.a.auth.peer('P1');
+// goal/G49.21: peer and relabel are gone from the node's store, and their checks with them.
+test.run('all answers the grants with their names', 0.4, function () {
   const all = Array.from(W.a.auth.all());
-  return (p.length === 2 && p[0].key === 'P1' && p[0].label === 'Pat' && p[0].path === 'desk/post' && all.length === 5 &&
+  return (all.length === 5 &&
     all.every(function (r) { return typeof r.key === 'string' && typeof r.label === 'string' && typeof r.path === 'string'; })) || false;
 }, test.limit.quick);
-test.run('revoke says whether the grant went, and relabel refuses a key with no grant', 0.4, function () {
+test.run('revoke says whether the grant went', 0.4, function () {
   const a = W.a.auth.revoke('P4', 'x');
   const b = W.a.auth.revoke('P4', 'x');
-  const c = W.a.auth.relabel('P4', 'New');
-  const d = W.a.auth.relabel('P1', 'Patricia');
-  return (a === true && b === false && c === false && W.a.seen.get('P4') === null && d === true &&
-    W.a.auth.label('P1') === 'Patricia') || false;
+  return (a === true && b === false) || false;
 }, test.limit.quick);
 
 // ── bundles and branches ──

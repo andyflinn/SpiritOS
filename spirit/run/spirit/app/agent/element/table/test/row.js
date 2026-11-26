@@ -127,16 +127,18 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
   rowPath = function (table, id) { return global.window.spirit.required.spirit.data['spirit.app.agent'].data.branch(table) + '/' + id; };
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/spirit.app.agent/' + table; };
-  // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
-  // has not; each ask kept.
+  // The node's bundles (spirit.bundle, the one dictionary of bundles; goal/G49.21, was auth.bundle {op}): get answers a bundle
+  // the node has, refuses one it has not; each ask kept, with its verb as call.
   w.bundleAsks = [];
   w.bundlesHeld = { 7: 'Reader', 9: 'Writer' };
-  // Asked by its path, spirit/auth/api.js (goal/G49.6: never by a name).
-  w.auth = { bundle: function (a) {
-    w.bundleAsks.push(a);
-    if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
-    return Promise.resolve({ items: [], more: false });
-  } };
+  // Asked by its path, spirit/bundle/script.js (goal/G49.6: never by a name; goal/G49.21).
+  w.bundleBranch = {
+    get: function (a) {
+      w.bundleAsks.push(Object.assign({ call: 'get' }, a));
+      return w.bundlesHeld[Number(a && a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('spirit.bundle has no row ' + (a && a.id)), { code: 'no-such-bundle' }));
+    },
+    search: function (a) { w.bundleAsks.push(Object.assign({ call: 'search' }, a)); return Promise.resolve({ items: [], more: false }); },
+  };
   global.window.spirit.readyPromise = Promise.resolve(global.window.spirit);
   // EACH PART'S ANSWER IS requireScript's (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
@@ -165,7 +167,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
     'spirit/element/search/icon/script.js': { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } },
     'spirit/element/fieldInput/script.js': w.fieldInput,
-    'spirit/auth/api.js': w.auth,
+    'spirit/bundle/script.js': w.bundleBranch,
   };
   global.window.spirit.requireScript = function (p) {
     w.required.push(String(p));
@@ -661,7 +663,7 @@ test.run('the editor loads the bundle selector itself', 0.2, async function () {
   return w.required.indexOf('spirit/element/search/bundle/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
-// the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
+// the bundle by its label, as the node has it (spirit.bundle.get, goal/G49.21: 7 is Reader).
 test.run('the bundle field shows the job\'s bundle by its label, not its number', 0.2, function () {
   if (!B.ed4) return false;
   const bundleSays = B.bsel ? String((B.bsel.row && B.bsel.row.label) || B.bsel.opts.placeholder || '') : '';
@@ -715,10 +717,11 @@ const openedJob = async function (bundle) {
   return { said: said, asked: asked };
 };
 const G = { goneOne: null };
-test.run('a job naming a bundle asks the node for it with an auth.bundle get by its id', 0.2, async function () {
+// goal/G49.21: auth.bundle {op: 'get'} is spirit.bundle.get {id}, no op argument.
+test.run('a job naming a bundle asks the node for it with a spirit.bundle.get by its id', 0.2, async function () {
   if (!E.agentRow) return false;
   G.goneOne = await openedJob('5');
-  return G.goneOne.asked.some(function (a) { return a && a.op === 'get' && Number(a.id) === 5; }) ? true : false;
+  return G.goneOne.asked.some(function (a) { return a && a.call === 'get' && a.op === undefined && Number(a.id) === 5; }) ? true : false;
 }, test.limit.quick);
 test.run('a bundle the node no longer has is said in the detail panel, with the bundle and that the job has no grant', 0.2, function () {
   if (!G.goneOne) return false;

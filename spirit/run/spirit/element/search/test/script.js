@@ -995,17 +995,18 @@ let c7b = null;
 test.run('over the real spirit.required.spirit.data, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
   window.spirit.required.spirit.data = undefined;
   try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'spirit/data/script.js' }); } catch (e) { return false; }
-  // The auth family's grants, as a node's stream hands them (spirit/auth/data.js), the branch the Grants app's list views.
-  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } catch (e) { return false; }
+  // The node's grants, as a node's stream hands them (spirit/grant/client/script.js; goal/G49.21, once spirit/auth/data.js),
+  // the branch the Grants app's list views.
+  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' }); } catch (e) { return false; }
   const D = window.spirit.required.spirit.data;
-  const X = D && D.auth && D.auth.data;
+  const X = D && D.grant && D.grant.data;
   if (!X || typeof D.takeJob !== 'function') return false;
   const K = 'MCowBQYDK2VwAyEAsearchTestContactKey0123456789abcdefghijk=';
   const NODE = 'MCowBQYDK2VwAyEAsearchTestNodeKey0123456789abcdefghijklmn=';
-  ['desk.chat', 'jobs.list'].forEach(function (p) { D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: K, path: p, name: 'Ubu' } } }, NODE); });
+  ['desk.chat', 'jobs.list'].forEach(function (p) { D.takeJob({ id: 'spirit.grant', data: { row: { key: K, path: p, name: 'Ubu' } } }, NODE); });
   c7b = container();
   const A = source('s');
-  const L = PS.create(c7b, { search: A.search, server: 's', verb: 'v', data: X.grants.branch, columns: [{ field: 'name' }, { field: 'path' }] });
+  const L = PS.create(c7b, { search: A.search, server: 's', verb: 'v', data: X.branch, columns: [{ field: 'name' }, { field: 'path' }] });
   await tick();
   const shown = c7b.shown().length;
   L.destroy();

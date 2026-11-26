@@ -5,11 +5,11 @@
 // goal/G41.16). The browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires
 // it. The shared row element and the page's data set are real; the arming button is a stand-in that records what it was
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
-// tried, so nothing of either is the row's own: the node's auth grants as the Grants app configures them since
-// goal/G41.28 (spirit/element/search/grant/grantsPanel/script.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.required.spirit.data.auth.data.grants.branch,
+// tried, so nothing of either is the row's own: the node's grants as the Grants app configures them since
+// goal/G41.28 (spirit/element/search/grant/grantsPanel/script.js, which spirit/app/grants/element.js mounts: the branch the grant branch's client keeps, spirit.required.spirit.data.grant.data.branch,
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.required.spirit.data path
-// (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
-// page's spirit.requireScript('spirit/auth/api.js') brings it, as the Grants app asks it, the page's node known as spirit.startPage makes it
+// (node/family/branch) and its watch that branch's. The grant branch's client is loaded as a
+// page's spirit.requireScript('spirit/grant/script.js') brings it (goal/G49.21; once the auth family's data.js), as the Grants app asks it, the page's node known as spirit.startPage makes it
 // known (spirit.nodeFacts.key, then data.homeNode).
 
 const fs = require('fs');
@@ -45,16 +45,16 @@ function grantsTable(o) {
   Object.defineProperty(t, 'branch', Object.getOwnPropertyDescriptor(o, 'branch'));
   return t;
 }
-// As spirit/element/search/grant/grantsPanel/script.js, in the Grants app, configures the node's grants (goal/G41.28): the auth family's branch and its watch.
-const NODE = grantsTable({ get branch() { return ((global.window.spirit.required.spirit.data || {}).auth || {}).data ? global.window.spirit.required.spirit.data.auth.data.grants.branch : ''; }, key: 'key', label: 'label',
-  watch: function (fn) { return global.window.spirit.required.spirit.data.auth.data.grants.watch(fn); } });
+// As spirit/element/search/grant/grantsPanel/script.js, in the Grants app, configures the node's grants (goal/G41.28): the grant branch's client's branch and its watch (goal/G49.21).
+const NODE = grantsTable({ get branch() { return ((global.window.spirit.required.spirit.data || {}).grant || {}).data ? global.window.spirit.required.spirit.data.grant.data.branch : ''; }, key: 'key', label: 'label',
+  watch: function (fn) { return global.window.spirit.required.spirit.data.grant.data.watch(fn); } });
 // A second table, its branch a whole spirit.required.spirit.data path of the home node, its watch that branch's.
 const AGENT = grantsTable({ get branch() { return global.window.spirit.required.spirit.data.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
   watch: function (fn) { const v = global.window.spirit.required.spirit.data.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let SRC, required, loaded, armed, DATA, A, V, E;
-function noRow() { if (!A || !A.grants) return true; if (!E.search.grant.row || typeof E.search.grant.row.create !== 'function') return true; return false; }
+function noRow() { if (!A) return true; if (!E.search.grant.row || typeof E.search.grant.row.create !== 'function') return true; return false; }
 
 test.run('the grant row runs on a bare window, with the page\'s data set real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
@@ -79,12 +79,12 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // The auth family's data.js, run from its path as the auth interface brings it: the Grants app requires
-  // spirit/auth/api.js as it loads (spirit/element/search/grant/grantsPanel/script.js), and that api.js requires its data.js.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' });
-  A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
-  // The direct writes below are the auth family's own view of the home node, as its manager files them.
-  V = DATA.viewAt(null, 'auth');
+  // The grant branch's client, run from its path as its branch brings it (goal/G49.21): the Grants app requires
+  // spirit/grant/script.js as it loads (spirit/element/search/grant/grantsPanel/script.js), and that script requires its client.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' });
+  A = ((global.window.spirit.required.spirit.data || {}).grant || {}).data;
+  // The direct writes below are the grant client's own view of the home node, as it files them.
+  V = DATA.viewAt(null, 'grant');
   const made = {};
   global.window.spirit.requireScript = function (p) { required.push(String(p)); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
@@ -95,25 +95,25 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   return true;
 }, test.limit.quick);
 
-test.run('the auth branch\'s data is on the page, and each table names a branch of its own', 0.2, function () {
+test.run('the grant branch\'s data is on the page, and each table names a branch of its own', 0.2, function () {
   if (!DATA) return false;
-  return !!A && !!A.grants && typeof A.grants.row === 'function' && typeof NODE.branch === 'string' && NODE.branch !== '' && typeof AGENT.branch === 'string' && AGENT.branch !== '' && NODE.branch !== AGENT.branch ? true
+  return !!A && typeof A.row === 'function' && typeof NODE.branch === 'string' && NODE.branch !== '' && typeof AGENT.branch === 'string' && AGENT.branch !== '' && NODE.branch !== AGENT.branch ? true
     : false;
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26), and knows no grants table
 test.run('the grant row requires the shared row element and the arming button, and no data script', 0.2, function () {
-  if (!A || !A.grants) return false;
+  if (!A) return false;
   if (!loaded) return false;
   return ['spirit/element/row/script.js', 'spirit/element/armingButton/script.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('the grant row names no table: no auth verb, no agent grant, and no stream job of its own', 0.2, function () {
-  if (!A || !A.grants) return false;
-  const names = /auth\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC);
+  if (!A) return false;
+  const names = /auth\.|spirit\.grant\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC);
   return !names ? true : false;
 }, test.limit.quick);
 test.run('the grant row registers spirit.required.spirit.element.search.grant.row.create', 0.2, function () {
-  if (!A || !A.grants) return false;
+  if (!A) return false;
   return E.search.grant.row && typeof E.search.grant.row.create === 'function' ? true : false;
 }, test.limit.quick);
 // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "throws nothing even when unconfigured"): made with no grants
@@ -216,14 +216,14 @@ test.run('when its row in its branch changes, the grant row repaints whose grant
   live = E.search.grant.row.create({ key: 'K2', path: 'fs.search', label: 'Ann' }, { grants: NODE });
   const lh = { name: cell(), path: cell(), revoke: cell() };
   live.mount(lh);
-  V.set('grants/K2\nfs.search', { key: 'K2', path: 'fs.search', label: 'Ann, renamed' });
+  V.set('rows/K2\nfs.search', { key: 'K2', path: 'fs.search', label: 'Ann, renamed' });
   await settle();
   return live.row.label === 'Ann, renamed' && /Ann, renamed/.test(lh.name.innerHTML) ? true : false;
 }, test.limit.quick);
 test.run('another grant, or the same key in another table\'s branch, changes nothing here', 0.2, async function () {
   if (!live) return false;
   DATA.setPath(AGENT.branch + '/K2\nfs.search', { job_id: 'K2', path: 'fs.search', job: 'Other table' });
-  V.set('grants/K3\nfs.search', { key: 'K3', path: 'fs.search', label: 'Other' });
+  V.set('rows/K3\nfs.search', { key: 'K3', path: 'fs.search', label: 'Other' });
   await settle();
   return live.row.label === 'Ann, renamed' ? true : false;
 }, test.limit.quick);

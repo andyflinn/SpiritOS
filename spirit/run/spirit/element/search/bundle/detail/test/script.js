@@ -5,7 +5,8 @@
 // goal/G43.32), and of no other module (spec: ./script.md; goal/G41.14). The browser file
 // runs in node on a BARE window (rule/26): nothing is on the page until the editor requires it, but the shell's own
 // navigation, a recorder of the pages pushed. The family and branch selectors are stand-ins that keep what they
-// were handed; each is tested in its own file. The node's auth family is the spirit object's, each call recorded.
+// were handed; each is tested in its own file. The node's bundle and branch branches are the spirit object's, each call recorded
+// (goal/G49.21: the auth branch's tables are spirit.bundle and spirit.branch, spirit/bundle/script.js and spirit/branch/script.js).
 
 const fs = require('fs');
 const path = require('path');
@@ -49,7 +50,9 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   families = [];
   branchSels = [];
   forms = [];
-  const auth = { branch: function (a) { asked.push(a); return answer(a); }, bundle: function (a) { asked.push(a); return Promise.resolve({ id: a.id }); } };
+  // goal/G49.21: one verb per operation, no op argument; each call recorded with its table and its verb as call.
+  const branchBranch = { add: function (a) { asked.push(Object.assign({ table: 'branch', call: 'add' }, a)); return answer(a); }, delete: function (a) { asked.push(Object.assign({ table: 'branch', call: 'delete' }, a)); return answer(a); } };
+  const bundleBranch = { add: function (a) { asked.push(Object.assign({ table: 'bundle', call: 'add' }, a)); return Promise.resolve({ id: a.id }); }, delete: function (a) { asked.push(Object.assign({ table: 'bundle', call: 'delete' }, a)); return Promise.resolve({ id: a.id }); } };
   armed = [];
   bundleWatches = [];
   // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
@@ -68,7 +71,8 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
     'spirit/element/armingButton/script.js': function () { return { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api/script.js': function () { return { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
-    'spirit/auth/api.js': function () { return auth; },
+    'spirit/bundle/script.js': function () { return bundleBranch; },
+    'spirit/branch/script.js': function () { return branchBranch; },
     'spirit/element/search/branch/script.js': function () { return { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
@@ -79,8 +83,11 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   // goal/G43.32: spirit.required is a plain place, no getter: the branch editor, now strict, sets spirit.required itself.
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  ((global.window.spirit.required.spirit.data = global.window.spirit.required.spirit.data || {}).auth = {}).data = { bundles: { watch: function (fn) { bundleWatches.push(fn); return function () {}; } }, branches: { watch: function () { return function () {}; } } };
-  // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
+  // goal/G49.21: the bundles and the branches are each their own branch's data, spirit.required.spirit.data.bundle and .branch.
+  const DATA_HERE = (global.window.spirit.required.spirit.data = global.window.spirit.required.spirit.data || {});
+  (DATA_HERE.bundle = {}).data = { watch: function (fn) { bundleWatches.push(fn); return function () {}; } };
+  (DATA_HERE.branch = {}).data = { watch: function () { return function () {}; } };
+  // The bundle and branch branches are answered by their script.js paths (goal/G49.6: never by a name).
   const made = {};
   // As the loader places what it loaded, at the path's place: the detail still reads its parts there (cw's half of the sweep).
   const placeAsLoader = function (p, v) {
@@ -161,14 +168,15 @@ test.run('Add with no BRANCH asks nothing', 0.2, async function () {
   return asked.length === 0 ? true : false;
 }, test.limit.quick);
 let r0;
-test.run('Add with the verb left at All Verbs asks auth.branch to add the branch to the bundle with an empty verb', 0.2, async function () {
+// goal/G49.21: auth.branch {op: 'add'} is spirit.branch.add, no op argument.
+test.run('Add with the verb left at All Verbs asks spirit.branch.add to add the branch to the bundle with an empty verb', 0.2, async function () {
   if (!fam || !add) return false;
   fam.family = 'desk'; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
   r0 = bs.refreshed;
   add.dispatchEvent({ type: 'click' });
   await settle();
-  return asked.length === 1 && asked[0].op === 'add' && asked[0].bundle === 7 && asked[0].family === 'desk' && asked[0].verb === '' ? true : false;
+  return asked.length === 1 && asked[0].table === 'branch' && asked[0].call === 'add' && asked[0].op === undefined && asked[0].bundle === 7 && asked[0].family === 'desk' && asked[0].verb === '' ? true : false;
 }, test.limit.quick);
 test.run('an answered add makes the list search again', 0.2, function () {
   if (!fam || !add) return false;
@@ -209,10 +217,11 @@ test.run('its Delete is an armingButton', 0.2, function () {
   del = armed.filter(function (a) { return dr && a.button === dr.button; })[0];
   return !!del && typeof del.o.run === 'function' ? true : false;
 }, test.limit.quick);
-test.run('the second press on Delete asks auth.bundle to delete the bundle by its id', 0.2, async function () {
+// goal/G49.21: auth.bundle {op: 'delete'} is spirit.bundle.delete {id}, no op argument.
+test.run('the second press on Delete asks spirit.bundle.delete for the bundle by its id', 0.2, async function () {
   if (!box) return false;
   if (del) { await del.o.run(); await settle(); }
-  return asked.filter(function (a) { return a.op === 'delete' && a.id === 7; }).length === 1 ? true : false;
+  return asked.filter(function (a) { return a.table === 'bundle' && a.call === 'delete' && a.op === undefined && a.id === 7; }).length === 1 ? true : false;
 }, test.limit.quick);
 test.run('the editor waits to hear the deletion, so the delete\'s answer closes nothing', 0.2, function () {
   if (!box) return false;

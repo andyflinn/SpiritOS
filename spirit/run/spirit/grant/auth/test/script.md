@@ -9,11 +9,13 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
 
 ## Requirements
 
-- `spirit/auth/api.js` declares, flat as the agent tables' verbs (*"op add, set, delete, get and search"*):
-  - `bundle { op, id, label, text, owner }`, `id` a number;
-  - `branch { op, id, bundle, family, verb, text }`, `id` and `bundle` numbers.
-- `spirit/auth/bundle.json` and `spirit/auth/branch.json` describe each verb and its request; `bundle.json` names the
-  owner.
+- goal/G49.21: the two tables are branches of their own, `spirit.bundle` and `spirit.branch`, each with search, get, add
+  and delete, one verb per op of old:
+  - `spirit/bundle/script.js`: `search { text?, owner? }`, `get { id }`, `add { label, owner? }`, `delete { id }`, `id` a number;
+  - `spirit/branch/script.js`: `search { text?, bundle?, family?, verb? }`, `get { id }`, `add { bundle, family, verb? }`,
+    `delete { id }`, `id` and `bundle` numbers.
+- Each `spirit/<table>/<verb>.json` describes its verb and its request; the bundle's `add.json` names the owner, and the
+  bundle branch has no set verb.
 - `createApiAuth` answers `bundle(a)` and `branch(a)` beside grant and revoke.
 - The node keeps two tables in `node.db`, and makes the old `bundles` and `bundle_paths` no more. What they held is lost
   (Andy: *"any bundle lost during these changed are LOST. OOS."*).

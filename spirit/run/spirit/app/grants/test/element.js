@@ -136,7 +136,8 @@ test.run('it requires nothing else', 0.2, function () {
 // (GR_GRANTS). It moves into grantsPanel."
 test.run('it asks nothing itself: no verb, no api, no auth verb, no cache of its own', 0.2, function () {
   if (!SRC) return false;
-  return !/\.verb\s*\(|\bapi\b|\bauth\.|\bdata\.js\b|\bspirit\.data\b|\boutcome\b|\bfetch\s*\(/.test(CODE) || false;
+  // goal/G49.21: the auth verbs are the branches spirit.grant, spirit.bundle and spirit.branch.
+  return !/\.verb\s*\(|\bapi\b|\bauth\.|\bspirit\.(grant|bundle|branch)\.|\bdata\.js\b|\bspirit\.data\b|\boutcome\b|\bfetch\s*\(/.test(CODE) || false;
 }, test.limit.quick);
 test.run('it draws nothing itself: no markup, no list, no selector of its own', 0.2, function () {
   if (!SRC) return false;
@@ -300,18 +301,19 @@ test.run('a Chrome page opens for the bundle lines', 0.2, async function () {
 }, test.limit.quick);
 test.run('three bundles of the node\'s are added', 0.2, async function () {
   if (!B.up) return false;
-  B.one = await home('auth.bundle', { op: 'add', label: 'zzOne' });
-  B.two = await home('auth.bundle', { op: 'add', label: 'zzTwo' });
-  B.three = await home('auth.bundle', { op: 'add', label: 'zzThree' });
+  // goal/G49.21: auth.bundle {op} is spirit.bundle.<op>, auth.branch {op} spirit.branch.<op>.
+  B.one = await home('spirit.bundle.add', { label: 'zzOne' });
+  B.two = await home('spirit.bundle.add', { label: 'zzTwo' });
+  B.three = await home('spirit.bundle.add', { label: 'zzThree' });
   return B.one.status === 200 && B.two.status === 200 && B.three.status === 200 ? true : false;
 }, test.limit.quick);
-// A SERVER'S BUNDLE, PLANTED (goal/G47.1, the top reds cycle): nothing makes one any more (auth.bundle adds node-owned
+// A SERVER'S BUNDLE, PLANTED (goal/G47.1, the top reds cycle): nothing makes one any more (spirit.bundle.add adds node-owned
 // bundles alone since goal/G41.32, and the bundle sync went with goal/G43.20), so a fresh node has none; one stands only
 // in a node.db made before. Planted so, a row owned by desk with one branch, written into the scratch node's node.db,
-// which every auth.bundle read reads.
+// which every spirit.bundle read reads.
 test.run('a server\'s bundle is planted in the node\'s database', 0.2, async function () {
   if (!B.up) return false;
-  await home('auth.branch', { op: 'add', bundle: B.one && B.one.body && B.one.body.id, family: 'node', verb: 'card' });
+  await home('spirit.branch.add', { bundle: B.one && B.one.body && B.one.body.id, family: 'node', verb: 'card' });
   try {
     const db = new (require('node:sqlite').DatabaseSync)(path.join(B.s.run, 'spirit', 'state', 'node.db'));
     db.exec('PRAGMA busy_timeout = 5000');
@@ -319,7 +321,7 @@ test.run('a server\'s bundle is planted in the node\'s database', 0.2, async fun
     db.prepare("INSERT INTO branch (bundle, family, verb) VALUES (?, 'desk', 'item.get')").run(Number(made.lastInsertRowid));
     db.close();
   } catch (e) { return false; }
-  const all = await home('auth.bundle', { op: 'search', text: '' });
+  const all = await home('spirit.bundle.search', { text: '' });
   const rows = ((all.body && all.body.items) || []).map(function (i) { return parsed(i.label) || {}; });
   B.serverBundle = rows.filter(function (r) { return r.owner && r.owner !== 'node'; })[0];
   return !!B.serverBundle || false;
@@ -429,7 +431,7 @@ test.run('the close button takes the zzOne tab away', 0.2, async function () {
 }, test.limit.quick);
 test.run('the zzOne bundle is still there after its tab closes', 0.2, async function () {
   if (!B.one || !B.one.body) return false;
-  return (await home('auth.bundle', { op: 'get', id: B.one.body.id })).status === 200 || false;
+  return (await home('spirit.bundle.get', { id: B.one.body.id })).status === 200 || false;
 }, test.limit.quick);
 
 // goal/G41.32: the Delete row deletes, by the arming button, and the tab closes
@@ -443,13 +445,13 @@ test.run('one press of the Delete row only arms it, and the bundle stays', 0.2, 
   B.hadTwo = (await tabNamed('zzTwo')).length === 1;
   const pressedOnce = await B.chrome.evaluate('(function () { var f = ' + DELBTN + '; var b = f && f.querySelector("button"); if (!b) return false; b.click(); return true; }())');
   await H.sleep(500);
-  return pressedOnce === true && (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status === 200 ? true : false;
+  return pressedOnce === true && (await home('spirit.bundle.get', { id: B.two.body.id })).status === 200 ? true : false;
 }, test.limit.quick);
 test.run('the second press of the Delete row deletes the bundle', 0.2, async function () {
   if (!B.tile || !B.two || !B.two.body) return false;
   await B.chrome.evaluate('(function () { var f = ' + DELBTN + '; var b = f && f.querySelector("button"); if (b) b.click(); }())');
-  await waitFor(function () { return home('auth.bundle', { op: 'get', id: B.two.body.id }).then(function (a) { return a.status !== 200; }); });
-  return (await home('auth.bundle', { op: 'get', id: B.two.body.id })).status !== 200 || false;
+  await waitFor(function () { return home('spirit.bundle.get', { id: B.two.body.id }).then(function (a) { return a.status !== 200; }); });
+  return (await home('spirit.bundle.get', { id: B.two.body.id })).status !== 200 || false;
 }, test.limit.quick);
 test.run('the deleted bundle\'s tab closes', 0.2, async function () {
   if (!B.tile) return false;
@@ -469,7 +471,7 @@ test.run('zzThree has its tab', 0.2, async function () {
 }, test.limit.quick);
 test.run('a bundle deleted at the door has its tab close by itself', 0.2, async function () {
   if (!B.tile || !B.three || !B.three.body) return false;
-  await home('auth.bundle', { op: 'delete', id: B.three.body.id });
+  await home('spirit.bundle.delete', { id: B.three.body.id });
   await waitFor(function () { return tabNamed('zzThree').then(function (t) { return t.length === 0; }); });
   return B.hadThree && (await tabNamed('zzThree')).length === 0 ? true : false;
 }, test.limit.quick);
@@ -505,7 +507,7 @@ test.run('a server\'s bundle has its branches there to read, under its label', 0
 }, test.limit.quick);
 test.run('the node refuses the delete of a server\'s bundle at the door, with a code', 0.8, async function () {
   if (!B.serverBundle) return false;
-  const refused = await home('auth.bundle', { op: 'delete', id: B.serverBundle.id });
+  const refused = await home('spirit.bundle.delete', { id: B.serverBundle.id });
   return refused.status >= 400 && refused.status < 500 && !!(refused.body && refused.body.code) ? true : false;
 }, test.limit.quick);
 
@@ -644,7 +646,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   }, test.limit.quick);
   test.run('it calls no verb of its own', 0.2, function () {
     if (!R.c0) return false;
-    const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/]
+    const verbs = [/\.verb\s*\(/, /\bspirit\.outcome\b/, /\bcallDialog\b/, /\bfetch\s*\(/, /\brelay\W{1,4}status\b/, /\bnode\W{1,4}card\b/, /\bauth\W{1,4}(search|grant|revoke)\b/, /\bspirit\W{1,4}grant\W{1,4}(search|add|delete)\b/]
       .filter(function (re) { return re.test(R.c0); });
     return !verbs.length || false;
   }, test.limit.quick);

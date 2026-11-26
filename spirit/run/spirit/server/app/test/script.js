@@ -128,9 +128,10 @@ delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data', 'script.js
 const fake = {
   requireScript: function (p, key) {
     const q = String(p);
-    if (/spirit\/auth\/api\.js$/.test(q)) {
+    // goal/G49.21: the grant table is the spirit.grant branch, auth.grant its add and auth.search its search.
+    if (/spirit\/grant\/script\.js$/.test(q)) {
       return Promise.resolve({
-        grant: function (a) { asked.push({ verb: 'auth.grant', args: a }); return Promise.resolve({ ok: true }); },
+        add: function (a) { asked.push({ verb: 'spirit.grant.add', args: a }); return Promise.resolve({ ok: true }); },
         search: function () { return Promise.resolve({ items: [], more: false }); },
       });
     }
@@ -827,7 +828,7 @@ function ownPart() {
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
     const first = await O.s.subscribe(PUBLISHER, ID);
     await tick(300);
-    return (first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }))
+    return (first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'spirit.grant.add'; }))
       || false;
   }, test.limit.quick);
   test.run('the bootstrap lands in the cache with both items', 0.2, function () {

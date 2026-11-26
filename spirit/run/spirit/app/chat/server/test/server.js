@@ -117,13 +117,14 @@ test.run('the next line is seq 2', 0.2, async function () {
 }, test.limit.quick);
 test.run('the line is also the grant to answer, so K may call spirit.app.chat.line.receive', 0.2, async function () {
   if (!X.K) return false;
-  const grant = await X.call('auth.query', { key: X.K, path: ID + '.line.receive' });
+  // goal/G49.21: auth.query is spirit.grant.get.
+  const grant = await X.call('spirit.grant.get', { key: X.K, path: ID + '.line.receive' });
   return grant.status === 200 && !!grant.body && grant.body.allowed === true ? true : false;
 }, test.limit.quick);
 // A grant under the old name would let K reach what nobody granted it.
 test.run('K may never call chatClerver.line.receive', 0.8, async function () {
   if (!X.K) return false;
-  const oldGrant = await X.call('auth.query', { key: X.K, path: 'chatClerver.line.receive' });
+  const oldGrant = await X.call('spirit.grant.get', { key: X.K, path: 'chatClerver.line.receive' });
   return oldGrant.status === 200 && !!oldGrant.body && oldGrant.body.allowed === false ? true : false;
 }, test.limit.quick);
 
