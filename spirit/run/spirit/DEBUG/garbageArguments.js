@@ -128,10 +128,13 @@ function make(o) {
     // A RELAY'S ONE GROUP, AS ITS TREE NAMES IT (goal/G49.12): its module is spirit/relay/processor since the flag day, and
     // its tree still calls its one group relay; a node's server is named by its module's last part, as before.
     const groups = tree && typeof tree === 'object' ? Object.keys(tree) : [];
-    // An app is in the tree by its id, its module's folder in dots, spirit.app.testicle (goal/G49.19); a trunk branch of the old
+    // An app is in the tree by its id, its folder in dots, spirit.app.testicle (goal/G49.19): the longest of the module's
+    // folders the tree names (its module spirit/app/testicle/testicle is no id itself; wsl's find); a trunk branch of the old
     // shape by its last word, until its own turn.
-    const id = spirit.dottedPath(o.module);
-    const family = o.server.kind === 'relay' && groups.length === 1 ? groups[0] : (tree && tree[id] ? id : named);
+    const parts = String(o.module).split('/');
+    let id = '';
+    for (let n = parts.length; n > 0 && !id; n--) { const d = spirit.dottedPath(parts.slice(0, n).join('/')); if (tree && tree[d]) id = d; }
+    const family = o.server.kind === 'relay' && groups.length === 1 ? groups[0] : (id || named);
     const verbs = tree && tree[family] && typeof tree[family] === 'object' ? tree[family] : null;
     if (!verbs || !Object.keys(verbs).length) return null;
     const list = [];

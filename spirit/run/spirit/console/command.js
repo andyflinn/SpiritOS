@@ -102,11 +102,13 @@ function apiFile(p) { return spirit.slashedPath('spirit.' + p) + '/api.js'; }
 function apiAt(p) {
   if (!p) return Promise.resolve(null);
   const file = apiFile(p);
+  // The load is waited on and its failure caught: with no node it rejects, and is then no branch here (wsl, on goal/G49.19).
   return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: file }); }).then(function () {
-    spirit.requireScript(file);
+    return spirit.requireScript(file);
+  }).then(function () {
     const at = file.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, spirit.required);
     return at && at.verbs && typeof at.verbs === 'object' ? at : null;
-  }, function () { return null; });
+  }).then(null, function () { return null; });
 }
 // EVERY SERVER'S AUTO-VERBS (wsl, on goal/G48.8: "the console lists only api.js verbs, so the auto-verb remote cannot be
 // called from it"): remote and DEBUG, which spirit.js binds by hand on every branch and no api.js lists (spirit/server/app/script.js
