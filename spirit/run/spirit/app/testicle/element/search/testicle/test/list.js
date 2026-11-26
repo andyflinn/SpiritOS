@@ -57,6 +57,7 @@ function scratch() {
     .forEach(function (f) { fs.writeFileSync(path.join(root, f), '\'use strict\';\n// a stub in this scratch tree: it judges nothing\n'); });
   return { root: root, run: run, gen: gen };
 }
+// A verb is called by the app's id (goal/G49.19): spirit.app.testicle.<verb>, never testicle.<verb>.
 async function call(base, verb, args) {
   try {
     const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });

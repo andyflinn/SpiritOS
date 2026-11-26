@@ -59,6 +59,7 @@ function scratch() {
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: run };
 }
+// A verb is called by the app's id (goal/G49.19): spirit.app.testicle.<verb>, never testicle.<verb>.
 async function call(base, verb, args) {
   try {
     const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });

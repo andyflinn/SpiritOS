@@ -24,6 +24,7 @@ const W = {};
 const OK = 'spirit/zzBox/zzOk.js', OKS = 'spirit/zzBox/test/zzOk.js', BAD = 'spirit/zzBox/zzBad.js', BADS = 'spirit/zzBox/test/zzBad.js';
 const SUITE_HEAD = "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n";
 const ev = function (expr) { return W.page.evaluate(expr).catch(function () { return null; }); };
+// A verb is called by the app's id (goal/G49.19): spirit.app.testicle.<verb>, never testicle.<verb>.
 const ask = function (verb, args) {
   return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) })
     .then(function (r) { return r.json(); }, function () { return null; });

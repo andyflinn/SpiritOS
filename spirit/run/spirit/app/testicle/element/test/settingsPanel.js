@@ -14,6 +14,7 @@ const REL = 'spirit/app/testicle/element/settingsPanel.js';
 
 const W = {};
 const ev = function (expr) { return W.page.evaluate(expr).catch(function () { return {}; }); };
+// A verb is called by the app's id (goal/G49.19): spirit.app.testicle.<verb>, never testicle.<verb>.
 const ask = function (verb, args) {
   return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) })
     .then(function (r) { return r.json(); }, function () { return null; });
