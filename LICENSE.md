@@ -1,101 +1,101 @@
 Required Notice: Copyright 2018-2026 Andy Flinn (https://andyflinn.com)
 
-# Big Time Public License
+# Natural Persons License (NPL)
 
-Version 2.0.0
+Version 2.0
 
-<https://bigtimelicense.com/versions/2.0.0>
+<https://github.com/andyflinn/SpiritOS/blob/master/LICENSE.md>
 
 ## Purpose
 
-These terms let you use and share this software for noncommercial purposes and in small business for free, while also guaranteeing that paid licenses for big businesses will be available on fair, reasonable, and nondiscriminatory terms.
+This software is made by a person, for people. Every human being may use, change, share and sell it for free. Companies and other organisations may try it, and are guaranteed the right to buy a license on fair terms, but they pay the people who made it.
+
+## Definitions
+
+**The licensor** is the person who offers this software under these terms, named in the Required Notice above.
+
+**The software** is the software the licensor makes available under these terms, including any part of it, in source or any other form.
+
+**You** means the person or organisation that receives the software and agrees to these terms.
+
+**A natural person** is an individual human being (*Homo sapiens*), acting for themselves. A sole trader acting under their own name is a natural person, also when they employ others.
+
+**A legal person** is anything else that can hold rights or make contracts: corporations, limited liability companies (LLC, GmbH, Sàrl, AG, SA and the like), partnerships with legal personality, foundations, associations, cooperatives, trusts, public bodies and governments, and any organisation controlled by one of them.
+
+**Acting on behalf.** A natural person who uses the software as an employee, officer, contractor or agent of a legal person, or for its benefit, does so as that legal person. That use is the legal person's use.
+
+**Non-persons.** Software agents, AI systems and other things that are neither natural nor legal persons get no rights under these terms. When one of them uses the software, the person who runs it, or on whose behalf it acts, is the one using the software.
+
+**Use** includes running, copying, changing, distributing and selling the software, and making it available to others over a network.
 
 ## Acceptance
 
-In order to get any license under these terms, you must agree to them as both strict obligations and conditions to all your licenses.
+You may only use the software under these terms if you agree to them. Each of them is both an obligation and a condition of every right these terms give you. If you do not agree, you have no license.
 
-## Noncommercial Purposes
+## Natural Persons
 
-You may use the software for any noncommercial purpose.
+If you are a natural person acting for yourself, the licensor grants you, free of charge, a copyright license to use the software for any purpose, including commercial purposes, and to sell copies of it, as long as you follow the Notices and Changes sections.
 
-## Personal Uses
+Selling a copy to a legal person does not give that legal person a license. It still needs its own license under the Legal Persons section.
 
-Personal use for research, experiment, and testing for the benefit of public knowledge, personal study, private entertainment, hobby projects, amateur pursuits, or religious observance, without any anticipated commercial application, count as use for noncommercial purposes.
+## Legal Persons
 
-## Noncommercial Organizations
+If you are a legal person, these terms give you two rights.
 
-Use by any charitable organization, educational institution, public research organization, public safety or health organization, environmental protection organization, or government institution counts as use for noncommercial purposes, regardless of the source of funding or obligations resulting from the funding.
+**1. Trial.** You may use the software for 30 days from your first use, to evaluate it.
 
-## Small Business
+**2. Guaranteed commercial license.** After the trial you need a commercial license from the licensor. If you request one in writing before or during your trial, you may keep using the software while the request is open. The licensor must offer you a commercial license on fair, reasonable and nondiscriminatory terms within 30 days of your request. If the licensor does not, you may continue to use the software under these terms until the licensor makes such an offer and you have had 30 days to accept it.
 
-You may use the software for the benefit of your company if it meets all these criteria:
+**Fees.** Commercial license fees are paid to the licensor. An offer is presumed fair, reasonable and nondiscriminatory if it matches the price and terms the licensor publishes at <https://andyflinn.com>, or the terms on which an unrelated legal person has bought a comparable license within the past year.
 
-1.  had fewer than 20 total individuals working as employees and independent contractors at all times during the last tax year
-
-2.  earned less than 1,000,000 USD (2019) total revenue in the last tax year
-
-3.  received less than 1,000,000 USD (2019) total debt, equity, and other investment in the last five tax years, counting investment in predecessor companies that reorganized into, merged with, or spun out your company
-
-Adjust these dollar figures for inflation according to the United States Bureau of Labor Statistics' consumer price index for all urban consumers, United States city average, for all items, not seasonally adjusted, with 1982–1984=100 reference base.
-
-## Big Business
-
-You may use the software for the benefit of your company:
-
-1.  for 128 days after your company stops qualifying under [Small Business](#small-business)
-
-2.  indefinitely, if the licensor or their legal successor does not offer fair, reasonable, and nondiscriminatory terms for a commercial license for the software within 32 days of [written request](#how-to-request) and negotiate in good faith to conclude a deal
-
-## How to Request
-
-If this software includes an address for the licensor or an agent of the licensor in a standard place, such as in documentation, software package metadata, or an "about" page or screen, try to request a fair commercial license at that address.  If this package includes both online and offline addresses, try online before offline.  If you can't deliver a request that way, or this software doesn't include any addressees, spend one hour online researching an address, recording all your searches and inquiries as you go, and try any addresses that you find.  If you can't find any addresses, or if those addresses also fail, that counts as failure to offer a fair commercial license by the licensor under [Big Business](#big-business).
-
-## Fair, Reasonable, and Nondiscriminatory Terms
-
-Fair, reasonable, and nondiscriminatory terms may license the software perpetually or for a term, and may or may not cover new versions of the software.  If the licensor advertises license terms and a pricing structure for generally available commercial licenses, the licensor proposes license terms and a price as advertised, and a customer not affiliated with the licensor has bought a commercial commercial license for the software on substantially equivalent terms in the past year, the proposal is fair, reasonable, and nondiscriminatory.
-
-## Copyright License
-
-The licensor grants you a copyright license to do everything with the software that would otherwise infringe the licensor's copyright in it for any purpose allowed by these terms.
+**How to request.** Send your request to the contact address the licensor gives in the software's documentation, package metadata or website, or to the address in the Required Notice above.
 
 ## Notices
 
-You must ensure that anyone who gets a copy of any part of the software from you also gets a copy of these terms or the URL for them above, as well as copies of any plain-text lines beginning with `Required Notice:` that the licensor provided with the software.  For example:
+Anyone who receives a copy of any part of the software from you must also receive these terms, or the address of these terms given above, and every line beginning with `Required Notice:` that came with the software.
 
-> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+## Changes
+
+You may change the software and share your changes. If you distribute a changed version, or make one available to others over a network:
+
+1. it must remain under these terms, with all Required Notices kept;
+2. you must clearly mark it as changed; and
+3. you may add your own `Required Notice:` line for your changes, but you may not remove anyone else's.
+
+Changes do not give anyone a license that these terms would not otherwise give them. A legal person still needs a commercial license, whoever made the version it uses.
 
 ## Patent License
 
-The licensor grants you a patent license for the software that covers patent claims the licensor can license, or becomes able to license, that you would infringe by using the software.
-
-## Fair Use
-
-You may have "fair use" rights for the software under the law. These terms do not limit them.
-
-## No Other Rights
-
-These terms do not allow you to sublicense or transfer any of your licenses to anyone else, or prevent the licensor from granting licenses to anyone else.  These terms do not imply any other licenses.
+The licensor grants you a license, under any patent claims the licensor can license or comes to be able to license, to do everything these terms allow you to do with the software.
 
 ## Patent Defense
 
-If you make any written claim that the software infringes or contributes to infringement of any patent, your patent license for the software granted under these terms ends immediately. If your company makes such a claim, your patent license ends immediately for work on behalf of your company.
+If you claim that the software infringes a patent, your licenses under these terms end immediately. If your organisation makes such a claim, your licenses end immediately for work on behalf of your organisation.
+
+## Fair Use
+
+You may have "fair use" rights, or other rights to use the software, that these terms do not take away.
+
+## No Other Rights
+
+These terms do not give you any rights to use the licensor's names, logos or trademarks. They do not prevent the licensor from offering the software under other terms. They do not imply any other licenses.
 
 ## Violations
 
-The first time you are notified in writing that you have violated any of these terms, or done anything with the software not covered by your licenses, your licenses can nonetheless continue if you come into full compliance with these terms, and take practical steps to correct past violations, within 32 days of receiving notice.  Otherwise, all your licenses end immediately.
+If you violate these terms, you must stop and fix the violation. If you fix it within 30 days of receiving notice of it from the licensor, and it is your first violation, you keep your licenses. Otherwise your licenses end, and you must stop using the software. A legal person that used the software beyond its trial without a commercial license owes the licensor the fee for that use.
+
+## Third-Party Components
+
+Parts of the software written by others may come under their own licenses, kept in or next to those parts. These terms do not change those licenses.
 
 ## No Liability
 
 ***As far as the law allows, the software comes as is, without any warranty or condition, and the licensor will not be liable to you for any damages arising out of these terms or the use or nature of the software, under any kind of legal claim.***
 
-## Definitions
+## Governing Law
 
-The **licensor** is the individual or entity offering these terms, and the **software** is the software the licensor makes available under these terms.
+These terms are governed by Swiss law. The courts at the licensor's place of residence have jurisdiction, unless mandatory law says otherwise.
 
-**You** refers to the individual or entity agreeing to these terms.
+## Severability
 
-**Your company** is any legal entity, sole proprietorship, or other kind of organization that you work for, plus all organizations that have control over, are under the control of, or are under common control with that organization.  **Control** means ownership of substantially all the assets of an entity, or the power to direct its management and policies by vote, contract, or otherwise.  Control can be direct or indirect.
-
-**Your licenses** are all the licenses granted to you for the software under these terms.
-
-**Use** means anything you do with the software requiring one of your licenses.
+If any part of these terms is found invalid, the rest remains in force, and the invalid part is replaced by the valid rule that comes closest to its purpose.
