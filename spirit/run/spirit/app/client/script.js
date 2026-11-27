@@ -21,14 +21,14 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('app', function () {
-    var HOME = D.viewAt(null, 'app');
+  D.handOut(OUT, D.makeFamily('spirit.app', function () {
+    var HOME = D.viewAt(null, 'spirit.app');
     D.addTranslator({
       onJob: function (job) {
         // THE APP LIST, news of spirit.app (goal/G43.20): { apps }.
         var all = job && job.id === 'spirit.app' && job.data ? job.data.apps : null;
         if (!all || typeof all !== 'object') return;
-        var V = D.viewAt(job.fromNode || null, 'app');
+        var V = D.viewAt(job.fromNode || null, 'spirit.app');
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });
         // Every field the node's row carries (spirit/app/manager/script.js rowOf), run and runOnly among them (goal/G43.21: a node:run app
         // is listed in pane mode only, and shows Run, not Activate).

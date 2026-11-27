@@ -75,8 +75,9 @@
   function familyOf(name) {
     var n = String(name);
     if (!families[n]) {
+      // KEPT HERE ALONE (goal/G49.23, box v22 Part 1: "no table of names keeps them, so none can clash"): a family's rows are its
+      // client's, at the client's path; the store hands none out by name. Its name is its branch's path, so none can clash.
       families[n] = { name: n, data: null, cache: Object.create(null) };
-      if (!(n in api)) api[n] = families[n];
     }
     return families[n];
   }

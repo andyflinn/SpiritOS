@@ -29,10 +29,10 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('node', function () {
-    var HOME = D.viewAt(null, 'node');
+  D.handOut(OUT, D.makeFamily('spirit.node', function () {
+    var HOME = D.viewAt(null, 'spirit.node');
     var parties = {};
-    function viewOf(party) { var p = String(party || ''); return !p ? HOME : (parties[p] || (parties[p] = D.viewAt(p, 'node'))); }
+    function viewOf(party) { var p = String(party || ''); return !p ? HOME : (parties[p] || (parties[p] = D.viewAt(p, 'spirit.node'))); }
     // THE READS AND THE ONE WRITE:
     //   keepTree(tree, index, party)   the api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name)),
     //                                  party '' for this node's own, else the peer's key or relay's address that answered it

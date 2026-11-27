@@ -28,13 +28,13 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('fs', function () {
+  D.handOut(OUT, D.makeFamily('spirit.fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
-    var HOME = D.viewAt(null, 'fs');
+    var HOME = D.viewAt(null, 'spirit.fs');
     D.addTranslator({
       onJob: function (job) {
         if (!job || job.id !== 'spirit.fs' || !job.data) return;
-        var V = D.viewAt(job.fromNode || null, 'fs');
+        var V = D.viewAt(job.fromNode || null, 'spirit.fs');
         if (job.data.treeComplete) { V.ready(FILES, true); return; }
         var cmd = job.data.command;
         if (!cmd || !cmd.path) return;

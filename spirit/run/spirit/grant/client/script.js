@@ -21,13 +21,13 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1): on a page that has not loaded it yet, this file loads it and
   // runs again.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('grant', function () {
-    var HOME = D.viewAt(null, 'grant');
+  D.handOut(OUT, D.makeFamily('spirit.grant', function () {
+    var HOME = D.viewAt(null, 'spirit.grant');
     D.addTranslator({
       onJob: function (job) {
         var d = job && job.id === 'spirit.grant' ? job.data : null;
         if (!d || !d.row || !d.row.key || !d.row.path) return;
-        var V = D.viewAt(job.fromNode || null, 'grant');
+        var V = D.viewAt(job.fromNode || null, 'spirit.grant');
         var g = ROWS + '/' + grantKey(d.row.key, d.row.path);
         if (d.gone === true) V.del(g);
         else V.set(g, Object.assign({}, d.row));

@@ -16,13 +16,13 @@
   // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
   // again with it once it has loaded.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('branch', function () {
-    var HOME = D.viewAt(null, 'branch');
+  D.handOut(OUT, D.makeFamily('spirit.branch', function () {
+    var HOME = D.viewAt(null, 'spirit.branch');
     D.addTranslator({
       onJob: function (job) {
         var d = job && job.id === 'spirit.branch' ? job.data : null;
         if (!d || !d.row || d.row.id == null) return;
-        var V = D.viewAt(job.fromNode || null, 'branch');
+        var V = D.viewAt(job.fromNode || null, 'spirit.branch');
         var r = d.row;
         var p = ROWS + '/' + Number(r.id);
         if (d.gone === true) V.del(p);

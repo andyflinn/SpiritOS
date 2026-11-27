@@ -33,12 +33,12 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('job', function () {
-    var HOME = D.viewAt(null, 'job');
+  D.handOut(OUT, D.makeFamily('spirit.job', function () {
+    var HOME = D.viewAt(null, 'spirit.job');
     D.addTranslator({
       onJob: function (job) {
         if (!job || !job.id) return;
-        var V = D.viewAt(job.fromNode || null, 'job');
+        var V = D.viewAt(job.fromNode || null, 'spirit.job');
         var id = String(job.id);
         var row = Object.assign({}, job);
         delete row.fromNode;
@@ -59,7 +59,7 @@
       },
       onDelete: function (gone) {
         if (!gone || !gone.id) return;
-        var V = D.viewAt(gone.fromNode || null, 'job');
+        var V = D.viewAt(gone.fromNode || null, 'spirit.job');
         V.del(EVENTS + '/' + String(gone.id));
         V.del(JOBS + '/' + String(gone.id));
       },

@@ -26,13 +26,13 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
-  D.handOut(OUT, D.makeFamily('contact', function () {
-    var HOME = D.viewAt(null, 'contact');
+  D.handOut(OUT, D.makeFamily('spirit.contact', function () {
+    var HOME = D.viewAt(null, 'spirit.contact');
     var told = Object.create(null);   // keys the presence table has spoken of, by node
     D.addTranslator({
       onJob: function (job) {
         if (!job || !job.data) return;
-        var V = D.viewAt(job.fromNode || null, 'contact');
+        var V = D.viewAt(job.fromNode || null, 'spirit.contact');
         // THE ONE CONTACT JOB, spirit.contact (goal/G43.20, Q1): presence, a search hit or a row, each event only its own.
         if (job.id !== 'spirit.contact') return;
         if (job.data.presence) {
@@ -61,7 +61,7 @@
           else V.merge(CONTACTS + '/' + r.publicKey, r);
         }
       },
-      onRename: function (d) { D.viewAt(d && d.fromNode || null, 'contact').merge(CONTACTS + '/' + d.key, { name: String(d.caption || '') }); },
+      onRename: function (d) { D.viewAt(d && d.fromNode || null, 'spirit.contact').merge(CONTACTS + '/' + d.key, { name: String(d.caption || '') }); },
     });
     // THE READS, ANSWERED HERE:
     //   contact(key)   a contact's row, or null;  contacts()  every contact kept, key -> row
