@@ -75,15 +75,17 @@ function rule0() {
   test.run('the job branch, spirit/job/, holds api.js and data.js', 0.4, function () {
     return (isFile('spirit/job/script.js') && isFile('spirit/job/client/script.js')) ? true : false;
   }, test.limit.quick);
-  test.run('the event branch, spirit/event/, holds api.js and data.js', 0.4, function () {
-    return (isFile('spirit/event/api.js') && isFile('spirit/event/data.js')) ? true : false;
+  // The event branch's verbs are the spirit branch's since goal/G49.23 (box v22 Part 2), spirit/event/ gone: they stand in
+  // spirit/script.js (spirit.verbs), each verb's file spirit/<verb>.json.
+  test.run('the event branch\'s verbs stand in the spirit branch: spirit/script.js, spirit/subscribe.json and spirit/publish.json', 0.4, function () {
+    return (isFile('spirit/script.js') && isFile('spirit/subscribe.json') && isFile('spirit/publish.json')) ? true : false;
   }, test.limit.quick);
   test.run('the job branch\'s face is spirit/app/job/', 0.4, function () { return isFile('spirit/app/job/job.json') ? true : false; }, test.limit.quick);
   test.run('spirit/job/script.js holds the verbs search, get, create, cancel and delete, their words unchanged', 0.4, function () {
     return verbsOf('spirit/job/script.js', ['search', 'get', 'create', 'cancel', 'delete']);
   }, test.limit.quick);
-  test.run('spirit/event/api.js holds the verbs subscribe and publish, their words unchanged', 0.4, function () {
-    return verbsOf('spirit/event/api.js', ['subscribe', 'publish']);
+  test.run('spirit/script.js holds the verbs subscribe and publish, their words unchanged, beside the node branch\'s card, debug, setName, setDescription and rotateCipher', 0.4, function () {
+    return verbsOf('spirit/script.js', ['card', 'debug', 'setName', 'setDescription', 'rotateCipher', 'publish', 'subscribe']);
   }, test.limit.quick);
   // A call by its old name: 'jobs.<verb>' or 'events.<verb>' in a string, or spirit.jobs / spirit.events, in any product file.
   // (A constant: its quote characters inside a test's body would be read as strings by the title rule's parser.)

@@ -357,11 +357,11 @@ async function home(base, verb, args) {
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }
-// The node's own stream, as a page reads it: every event, kept.
+// The node's own stream, as a page reads it: every event, kept (goal/G49.23 Part 2: event.subscribe is spirit.subscribe).
 function stream(base) {
   const kept = [];
   const c = new AbortController();
-  const done = fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json', 'x-spirit-reader': 'server' }, body: JSON.stringify({ call: 'event.subscribe', args: {} }), signal: c.signal }).then(async function (r) {
+  const done = fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json', 'x-spirit-reader': 'server' }, body: JSON.stringify({ call: 'spirit.subscribe', args: {} }), signal: c.signal }).then(async function (r) {
     let held = '';
     const dec = new TextDecoder();
     for await (const chunk of r.body) {
@@ -965,7 +965,7 @@ test.run('the relay mails a join code', 0.2, async function () {
   S.N = await scratchNode();
   S.R = await scratchFaceRelay({ members: [] });
   if (!S.N.up || !S.R.up) return false;
-  S.me = (await home(S.N.base, 'node.card')).body.publicKey;
+  S.me = (await home(S.N.base, 'spirit.card')).body.publicKey;
   S.stream = stream(S.N.base);
   S.key = S.R.relayKey;
   S.up = true;

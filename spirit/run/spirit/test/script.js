@@ -55,8 +55,8 @@ function answer(b) {
   // spirit.app.zapp, its folder's path in dots (goal/G49.19).
   if (c === 'api' && a.branch === 'spirit.app.zapp') return [200, { interface: DEMO }];
   if (c === 'spirit.app.zapp.hello') return [200, { ok: true, said: 'zapp ' + a.name }];
-  // The event branch, which processJob reports through (goal/G49.19): this tree's own spirit/event/api.js, as a node answers it.
-  if (c === 'api' && a.branch === 'event') return [200, { interface: fs.readFileSync(path.join(RUN, 'spirit', 'event', 'api.js'), 'utf8') }];
+  // The event branch's interface, spirit/event/api.js, which processJob reported through, stood in here; since goal/G49.23
+  // (box v22 Part 2) publish is the spirit branch's, its verbs spirit/script.js's own (spirit.verbs), asked of no node.
   if (c === 'api' && a.branch) return [404, { ok: false, code: 'no-branch', error: 'no branch ' + a.branch }];
   if (c === 'api') return [200, { demo: { hello: {} }, gone: {} }];
   if (c === 'demo.hello' && a.name === 'held') return [409, { ok: false, code: 'held', error: 'held by bert' }];
@@ -65,7 +65,7 @@ function answer(b) {
   if (c === 'demo.line.write') return [200, { ok: true, wrote: a.text }];
   return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + c }];
 }
-// It also serves the node's events family: event.subscribe is a stream, as the real node's (a snapshot and then a job
+// It also serves the spirit branch's stream (event.subscribe before goal/G49.23): spirit.subscribe is a stream, as the real node's (a snapshot and then a job
 // update, for a page and for a server, which says X-Spirit-Reader: server and takes no packets); a peer.post is answered with its
 // hash, and the peer's answer arrives on the stream as a packet carrying re, as a real node hands it.
 const packet = require(path.join(RUN, 'spirit', 'peer', 'packet', 'script.js'));
@@ -80,7 +80,7 @@ function fakeNode() {
       try { b = JSON.parse(body || '{}'); } catch (e) { b = {}; }
       asked.push(b);
       if (!isCall(b)) { res.writeHead(FLAT[0], { 'Content-Type': 'application/json' }); res.end(JSON.stringify(FLAT[1])); return; }
-      if (b.call === 'event.subscribe') {
+      if (b.call === 'spirit.subscribe') {
         const reader = req.headers['x-spirit-reader'] || '';
         res.writeHead(200, { 'Content-Type': 'text/event-stream' });
         res.write(': open\n\n');
@@ -97,7 +97,7 @@ function fakeNode() {
         setTimeout(function () { streams.forEach(function (st) { st.res.write('event: packet\ndata: ' + JSON.stringify({ from: b.args.to, text: reply.text }) + '\n\n'); }); }, 30);
         return;
       }
-      if (b.call === 'event.publish') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
+      if (b.call === 'spirit.publish') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true })); return; }
       const [status, out] = answer(b);
       res.writeHead(status, { 'Content-Type': typeof out === 'string' ? 'text/plain' : 'application/json' });
       res.end(typeof out === 'string' ? out : JSON.stringify(out));
@@ -155,7 +155,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     out.viaRequire = (await s.requireScript('spirit/demo/api.js')) === s.demo.api;
     out.outcome = [await s.callOutcome(s.demo.api.hello({ name: 'eve' })), await s.callOutcome(s.demo.api.hello({ nme: 1 })), await s.callOutcome(s.demo.api.hello({ name: 'held' })), await s.callOutcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
-    // This process's job, published by event.publish with its own id, the one path.
+    // This process's job, published by spirit.publish with its own id, the one path.
     out.publish = s.eventStream.publish({ x: 1 });
     out.tooBig = s.eventStream.publish({ big: 'y'.repeat(30000) });
     out.noProcessJob = !('processJob' in s);
@@ -513,12 +513,12 @@ test.run('spirit.nodeFacts holds its port from environment.json, and the name, k
   return (f.port === T.node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') || false;
 }, test.limit.quick);
 // ITS PUBLISH, THROUGH processJob BY ITS PATH (goal/G49.19, box v13: "after the move the spirit object's publish requires
-// spirit/job/processJob/script.js for it"): what it publishes goes out by event.publish with the job's id, over the cap is
+// spirit/job/processJob/script.js for it"): what it publishes goes out by spirit.publish (event.publish before goal/G49.23) with the job's id, over the cap is
 // dropped, and the spirit object holds no processJob. processJob's own verbs are judged in its own test.
-test.run('spirit.eventStream.publish goes out by event.publish with the job\'s id; over the cap is dropped; the spirit object holds no processJob', 0.2, function () {
+test.run('spirit.eventStream.publish goes out by spirit.publish with the job\'s id; over the cap is dropped; the spirit object holds no processJob', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
-  const updates = node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args; });
+  const updates = node.asked.filter(function (b) { return b.call === 'spirit.publish'; }).map(function (b) { return b.args; });
   const dropped = updates.filter(function (u) { return u.app && u.app.dropped; });
   return (o.publish === true && o.tooBig === false && updates.length > 0 && updates.every(function (u) { return u.id === 'spirit.app.zzjob'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
       && dropped.length === 1 && dropped[0].app.dropped.max > 0 && o.noProcessJob === true && !node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
@@ -528,12 +528,12 @@ test.run('spirit.eventStream.subscribe hears the node\'s events as a stream: up,
   return JSON.stringify(o.heard) === JSON.stringify(['up:true', 'snapshot:j1', 'update:j1:done']) || false;
 }, test.limit.quick);
 // goal/G43.3: a process that followed the stream as a page would take its node's owner's waiting lines.
-test.run('in a process, every event.subscribe says it is a server, so it takes no packets', 0.2, function () {
+test.run('in a process, every spirit.subscribe says it is a server, so it takes no packets', 0.2, function () {
   const o = O(); if (!o) return false;
-  const subscribes = T.node.asked.filter(function (b) { return b.call === 'event.subscribe'; });
+  const subscribes = T.node.asked.filter(function (b) { return b.call === 'spirit.subscribe'; });
   return (subscribes.length > 0 && subscribes.every(function (b) { return b.reader === 'server'; })) || false;
 }, test.limit.quick);
-test.run('spirit.peerPost makes one post of peer.post and reads the answer off the node\'s events, through event.subscribe as a server', 0.2, function () {
+test.run('spirit.peerPost makes one post of peer.post and reads the answer off the node\'s events, through spirit.subscribe as a server', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
@@ -584,17 +584,17 @@ test.run('with no port in its environment.json, require of an interface and tree
 // necessary calls?", "Q1: clear"): start asks no api, whole or of a family. Any family named on what spirit.readyPromise answers
 // stands there and binds when first called; one with no interface is refused no-interface when called.
 // The one family start calls is node, for node.card (goal/G41.28, Q10: "yes."): its api is asked as it is called. Never the
-// whole api, and no other family's.
+// whole api, and no other family's. Since goal/G49.23 (box v22 Part 2) that is the spirit branch, for spirit.card.
 // goal/G49.6 (Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"): what ready answers is the instance itself,
 // and a branch is asked by its api.js path, one with no interface refused no-interface.
-test.run('startPage() asks no api but node, readyPromise answers the instance itself, and a branch with no interface refuses no-interface', 0.2, async function () {
+test.run('startPage() asks no api but the spirit branch\'s, readyPromise answers the instance itself, and a branch with no interface refuses no-interface', 0.2, async function () {
   const wq = T.wq = page();
   const started = wq.spirit.startPage();
   const again = wq.spirit.startPage();
   const ps = T.ps = await started;
   const askedAtStart = wq.fetched.filter(function (f) {
     const b = f.url === '/spirit' ? JSON.parse(f.body) : null;
-    return !!b && b.call === 'api' && !(b.args && b.args.branch === 'node');
+    return !!b && b.call === 'api' && !(b.args && b.args.branch === 'spirit');
   });
   const goneSaid = await Promise.resolve(wq.spirit.requireScript('spirit/gone/api.js'))
     .then(function () { return null; }, function (e) { return (e && e.code) || null; });
@@ -1100,11 +1100,12 @@ test.run('on a real page, no branch\'s api is asked twice', 0.2, function () {
   return !twice.length || false;
 }, test.limit.quick);
 // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at
-// first use, and not again on the second call. Which family that is, the page decides as it loads (event, net, peer,
-// owner or config, the first it has not used): its name is in the answer, never the title.
-test.run('one of event, net, peer, owner and config is a branch the page has not used yet', 0.2, function () {
+// first use, and not again on the second call. Which family that is, the page decides as it loads (net, peer, owner or
+// config, the first it has not used; event went with spirit/event/, goal/G49.23 box v22 Part 2): its name is in the answer,
+// never the title.
+test.run('one of net, peer, owner and config is a branch the page has not used yet', 0.2, function () {
   if (!L.atLoad) return false;
-  L.fresh = ['event', 'net', 'peer', 'owner', 'config'].filter(function (f) { return !L.used.has(f) && L.asked.indexOf(f) === -1; })[0] || '';
+  L.fresh = ['net', 'peer', 'owner', 'config'].filter(function (f) { return !L.used.has(f) && L.asked.indexOf(f) === -1; })[0] || '';
   return !!L.fresh || false;
 }, test.limit.quick);
 test.run('the branch the page has not used yet is bound on the page once it is required', 0.2, async function () {
@@ -1404,12 +1405,13 @@ function walk(dir, base, out) {
 // the world
 const FF = {};
 // The node's relay branch is gone (goal/G49.11): peer stands in for it, a branch with no app folder of its name.
-// contact's interface is spirit/contact/script.js since goal/G49.22, no api.js: node stands in for it.
-test.run('ten or more branch names have an api.js in the tree, node and peer among them', 0.2, function () {
+// contact's interface is spirit/contact/script.js since goal/G49.22, no api.js: owner stands in for it (node did, until its
+// api.js went with spirit/node/, goal/G49.23 box v22 Part 2).
+test.run('ten or more branch names have an api.js in the tree, owner and peer among them', 0.2, function () {
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
   const by = interfaces(RUN, files);
-  return (Object.keys(by).length >= 10 && !!by.node && !!by.peer) || false;
+  return (Object.keys(by).length >= 10 && !!by.owner && !!by.peer) || false;
 }, test.limit.quick);
 test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;
@@ -1468,7 +1470,7 @@ test.after(async function () {
 // A page on a scratch node, reached through a go-between of this test: once it goes quiet, it stops reading what the node
 // sends, so the page's socket stays open and nothing comes, as on Andy's frozen tab (cw: "the node is sending and the
 // socket is open, but your page stopped taking what arrives"). Within the 5 s and a second's grace, the page sends a new
-// event.subscribe of its own; then the go-between passes bytes on again. A go-between, not a paused node, so the check
+// spirit.subscribe of its own; then the go-between passes bytes on again. A go-between, not a paused node, so the check
 // judges on Windows as on Linux (Andy, goal/G47.1: "so you both FIX the red in spirit.js"; it judged nothing on Windows).
 const SIL = {};
 // A go-between: every request to it is sent on to the node, named as the node's own (a personal node answers only a host,
@@ -1521,7 +1523,8 @@ test.after(async function () {
   try { if (SIL.page && SIL.page.kid) SIL.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (SIL.node && SIL.node.release) await SIL.node.release(); } catch (e) { /* gone */ }
 });
-const subscribeIds = function () { return SIL.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /event\.subscribe/.test(String(m.params.request.postData || '')); }).map(function (m) { return m.params.requestId; }); };
+// spirit.subscribe, event.subscribe before goal/G49.23 (box v22 Part 2).
+const subscribeIds = function () { return SIL.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /spirit\.subscribe/.test(String(m.params.request.postData || '')); }).map(function (m) { return m.params.requestId; }); };
 const subscribes = function () { return subscribeIds().length; };
 // When a request of the page ended, by its id: finished or failed (a cancelled read fails it), in the order Chrome said them.
 const endedAt = function (id) { let at = -1; SIL.page.heard.forEach(function (m, i) { if ((m.method === 'Network.loadingFinished' || m.method === 'Network.loadingFailed') && m.params.requestId === id && at < 0) at = i; }); return at; };

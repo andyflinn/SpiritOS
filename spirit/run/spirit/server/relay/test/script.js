@@ -189,7 +189,8 @@ test.run('a /face/call with another member\'s session at this face\'s host is re
 test.run('the face\'s own page, its Origin and json, still reaches its node', 0.2, async function () {
   if (!FP.R || !FP.R.up) return false;
   const from = FP.R.lines.length;
-  await facePost('/face/call', { origin: own(), type: JSONT, body: '{"call":"node.card","args":{}}' });
+  // spirit.card, node.card before goal/G49.23 (box v22 Part 2).
+  await facePost('/face/call', { origin: own(), type: JSONT, body: '{"call":"spirit.card","args":{}}' });
   const ev = faceEvents(from);
   return (ev.length === 1 && ev[0].stream === 'harbour') || false;
 }, test.limit.slow);
@@ -605,7 +606,7 @@ async function answered(headers) {
   const m = R.members.harbour;
   const from = R.lines.length;
   const viewer = new Promise(function (resolve) {
-    const b = '{"call":"node.card","args":{}}';
+    const b = '{"call":"spirit.card","args":{}}';
     const q = http.request({ host: '127.0.0.1', port: R.port, path: '/face/call', method: 'POST', headers: { Host: m.host, Origin: 'https://' + m.host, Cookie: 'spirit_face=' + m.sid, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) } }, function (r) { r.resume(); resolve(r.statusCode); });
     q.setTimeout(3000, function () { resolve(0); q.destroy(); });
     q.on('error', function () { resolve(0); });

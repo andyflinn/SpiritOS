@@ -237,7 +237,8 @@ const door = async function (verb, args) {
   let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, body: body, text: text };
 };
-const setDebug = async function (on) { const a = await door('node.debug', { debug: { on: on } }); return !!(a.body && a.body.debug === on); };
+// spirit.debug and spirit.publish, node.debug and event.publish before goal/G49.23 (box v22 Part 2).
+const setDebug = async function (on) { const a = await door('spirit.debug', { debug: { on: on } }); return !!(a.body && a.body.debug === on); };
 const noisy = function (name, tail) {
   const f = path.join(J.run, 'spirit', 'app', name, name + '.js');
   fs.mkdirSync(path.dirname(f), { recursive: true });
@@ -257,7 +258,7 @@ const start = async function (name) {
 };
 // A process job that completes deletes itself (job.js:120), so each here ends with an exit code of its own and stays to be read.
 const PUBLISH = 'const u = process.env.SPIRIT_CALLBACK_URL, id = process.env.SPIRIT_JOB_ID;'
-  + 'fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "event.publish", args: { id: id, logMessage: "zzPublishedLine" } }) })';
+  + 'fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "spirit.publish", args: { id: id, logMessage: "zzPublishedLine" } }) })';
 
 // goal/G41.33: DEBUG off, a process's console goes nowhere, and what is structured stays
 test.run('the scratch node\'s DEBUG is switched off', 0.2, async function () {

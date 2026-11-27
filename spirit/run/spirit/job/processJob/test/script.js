@@ -4,7 +4,8 @@
 // THE TESTS OF spirit/job/processJob/script.js, and of no other script (goal/G49.19, box v13: "spirit.processJob() leaves
 // spirit/script.js and becomes spirit/job/processJob/script.js"; "processJob is required by its path ... by every caller ...
 // The spirit object keeps no copy and no member of it"). What it did as spirit.processJob it does by its path: a process the
-// node started as a job reports on that job by event.publish with its own id (SPIRIT_JOB_ID), one post.
+// node started as a job reports on that job by spirit.publish (event.publish before goal/G49.23, box v22 Part 2) with its own
+// id (SPIRIT_JOB_ID), one post.
 // A fake node on a free port takes the posts; a scratch run root names it in its environment.json, so no real node is asked.
 
 require('../../../script.js');
@@ -18,10 +19,9 @@ const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const SUBJECT = 'spirit/job/processJob/script.js';
 const VERBS = ['report', 'log', 'complete', 'fail', 'publish', 'cycle', 'start', 'progress', 'end'];
-const EVENT_API = fs.readFileSync(path.join(RUN, 'spirit', 'event', 'api.js'), 'utf8');
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/job/processJob/test'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
-// The fake node: every post kept, event.publish answered ok.
+// The fake node: every post kept, spirit.publish answered ok.
 function fakeNode() {
   const asked = [];
   const server = http.createServer(function (req, res) {
@@ -32,8 +32,8 @@ function fakeNode() {
       try { b = JSON.parse(body || '{}'); } catch (e) { b = {}; }
       asked.push(b);
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      // The event branch's interface, asked before its first call, is this tree's own spirit/event/api.js, as a node answers it.
-      if (b.call === 'api' && b.args && b.args.branch === 'event') { res.end(JSON.stringify({ interface: EVENT_API })); return; }
+      // The event branch's interface, spirit/event/api.js, stood in here; since goal/G49.23 publish is the spirit branch's,
+      // its verbs spirit/script.js's own (spirit.verbs), asked of no node.
       res.end(JSON.stringify({ ok: true }));
     });
   });
@@ -91,18 +91,18 @@ test.run('a process of a scratch run root naming a fake node runs processJob by 
 test.run('spirit/job/processJob/script.js exposes an object holding report, log, complete, fail, publish, cycle, start, progress and end', 0.2, function () {
   return (!!T.o && JSON.stringify(T.o.verbs) === JSON.stringify(VERBS.slice().sort())) || false;
 }, test.limit.quick);
-const published = function () { return T.node ? T.node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args || {}; }) : []; };
-test.run('start, progress and end publish by event.publish with the job\'s id, in that order', 0.2, function () {
+const published = function () { return T.node ? T.node.asked.filter(function (b) { return b.call === 'spirit.publish'; }).map(function (b) { return b.args || {}; }) : []; };
+test.run('start, progress and end publish by spirit.publish with the job\'s id, in that order', 0.2, function () {
   const states = published().map(function (u) { return u.app && u.app.job && u.app.job.state; }).filter(Boolean);
   return (published().length > 0 && published().every(function (u) { return u.id === 'spirit.app.zzjob'; }) && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end'])) || false;
 }, test.limit.quick);
 test.run('a second start while a job is open is refused job-open', 0.2, function () {
   return (!!T.o && T.o.startAgain === 'job-open') || false;
 }, test.limit.quick);
-test.run('report goes out by event.publish with the job\'s id and its patch', 0.2, function () {
+test.run('report goes out by spirit.publish with the job\'s id and its patch', 0.2, function () {
   return published().some(function (u) { return u.id === 'spirit.app.zzjob' && u.data && u.data.reported === true; }) || false;
 }, test.limit.quick);
-test.run('it posts nothing but event.publish: no job.update', 0.2, function () {
+test.run('it posts nothing but spirit.publish: no job.update', 0.2, function () {
   return (!!T.node && T.node.asked.length > 0 && !T.node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
 }, test.limit.quick);
 test.run('in a process the node did not start as a job, report is refused no-job', 0.2, async function () {

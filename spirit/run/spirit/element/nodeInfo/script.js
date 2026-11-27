@@ -152,7 +152,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       }).then(function (r) {
         if (gone) return;
         var card = r && r.body;
-        if (!card || !card.ok) { say((card && card.error) || 'node.card did not answer'); return; }
+        if (!card || !card.ok) { say((card && card.error) || 'spirit.card did not answer'); return; }
         // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): kept in the node branch's reads, its data.
         ANSWER['spirit/script.js'].client.card.keep(card);
       });

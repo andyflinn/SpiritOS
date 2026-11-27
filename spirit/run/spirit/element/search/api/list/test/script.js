@@ -47,7 +47,7 @@ function world() {
       // What readyPromise answers is the spirit instance itself (goal/G49.6), whose apiTree reads the node's tree.
       readyPromise: Promise.resolve({ apiTree: function () { return Promise.resolve(TREE); } }),
       // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
-      // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.client.node.data).
+      // the real api.js requires it (goal/G47.1).
       requireScript: function (p) {
         w.required.push(String(p));
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
@@ -59,6 +59,9 @@ function world() {
         // stand-in for spirit/element/search/script.js, an object for every other part it asks (its row, its detail, node's api).
         // goal/G49.23, box v22 Part 1: a branch's api.js answers the branch, its data.js's reads on it as data, read at each use, as the
         // loader's branch carries them.
+        // goal/G49.23, box v22 Part 2: the spirit branch, spirit/script.js, answers the branch with its client (the store,
+        // spirit.client) on it as client, read at each use, as the loader's branch carries it; the api tree is its client's.
+        if (p === 'spirit/script.js') { const b = {}; Object.defineProperty(b, 'client', { get: function () { return win.spirit.client; } }); return Promise.resolve(b); }
         if (m) { const b = {}; Object.defineProperty(b, 'data', { get: function () { const at = m[1].split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, win.spirit); return at ? at.data : undefined; } }); return Promise.resolve(b); }
         return Promise.resolve(p === 'spirit/element/search/script.js' ? E.search : {});
       } },
@@ -74,7 +77,7 @@ function world() {
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   win.spirit.requireScript('spirit/client/script.js');
   pageData = win.spirit.client;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks spirit.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');

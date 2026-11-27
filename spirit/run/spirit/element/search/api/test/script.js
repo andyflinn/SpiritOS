@@ -7,8 +7,8 @@
 // the verb selector NEEDs the family selector to have any meaning at all."). The browser file runs in node on a BARE
 // window (rule/26): its two halves, the family list search/api/list.js and the verb half search/api/verb.js, are put there real once required;
 // probabilitySearch is a stand-in that keeps every list it was asked to make; the node's api tree is the spirit
-// object's answer, kept by the node family's data.js (goal/G41.28), loaded with the node family's api.js, as a page's
-// spirit.requireScript('spirit/node/api.js') loads it, the page's node known as spirit.startPage makes it known (spirit.nodeFacts.key, then
+// object's answer, kept by the spirit branch's client, spirit/client/script.js (goal/G41.28; goal/G49.23 Part 2: the node
+// branch's reads are the spirit branch's), as a page's spirit.requireScript('spirit/script.js') hands it, the page's node known as spirit.startPage makes it known (spirit.nodeFacts.key, then
 // data.homeNode). One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -78,23 +78,22 @@ function world() {
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,
     console: { log: function () {}, error: function () {} },
   };
-  // The node family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
-  // itself to the data set; the api tree is the node family's (spirit.client.node.data).
-  let ran = false;
-  win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } if (Object.prototype.hasOwnProperty.call(ANSWERS, p)) return Promise.resolve(ANSWERS[p]); return placedAnswer(p, win); };
-  // What the halves require and this world does not run, as requireScript answers them: the node branch's interface and its
-  // data (the api tree comes through readyPromise), and the list's row and detail, which no check here opens.
-  // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
-  const ANSWERS = { 'spirit/node/api.js': Object.defineProperty({}, 'data', { get: function () { return (win.spirit.node || {}).data; } }), 'spirit/node/data.js': {}, 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
+  // goal/G49.23 Part 2: the api tree is the spirit branch's client's (the real spirit/client/script.js, loaded below).
+  win.spirit.requireScript = function (p) { w.required.push(String(p)); if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } if (Object.prototype.hasOwnProperty.call(ANSWERS, p)) return Promise.resolve(ANSWERS[p]); return placedAnswer(p, win); };
+  // What the halves require and this world does not run, as requireScript answers them: the spirit branch (the api tree
+  // comes through readyPromise), and the list's row and detail, which no check here opens.
+  // goal/G49.23, box v22 Part 2: the spirit branch carries its client (the store, spirit.client) as client, as the loader's
+  // branch does, read at each use.
+  const ANSWERS = { 'spirit/script.js': Object.defineProperty({}, 'client', { get: function () { return win.spirit.client; } }), 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
   win.window = win;
   // The page's spirit.requireScript, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/client/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', SUBJECT] });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', SUBJECT] });
   vm.createContext(win);
   // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   win.spirit.requireScript('spirit/client/script.js');
   pageData = win.spirit.client;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks spirit.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');
@@ -139,9 +138,9 @@ test.run('it loads its two halves itself, the branch list search/api/list.js and
   return w.required.indexOf('spirit/element/search/api/list/script.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js".
-test.run('its halves require the node branch\'s interface, spirit/node/api.js, and no data script', 0.2, function () {
+test.run('its halves require the spirit branch, spirit/script.js, and no data script', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
-  return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  return w.required.indexOf('spirit/script.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 
 // the family, then its verb, side by side

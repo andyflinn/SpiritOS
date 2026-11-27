@@ -61,7 +61,8 @@ const typeRefused = function (r, arg) { arg = arg || 'key'; return !!r && r.stat
 test.run('a scratch node comes up and answers its card', 0.2, async function () {
   N.node = await H.scratchNode({});
   if (!N.node || !N.node.up) return false;
-  N.card = await call('node.card');
+  // spirit.card, node.card before goal/G49.23 (box v22 Part 2).
+  N.card = await call('spirit.card');
   return (N.card.status === 200 && typeof N.card.body.publicKey === 'string') || false;
 }, test.limit.slow);
 test.after(async function () {

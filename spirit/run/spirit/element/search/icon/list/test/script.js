@@ -212,7 +212,8 @@ test.run('the node goes away and comes back while the page stays open', 0.2, asy
   await until(function () { return Promise.resolve(N.child.exitCode !== null); }, 8000);
   await sleep(2000);
   N.child = LABH.startNodeOn(N.run, port);
-  const back = await until(function () { return home(N.base, 'node.card').then(function (r) { return r.status === 200; }, function () { return false; }); }, 30000);
+  // goal/G49.23 Part 2: node.card is spirit.card.
+  const back = await until(function () { return home(N.base, 'spirit.card').then(function (r) { return r.status === 200; }, function () { return false; }); }, 30000);
   return !!back ? true : false;
 }, test.limit.slow);
 test.run('the rows are still there after the reconnect', 0.2, async function () {

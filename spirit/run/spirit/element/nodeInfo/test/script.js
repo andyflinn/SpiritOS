@@ -138,12 +138,16 @@ function world(o) {
   win.spirit.requireScript('spirit/client/script.js');
   const S = win.spirit;
   Object.assign(S, page.spirit);
-  S.nodeFacts = { key: 'NODEKEY+INFO==',
-    card: function (args) { w.calls.push({ name: 'node.card', args: args });
+  S.nodeFacts = { key: 'NODEKEY+INFO==' };
+  // goal/G49.23, box v22 Part 2: the node branch's verbs and reads are the spirit branch's, spirit/script.js: a stand-in answering
+  // spirit.card, its client (the store, spirit.client) on it as client, read at each use, as the loader's branch carries it.
+  w.spiritBranch = Object.defineProperty({
+    card: function (args) { w.calls.push({ name: 'spirit.card', args: args });
       if (opt.cardHeld) return opt.cardHeld;
       const a = opt.card ? opt.card() : { status: 200, body: CARD };
-      return a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: a.status, body: a.body }); } };
-  S.node = S.nodeFacts; S.client.homeNode(S.nodeFacts.key);
+      return a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: a.status, body: a.body }); } },
+    'client', { get: function () { return S.client; } });
+  S.client.homeNode(S.nodeFacts.key);
   S.contact = contactOver(function () {
     if (opt.relaysHeld) return opt.relaysHeld;
     if (opt.relaysRefused) return Promise.reject({ status: 503, body: { ok: false, error: 'no relay answered' } });
@@ -168,9 +172,9 @@ function world(o) {
     if (FILES[p]) { els[FILES[p][0]] = E[FILES[p][0]]; return Promise.resolve(E[FILES[p][0]]); }
     if (p === 'spirit/element/panel/script.js') { els.panel = panel; return Promise.resolve(panel); }
     if (p === 'spirit/element/rotateKey/script.js') return Promise.resolve(rotateKey);
-    // The node's branches by their api.js paths (goal/G49.6: never by a name): the contact and the node stand above.
+    // The node's branches by their paths (goal/G49.6: never by a name): the contact and the spirit branch stand above.
     if (p === 'spirit/contact/script.js') return Promise.resolve(S.contact);
-    if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
+    if (p === 'spirit/script.js') return Promise.resolve(w.spiritBranch);
     // The data store, the real one this window ran above, as spirit.requireScript hands it back (goal/G49.23: the elements
     // read it there, never at its place).
     if (p === 'spirit/client/script.js') return Promise.resolve(S.client);
@@ -226,7 +230,7 @@ test.run('it uses neither spirit.shell.activateApp nor a dialog of the old shell
 }, test.limit.quick);
 test.run('it asks through the spirit object\'s branches, never through an api, an api verb or peerPost', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the spirit object's families, no api handed.
-  // A branch's interface asked by its path (spirit/node/api.js) is the spirit object's family, no api object.
+  // A branch asked by its path (spirit/script.js) is the spirit object's family, no api object.
   return (!/\bapi\s*\.(?!js\b)|\.verb\s*\(|\bpeerPost\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('nothing in it ticks, because it sets no timer', 0.2, function () {
@@ -285,15 +289,15 @@ test.run('the description is changeMyDescription, in the description slot', 0.2,
 test.run('each field is made with its container alone, handed no api, and gets what it needs itself', 0.2, function () {
   return (w.made.every(function (m) { return m.args === 1 && m.opts === undefined; })) ? true : false;
 }, test.limit.quick);
-test.run('it asks spirit.node.api.card once, with an empty object', 0.2, function () {
-  // the card: node.card, kept in the node family's cache (goal/G41.28)
-  card = w.calls.filter(function (c) { return c.name === 'node.card'; });
+test.run('it asks the spirit branch\'s card once, with an empty object', 0.2, function () {
+  // the card: spirit.card, kept in the node family's cache (goal/G41.28; goal/G49.23 Part 2: node.card is spirit.card)
+  card = w.calls.filter(function (c) { return c.name === 'spirit.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : false;
 }, test.limit.quick);
-// goal/G49.23: the card read from the node branch the element requires, its data (spirit.node.data), never from the store by a short name.
-test.run('it requires spirit/node/api.js, no data.js, and keeps node.card\'s answer in the node branch\'s data, spirit.node.data', 0.2, function () {
-  N = (w.S.node || {}).data;
-  return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
+// goal/G49.23: the card read from the spirit branch the element requires, its client (spirit.client), never from the store by a short name.
+test.run('it requires spirit/script.js, no data.js, and keeps spirit.card\'s answer in the spirit branch\'s client', 0.2, function () {
+  N = w.spiritBranch.client;
+  return (w.required.indexOf('spirit/script.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
 }, test.limit.quick);
 test.run('a card read says nothing', 0.2, function () {
   return (w.slot(host, 'said').textContent === '') ? true : false;
@@ -309,16 +313,16 @@ test.run('a card refused is said in the node\'s words, and nothing is kept', 0.2
   m2 = refused.els.nodeInfo.create(h2, {});
   await m2.ready;
   await settle();
-  N2 = refused.S.node && refused.S.node.data;
+  N2 = refused.spiritBranch.client;
   return (/owner only/.test(refused.slot(h2, 'said').textContent) && !(N2 && N2.card.get())) ? true : false;
 }, test.limit.quick);
-test.run('a node that does not answer is said as node.card did not answer', 0.2, async function () {
+test.run('a node that does not answer is said as spirit.card did not answer', 0.2, async function () {
   silent = world({ card: function () { return { status: 0, body: null }; } });
   h3 = node('<container>');
   m3 = silent.els.nodeInfo.create(h3, {});
   await m3.ready;
   await settle();
-  return (/node\.card did not answer/.test(silent.slot(h3, 'said').textContent)) ? true : false;
+  return (/spirit\.card did not answer/.test(silent.slot(h3, 'said').textContent)) ? true : false;
 }, test.limit.quick);
 test.run('it asks spirit.relay.status once, with an empty string', 0.2, function () {
   // the two forms: the email form always, the face form only for a starred relay (goal/G43.27)
@@ -355,7 +359,7 @@ test.run('the fields and the card do not wait for the relays', 0.2, async functi
   m4 = slow.els.nodeInfo.create(h4, {});
   await m4.ready;
   await settle();
-  return (slow.made.length === 2 && !!(slow.S.node && slow.S.node.data && slow.S.node.data.card.get()) && slow.forms.length === 0) ? true : false;
+  return (slow.made.length === 2 && !!(slow.spiritBranch.client && slow.spiritBranch.client.card.get()) && slow.forms.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('the forms are drawn when the relays land', 0.2, async function () {
   letRelays(answered(ROWS));
@@ -443,7 +447,7 @@ test.run('a card that lands after destroy is not kept', 0.2, async function () {
   m6.destroy();
   letCard(CARD);
   await settle();
-  return (!(late.S.node && late.S.node.data && late.S.node.data.card.get())) ? true : false;
+  return (!(late.spiritBranch.client && late.spiritBranch.client.card.get())) ? true : false;
 }, test.limit.quick);
 test.run('relays that land after destroy draw no form', 0.2, async function () {
   letRel = null;
@@ -550,8 +554,10 @@ function formsPart() {
       if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
       return f;
     } };
-    S.nodeFacts = { key: 'NODEKEY+INFO==', card: function () { return Promise.resolve(CARD); } };
-    S.node = S.nodeFacts; S.client.homeNode(S.nodeFacts.key);
+    S.nodeFacts = { key: 'NODEKEY+INFO==' };
+    // goal/G49.23, box v22 Part 2: the spirit branch, spirit/script.js, answering spirit.card, its client on it.
+    const spiritBranch = Object.defineProperty({ card: function () { return Promise.resolve(CARD); } }, 'client', { get: function () { return S.client; } });
+    S.client.homeNode(S.nodeFacts.key);
     // The relays from the contact branch, contact.search and contact.get (goal/G49.11), over these rows.
     S.contact = contactOver(function () { return answered(relayRows.slice()); }, function () {});
     S.readyPromise = Promise.resolve(S);
@@ -574,9 +580,9 @@ function formsPart() {
       if (p === 'spirit/element/changeMyLabel/script.js' || p === 'spirit/element/changeMyDescription/script.js') return Promise.resolve(field);
       if (p === 'spirit/element/panel/script.js') { at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } }; return Promise.resolve(at.panel); }
       if (p === 'spirit/element/rotateKey/script.js') return Promise.resolve({ create: function () { return { destroy: function () {} }; } });
-      // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
+      // The node's branches by their paths (goal/G49.6: never by a name): the relay and the spirit branch stand above.
       if (p === 'spirit/contact/script.js') return Promise.resolve(S.contact);
-      if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
+      if (p === 'spirit/script.js') return Promise.resolve(spiritBranch);
       // fieldInput is not loaded here, so the forms draw without it: its require fails, as a script that is not there does.
       if (p === 'spirit/element/fieldInput/script.js') return Promise.reject(new Error('not loaded here: ' + p));
       // The data store, the real one this window ran above, as spirit.requireScript hands it back (goal/G49.23).
@@ -634,7 +640,7 @@ function formsPart() {
 function partsPart() {
   // The parts part (once nodeInfo-parts.js).
   // ALL OF INFO IS IN ONE ELEMENT, nodeInfo.js (goal/G43.24, requirement 6, Q2; spec: ./script.md, its parts section). The box: "the page
-  // layout, the relays ... (relay.status), the card ... (node.card), the rotate button ... They move into one new element,
+  // layout, the relays ... (relay.status), the card ... (node.card, since goal/G49.23 Part 2 spirit.card), the rotate button ... They move into one new element,
   // spirit/element/nodeInfo/script.js (Q2)". Andy: "no i want those apps to basically be wrappers for spirit/element/ things....".
   // nodeInfo.js read as it is, comments stripped.
 
@@ -658,8 +664,9 @@ function partsPart() {
     // relay.status is gone (goal/G49.11): the contact branch by its api.js path, its relays listed by contact.search.
     return (/'spirit\/contact\/script\.js'/.test(nodeInfo) && /\.search\(\{[^}]*relay:\s*true/.test(nodeInfo)) ? true : false;
   }, test.limit.quick);
-  test.run('nodeInfo puts the card from node.card into the node cache', 0.2, function () {
-    return (/\bnode\W{1,4}card\b/.test(nodeInfo)) ? true : false;
+  // goal/G49.23 Part 2: node.card is spirit.card, its answer kept in the spirit branch's client's card.
+  test.run('nodeInfo puts the card from spirit.card into the spirit branch\'s client', 0.2, function () {
+    return (/'spirit\/script\.js'/.test(nodeInfo) && /\.client\W{1,4}card\W{1,4}keep\b/.test(nodeInfo)) ? true : false;
   }, test.limit.quick);
   test.run('nodeInfo draws the rotate button', 0.2, function () {
     return (/Rotate this node/.test(nodeInfo)) ? true : false;
@@ -672,7 +679,7 @@ function rotatePart() {
   // opens the old shell's dialog": "not good." "do it right!", "it's just a panel that opens exactly overtop of the calling
   // panel, new-shell-style.", "like fstat". The tree read as it is, then a real node on a scratch copy of the tree's files and
   // real clicks in a real Chrome on / (spirit/shell/face.html), Info opened from its tile in the shell app. No key is ever rotated: the page's
-  // node.rotateCipher is replaced by a recorder that refuses, and the node's card is compared before and after. Neither Andy's
+  // spirit.rotateCipher is replaced by a recorder that refuses, and the node's card is compared before and after. Neither Andy's
   // node nor an agent's is touched.
 
   const fs = require('fs');
@@ -755,7 +762,7 @@ function rotatePart() {
   }, test.limit.slow);
   test.run('the scratch node answers its card', 0.2, async function () {
     if (!N || !N.up) return false;
-    card0 = await call(N.base, 'node.card', {});
+    card0 = await call(N.base, 'spirit.card', {});
     return (card0.status === 200 && !!card0.body) ? true : false;
   }, test.limit.quick);
   test.run('Chrome is on this machine', 0.2, function () {
@@ -776,14 +783,14 @@ function rotatePart() {
     await c.send('Page.navigate', { url: N.base + '/' });
     return (await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000)) ? true : false;
   }, test.limit.quick);
-  test.run('the page\'s node.rotateCipher is replaced by a recorder that refuses', 0.2, async function () {
+  test.run('the page\'s spirit.rotateCipher is replaced by a recorder that refuses', 0.2, async function () {
     if (!N || !N.up) return false;
     if (!where) return false;
     if (!c || c.error) return false;
-    // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
-    // The node branch's verb spied on what spirit.requireScript hands back for its api.js, never at a spirit.required place
+    // NO KEY IS ROTATED: the page's spirit.rotateCipher records the ask and refuses it.
+    // The spirit branch's verb spied on what spirit.requireScript hands back for spirit/script.js (goal/G49.23 Part 2), never at a spirit.required place
     // (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw").
-    spy = await c.evaluate('window.spirit.readyPromise.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.nodeFacts) return false; return S.requireScript("spirit/node/api.js").then(function (N) { if (!N || typeof N.rotateCipher !== "function") return false; N.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; }); })');
+    spy = await c.evaluate('window.spirit.readyPromise.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.nodeFacts) return false; return S.requireScript("spirit/script.js").then(function (N) { if (!N || typeof N.rotateCipher !== "function") return false; N.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; }); })');
     return (spy === 'spied') ? true : false;
   }, test.limit.quick);
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };
@@ -880,7 +887,7 @@ function rotatePart() {
     if (!c || c.error) return false;
     if (!infoOpen) return false;
     // no key was rotated
-    card1 = await call(N.base, 'node.card', {});
+    card1 = await call(N.base, 'spirit.card', {});
     return (card0.status === 200 && card1.status === 200 && card1.text === card0.text) ? true : false;
   }, test.limit.quick);
   test.after(async function () {

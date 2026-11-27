@@ -4,7 +4,7 @@
 // The tests of spirit/element/rotateKey/script.js, and of no other module (spec: ./script.md; goal/G43.24, requirement 8;
 // cycle-10/R13; goal/G41.9). The browser file runs in node on a window of its own. The arming button is the real one
 // (spirit/element/armingButton/script.js, tested in its own file), put on the page when the element requires it, so a press here
-// is a press as the page has it. The node is the spirit object's node family, a stub that records every rotateCipher and
+// is a press as the page has it. The node is the spirit branch (spirit/script.js), a stub that records every rotateCipher and
 // answers as the node would (its body, or a refusal thrown with its status and body). How it opens over Info is judged in
 // ../../nodeInfo/test/script.js and, on a real page, in ./nodeInfoRotate.js.
 
@@ -104,17 +104,18 @@ function world(answer) {
           return M;
         });
       }
-      // The node branch by its api.js's path, the one place rotateKey reaches it (goal/G49.6: nothing hands out a branch by name).
-      if (p === 'spirit/node/api.js') return Promise.resolve(win.spirit.node);
+      // The spirit branch by its path, the one place rotateKey reaches it (goal/G49.6: nothing hands out a branch by name;
+      // goal/G49.23 Part 2: the node branch's verbs are the spirit branch's, spirit/script.js).
+      if (p === 'spirit/script.js') return Promise.resolve(win.spirit.zzSpiritBranch);
       return w.hold ? w.hold : Promise.resolve({});
     },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
     // readyPromise, as the page names it since goal/G49.6's renames; the node branch is then required by its path (above).
     get readyPromise() { return Promise.resolve(win.spirit); },
     callOutcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
-    node: {
+    zzSpiritBranch: {
       rotateCipher: function (args) {
-        w.calls.push({ name: 'node.rotateCipher', args: args });
+        w.calls.push({ name: 'spirit.rotateCipher', args: args });
         const a = answer(args);
         if (a && a.wait) return new Promise(function (r) { w.release = function () { r(a.body); }; });
         return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
@@ -149,14 +150,14 @@ test.run('rotateKey.js sets spirit.element.rotateKey to an object with create', 
 test.run('rotateKey.js uses no spirit.shell.activateApp and no dialog of the old shell', 0.2, function () {
   return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
-test.run('rotateKey asks the node through the spirit object, by spirit.node.api.rotateCipher, and never by api.verb', 0.2, function () {
+test.run('rotateKey asks the node through the spirit object, by the spirit branch\'s rotateCipher, and never by api.verb', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
-  // Since goal/G49.6 the node branch is required by its api.js's path, and its verb called on what that answers, the object
-  // standing at spirit.node.api (goal/G49.23).
+  // Since goal/G49.6 the branch is required by its path, and its verb called on what that answers; since goal/G49.23 Part 2
+  // the branch is the spirit branch, spirit/script.js.
   // Since goal/G49.9 (box v5) it keeps requireScript's answer by one helper of its own, keepAnswer(path), which calls
   // spirit.requireScript with it: asking that helper for the path is asking requireScript for it.
-  const asks = /requireScript\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE) ||
-    (/function keepAnswer\(p\)[\s\S]*?requireScript\(p\)/.test(CODE) && /keepAnswer\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE));
+  const asks = /requireScript\(\s*['"]spirit\/script\.js['"]\s*\)/.test(CODE) ||
+    (/function keepAnswer\(p\)[\s\S]*?requireScript\(p\)/.test(CODE) && /keepAnswer\(\s*['"]spirit\/script\.js['"]\s*\)/.test(CODE));
   return (!/\.verb\s*\(/.test(CODE) && asks && /\.rotateCipher\s*\(/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('rotateKey loads spirit/element/armingButton/script.js itself, through spirit.requireScript', 0.2, function () {
@@ -228,11 +229,11 @@ test.run('after a disarm the next press only arms the button again: two presses 
   await settle();
   return (w.calls.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('the second press asks spirit.node.api.rotateCipher once, with no arguments', 0.2, async function () {
+test.run('the second press asks the spirit branch\'s rotateCipher once, with no arguments', 0.2, async function () {
   // the second press: one rotateCipher, the result said
   b.fire('click', { preventDefault: function () {} });
   await settle();
-  rot = w.calls.filter(function (c) { return c.name === 'node.rotateCipher'; });
+  rot = w.calls.filter(function (c) { return c.name === 'spirit.rotateCipher'; });
   return (rot.length === 1 && rot[0].args && JSON.stringify(rot[0].args) === '{}') ? true : false;
 }, test.limit.quick);
 test.run('rotateKey says what the node answered: Rotated, the card\'s number, and how many relays it went to', 0.2, function () {

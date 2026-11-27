@@ -3,7 +3,8 @@
 // spirit/run/spirit/element/changeMyLabel/test/script.js
 // The tests of spirit/element/changeMyLabel/script.js, and of no other module (spec: ./script.md; goal/G41.6). The browser
 // file runs in node on a window of its own: the label type is the real one (spirit/type/string/label/script.js), fieldInput is a
-// stub that keeps what was attached, and the node is a stub that answers node.setName.
+// stub that keeps what was attached, and the node is a stub that answers spirit.setName (goal/G49.23 Part 2: the node branch's verbs
+// and reads are the spirit branch's, spirit/script.js, its reads at its client).
 
 const fs = require('fs');
 const path = require('path');
@@ -72,8 +73,8 @@ function world(answer) {
         const f = b ? path.join(RUN, b, 'data.js') : '';
         // By its path, through the page stand-in, which runs it in this window (goal/G49.6).
         if (f && fs.existsSync(f)) pageRequire(b + '/data.js');
-        // The node branch, required by its api.js's path, answers the stand-in's node verbs (goal/G49.6: one place, no branch by name).
-        if (p === 'spirit/node/api.js') return Promise.resolve(w.nodeApi);
+        // The spirit branch, required by its path, answers the stand-in's verbs (goal/G49.6: one place, no branch by name).
+        if (p === 'spirit/script.js') return Promise.resolve(w.nodeApi);
         if (Object.prototype.hasOwnProperty.call(w.stands, String(p))) return Promise.resolve(w.stands[String(p)]);
         return Promise.reject(new Error('no stand-in for ' + p));
       } },
@@ -82,8 +83,9 @@ function world(answer) {
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
-  Object.defineProperty(w.nodeApi, 'data', { get: function () { return ((win.spirit || {}).node || {}).data; } });
+  // goal/G49.23, box v22 Part 2: the spirit branch carries its client (the store, spirit.client) as client, as the loader's
+  // branch does, read at each use.
+  Object.defineProperty(w.nodeApi, 'client', { get: function () { return (win.spirit || {}).client; } });
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
   const REAL = [SUBJECT, 'spirit/type/string/label/script.js', 'spirit/client/script.js'];
@@ -104,13 +106,13 @@ function world(answer) {
   win.spirit.client.homeNode(win.spirit.nodeFacts.key);
   if (fs.existsSync(FILE)) pageRequire(SUBJECT);
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
-  // outcome as spirit.js has it, and the node family's setName, which records every call and answers as the node would
+  // outcome as spirit.js has it, and the spirit branch's setName, which records every call and answers as the node would
   // (its body, or a refusal thrown with its status and body).
   win.spirit.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
   win.spirit.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
   w.nodeApi.setName = function (args) {
-    w.calls.push({ name: 'node.setName', args: args });
-    const a = answer('node.setName', args);
+    w.calls.push({ name: 'spirit.setName', args: args });
+    const a = answer('spirit.setName', args);
     return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
   };
   win.spirit.readyPromise = Promise.resolve(win.spirit);
@@ -190,14 +192,14 @@ test.run('an empty name never reaches the wire, and the field says why', 0.2, as
   await settle();
   return (w.calls.length === 0 && said.textContent.length > 0) ? true : false;
 }, test.limit.quick);
-test.run('Save asks node.setName with the field as typed', 0.2, async function () {
+test.run('Save asks spirit.setName with the field as typed', 0.2, async function () {
   // Save asks the node, and the field shows what it stored (rule/19)
   input.value = '  Bob  ';
   input.fire('input');
   save.fire('click');
   await settle();
   c = w.calls[0];
-  return (c && c.name === 'node.setName' && c.args.name === '  Bob  ') ? true : false;
+  return (c && c.name === 'spirit.setName' && c.args.name === '  Bob  ') ? true : false;
 }, test.limit.quick);
 test.run('the field then shows the name the node stored', 0.2, function () {
   return (input.value === 'Bob') ? true : false;
@@ -205,11 +207,11 @@ test.run('the field then shows the name the node stored', 0.2, function () {
 test.run('after Save it says saved', 0.2, function () {
   return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
-test.run('it requires spirit/node/api.js and no data.js, and the name the node stored is kept in the node branch\'s card', 0.2, function () {
+test.run('it requires spirit/script.js and no data.js, and the name the node stored is kept in the spirit branch\'s card', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
-  // goal/G49.23: the card read from the node branch the element requires (its data), never from the store by a short name.
-  N = w.nodeApi.data;
-  return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
+  // goal/G49.23: the card read from the spirit branch the element requires (its client), never from the store by a short name.
+  N = w.nodeApi.client;
+  return (w.required.indexOf('spirit/script.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('a name changed in the card, from elsewhere, redraws the field', 0.2, async function () {
   N.card.keep({ name: 'Eve' });

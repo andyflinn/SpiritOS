@@ -52,19 +52,17 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element.search.
   w = { lists: [], required: [] };
   // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
   // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
-  // function... or fail/throw"): the search, its list part and the node branch's interface, each an object.
+  // function... or fail/throw"): the search, its list part and the spirit branch, each an object.
   const SEARCH = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } };
   const STANDS = { 'spirit/element/search/script.js': SEARCH, 'spirit/element/search/api/list/script.js': {},
-    // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
-    'spirit/node/api.js': Object.defineProperty({}, 'data', { get: function () { return ((win && win.spirit && win.spirit.node) || {}).data; } }) };
+    // goal/G49.23, box v22 Part 2: the spirit branch, spirit/script.js, carries its client (the store, spirit.client) as client,
+    // as the loader's branch does, read at each use.
+    'spirit/script.js': Object.defineProperty({}, 'client', { get: function () { return (win && win.spirit && win.spirit.client) || undefined; } }) };
   win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
       requireScript: function (p) {
         w.required.push(String(p));
-        // A family's cache (goal/G41.28): the node branch's interface brings its data.js, as the real api.js does; it runs
-        // on this window over the real data set, from its path.
-        if (p === 'spirit/node/api.js') win.spirit.requireScript('spirit/node/data.js');
         return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
       } },
     document: { createElement: function (t) { return node(t); } },
@@ -75,7 +73,7 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element.search.
   win.window = win;
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = [SUBJECT, 'spirit/node/data.js', 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/client/script.js'];
+  const REAL = [SUBJECT, 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/client/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
@@ -147,14 +145,14 @@ test.run('show with no server hides it and clears the choice', 0.2, function () 
 
 // this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
 // draw from it")
-test.run('it requires spirit/node/api.js and no data.js, and its list is a view of the node branch\'s verbs, no rows of its own', 0.2, async function () {
+test.run('it requires spirit/script.js and no data.js, and its list is a view of the spirit branch\'s verbs, no rows of its own', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   mine = made.create(node('div'), {});
   await settle();
   m = w.lists[w.lists.length - 1];
-  // goal/G49.23: the verbs read from the node branch the element requires, its data (spirit.node.data), never from the store by a short name.
-  N = ((win.spirit.node) || {}).data;
-  return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!m.opts.data && typeof m.opts.data.whole === 'function' && m.opts.data.path === N.verbsBranch && m.opts.rows === undefined ? true : false;
+  // goal/G49.23: the verbs read from the spirit branch the element requires, its client (spirit.client), never from the store by a short name.
+  N = win.spirit.client;
+  return w.required.indexOf('spirit/script.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!m.opts.data && typeof m.opts.data.whole === 'function' && m.opts.data.path === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;

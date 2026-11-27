@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/eventEngine/test/script.js
 // The tests of spirit/eventEngine/script.js (spec: ./script.md; goal/G43.3). Andy, the box: "no leftover timers after a stream
-// closes". event.subscribe runs on a real http server here, with stand-ins for what feeds it, and a real client opens
+// closes". spirit.subscribe (event.subscribe before goal/G49.23, box v22 Part 2) runs on a real http server here, with stand-ins for what feeds it, and a real client opens
 // the stream and closes it, the way a process does when its one reply has come.
 
 const http = require('http');
@@ -59,7 +59,7 @@ function open(port, headers) {
       resolve({ heard: heard, req: req, res: res });
     });
     req.on('error', reject);
-    req.end(JSON.stringify({ call: 'event.subscribe', args: {} }));
+    req.end(JSON.stringify({ call: 'spirit.subscribe', args: {} }));
   }).then(function (s) { s.req.on('error', function () {}); return s; });
 }
 const nothingHeld = { timers: 0, jobUpdated: 0, jobDeleted: 0, relay: 0, renames: 0, packets: 0, pageStreams: 0 };
@@ -74,7 +74,7 @@ test.after(function () {
   global.clearInterval = realClear;
 });
 
-test.run('a server with event.subscribe on it listens', 0.2, async function () {
+test.run('a server with spirit.subscribe on it listens', 0.2, async function () {
   const w = world();
   await new Promise(function (r) { w.server.listen(0, '127.0.0.1', r); });
   W.w = w;
@@ -96,7 +96,7 @@ test.run('a quiet stream hears a beat each second, with no gap of more than 1.5 
       resolve({ req: req, res: res });
     });
     req.on('error', reject);
-    req.end(JSON.stringify({ call: 'event.subscribe', args: {} }));
+    req.end(JSON.stringify({ call: 'spirit.subscribe', args: {} }));
   });
   s.req.on('error', function () {});
   await sleep(4000);
@@ -226,7 +226,7 @@ test.run('a page\'s connect to the node\'s event stream reaches each app server 
       res.on('data', function () {}); res.on('error', function () {}); resolve(req);
     });
     req.on('error', function () { resolve(null); });
-    req.end(JSON.stringify({ call: 'event.subscribe', args: {} }));
+    req.end(JSON.stringify({ call: 'spirit.subscribe', args: {} }));
   });
   if (!page) return false;
   page.on('error', function () {});

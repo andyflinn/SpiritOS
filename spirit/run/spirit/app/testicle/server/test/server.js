@@ -3216,7 +3216,7 @@ test.run('testicle.hold with a holder that is not the asker is refused, and the 
   return refusedByHold(r) && after.status === 200 && heldAnswer(after);
 }, test.limit.quick);
 // The asker on the node's loopback door is the node itself (cw: "node.js builds the owner caller as {owner: true, key: <its
-// public key>}"): its key, from node.card, is the holder the box asks for. The box: "with holder, it holds ...: heldBy is set to
+// public key>}"): its key, from spirit.card (goal/G49.23 Part 2: node.card is spirit.card), is the holder the box asks for. The box: "with holder, it holds ...: heldBy is set to
 // the asker's ID and heldSince to now; it returns the asker's ID"; "held and not expired, by anyone, the asker too: an error";
 // "held by the asker: the hold is released ... and it returns \"\""; "not held, or the hold has expired: it returns \"\"; an
 // expired hold's heldBy and heldSince are cleared".
@@ -3230,7 +3230,7 @@ const heldBy = function () {
 const answers = function (r, v) { return r.body === v || (!!r.body && typeof r.body === 'object' && r.body.holder === v) || r.text === JSON.stringify(v); };
 test.run('testicle.hold with the asker\'s own key holds the red: it answers that key, and the row holds it with its time', 0.8, async function () {
   if (!up()) return false;
-  const card = await call(N.base, 'node.card', {});
+  const card = await call(N.base, 'spirit.card', {});
   HOLD.me = card.body && card.body.publicKey;
   if (!HOLD.me) return false;
   const before = Date.now();

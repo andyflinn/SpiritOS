@@ -96,7 +96,8 @@ function sealed(call) {
 function pieced(call) { return { piece: { id: 'p' + (n + 1), n: 0, of: 1, text: Buffer.from(JSON.stringify(call)).toString('base64') } }; }
 const refused = function (a) { return !a.thrown && a.status >= 400 && a.status < 500 && !!a.body && typeof a.body.code === 'string' && a.body.code !== ''; };
 
-const CARD = { call: 'node.card', args: {} };
+// spirit.card, node.card before goal/G49.23 (box v22 Part 2).
+const CARD = { call: 'spirit.card', args: {} };
 const SHELL = { call: 'spirit.job.create', args: { command: '/bin/sh', args: JSON.stringify(['-c', 'id']) } };
 
 // A request sent to a stand-in world, its answer kept under key; then that the answer never reached the door.
@@ -159,13 +160,13 @@ test.run('a face home told of no face takes no call', 0.8, async function () {
 // Box v29: "The home node answers a face only from a starred relay, one check; a face it answers is a full face." The relay
 // where this node set a face, and starred, works as before.
 const starredWorld = function () { return world(onlyMine, onlyMine); };
-test.run('node.card reaches the door', 0.2, async function () {
+test.run('spirit.card reaches the door', 0.2, async function () {
   const card = await send(lazy('m', starredWorld), MINE, CARD);
-  return (card.reached.indexOf('node.card') !== -1 && card.status === 200) || false;
+  return (card.reached.indexOf('spirit.card') !== -1 && card.status === 200) || false;
 }, test.limit.quick);
-test.run('a sealed node.card reaches the door too', 0.2, async function () {
+test.run('a sealed spirit.card reaches the door too', 0.2, async function () {
   const cardSealed = await send(lazy('m', starredWorld), MINE, sealed(CARD));
-  return (cardSealed.reached.indexOf('node.card') !== -1 && cardSealed.status === 200) || false;
+  return (cardSealed.reached.indexOf('spirit.card') !== -1 && cardSealed.status === 200) || false;
 }, test.limit.quick);
 test.run('a file it asks is served (the face loads its parts so)', 0.2, async function () {
   const m = lazy('m', starredWorld);
@@ -218,7 +219,7 @@ const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file
 // node, NO face is offered (faceForm hides itself) for a relay without star."): the half face of G41.30 and G41.33 is gone.
 // A relay with my face and no star gets nothing at all.
 const plainWorld = function () { return world(onlyMine, never); };
-test.run('with no star, node.card is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return CARD; }), test.limit.quick);
+test.run('with no star, spirit.card is refused and never reaches the door', 0.8, sentAndRefused('plain', plainWorld, MINE, function () { return CARD; }), test.limit.quick);
 
 // Starring takes the node's own word, and a face there.
 test.run('only true counts as a star, so a truthy answer opens nothing', 0.8, sentAndRefused('loose', function () { return world(onlyMine, function () { return 'yes'; }); }, MINE, function () { return CARD; }), test.limit.quick);
@@ -555,7 +556,7 @@ test.run('the node says its key', 0.2, async function () {
   const N = S.N = await scratchNode();
   if (!N.up) return false;
   const run = S.run = path.join(N.root, 'spirit', 'run');
-  const card = await home(N.base, 'node.card');
+  const card = await home(N.base, 'spirit.card');
   S.me = card.body && card.body.publicKey;
   if (!S.me) return false;
   // An app this node runs (its json says node run true, goal/G43.20): it leaves a mark only when started with the word a
@@ -591,7 +592,7 @@ test.run('the relay has no star', 0.8, async function () {
   if (!S.me || !S.R) return false;
   return !(await starOf(S.R.relayKey)) || false;
 }, test.limit.quick);
-test.run('with no faceable mark on the relay, a call from the face is refused and never reaches the door', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
+test.run('with no faceable mark on the relay, a call from the face is refused and never reaches the door', 0.8, faceRefused({ call: 'spirit.card', args: {} }), test.limit.quick);
 
 // The star on, pressed at home: everything is back.
 test.run('spirit.contact.faceable at home puts the star on the relay\'s row', 0.2, async function () {
@@ -644,11 +645,11 @@ test.run('the node holds no face on that relay any more', 0.8, async function ()
   if (!S.before) return false;
   return (await until(function () { return faceName(S.R.base).then(function (n) { return n === ''; }); }, 8000)) || false;
 }, test.limit.quick);
-test.run('with the star off, node.card through it is refused', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
+test.run('with the star off, spirit.card through it is refused', 0.8, faceRefused({ call: 'spirit.card', args: {} }), test.limit.quick);
 test.run('the star put back opens nothing, because the face is gone, not hidden', 0.8, async function () {
   if (!loggedIn()) return false;
   await home(S.N.base, 'spirit.contact.faceable', { key: S.R.relayKey, faceable: true });
-  const back = await face({ call: 'node.card', args: {} });
+  const back = await face({ call: 'spirit.card', args: {} });
   return starRefused(back) || false;
 }, test.limit.quick);
 
@@ -831,7 +832,7 @@ function forgedRefused(q) {
     return (a.status === 403 && !!a.body && a.body.code === 'no-face-here') || false;
   };
 }
-test.run('node.card through it is refused with no-face-here', 0.8, forgedRefused({ call: 'node.card', args: {} }), test.limit.quick);
+test.run('spirit.card through it is refused with no-face-here', 0.8, forgedRefused({ call: 'spirit.card', args: {} }), test.limit.quick);
 test.run('a star does not open it, because with no face of mine nothing opens', 0.8, async function () {
   if (!S.L3 || !S.L3.sid) return false;
   const on3 = await home(S.N.base, 'spirit.contact.faceable', { key: S.D.relayKey, faceable: true });

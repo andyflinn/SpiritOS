@@ -3,7 +3,8 @@
 // spirit/run/spirit/element/changeMyDescription/test/script.js
 // The tests of spirit/element/changeMyDescription/script.js, and of no other module (spec: ./script.md; goal/G41.6). The
 // browser file runs in node on a window of its own: the description type is the real one (spirit/type/string/description/script.js),
-// fieldInput is a stub that keeps what was attached, and the node is a stub that answers node.setDescription.
+// fieldInput is a stub that keeps what was attached, and the node is a stub that answers spirit.setDescription (goal/G49.23 Part 2:
+// the node branch's verbs and reads are the spirit branch's, spirit/script.js, its reads at its client).
 
 const fs = require('fs');
 const path = require('path');
@@ -63,13 +64,12 @@ function world(answer) {
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
       } },
-      // Each path kept; the node family's api.js requires its companion data.js (goal/G41.28, G47.1), as the real one
-      // does: the real file, run once on this window over the real data set.
+      // Each path kept (goal/G41.28, G47.1). goal/G49.23 Part 2: the spirit branch's reads are its client's, the real
+      // spirit/client/script.js, loaded below over the real data set.
       requireScript: function (p) {
         w.required.push(String(p));
-        if (p === 'spirit/node/api.js' && !w.ran) { w.ran = true; win.spirit.requireScript('spirit/node/data.js'); }
-        // The node branch, required by its api.js's path, answers the stand-in's node verbs (goal/G49.6: one place, no branch by name).
-        if (p === 'spirit/node/api.js') return Promise.resolve(w.nodeApi);
+        // The spirit branch, required by its path, answers the stand-in's verbs (goal/G49.6: one place, no branch by name).
+        if (p === 'spirit/script.js') return Promise.resolve(w.nodeApi);
         if (Object.prototype.hasOwnProperty.call(w.stands, String(p))) return Promise.resolve(w.stands[String(p)]);
         return Promise.reject(new Error('no stand-in for ' + p));
       } },
@@ -78,11 +78,12 @@ function world(answer) {
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
-  Object.defineProperty(w.nodeApi, 'data', { get: function () { return ((win.spirit || {}).node || {}).data; } });
+  // goal/G49.23, box v22 Part 2: the spirit branch carries its client (the store, spirit.client) as client, as the loader's
+  // branch does, read at each use.
+  Object.defineProperty(w.nodeApi, 'client', { get: function () { return (win.spirit || {}).client; } });
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = [SUBJECT, 'spirit/node/data.js', 'spirit/type/string/description/script.js', 'spirit/client/script.js'];
+  const REAL = [SUBJECT, 'spirit/type/string/description/script.js', 'spirit/client/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
@@ -100,13 +101,13 @@ function world(answer) {
   win.spirit.client.homeNode(win.spirit.nodeFacts.key);
   if (fs.existsSync(FILE)) pageRequire(SUBJECT);
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
-  // outcome as spirit.js has it, and the node family's setDescription, which records every call and answers as the node would
+  // outcome as spirit.js has it, and the spirit branch's setDescription, which records every call and answers as the node would
   // (its body, or a refusal thrown with its status and body).
   win.spirit.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
   win.spirit.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
   w.nodeApi.setDescription = function (args) {
-    w.calls.push({ name: 'node.setDescription', args: args });
-    const a = answer('node.setDescription', args);
+    w.calls.push({ name: 'spirit.setDescription', args: args });
+    const a = answer('spirit.setDescription', args);
     return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
   };
   win.spirit.readyPromise = Promise.resolve(win.spirit);
@@ -182,14 +183,14 @@ test.run('a description past its limit never reaches the wire, and the field say
   await settle();
   return (w.calls.length === 0 && said.textContent.length > 0) ? true : false;
 }, test.limit.quick);
-test.run('Save asks node.setDescription with the field as typed', 0.2, async function () {
+test.run('Save asks spirit.setDescription with the field as typed', 0.2, async function () {
   // Save asks the node, and the field shows what it stored (rule/19)
   input.value = '  Bob  ';
   input.fire('input');
   save.fire('click');
   await settle();
   c = w.calls[0];
-  return (c && c.name === 'node.setDescription' && c.args.description === '  Bob  ') ? true : false;
+  return (c && c.name === 'spirit.setDescription' && c.args.description === '  Bob  ') ? true : false;
 }, test.limit.quick);
 test.run('the field then shows the description the node stored', 0.2, function () {
   return (input.value === 'Bob') ? true : false;
@@ -197,11 +198,11 @@ test.run('the field then shows the description the node stored', 0.2, function (
 test.run('after the save it says saved', 0.2, function () {
   return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
-test.run('it requires spirit/node/api.js, and the description the node stored is kept in the card of the node branch\'s data', 0.2, function () {
+test.run('it requires spirit/script.js, and the description the node stored is kept in the card of the spirit branch\'s client', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
-  // goal/G49.23: the card read from the node branch the element requires (its data), never from the store by a short name.
-  N = w.nodeApi.data;
-  return (w.required.indexOf('spirit/node/api.js') !== -1 && !!N && !!N.card.get() && N.card.get().description === 'Bob') ? true : false;
+  // goal/G49.23: the card read from the spirit branch the element requires (its client), never from the store by a short name.
+  N = w.nodeApi.client;
+  return (w.required.indexOf('spirit/script.js') !== -1 && !!N && !!N.card.get() && N.card.get().description === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('it requires no data script, as only an api.js requires its data.js', 0.2, function () {
   return !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;

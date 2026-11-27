@@ -354,9 +354,10 @@ test.run('on the node, DEBUG off, its garbage address answers as an address of n
   return (offData.status === none.status) ? true : false;
 }, test.limit.quick);
 
-test.run('the scratch node\'s DEBUG is switched on, by node.debug', 0.2, async function () {
+// spirit.debug, node.debug before goal/G49.23 (box v22 Part 2).
+test.run('the scratch node\'s DEBUG is switched on, by spirit.debug', 0.2, async function () {
   if (!node || !node.up) return false;
-  on = json(await call(N, 'node.debug', { debug: { on: true } }));
+  on = json(await call(N, 'spirit.debug', { debug: { on: true } }));
   return (on && on.debug === true) ? true : false;
 }, test.limit.quick);
 

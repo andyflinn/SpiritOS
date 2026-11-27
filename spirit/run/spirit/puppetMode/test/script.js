@@ -99,8 +99,9 @@ test.run('a command the owner signed for this puppet gives the verb and body to 
   return (got.ok === true && got.verb === 'job.list' && short(got.body) === short({ all: true })) || false;
 }, test.limit.quick);
 test.run('an owner\'s command with no body runs with an empty body', 0.2, function () {
-  const got = P.ownerCommandIn(arrive(command('node.card')), switchOpts());
-  return (got.ok === true && got.verb === 'node.card' && short(got.body) === '{}') || false;
+  // spirit.card, node.card before goal/G49.23 (box v22 Part 2).
+  const got = P.ownerCommandIn(arrive(command('spirit.card')), switchOpts());
+  return (got.ok === true && got.verb === 'spirit.card' && short(got.body) === '{}') || false;
 }, test.limit.quick);
 test.run('a node that is not a puppet takes no command at all, even a well-signed one, and answers 403 not a puppet', 0.2, function () {
   const got = P.ownerCommandIn(arrive(command('job.list')), switchOpts(''));

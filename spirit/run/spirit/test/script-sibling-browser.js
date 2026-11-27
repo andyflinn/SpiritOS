@@ -215,8 +215,8 @@ const WATCH = String.raw`(function () {
   var READ_VERB = /\.(search|get|list|status|card|read|tree|history|load|loadFile|ls|stat)$/;
   function isWrite(body) {
     var b = null; try { b = JSON.parse(String(body || '')); } catch (e) { return null; }
-    // Spirit's own asks are no write: the stream (event.subscribe) and a family's interface (api).
-    if (!b || typeof b.call !== 'string' || b.call === 'event.subscribe' || b.call === 'api') return null;
+    // Spirit's own asks are no write: the stream (spirit.subscribe, event.subscribe before goal/G49.23) and a family's interface (api).
+    if (!b || typeof b.call !== 'string' || b.call === 'spirit.subscribe' || b.call === 'api') return null;
     var op = b.args && b.args.op;
     if (op ? READ_OPS.indexOf(String(op)) !== -1 : READ_VERB.test(b.call)) return null;
     return b.call + (op ? ' ' + op : '');
@@ -269,7 +269,7 @@ const WATCH = String.raw`(function () {
     // A write is the module's: made with its code on the way, spirit carrying it.
     // EVERY FAMILY IT CALLS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS"): the
     // family of each call its code made, read or write, spirit's own asks (the stream, an interface) left out.
-    if (moduleMade()) { try { var cb = JSON.parse(String((o && o.body) || '')); var fam = cb && typeof cb.call === 'string' && cb.call !== 'api' && cb.call !== 'event.subscribe' ? cb.call.split('.')[0] : ''; if (fam && W.families.indexOf(fam) === -1) W.families.push(fam); } catch (e) { /* no call */ } }
+    if (moduleMade()) { try { var cb = JSON.parse(String((o && o.body) || '')); var fam = cb && typeof cb.call === 'string' && cb.call !== 'api' && cb.call !== 'spirit.subscribe' ? cb.call.split('.')[0] : ''; if (fam && W.families.indexOf(fam) === -1) W.families.push(fam); } catch (e) { /* no call */ } }
     var w = moduleMade() ? isWrite(o && o.body) : null;
     if (!w) return realFetch.apply(this, arguments);
     W.writes.push(w); opened();

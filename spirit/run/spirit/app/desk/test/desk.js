@@ -107,7 +107,7 @@ function interfaceOf(body) {
 }
 function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : []; }
 // ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /spirit {verb, ...}): his pages' publishes
-// (event.publish, the row as app) into pages; the event stream peerPost reads its answers on (event.subscribe); a
+// (spirit.publish, the row as app; goal/G49.23 Part 2: event.* are spirit.*) into pages; the event stream peerPost reads its answers on (spirit.subscribe); a
 // family's interface (api {family}); each post to a subscriber's desk listener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.
 // A job (spirit.job.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
@@ -120,11 +120,11 @@ function pretendNode() {
       let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
       // ONE ENVELOPE (goal/G41.15): { call, args } at the door, read here as the verb and its arguments.
       if (b && typeof b.call === 'string') b = Object.assign({}, b.args || {}, { verb: b.call });
-      if (b.verb === 'event.subscribe') {
+      if (b.verb === 'spirit.subscribe') {
         res.writeHead(200, { 'Content-Type': 'text/event-stream' }); res.write(': open\n\n'); streams.push(res); return;
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      if (b.verb === 'event.publish') { if (b.app) pages.push(b.app); res.end('{"ok":true}'); return; }
+      if (b.verb === 'spirit.publish') { if (b.app) pages.push(b.app); res.end('{"ok":true}'); return; }
       if (b.verb === 'api' && typeof b.branch === 'string') { res.end(JSON.stringify(interfaceOf({ api: { branch: b.branch } }))); return; }
       if (b.verb !== 'peer.post') { res.end('{"ok":true}'); return; }
       const hash = 'H' + Date.now() + Math.random();

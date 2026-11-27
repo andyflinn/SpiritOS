@@ -1359,8 +1359,8 @@ const WATCH = String.raw`(function () {
   var READ_VERB = /\.(search|get|list|status|card|read|tree|history|load|loadFile|ls|stat)$/;
   function isWrite(body) {
     var b = null; try { b = JSON.parse(String(body || '')); } catch (e) { return null; }
-    // Spirit's own asks are no write: the stream (event.subscribe) and a family's interface (api).
-    if (!b || typeof b.call !== 'string' || b.call === 'event.subscribe' || b.call === 'api') return null;
+    // Spirit's own asks are no write: the stream (spirit.subscribe, event.subscribe before goal/G49.23) and a family's interface (api).
+    if (!b || typeof b.call !== 'string' || b.call === 'spirit.subscribe' || b.call === 'api') return null;
     var op = b.args && b.args.op;
     if (op ? READ_OPS.indexOf(String(op)) !== -1 : READ_VERB.test(b.call)) return null;
     return b.call + (op ? ' ' + op : '');
@@ -1991,15 +1991,16 @@ function every() {
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
     return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
+  // The floor two lower since goal/G49.23 (box v22 Part 2): spirit/node/data.js and spirit/event/data.js went with their branches.
   test.run('every api.js beside a data.js requires that data.js', 0.4, function () {
     const data = branchDataFiles(E.elementFiles);
-    return (data.length > 10 && data.every(function (d) { return dataRequiresOf(d.replace(/data\.js$/, 'api.js')).indexOf(d) !== -1; })) || false;
+    return (data.length > 8 && data.every(function (d) { return dataRequiresOf(d.replace(/data\.js$/, 'api.js')).indexOf(d) !== -1; })) || false;
   }, test.limit.quick);
   test.run('no product file but its api.js requires a branch data.js', 0.4, function () {
     const data = branchDataFiles(E.elementFiles);
     const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
     const strays = product.filter(function (f) { return dataRequiresOf(f).some(function (d) { return data.indexOf(d) !== -1 && f !== d.replace(/data\.js$/, 'api.js'); }); });
-    return (data.length > 10 && product.length > 100 && !strays.length) || false;
+    return (data.length > 8 && product.length > 100 && !strays.length) || false;
   }, test.limit.quick);
   test.run('no product file loads a branch file by the branch name: each is required by its full path', 0.4, function () {
     const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
@@ -2354,7 +2355,7 @@ function oneFile(P) {
   {
     const own = ownCode;
     // A write in code: an op that changes a row ({ op: 'set' }), a verb named as a string that changes one
-    // ('node.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.relay.api.join(...)).
+    // ('spirit.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.relay.api.join(...)).
     const WRITE = /\bop\s*:\s*['"](add|set|delete|remove|grant|revoke|ask|claim|press)['"]|['"][a-z]\w*(?:\.[a-z]\w*)*\.(?:set[A-Z]\w*|set|add|delete|remove|grant|revoke|join|face|write|press|claim)['"]|\bspirit\.\w+\.(?:set[A-Z]\w*|join|face|grant|revoke)\s*\(|\.relay\.(?:join|face)\s*\(|\.(?:saveFile|grant|revoke)\s*\(\s*\w/;
     const writes = WRITE.exec(own);
     // <address>: what its code changes, it watches in the store

@@ -127,23 +127,27 @@ test.run('"path <<" makes the prompt "spirit: " again', 0.4, async function () {
   const ok = await type(W.t, 'path <<', 'spirit: ');
   return (!!ok && at() === '') || false;
 }, test.limit.slow);
-test.run('then "path node" makes the prompt "spirit.node: "', 0.4, async function () {
+// spirit/node/ is gone since goal/G49.23 (box v22 Part 2): another branch, spirit.bundle, where neither path can be used,
+// and the node's verbs, card among them, are the spirit branch's, at the root.
+test.run('then "path bundle" makes the prompt "spirit.bundle: "', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
-  W.atNode = !!(await type(W.t, 'path node', 'spirit.node: ')) && at() === 'node';
+  W.atNode = !!(await type(W.t, 'path bundle', 'spirit.bundle: ')) && at() === 'bundle';
   return W.atNode || false;
 }, test.limit.slow);
-test.run('at "spirit.node: " the up key offers neither "path agent" nor "path app.agent": they cannot be used from there', 0.4, async function () {
+test.run('at "spirit.bundle: " the up key offers neither "path agent" nor "path app.agent": they cannot be used from there', 0.4, async function () {
   if (!W.t || W.t.ended || !W.atNode) return false;
-  const seen = await offers(W.t, 'spirit.node: ', 6);
+  const seen = await offers(W.t, 'spirit.bundle: ', 6);
   return (seen.indexOf('path agent') === -1 && seen.indexOf('path app.agent') === -1) || false;
 }, test.limit.slow);
 // goal/G48.3, Andy: "a successfully run command must be logged in state and be available for re-use with the up-key on the
 // keyboad, the up key isn't for navigation only, it's for every command that is successful."
-test.run('at "spirit.node: " a verb that ran, "card", is offered again by the up key', 0.4, async function () {
+test.run('at "spirit: ", the spirit branch, a verb that ran, "card", is offered again by the up key', 0.4, async function () {
   if (!W.t || W.t.ended || !W.atNode) return false;
-  await type(W.t, 'card', 'spirit.node: ');
-  await type(W.t, 'nope', 'spirit.node: ');
-  W.afterCard = await offers(W.t, 'spirit.node: ', 4);
+  W.t.kid.stdin.write('\x15');
+  if (!(await type(W.t, 'path <<', 'spirit: ')) || at() !== '') return false;
+  await type(W.t, 'card', 'spirit: ');
+  await type(W.t, 'nope', 'spirit: ');
+  W.afterCard = await offers(W.t, 'spirit: ', 4);
   return W.afterCard.indexOf('card') !== -1 || false;
 }, test.limit.slow);
 test.run('a command that failed, "nope", is not offered by the up key', 0.4, function () {

@@ -178,7 +178,8 @@ async function startNode(lab, port) {
   const up = await until(function () {
     return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
   }, 60000);
-  const debug = up ? await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'node.debug', args: { debug: { on: true } } }) })
+  // spirit.debug, node.debug before goal/G49.23 (box v22 Part 2).
+  const debug = up ? await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.debug', args: { debug: { on: true } } }) })
     .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.debug === true); }, function () { return false; }) : false;
   return { child: child, base: base, port: at, up: up, debug: debug };
 }

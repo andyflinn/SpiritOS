@@ -137,9 +137,11 @@ test.run('"path <<" at the root is refused with an error, and the path stays the
 // command-line-format in json, human and machine readable, with a field \"usage\" at the very bottom". Andy: "the console
 // command: \"api search\" will return a JSON.stringify(search,null,2) desription. period." What the branch has is read from
 // this tree's own files, by the test only: its api.js names the verbs, each <verb>.json describes one.
-// The verbs an api.js names, read in a process of its own, so this test's spirit object stays its own.
+// The verbs an api.js names, read in a process of its own, so this test's spirit object stays its own. The spirit branch
+// (goal/G49.23, box v22 Part 2: the node branch's verbs are the spirit branch's, spirit/node/ gone), rel '', is
+// spirit/script.js, its verbs spirit.verbs.
 const verbsOf = function (rel) {
-  const r = require('child_process').spawnSync(process.execPath, ['-e', 'process.stdout.write(JSON.stringify(Object.keys(require(process.argv[1]).verbs || {}).sort()))', path.join(W.node.run, 'spirit', rel, 'api.js')], { encoding: 'utf8', timeout: 30000 });
+  const r = require('child_process').spawnSync(process.execPath, ['-e', 'process.stdout.write(JSON.stringify(Object.keys(require(process.argv[1]).verbs || {}).sort()))', rel ? path.join(W.node.run, 'spirit', rel, 'api.js') : path.join(W.node.run, 'spirit', 'script.js')], { encoding: 'utf8', timeout: 30000 });
   try { return JSON.parse(r.stdout); } catch (e) { return null; }
 };
 const fileOf = function (rel, verb) { try { return JSON.parse(fs.readFileSync(path.join(W.node.run, 'spirit', rel, verb + '.json'), 'utf8')); } catch (e) { return null; } };
@@ -158,30 +160,31 @@ test.run('"api" at the root, where spirit has no api.js, answers a JSON error', 
   const p = await go('api');
   return refused(p, '') || false;
 }, test.limit.slow);
-test.run('"api" at spirit.nodeFacts lists its verbs in JSON, by name only and sorted, as its api.js names them', 0.4, async function () {
+// The spirit branch at the root, spirit, where spirit.nodeFacts' verbs stood at node (goal/G49.23, box v22 Part 2).
+test.run('"api" at the root, the spirit branch, lists its verbs in JSON, by name only and sorted, as spirit.verbs names them', 0.4, async function () {
   if (!up()) return false;
-  await go('path node');
-  if (at() !== 'node') return false;
+  await go('path <<');
+  if (at() !== '') return false;
   const p = await go('api');
-  const want = verbsOf('node');
+  const want = verbsOf('');
   const got = json(p.out);
   return (!!want && want.length > 0 && Array.isArray(got) && JSON.stringify(got) === JSON.stringify(want)) || false;
 }, test.limit.slow);
-test.run('"api card" at spirit.nodeFacts answers card.json\'s description and request in JSON, with "usage" at the very bottom', 0.4, async function () {
-  if (!up() || at() !== 'node') return false;
+test.run('"api card" at the root, the spirit branch, answers spirit/card.json\'s description and request in JSON, with "usage" at the very bottom', 0.4, async function () {
+  if (!up() || at() !== '') return false;
   const p = await go('api card');
-  return describes(p.out, 'card', fileOf('node', 'card')) || false;
+  return describes(p.out, 'card', fileOf('', 'card')) || false;
 }, test.limit.slow);
 test.run('a verb\'s answer is printed as JSON.stringify(it, null, 2)', 0.4, async function () {
-  if (!up() || at() !== 'node') return false;
+  if (!up() || at() !== '') return false;
   const p = await go('api card');
   const o = json(p.out);
   return (!!o && typeof o.usage === 'string' && String(p.out).trim() === JSON.stringify(o, null, 2)) || false;
 }, test.limit.slow);
-test.run('"api nope", a verb spirit.nodeFacts does not have, answers a JSON error, and the path stays', 0.4, async function () {
-  if (!up() || at() !== 'node') return false;
+test.run('"api nope", a verb the spirit branch does not have, answers a JSON error, and the path stays', 0.4, async function () {
+  if (!up() || at() !== '') return false;
   const p = await go('api nope');
-  return refused(p, 'node') || false;
+  return refused(p, '') || false;
 }, test.limit.slow);
 test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description and request, its usage naming item.get and its id', 0.4, async function () {
   if (!up()) return false;
@@ -225,37 +228,37 @@ async function call(verb, args) {
   } catch (e) { return { status: 0, body: null }; }
 }
 const answered = function (p) { const o = json(p.out); return p.ended && !!o && typeof o === 'object' && o.ok !== false && String(p.out).trim() === JSON.stringify(o, null, 2) ? o : null; };
-test.run('at spirit.nodeFacts, "card" executes node.card and shows its answer as JSON.stringify(answer, null, 2)', 0.4, async function () {
+// spirit.card, node.card at node before goal/G49.23 (box v22 Part 2); the spirit branch is the root.
+test.run('at the root, "card" executes spirit.card and shows its answer as JSON.stringify(answer, null, 2)', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
-  await go('path node');
-  if (at() !== 'node') return false;
+  if (at() !== '') return false;
   const p = await go('card');
   const o = answered(p);
-  const want = await call('node.card');
+  const want = await call('spirit.card');
   return (!!o && want.status === 200 && JSON.stringify(o) === JSON.stringify(want.body)) || false;
 }, test.limit.slow);
 test.run('a value with a space, put in double quotes, arrives whole: setDescription description="said in four words"', 0.4, async function () {
-  if (!up() || at() !== 'node') return false;
+  if (!up() || at() !== '') return false;
   const p = await run(['setDescription', 'description="said in four words"']);
-  const card = await call('node.card');
+  const card = await call('spirit.card');
   return (!!answered(p) && card.status === 200 && card.body.description === 'said in four words') || false;
 }, test.limit.slow);
 // A DOUBLE QUOTE IN A VALUE (goal/G48.8, wsl: "a quoted value cannot hold a double quote, there is no escape"; Andy: "cw, fix
 // the console. push it"): typed \" inside the quotes, it arrives as a double quote.
 test.run('a double quote typed \\" inside a quoted value arrives as one: setDescription description="a \\"quoted\\" word"', 0.4, async function () {
-  if (!up() || at() !== 'node') return false;
+  if (!up() || at() !== '') return false;
   const p = await run(['setDescription', 'description="a \\"quoted\\" word"']);
-  const card = await call('node.card');
+  const card = await call('spirit.card');
   return (!!answered(p) && card.status === 200 && card.body.description === 'a "quoted" word') || false;
 }, test.limit.slow);
 test.run('an object argument is read as JSON: debug debug={"on":...} sets the node\'s debug flag', 0.4, async function () {
-  if (!up() || at() !== 'node') return false;
-  const before = await call('node.debug', { debug: {} });
+  if (!up() || at() !== '') return false;
+  const before = await call('spirit.debug', { debug: {} });
   if (before.status !== 200 || typeof before.body.debug !== 'boolean') return false;
   const want = !before.body.debug;
   const p = await run(['debug', 'debug={"on":' + want + '}']);
-  const after = await call('node.debug', { debug: {} });
+  const after = await call('spirit.debug', { debug: {} });
   return (!!answered(p) && after.body.debug === want) || false;
 }, test.limit.slow);
 // The bundle table is a branch of its own since goal/G49.21, spirit.bundle, its verbs add and get with no op.
@@ -288,10 +291,11 @@ test.run('a yes/no argument is read as true or false: at spirit.contact, search 
 test.run('the command history rolls at 256: after 300 more lines it holds 256, the newest last', 0.4, async function () {
   if (!up()) return false;
   const lines = [];
-  for (let i = 0; i < 150; i += 1) { lines.push('path node'); lines.push('path <<'); }
+  // A folder that is there, spirit/node/ gone since goal/G49.23.
+  for (let i = 0; i < 150; i += 1) { lines.push('path app'); lines.push('path <<'); }
   await run([], lines.join('\n') + '\n');
   const h = history();
-  return (!!h && h.length === 256 && h[h.length - 2] === 'path node' && at() === '') || false;
+  return (!!h && h.length === 256 && h[h.length - 2] === 'path app' && at() === '') || false;
 }, test.limit.long);
 
 // ── THE WAIT (goal/G48.6) ──────────────────────────────────────────────────────────────────────────────────────────────

@@ -134,7 +134,8 @@ async function ownScratch() {
     return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
   };
   const up = await until(function () { return post('api').then(function (r) { return r.status === 200; }); }, 60000);
-  if (up) await post('node.debug', { debug: { on: true } }).catch(function () { /* the page loads without it */ });
+  // spirit.debug, node.debug before goal/G49.23 (box v22 Part 2).
+  if (up) await post('spirit.debug', { debug: { on: true } }).catch(function () { /* the page loads without it */ });
   return { root: root, base: base, child: child, up: up };
 }
 // THE NODE TESTICLE HANDS ITS RUNS, WHEN IT HANDS ONE (goal/G49.8; Andy: "make it smaller! make it faster!", "do it."; wsl's

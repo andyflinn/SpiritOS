@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/starter/test/element.js
 // The tests of spirit/app/starter/element.js, and of no other module (spec: ./starter.md; goal/G43.27). The browser file
-// runs in node on a bare window: the node's family is a stand-in that answers node.card, and spirit.callOutcome wraps an
+// runs in node on a bare window: the node's family is a stand-in that answers spirit.card (goal/G49.23 Part 2: node.* are spirit.*), and spirit.callOutcome wraps an
 // answer as spirit.js's does ({status, body}).
 
 const fs = require('fs');
@@ -33,7 +33,7 @@ function node(tag) {
   return n;
 }
 
-// A world: card is what node.card answers (a body), or an Error for a refusal; hold delays the answer.
+// A world: card is what spirit.card answers (a body), or an Error for a refusal; hold delays the answer.
 function world(card, hold) {
   const w = { asked: [], required: [] };
   const win = {
@@ -44,7 +44,7 @@ function world(card, hold) {
   win.window = win;
   vm.createContext(win);
   const family = { card: function (args) {
-    w.asked.push({ verb: 'node.card', args: args });
+    w.asked.push({ verb: 'spirit.card', args: args });
     const answer = card instanceof Error ? Promise.reject(card) : Promise.resolve(card);
     return hold ? hold.then(function () { return answer; }) : answer;
   } };
@@ -54,8 +54,8 @@ function world(card, hold) {
       return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
         function (e) { return { status: 500, body: { ok: false, error: e.message } }; });
     },
-    // The node's branch by its api.js path (goal/G49.6: never by a name).
-    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(String(p) === 'spirit/node/api.js' ? family : {}); },
+    // The spirit branch by its path, spirit/script.js (goal/G49.23 Part 2: the node branch's verbs are the spirit branch's).
+    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(String(p) === 'spirit/script.js' ? family : {}); },
   };
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js is placed at
   // spirit.app.starter.element as it runs (goal/G49.23: on the spirit object itself).
@@ -84,16 +84,16 @@ test.run('create answers an object with destroy', 0.2, function () {
 }, test.limit.quick);
 
 // 2. it asks its node once
-test.run('it asks node.card once', 0.2, async function () {
+test.run('it asks spirit.card once', 0.2, async function () {
   if (!W.box) return false;
   await settle();
-  return W.w.asked.length === 1 && W.w.asked[0].verb === 'node.card' ? true : false;
+  return W.w.asked.length === 1 && W.w.asked[0].verb === 'spirit.card' ? true : false;
 }, test.limit.quick);
-// goal/G47.1, Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS": the node's interface for
-// node.card; nothing else. Since goal/G49.6 the call asks the branch by that path again, as it calls it.
-test.run('it requires the node interface, and nothing else', 0.2, function () {
+// goal/G47.1, Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS": the spirit branch for
+// spirit.card; nothing else. Since goal/G49.6 the call asks the branch by that path again, as it calls it.
+test.run('it requires the spirit branch, and nothing else', 0.2, function () {
   if (!W.w) return false;
-  return W.w.required.length >= 1 && W.w.required.every(function (p) { return p === 'spirit/node/api.js'; }) || false;
+  return W.w.required.length >= 1 && W.w.required.every(function (p) { return p === 'spirit/script.js'; }) || false;
 }, test.limit.quick);
 
 // 3. it shows what the card says

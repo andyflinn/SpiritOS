@@ -59,15 +59,16 @@ const askDoor = function (at, body) {
   return fetch(W.node.base + at, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
     .then(function (r) { return r.text().then(function (t) { let b = null; try { b = JSON.parse(t); } catch (e) { b = null; } return { status: r.status, body: b }; }); }, function () { return { status: 0, body: null }; });
 };
-test.run('a call POSTed to /spirit is answered: node.card answers this node\'s card', 0.2, async function () {
+// spirit.card, node.card before goal/G49.23 (box v22 Part 2).
+test.run('a call POSTed to /spirit is answered: spirit.card answers this node\'s card', 0.2, async function () {
   if (!W.node || !W.node.up) return false;
-  const r = await askDoor('/spirit', { call: 'node.card', args: {} });
+  const r = await askDoor('/spirit', { call: 'spirit.card', args: {} });
   return (r.status === 200 && !!r.body && typeof r.body.publicKey === 'string') || false;
 }, test.limit.quick);
 // 404 or 405: the node answers a POST to any path it does not route 405, as it did before goal/G49.18.
 test.run('the old door, under api, answers no call: 404 or 405', 0.8, async function () {
   if (!W.node || !W.node.up) return false;
-  const r = await askDoor(OLD_DOOR, { call: 'node.card', args: {} });
+  const r = await askDoor(OLD_DOOR, { call: 'spirit.card', args: {} });
   return ((r.status === 404 || r.status === 405) && !(r.body && r.body.publicKey)) || false;
 }, test.limit.quick);
 test.run('a GET of /spirit/script.js is still the spirit object, the file, beside the door', 0.2, async function () {
@@ -317,18 +318,19 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
   });
   // 2) RAW BODIES AT THE NODE'S DOOR (the box, rule 2: "malformed, invalid arguments").
   const BODY_MAX = limits.BODY_MAX;
-  const deepJson = '{"call":"node.card","args":' + '['.repeat(5000) + ']'.repeat(5000) + '}';
+  // spirit.card since goal/G49.23 (node.card before); the body over the cap by one byte, its frame 38 bytes.
+  const deepJson = '{"call":"spirit.card","args":' + '['.repeat(5000) + ']'.repeat(5000) + '}';
   const RAWS = G.RAWS = [
     { head: null, type: undefined, body: 'not json!' },
     { head: null, type: undefined, body: '[1,2,3]' },
     { head: null, type: undefined, body: '"string"' },
     { head: null, type: undefined, body: 'null' },
-    { head: postHead('/spirit', 100), body: '{"call":"node.ca', keepOpen: true },
-    { head: postHead('/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
+    { head: postHead('/spirit', 100), body: '{"call":"spirit.ca', keepOpen: true },
+    { head: postHead('/spirit', BODY_MAX + 1), body: '{"call":"spirit.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 38) + '"}}' },
     { head: postHead('/spirit', 10000000), body: '{}' , keepOpen: true },
     { head: postHead('/spirit', Buffer.byteLength(deepJson)), body: deepJson },
-    { head: null, type: undefined, body: '{"call":"node.card","args":{"__proto__":{"admin":1}}}' },
-    { head: null, type: undefined, body: '{"call":"node.card","args":{"constructor":{"x":1}}}' },
+    { head: null, type: undefined, body: '{"call":"spirit.card","args":{"__proto__":{"admin":1}}}' },
+    { head: null, type: undefined, body: '{"call":"spirit.card","args":{"constructor":{"x":1}}}' },
     { head: null, type: undefined, body: '{"call":"__proto__","args":{}}' },
     { head: null, type: undefined, body: '{"call":"constructor.prototype","args":{}}' },
     { head: null, type: null, body: '{"call":"api","args":{}}' },

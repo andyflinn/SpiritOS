@@ -59,9 +59,10 @@ test.run('the node serves no auth branch any more', 0.2, function () {
 }, test.limit.quick);
 
 // A GRANT, ADDED, FOUND AND DELETED (goal/G49.21: grant becomes spirit.grant.add, revoke spirit.grant.delete, search stays):
-// a member's key given one served path, node.card, found by search, then taken back.
+// a member's key given one served path, spirit.card (node.card before goal/G49.23, box v22 Part 2), found by search, then
+// taken back.
 const KEY = 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=';
-const PATH = 'node.card';
+const PATH = 'spirit.card';
 const holds = function (r) { const items = (r.body && r.body.items) || []; return items.some(function (i) { return JSON.stringify(i).indexOf(KEY) !== -1 && JSON.stringify(i).indexOf(PATH) !== -1; }); };
 test.run('spirit.grant.add gives a key a served path', 0.2, async function () {
   if (!W.node || !W.node.up) return false;
