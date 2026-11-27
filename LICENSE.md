@@ -1,3 +1,5 @@
+Required Notice: Copyright 2018-2026 Andy Flinn (https://andyflinn.com)
+
 # Big Time Public License
 
 Version 2.0.0
