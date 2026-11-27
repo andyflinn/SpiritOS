@@ -1284,7 +1284,9 @@ function exportsCreate(f) {
   w.window = w;
   w.spirit = { required: {}, requireScript: never, readyPromise: never() };
   vm.createContext(w);
-  try { const e = H.runAsPage(f, w); return !!e && typeof e.create === 'function'; } catch (e) { return false; }
+  // The helper by its path, here: the parts run where the file's own const H does not reach (goal/G49.23: it threw 'H is not
+  // defined', so no script was ever taken for an element and every element check judged none).
+  try { const e = SPIRIT.requireScript('spirit/test/headLessChrome.js').runAsPage(f, w); return !!e && typeof e.create === 'function'; } catch (e) { return false; }
 }
 function isElementScript(rel) { const f = String(rel || ''); return /\.js$/.test(f) && ELEMENT_PLACE.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)) && exportsCreate(f); }
 function kindOf(file) { return isElementScript(file) ? 'element' : ''; }
