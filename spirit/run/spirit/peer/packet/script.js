@@ -382,11 +382,17 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
 } else if (typeof window !== 'undefined') {
   // WHAT IT HANDS OUT GOES THROUGH THE LOADER (goal/G49.23, box v9: "spirit.requireScript() places it's return objects"; goal/G49.9:
   // a script reaches another only through what spirit.requireScript hands back): on a page as in node, the module box the loader
-  // hands every own script; it places the object at its path, and nothing here writes spirit.required.
-  if (typeof module !== 'undefined' && module) module.exports = packetApi;
+  // hands every own script; it places the object at its path, and nothing here writes spirit.required. The object was put out
+  // as this file ran (below), and is filled here.
+  Object.keys(packetApi).forEach(function (k) { pageOut[k] = packetApi[k]; });
 }
 }
 
+// ON A PAGE ITS OBJECT IS PUT OUT AS THE FILE RUNS, filled once the limits are in (goal/G49.23): the loader reads what a script put
+// out right after it ran, so one set later is never placed; the limits' require, made as it runs, is one the loader waits for
+// before it hands this file's object to anyone, so whoever gets it gets it filled.
+var pageOut = {};
+if (!(typeof process !== 'undefined' && process.versions && process.versions.node) && typeof module !== 'undefined' && module) module.exports = pageOut;
 if ((typeof process !== 'undefined' && process.versions && process.versions.node) || limits) definePacket();
 // On a page, the limits as spirit.requireScript hands them back (goal/G49.23), never read at their place.
 else window.spirit.requireScript('spirit/limits/script.js').then(function (got) { limits = got || null; definePacket(); });
