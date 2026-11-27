@@ -4,7 +4,8 @@
 // as client, an old-shape branch's as data.
 var KEPT_BRANCHES = {};
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
-function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
+// A new-shape branch carries its rows as client, an old-shape one as data.
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data || null : null; }
 // spirit/run/spirit/app/text/element.js
 // TEXT, AN ELEMENT (goal/G43.17; the box: "Four elements: file, fstat, text and media", and "text and media take a file when
 // mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from

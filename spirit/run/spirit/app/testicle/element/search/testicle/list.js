@@ -4,7 +4,8 @@
 // as client, an old-shape branch's as data.
 var KEPT_BRANCHES = {};
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/testicle/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
-function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
+// A new-shape branch carries its rows as client, an old-shape one as data.
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data || null : null; }
 // spirit/run/spirit/app/testicle/element/search/testicle/list.js
 // THE TESTICLE LIST, AN ELEMENT (goal/G47.1, the search cycle): every current test row of testicle's test table, what the
 // testicle search (../testicle.js) draws in the first, non-closable tab of testicle's face. Its row is ./row.js; a

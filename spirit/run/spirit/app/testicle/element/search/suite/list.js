@@ -4,7 +4,8 @@
 // as client, an old-shape branch's as data.
 var KEPT_BRANCHES = {};
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/testicle/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
-function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
+// A new-shape branch carries its rows as client, an old-shape one as data.
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data || null : null; }
 // spirit/run/spirit/app/testicle/element/search/suite/list.js
 // THE SUITE LIST, AN ELEMENT (goal/G47.1, the UI cycle): the suites of one production file, what testicle's file detail
 // draws through the suite selector (../suite.js). Its row is ./row.js; no row opens a detail.

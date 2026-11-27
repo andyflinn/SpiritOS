@@ -4,7 +4,8 @@
 // as client, an old-shape branch's as data.
 var KEPT_BRANCHES = {};
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/desk/api.js','spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
-function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
+// A new-shape branch carries its rows as client, an old-shape one as data.
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data || null : null; }
 // spirit/run/spirit/app/desk/element/desk/desk.js
 // ANDY'S DESK FOR TALKING TO THE AGENTS — design/shell/AGENTS-UI.md.
 //

@@ -4,7 +4,8 @@
 // as client, an old-shape branch's as data.
 var KEPT_BRANCHES = {};
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
-function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
+// A new-shape branch carries its rows as client, an old-shape one as data.
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data || null : null; }
 // spirit/run/spirit/app/file/element.js
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
