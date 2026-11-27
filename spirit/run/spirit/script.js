@@ -686,7 +686,8 @@
   var LIMITS = null;
   var looked = Object.create(null);
   function isBranchFolder(dir) {
-    var fsData = STORE && STORE.fs && STORE.fs.data;
+    // The fs client as the loader placed it, at spirit.fs.client (goal/G49.23, box v22 Part 1); the loader reads what it placed itself.
+    var fsData = placedAt('spirit/fs/client/script.js');
     if (fsData && typeof fsData.ready === 'function' && fsData.ready() && typeof fsData.file === 'function') {
       var row = fsData.file(dir);
       return Promise.resolve(!!(row && row.branch === true));
@@ -837,8 +838,9 @@
   function appPath(elementPath) {
     var p = runPathOf(elementPath);
     var loaded = isNode() ? Promise.resolve(requireOne('spirit/fs/dataset/script.js')) : Promise.resolve(requireOne('spirit/fs/script.js'));
-    return loaded.then(function () {
-      var fsData = STORE && STORE.fs && STORE.fs.data;
+    // The fs reads as the require hands them back (goal/G49.23, box v22 Part 1): the dataset in node, the fs branch's client on a page.
+    return loaded.then(function (got) {
+      var fsData = isNode() ? got : (got && got.client);
       if (!fsData) return '';
       return new Promise(function (resolve) {
         if (fsData.ready()) { resolve(); return; }

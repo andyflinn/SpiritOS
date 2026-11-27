@@ -24,7 +24,10 @@ function fill() {
   following = true;
   D.followStream();
 }
-function reads() { return D.fs.data; }
+// ITS READS ARE THE FS CLIENT'S, AS THE REQUIRE HANDS THEM BACK (goal/G49.23, box v22 Part 1: a client's reads stand at its path, no
+// longer in the store by name; G49.1's box: this file "wraps spirit/fs/client/script.js"): in node the client is filled at once.
+const FS_CLIENT = spirit.requireScript('spirit/fs/client/script.js');
+function reads() { return FS_CLIENT; }
 // Required is asked: a process that only requires this file holds the dataset. The writer says FedHere in the same turn it
 // requires this file, so the stream is followed on the next turn only where no watcher writes.
 setImmediate(fill);

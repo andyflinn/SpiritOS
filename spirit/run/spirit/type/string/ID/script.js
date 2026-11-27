@@ -19,13 +19,17 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   // page's own node key, or a contact spirit.required.spirit.data.contact.data holds; until the contact api is loaded, the form decides.
   var knows;
   var ownOnDisc = '';
-  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place), kept once loaded.
-  var pageData = null;
-  if (typeof require !== 'function' && root && root.spirit && typeof root.spirit.requireScript === 'function') {
-    Promise.resolve(root.spirit.requireScript('spirit/client/script.js')).then(function (d) { pageData = d || null; }, function () { /* not loaded: the form decides */ });
-  }
+  // ON A PAGE, THE CONTACT BRANCH AS spirit.requireScript HANDS IT BACK (goal/G49.23, box v22 Part 1: a branch's rows are its client's,
+  // on the branch the require hands back; goal/G49.9: never read at its place): asked for at the first check, kept once it
+  // has come; until then the form decides, as before.
+  var pageContacts = null;
+  var askedContacts = false;
   function onPage() {
-    var C = pageData && pageData.contact && pageData.contact.data;
+    if (!askedContacts && typeof require !== 'function' && root && root.spirit && typeof root.spirit.requireScript === 'function') {
+      askedContacts = true;
+      try { Promise.resolve(root.spirit.requireScript('spirit/contact/script.js')).then(function (b) { pageContacts = b || null; }, function () { /* not there: the form decides */ }); } catch (e) { /* the form decides */ }
+    }
+    var C = pageContacts && pageContacts.client;
     if (!C || typeof C.contact !== 'function') return null;
     return function (k) { var N = root.spirit.nodeFacts; return (N && N.key === k) || !!C.contact(k); };
   }
