@@ -202,6 +202,9 @@ function createFaceHome(opts) {
   // arrives, so the file is never whole in memory; on the last, the size is checked, the work file copied to the target
   // through the save gate (o.saveFrom), then deleted. Each but the last is answered 202 {more: true}.
   const uploads = new Map();   // id -> { file, path, size, of, next, written, at }
+  // NO UPLOAD LEFT FROM A RUN BEFORE (Andy, G49.23: "make sure spirit/tempFolder/ leaves NO garbage"): the transfers live in RAM, so
+  // the work folders of those a restart cut short are known to nobody; started, the uploads' folder is made empty once.
+  try { spirit.requireScript('spirit/tempFolder/script.js').tempFolder('spirit/upload'); } catch (e) { /* no temp folder: nothing to empty */ }
   const UPLOAD_IDLE_MS = 60 * 60 * 1000;
   const UPLOAD_ID = /^[A-Za-z0-9_-]{8,64}$/;
   const nowMs = function () { return typeof o.now === 'function' ? o.now() : Date.now(); };
