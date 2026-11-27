@@ -1698,7 +1698,10 @@ function moduleRules(full) {
   const own = path.basename(full, '.js');
   const isSpirit = path.resolve(full) === path.join(RUN, 'spirit', 'script.js');
   const first = requires[0];
-  const page = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
+  // A TEST IS NEVER PAGE CODE (goal/G49.23, a gap the own-test agent found): every test file runs in node, so a test that
+  // names window still requires spirit.js first; only product code may be page code.
+  const isTestFile = /(^|[\\/])test[\\/]/.test(path.relative(RUN, full));
+  const page = !isSpirit && !isTestFile && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
   // THE RULE (Andy, 2026-11-13, goal/G47.1 box v73, replacing his api.js exemption of v72: "if a module requires
   // anything, it must require spirit.js first. Other modules are required using spirit.requireScript(), unless they are
   // native node.js modules."). A module that requires nothing holds it.
