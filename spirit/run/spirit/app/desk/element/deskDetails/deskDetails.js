@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/desk/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/desk/element/deskDetails/deskDetails.js
 // ONE ITEM OF THE DESK, AS A DIALOG — desk/G2.7.
 //
@@ -762,7 +764,7 @@ function ddRename() {
 // (the desk family's data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 // Asked of the cache's manager (goal/G41.28): spirit.required.spirit.data['spirit.app.desk'].data answers an item's parts; no branch is named here.
-function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && ((KEPT_DATA || {})['spirit.app.desk'] || {}).data && typeof KEPT_DATA['spirit.app.desk'].data.part === 'function' ? ((KEPT_DATA || {})['spirit.app.desk'] || {}).data : null; }
+function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && keptRows('spirit/app/desk/api.js') && typeof keptRows('spirit/app/desk/api.js').part === 'function' ? keptRows('spirit/app/desk/api.js') : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.forget(id); }
 // How many items of a goal are still open (neither done nor closed), as the page holds their facts.
 function ddOpenItems(goalId) {

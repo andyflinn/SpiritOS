@@ -114,6 +114,8 @@
     var testicleReads = {
       tables: TABLES.slice(),
       branch: function (table) { return TABLES.indexOf(String(table)) === -1 ? '' : HOME.path(String(table)); },
+      // A table's rows as kept, key -> row (goal/G49.23: read from the client, never from the store by a path).
+      rows: function (table) { return TABLES.indexOf(String(table)) === -1 ? {} : HOME.branch(String(table)); },
       keep: function (table, rows) {
         if (TABLES.indexOf(String(table)) === -1) return;
         (Array.isArray(rows) ? rows : []).forEach(function (r) { var k = r && typeof r === 'object' ? keyOf(table, r) : ''; if (k) HOME.merge(table + '/' + k, kept(table, r)); });

@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/icons/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/icons/element.js
 // THE ICONS FACE (goal/G43.19, box v16; Q6: icons gets icons/server/server.js and browserIcons.js, as desk has them). Its contract and
 // its test: ./test/icons.md and ./test/icons.js.
@@ -75,7 +77,7 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
     function openIcon(glyph) {
       var layer = null;
       Promise.resolve(openOver('icon/' + glyph, { icon: glyph, label: 'Icon', fill: function (host) {
-        var row = KEPT_DATA['spirit.app.icons'].data.row(glyph) || { glyph: glyph, keywords: [] };
+        var row = keptRows('spirit/app/icons/api.js').row(glyph) || { glyph: glyph, keywords: [] };
         host.innerHTML =
           '<div class="stat-tile wide"><div class="panel-heading" data-icons="glyph" style="font-size:2em">' + esc(glyph) + '</div>' +
           '<label class="field-label">Keywords <input type="text" data-icons="keywords" value="' + esc((row.keywords || []).join(', ')) + '"></label>' +
@@ -85,7 +87,7 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
         var field = host.querySelector('[data-icons="keywords"]');
         ANSWER['spirit/element/fieldInput/script.js'].attach(field, 'spirit/type/string/description/script.js');
         var close = function () { if (layer) layer.hide(); };
-        var off = KEPT_DATA['spirit.app.icons'].data.watch(function (g, v) {
+        var off = keptRows('spirit/app/icons/api.js').watch(function (g, v) {
           if (g !== glyph) return;
           if (!v) { close(); return; }
           if (document.activeElement !== field) field.value = (v.keywords || []).join(', ');
@@ -127,7 +129,7 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
             return { status: 200, body: { ok: true, items: (b && b.items) || [], more: !!(b && b.more) } };
           }, function (e) { return { status: (e && e.status) || 500, body: { ok: false, error: String((e && e.message) || e) } }; });
         },
-        data: KEPT_DATA['spirit.app.icons'].data.branch,
+        data: keptRows('spirit/app/icons/api.js').branch,
         api: 'spirit/app/icons/api.js',
         verb: 'icon',
         face: 'pane',

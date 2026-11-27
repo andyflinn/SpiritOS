@@ -449,6 +449,16 @@
     Object.keys(m).forEach(function (k) { if (!(k in api)) api[k] = m[k]; });
     // The copy carries its path too, as every object the loader hands out (goal/G49.20, box v31).
     markPath(api, p);
+    // AN OLD-SHAPE BRANCH CARRIES ITS CLIENT'S READS (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from the branch
+    // spirit.requireScript hands back"; "an old-shape branch's data.js stands at <app>.data the same way, until its own move"): its
+    // api.js's companion data.js, which the api.js requires itself, put its reads out at <its folder>.data; the branch handed back
+    // answers them as data. Not enumerable, so the branch's own names are listed as they were.
+    if (/\/api\.js$/.test(p) && !Object.prototype.hasOwnProperty.call(api, 'data')) {
+      var dataPath = p.replace(/api\.js$/, 'data.js');
+      try {
+        Object.defineProperty(api, 'data', { enumerable: false, configurable: true, get: function () { return placedAt(dataPath); } });
+      } catch (e) { /* frozen: no reads on it */ }
+    }
     standAt(required, p, api);
     return api;
   }
@@ -622,6 +632,13 @@
   // spirit object??????", "FUCKING FIX THAT!!"): a page script has no module box, so it stands at spirit.required.<its path>
   // by placing itself there as it runs (spirit/client/script.js does); the loader answers that object, as in node it answers the
   // module's exports. A script that placed nothing gets an empty object there, which says it is loaded.
+  // What stands at a path's place, or null; a read that makes nothing (an old-shape branch's data, carried()).
+  function placedAt(p) {
+    var keys = placeKeys(p);
+    var o = required;
+    for (var i = 0; i < keys.length && o; i += 1) o = o[keys[i]];
+    return o && (typeof o === 'object' || typeof o === 'function') && !isHolder(o) ? o : null;
+  }
   function keptAt(p) {
     var keys = placeKeys(p);
     var o = required;

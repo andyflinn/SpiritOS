@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/text/element.js
 // TEXT, AN ELEMENT (goal/G43.17; the box: "Four elements: file, fstat, text and media", and "text and media take a file when
 // mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from
@@ -80,7 +82,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // family's cache keeps it. Its own save is "saved" once the tree has it; any other change of the file is "changed on
         // disk".
         // Asked of the fs family's cache, which alone names its addresses: the tree's watch(path, fn) (spirit/fs/client/script.js).
-        off = KEPT_DATA && KEPT_DATA.fs && KEPT_DATA.fs.data ? KEPT_DATA.fs.data.watch(path, function (r) {
+        off = keptRows('spirit/fs/script.js') ? keptRows('spirit/fs/script.js').watch(path, function (r) {
           if (!r || gone || shown !== mine) return;
           status.textContent = saving ? 'saved' : 'changed on disk';
           saving = false;

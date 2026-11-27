@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/file/element.js
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
@@ -50,7 +52,7 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
     // opener app's icon, its label, a colon and the file's name, from what the node says of that app; a ❔ file, which only
     // fstat shows, its icon and its name.
     function barOf(opener, name, t) {
-      var app = (KEPT_DATA && KEPT_DATA.app && KEPT_DATA.app.data ? KEPT_DATA.app.data.rows()[S.dottedPath(opener)] : null) || {};
+      var app = (keptRows('spirit/app/script.js') ? keptRows('spirit/app/script.js').rows()[S.dottedPath(opener)] : null) || {};
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {

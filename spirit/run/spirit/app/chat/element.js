@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/chat/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/chat/element.js
 // THE CHAT APP'S ELEMENT (goal/G43.31; Andy: "the app-element must be spirit/app/chat/element.js", "all it's custom (app
 // specific) elements go into spirit/app/chat/element/"), what was chatter.js, the face of this node's chat server
@@ -79,7 +81,7 @@ var chInterfaces = window.spirit && typeof window.spirit.requireScript === 'func
 // kept by the family's cache manager (spirit.required.spirit.data['spirit.app.chat'].data.keep), and every line the server publishes too; the window places
 // a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
 // chLines holds the window's own elements, each with the line it paints.
-function chData() { return (window.spirit && ((KEPT_DATA || {})['spirit.app.chat'] || {}).data) || null; }
+function chData() { return (window.spirit && keptRows('spirit/app/chat/api.js')) || null; }
 function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lines); }
 
 // ITS SERVER THROUGH THE SPIRIT OBJECT (goal/G43.24): the chat branch, bound by the one loader; a refusal throws its code.

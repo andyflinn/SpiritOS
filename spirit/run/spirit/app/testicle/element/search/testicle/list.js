@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/testicle/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/testicle/element/search/testicle/list.js
 // THE TESTICLE LIST, AN ELEMENT (goal/G47.1, the search cycle): every current test row of testicle's test table, what the
 // testicle search (../testicle.js) draws in the first, non-closable tab of testicle's face. Its row is ./row.js; a
@@ -88,7 +90,7 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
 
     parts.then(function () {
       if (gone) return;
-      var data = KEPT_DATA['spirit.app.testicle'].data;
+      var data = keptRows('spirit/app/testicle/api.js');
       // WHAT IS CHOSEN GOES TO THE SERVER (goal/G47.1, the box: "Red, green, the script and the suite go to the server with
       // the words, so the server narrows before it cuts an answer", "the page asks for the following answers while the
       // server says there are more, up to 100 tests"): one answer holds about 12 tests.

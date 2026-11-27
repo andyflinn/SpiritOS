@@ -156,11 +156,15 @@
       else if (verb === 'item.checks' && Array.isArray(answer.checks)) keep(id, { checks: answer.checks });
     }
 
+    // WHO HEARS THE DESK'S NEWS (goal/G49.23, box v22 Part 1: a page reads a branch's rows and news from its client, never from the
+    // store): hear(fn) fn(app) on every one of the desk's published news, as the stream brings it; answers its release.
+    var hearers = [];
     D.addTranslator({
       onJob: function (job) {
         if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;
         V = D.viewAt(job.fromNode || null, 'spirit.app.desk');
         try { published(job.app); } finally { V = HOME; }
+        hearers.slice().forEach(function (h) { try { h(job.app); } catch (e) { /* one hearer's fault */ } });
       },
     });
     // THE READS, ANSWERED HERE (goal/G41.28): what the cache holds of the desk, by what it is, never by branch name.
@@ -184,6 +188,13 @@
     var doorRuns = rowTable(DOOR_RUNS);
     doorRuns.keep = function (id, run) { if (id && run && typeof run === 'object') V.set(DOOR_RUNS + '/' + String(id), run); };
     var deskReads = {
+      // A search's answer seated in the desk's items beside what is kept (goal/G49.23: through the client, never by a path).
+      seat: function (items) { HOME.seat(ITEMS, items || []); },
+      hear: function (fn) {
+        if (typeof fn !== 'function') return function () {};
+        hearers.push(fn);
+        return function () { var i = hearers.indexOf(fn); if (i !== -1) hearers.splice(i, 1); };
+      },
       parts: rowTable(PARTS),
       doors: doors,
       doorRuns: doorRuns,

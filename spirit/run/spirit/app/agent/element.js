@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/agent/element.js
 // THE AGENT FACE APP (goal/G41.1): the face of the agent server, built on the workBench element, on the face on
 // loopback and through a relay alike. Its contract and its test: ./test/browserAgent.md and ./test/browserAgent.js. Loaded
@@ -91,7 +93,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       function follow(spec, name) {
         // Asked of the agent family's cache, which alone names its addresses: its table's branch, watch(id, fn)
         // (spirit/app/agent/data.js).
-        var B = (((KEPT_DATA || {})['spirit.app.agent'] || {}).data || {})[spec.table];
+        var B = (keptRows('spirit/app/agent/api.js') || {})[spec.table];
         if (!B) return function () {};
         return B.watch(spec.id, function (value) {
           if (value === undefined) { tabs.close(name); return; }
@@ -106,7 +108,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           var adding = !s.id;
           var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
           var T = ANSWER['spirit/app/agent/element/table/tableElement.js'];
-          var kept = !adding && T && KEPT_DATA ? KEPT_DATA.getPath(T.branchOf(s.table) + '/' + s.id) : null;
+          var kept = !adding && keptRows('spirit/app/agent/api.js') ? keptRows('spirit/app/agent/api.js').row(s.table, s.id) : null;
           var off = null;
           tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
             // Once, with the tab: a press on a row already open adds nothing here.

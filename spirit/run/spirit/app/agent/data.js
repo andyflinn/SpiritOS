@@ -49,6 +49,10 @@
       tables: TABLES.slice(),
       branch: function (table) { return TABLES.indexOf(String(table)) === -1 ? '' : HOME.path(String(table)); },
       row: function (table, id) { return TABLES.indexOf(String(table)) !== -1 && id ? HOME.get(String(table) + '/' + id) || null : null; },
+      // A row written as a page has it (goal/G49.23: through the client, never into the store by a path): set it whole, or merge
+      // fields into it.
+      set: function (table, id, row) { if (TABLES.indexOf(String(table)) !== -1 && id) HOME.set(String(table) + '/' + id, row); },
+      merge: function (table, id, fields) { if (TABLES.indexOf(String(table)) !== -1 && id) HOME.merge(String(table) + '/' + id, fields); },
     };
     TABLES.forEach(function (t) {
       agentReads[t] = {

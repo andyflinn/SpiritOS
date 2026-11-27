@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/testicle/element/scriptDetail.js
 // THE SCRIPT DETAIL, AN ELEMENT OF ITS OWN (goal/G47.1, box v134-135: "every part of testicle's face is an element of its own,
 // just spirit/app/testicle/element/<element-name>.js", "element/scriptDetail.js (the script tab's file detail)"; Andy: "what
@@ -54,14 +56,14 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
     if (file) {
       var own = file.slice(0, file.lastIndexOf('/') + 1) + 'test/' + file.slice(file.lastIndexOf('/') + 1);
       var drawOwn = function () {
-        var F = KEPT_DATA && KEPT_DATA.fs && KEPT_DATA.fs.data;
+        var F = keptRows('spirit/fs/script.js');
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
       Promise.resolve(keepAnswer('spirit/fs/script.js')).then(function () {
         if (gone) return;
         drawOwn();
-        release = KEPT_DATA.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
+        release = keptRows('spirit/fs/script.js').watch(function (p) { if (!p || p === own) drawOwn(); });
       }, function () {});
       parts.then(function () {
         return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['script.get']({ name: file }));

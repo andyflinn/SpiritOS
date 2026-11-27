@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/testicle/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/testicle/element/search/testicle/detail.js
 // ONE TEST'S DETAIL, AN ELEMENT (goal/G47.1, the search cycle): its history of flips, what testicle's face shows in a closable
 // tab when a test row of the testicle search is clicked (the box: "The testicle detail is a history of flips, and opens in a
@@ -105,14 +107,14 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
     // branch holds, newest flip first, drawn again on every change the stream brings.
     var prefix = script + '|' + suite + '|' + test + '|';
     function fromBranch() {
-      var D = KEPT_DATA['spirit.app.testicle'].data;
-      var b = KEPT_DATA.getPath(D.branch('testicle'));
+      var D = keptRows('spirit/app/testicle/api.js');
+      var b = D.rows('testicle');
       return Object.keys(b || {}).filter(function (k) { return k.indexOf(prefix) === 0; }).map(function (k) { return b[k]; })
         .sort(function (a, c) { return Number(c.id) - Number(a.id); });
     }
     function ask() {
       return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
-        .then(function (b) { KEPT_DATA['spirit.app.testicle'].data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
+        .then(function (b) { keptRows('spirit/app/testicle/api.js').keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
@@ -150,7 +152,7 @@ if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requi
       if (gone) return;
       ask();
       forms();
-      release = KEPT_DATA['spirit.app.testicle'].data.testicle.watch(function () { draw(fromBranch()); });
+      release = keptRows('spirit/app/testicle/api.js').testicle.watch(function () { draw(fromBranch()); });
     }, function () { container.textContent = 'The history could not be loaded.'; });
 
     return {

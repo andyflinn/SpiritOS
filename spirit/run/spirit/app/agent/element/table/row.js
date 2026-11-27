@@ -1,8 +1,10 @@
 'use strict';
-// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
-// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
-var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+// THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
+// the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
+// as client, an old-shape branch's as data.
+var KEPT_BRANCHES = {};
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).then(function (b) { KEPT_BRANCHES[p] = b || null; }, function () { /* not there: no rows */ }); });
+function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? (/\/api\.js$/.test(p) ? b.data : b.client) || null : null; }
 // spirit/run/spirit/app/agent/element/table/row.js
 // ONE ROW OF THE AGENT'S TABLES, EDITED IN THE PAGE (goal/G41.4), an element of its own (goal/G41.28; the general test:
 // a file registers one element). Each table's elementRow.js names its fields and builds on this one; the title row, the
@@ -52,7 +54,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   function nameOf(r, columns) { return A().nameOf(r, columns); }
   function columnsOf(table) { return A().columnsOf(table); }
   function search(host, o, more) { return A().search(host, o, more); }
-  function D() { return KEPT_DATA; }
+  // The agent branch's rows, as its client reads and writes them (spirit/app/agent/data.js: row, set, merge).
+  function AG() { return keptRows('spirit/app/agent/api.js') || { row: function () { return null; }, set: function () {}, merge: function () {} }; }
   var STRETCH = 'width:100%;box-sizing:border-box';
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
   // chosen with the shell's icon selector (spirit/element/search/icon/script.js).
@@ -126,7 +129,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       // AN OUTPUT FIELD IS SHOWN, NEVER PICKED OR SENT (Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER
       // ordered a fucking picker for that............."): the other table's row by its icon and label, as the branch holds it.
       if (f.kind === 'output') {
-        var shown = f.pick && v ? D().getPath(branchOf(f.pick) + '/' + v) : null;
+        var shown = f.pick && v ? AG().row(f.pick, v) : null;
         return '<div id="' + id + '">' + esc(shown ? nameOf(Object.assign({ key: v }, shown), columnsOf(f.pick)) : (v || '')) + '</div>';
       }
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
@@ -193,7 +196,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
         // new pick is saved.
         if (f.kind === 'pick') {
-          var other = row[f.field] ? D().getPath(branchOf(f.pick) + '/' + row[f.field]) : null;
+          var other = row[f.field] ? AG().row(f.pick, row[f.field]) : null;
           // THE PICK NAMES ITS ROW AS THE PANEL OPENS (Andy: "provider details: when the panel opens, pickers must reflect
           // the value or the row field (model)"): a row the page does not hold yet is asked of its table once (get).
           if (row[f.field] && !other && !pickAsked[f.field + '|' + row[f.field]]) {
@@ -201,7 +204,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
             (function (table, key) {
               call(table, { op: 'get', id: key }).then(function (r) {
                 if (gone || !r || r.refused || !r.id) return;
-                D().mergePath(branchOf(table) + '/' + key, r);
+                AG().merge(table, key, r);
                 paint();
               });
             }(f.pick, row[f.field]));
@@ -337,7 +340,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     // agent family's cache, which alone names its addresses: its table's branch, watch(id, fn) (spirit/app/agent/data.js).
     var unwatch = function () {};
     function attach() {
-    var B = KEPT_DATA['spirit.app.agent'].data[o.table];
+    var B = keptRows('spirit/app/agent/api.js')[o.table];
     unwatch = !B ? function () {} : B.watch(o.id, function (value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;
@@ -352,9 +355,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     call(o.table, { op: 'get', id: o.id }).then(function (r) {
       if (gone) return;
       if (r.refused) { note = 'Not found: ' + r.refused; paint(); return; }
-      D().setPath(path, r);
+      AG().set(o.table, o.id, r);
       // A set that changes nothing tells no watcher: the editor takes the answer itself.
-      if (!row) { row = D().getPath(path) || r; paint(); }
+      if (!row) { row = AG().row(o.table, o.id) || r; paint(); }
     });
     }
     if (adding) { row = {}; paint(); } else attach();
