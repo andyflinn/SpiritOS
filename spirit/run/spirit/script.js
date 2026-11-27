@@ -374,7 +374,26 @@
   // the calls go where ask sends them, to this node or to a peer; nothing a peer hands over is run here.
   // The interfaces a page's own run of a branch's script.js put out, by the branch's name (ONE RUN, below).
   var scriptDefs = Object.create(null);
+  // THE SPIRIT BRANCH (goal/G49.23, box v22 Part 2: "the node and event branches verbs move into the spirit branch"; "on the wire
+  // they are spirit.card, spirit.debug, spirit.setName, spirit.setDescription, spirit.rotateCipher, spirit.publish, spirit.subscribe"):
+  // its seven verbs, each argument a type script by its path, put out as spirit.verbs. spirit.requireScript('spirit/script.js')
+  // hands back the branch bound, an object of its own (cw to Andy: "requiring the spirit branch hands its verbs back as an object
+  // of their own, and nothing lands on the spirit object"), its client on it; the plain require of this file stays the spirit object.
+  var SPIRIT_BRANCH = 'spirit';
+  var SPIRIT_PATH = 'spirit/script.js';
+  var SPIRIT_VERBS = {
+    card: {},
+    debug: { debug: 'spirit/type/object/payload/script.js' },
+    setName: { name: 'spirit/type/string/label/script.js' },
+    setDescription: { description: 'spirit/type/string/description/script.js' },
+    rotateCipher: {},
+    publish: { id: 'spirit/type/string/path/script.js', status: 'spirit/type/string/word/script.js?', data: 'spirit/type/object/payload/script.js?', logMessage: 'spirit/type/string/paragraph/script.js?', app: 'spirit/type/object/payload/script.js?' },
+    subscribe: {},
+  };
+  self.verbs = SPIRIT_VERBS;
+  var SPIRIT_DEF = { verbs: SPIRIT_VERBS };
   function ownInterface(fam) {
+    if (fam === SPIRIT_BRANCH) return Promise.resolve(SPIRIT_DEF);
     if (isNode()) {
       // The path it was asked by (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"): never
       // one made from its name.
@@ -439,6 +458,15 @@
   // The branch's functions onto its api.js object (the module in node, the interface the node handed over on a page), the
   // names it holds already kept as they are; it stands at spirit.required.<its path>, and is what a caller is answered.
   function carried(fam, m) {
+    if (fam === SPIRIT_BRANCH) {
+      var own = {};
+      Object.keys(SPIRIT_DEF).forEach(function (k) { own[k] = SPIRIT_DEF[k]; });
+      Object.keys(m).forEach(function (k) { if (!(k in own)) own[k] = m[k]; });
+      markPath(own, SPIRIT_PATH);
+      // Its client is the store's file, spirit/client/script.js, standing at spirit.client by its path; read at each use.
+      try { Object.defineProperty(own, 'client', { enumerable: false, configurable: true, get: function () { return placedAt('spirit/client/script.js'); } }); } catch (e) { /* frozen */ }
+      return own;
+    }
     var p = apiPathOf(fam);
     var def = (isNode() && nodeOnce[p]) || interfaceDefs[fam] || null;
     if (!p || !def || typeof def !== 'object') return m;
@@ -732,6 +760,13 @@
   }
   function requireOne(path, key, how) {
     var p = String(path || '').replace(/^\/+/, '');
+    if (p === SPIRIT_PATH) {
+      pathOf[SPIRIT_BRANCH] = SPIRIT_PATH;
+      if (key) return bindPeer(key, SPIRIT_BRANCH, how);
+      var bindsSpirit = bindOwn(SPIRIT_BRANCH);
+      if (collecting) collecting.push(bindsSpirit.then(null, function () {}));
+      return bindsSpirit;
+    }
     var fam = interfaceName(p) || nodeBranchName(p);
     // A BRANCH'S api.js STANDS AT spirit.required.spirit.<branch-path>.api (goal/G43.32; Andy: "i agree: thing
     // spirit.required.spirit.<branch-path>.api is where it should land"): on the node it is the file as it is, loaded and
@@ -1068,7 +1103,7 @@
     // it would eat the waiting lines of its node's owner.
     var headers = isNode() ? { 'X-Spirit-Reader': 'server' } : {};
     streamHandle = readStream({
-      open: function (signal) { return post('event.subscribe', {}, { stream: true, headers: headers, signal: signal }); },
+      open: function (signal) { return post('spirit.subscribe', {}, { stream: true, headers: headers, signal: signal }); },
       unit: function (block) {
         var ev = /(?:^|\n)event: (.*)/.exec(block);
         var da = /(?:^|\n)data: (.*)/.exec(block);
@@ -1138,7 +1173,7 @@
       if (!packet) packet = requireOne('spirit/peer/packet/script.js');
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
-      return post('event.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
+      return post('spirit.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
         var reader = r.body.getReader();
         var dec = new TextDecoder();
         var buf = '';
@@ -1261,7 +1296,7 @@
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a
       // process has it, and handed to the data set, which files the page's stream under it from then on.
-      return Promise.resolve(requireOne('spirit/node/api.js')).then(function (n) { return n.card(); }).then(function (c) {
+      return Promise.resolve(requireOne(SPIRIT_PATH)).then(function (n) { return n.card(); }).then(function (c) {
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
         (self.nodeFacts = self.nodeFacts && typeof self.nodeFacts === 'object' ? self.nodeFacts : {}).key = key;

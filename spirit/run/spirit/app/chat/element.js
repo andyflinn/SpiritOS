@@ -73,7 +73,7 @@ var chIconPart = window.spirit && typeof window.spirit.requireScript === 'functi
 // NEEDS"; spirit/test/script-sibling-browser.js): chat's own, the node's (its card) and contacts' (the peers it lists), and
 // chat's cache manager; none is left to another part having loaded it first.
 var chInterfaces = window.spirit && typeof window.spirit.requireScript === 'function'
-  ? Promise.all(['spirit/app/chat/api.js', 'spirit/node/api.js', 'spirit/contact/script.js'].map(function (p) { return Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); })
+  ? Promise.all(['spirit/app/chat/api.js', 'spirit/script.js', 'spirit/contact/script.js'].map(function (p) { return Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); })
     .concat([typeof window.spirit.requireScript === 'function' ? Promise.resolve(keepAnswer('spirit/app/chat/api.js')).catch(function () {}) : null]))
   : Promise.resolve();
 
@@ -699,7 +699,7 @@ function chMount(container) {
       if (C && typeof C.forgot === 'function') chKeep(C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); }));
     }, function () { /* nothing kept, nothing forgotten */ });
     // This node's key, for a reply to one of its own lines.
-    Promise.all([window.spirit.readyPromise, chInterfaces]).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (n) { return n.card({}); }).then(function (b) {
+    Promise.all([window.spirit.readyPromise, chInterfaces]).then(function () { return keepAnswer('spirit/script.js'); }).then(function (n) { return n.card({}); }).then(function (b) {
       chSelf = String((b && (b.publicKey || (b.card && b.card.publicKey))) || '');
     }, function () { /* a reply to its own line then names no writer */ });
 }

@@ -573,6 +573,56 @@
       onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
   }
   api.followStream = follow;
+  // THE SPIRIT BRANCH'S OWN READS (goal/G49.23, box v22 Part 2: "spirit/node/data.js and spirit/event/data.js merge into
+  // spirit/client/script.js"; "spirit/client/script.js is the spirit branch's client: the spirit branch's own rows on the spirit
+  // branch, and the code every branch's client keeps its rows with"): what a client knows of its node itself, as spirit/node/data.js
+  // kept it, now this file's own family, spirit. The event branch kept nothing.
+  //   card.keep(fields)  the node's card (spirit.card's answer, or one field a save stored), merged;  card.get()  it or null;
+  //   card.watch(fn)     fn(card) on every change, answering its release
+  //   keepTree(tree, index, party)  the api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name)), party '' for
+  //                      this node's own, else the peer's key or relay's address that answered it (the introSpector's, until its move)
+  //   families(party)  family -> row;  verbs(party)  'family.verb' -> row
+  //   treeBranch, verbsBranch  this node's whole paths, for a list that is a view of one;  treeBranchOf(party), verbsBranchOf(party)
+  handOut(api, family('spirit', function () {
+    var TREE = 'apiTree';
+    var VERBS = 'apiVerbs';
+    var CARD = 'nodeCard';
+    var HOME = at(null, 'spirit');
+    var parties = {};
+    function viewOf(party) { var p = String(party || ''); return !p ? HOME : (parties[p] || (parties[p] = at(p, 'spirit'))); }
+    return {
+      card: {
+        keep: function (fields) {
+          if (!fields || typeof fields !== 'object' || fields.ok === false) return;
+          var was = HOME.get(CARD + '/self') || {};
+          var card = { name: was.name, description: was.description };
+          if (fields.name !== undefined) card.name = fields.name;
+          if (fields.description !== undefined) card.description = fields.description;
+          HOME.set(CARD + '/self', card);
+        },
+        get: function () { return HOME.get(CARD + '/self') || null; },
+        watch: function (fn) { return HOME.watch(CARD + '/self', function (whole, v) { if (typeof fn === 'function') fn(v || null); }); },
+      },
+      keepTree: function (tree, index, party) {
+        var I = index;
+        if (!I) return;
+        var V = viewOf(party);
+        var names = tree ? I.servers(tree) : [];
+        var verbs = {};
+        names.forEach(function (name) { I.verbs(tree, name).forEach(function (v) { verbs[name + '.' + v] = { family: name, name: v }; }); });
+        Object.keys(V.branch(TREE)).forEach(function (k) { if (names.indexOf(k) === -1) V.del(TREE + '/' + k); });
+        Object.keys(V.branch(VERBS)).forEach(function (k) { if (!verbs[k]) V.del(VERBS + '/' + k); });
+        names.forEach(function (name) { V.set(TREE + '/' + name, { name: name }); });
+        Object.keys(verbs).forEach(function (k) { V.set(VERBS + '/' + k, verbs[k]); });
+      },
+      families: function (party) { return viewOf(party).branch(TREE); },
+      verbs: function (party) { return viewOf(party).branch(VERBS); },
+      get treeBranch() { return HOME.path(TREE); },
+      get verbsBranch() { return HOME.path(VERBS); },
+      treeBranchOf: function (party) { return viewOf(party).path(TREE); },
+      verbsBranchOf: function (party) { return viewOf(party).path(VERBS); },
+    };
+  }));
   // WHAT IT HANDS OUT GOES THROUGH THE LOADER (goal/G49.23, box v21: objects stand in the spirit object, no longer under
   // spirit.required): its module box on a page as in node; the loader places it at its path, spirit.client, and places nothing else.
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

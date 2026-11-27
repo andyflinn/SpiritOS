@@ -71,7 +71,7 @@ async function labNode(lab) {
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return call(base, 'api', {}).then(function (r) { return r.status === 200; }); }, UP_MS);
   if (!up) { await stop(child); got.release(); throw new Error('a lab node did not come up'); }
-  const card = (await call(base, 'node.card', {})).body || {};
+  const card = (await call(base, 'spirit.card', {})).body || {};
   return { lab: got, child: child, base: base, key: String(card.publicKey || ''),
     release: async function () { await stop(child); got.release(); } };
 }
@@ -133,7 +133,7 @@ async function measure(say) {
     const loopMs = [];
     for (let i = 0; i < CALLS; i++) {
       const t = process.hrtime.bigint();
-      await call(a.base, 'node.card', {});
+      await call(a.base, 'spirit.card', {});
       loopMs.push(Number(process.hrtime.bigint() - t) / 1e6);
     }
     // 3. A CARD REQUEST THROUGH A RELAY: a second lab node, both seated on a lab relay a owns; a invites b.

@@ -1,6 +1,6 @@
 # event.js
 
-`spirit/run/spirit/event/event.js` is the node's one dispatcher of events (goal/G40.6). Its test is `./event.js`.
+`spirit/run/spirit/eventEngine/script.js` is the node's one dispatcher of events (goal/G40.6). Its test is `./script.js`.
 
 Andy, goal/G43.3, the box: *"no leftover timers after a stream closes, and a receipt back in under 0.5 seconds."*
 

@@ -761,7 +761,7 @@ function subscribe(key, family, run, since) {
 // forwards a loopback connect to the as server as a normal request", "it will reach the app server with the local node's
 // ID, that's how the app server knows it's loopback", "47.5 WILL NOT HAVE ANY APP-SPECIFIC SHIT IN IT", "Go on 47.5 fix,
 // part two"): at a page's connect the node subscribes under its own key, naming this server itself as the family
-// (spirit/event/event.js, pageConnected). A subscribe of the node's own key under any other family is a subscriber like
+// (spirit/eventEngine/script.js, pageConnected). A subscribe of the node's own key under any other family is a subscriber like
 // any other (a server of this node following this one), and the owner's calls carry owner, so neither is taken for it.
 // It is answered by publishing to this node's own pages, never by peerPost and never kept as a subscriber: the cache in
 // client mode, as kept (the sibling listener's rows, or a following server's from its chosen sibling), the bootstrap in

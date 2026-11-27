@@ -1,18 +1,18 @@
 'use strict';
 
-// spirit/run/spirit/event/test/event.js
-// The tests of spirit/event/event.js (spec: ./event.md; goal/G43.3). Andy, the box: "no leftover timers after a stream
+// spirit/run/spirit/eventEngine/test/script.js
+// The tests of spirit/eventEngine/script.js (spec: ./script.md; goal/G43.3). Andy, the box: "no leftover timers after a stream
 // closes". event.subscribe runs on a real http server here, with stand-ins for what feeds it, and a real client opens
 // the stream and closes it, the way a process does when its one reply has come.
 
 const http = require('http');
 const path = require('path');
 const { EventEmitter } = require('events');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const { createEvents } = LOADER.requireScript('spirit/event/event.js');
+const { createEvents } = LOADER.requireScript('spirit/eventEngine/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 async function until(fn, ms) { for (let i = 0; i < ms / 20; i++) { if (fn()) return true; await sleep(20); } return !!fn(); }
@@ -83,7 +83,7 @@ test.run('a server with event.subscribe on it listens', 0.2, async function () {
 }, test.limit.quick);
 
 // A QUIET NODE IS NEVER TAKEN FOR DEAD (goal/G47.1, box v148: "the node beats each second when it has nothing else to send, on
-// the page's stream (spirit/event/event.js, every 20 s today)"). One stream open on a node with nothing to send, its bytes timed
+// the page's stream (spirit/eventEngine/script.js, every 20 s today)"). One stream open on a node with nothing to send, its bytes timed
 // as they come for 4 s: no gap between two of them is longer than 1.5 s.
 test.run('a quiet stream hears a beat each second, with no gap of more than 1.5 s in 4 s', 0.8, async function () {
   if (!W.port) return false;

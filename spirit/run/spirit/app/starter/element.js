@@ -6,11 +6,11 @@
 //
 //   spirit.required.spirit.app.starter.element.create(container, { title, open }) -> { destroy() }
 //
-// It asks the node it runs on for its card (node.card), through the one spirit object, and shows its name and its
+// It asks the node it runs on for its card (spirit.card), through the one spirit object, and shows its name and its
 // description. That is all it does.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
 
@@ -35,7 +35,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     box.textContent = 'asking this node what it is…';
     container.innerHTML = '';
     container.appendChild(box);
-    S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/node/api.js'); }).then(function (s) { return s.card({}); })).then(function (r) {
+    S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/script.js'); }).then(function (s) { return s.card({}); })).then(function (r) {
       if (gone) return;
       box.textContent = '';
       var card = r && r.status === 200 ? r.body : null;

@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/event/event.js
+// spirit/run/spirit/eventEngine/script.js
 // THE NODE'S ONE DISPATCHER OF EVENTS (goal/G40.6). Andy, 2026-10-25: "two verbs on events - publish - subscribe", and
 // "from now on. ONE path for everybody to publish events. decision. and don't come later and say that i never said
 // that." /api/events was a door outside any api; it is this family now, owner only on the node's loopback table, like fs.
@@ -8,13 +8,13 @@
 // The sources feed it, the subscribers subscribe:
 //   sources       the jobs (every job created, changed or deleted, a server's published object among them), what a
 //                 relay this node owns did, the packets that arrive, the contact renames
-//   subscribers   the node's own pages, its own processes (both through event.subscribe, a stream), and the owner's
+//   subscribers   the node's own pages, its own processes (both through spirit.subscribe, a stream), and the owner's
 //                 face (faceHome, in the node, through subscribe below)
 //
-//   event.subscribe {}   a stream: what is known now (the jobs as they stand, and the file tree as commands), then every
+//   spirit.subscribe {}   a stream: what is known now (the jobs as they stand, and the file tree as commands), then every
 //                         event as it happens, each with its kind. A process says it is one (X-Spirit-Reader: server): it
 //                         watches the packets pass and takes none, so the owner's waiting lines stay his.
-//   event.publish {id, status?, data?, logMessage?, app?}   a process publishes on its own job (SPIRIT_JOB_ID): its state
+//   spirit.publish {id, status?, data?, logMessage?, app?}   a process publishes on its own job (SPIRIT_JOB_ID): its state
 //                         or its object (app). The job is changed and every subscriber hears it; jobs keeps the last
 //                         state and object, so a page that opens later is handed them in its snapshot.
 //
@@ -58,7 +58,7 @@ function createEvents(o) {
     };
   }
 
-  // event.subscribe, the stream (was server.js handleSseConnection).
+  // spirit.subscribe, the stream (was server.js handleSseConnection).
   function handleSubscribe(req, res) {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -117,7 +117,7 @@ function createEvents(o) {
 
     o.pageStreams.add(res);
     // A QUIET NODE IS NEVER TAKEN FOR DEAD (goal/G47.1, box v148: "the node beats each second when it has nothing else to send,
-    // on the page's stream (spirit/event/event.js, every 20 s today)"): a page resets a stream that brought nothing for 5 s, so a
+    // on the page's stream (spirit/eventEngine/script.js, every 20 s today)"): a page resets a stream that brought nothing for 5 s, so a
     // second that wrote nothing ends with a beat, a comment line no reader takes for an event.
     const BEAT_MS = 1000;
     // Looked at four times a second, so no quiet gap grows much past the second.
@@ -141,7 +141,7 @@ function createEvents(o) {
     res.on('error', teardown);
   }
 
-  // event.publish, a process's state or object on its own job (was server.js handleJobUpdate, job.update). The id is
+  // spirit.publish, a process's state or object on its own job (was server.js handleJobUpdate, job.update). The id is
   // a field, and the rest of the call's args is the patch (the door hands the args on as the body, goal/G41.15).
   function handlePublish(req, res) {
     o.readJsonBody(req).then(function (whole) {

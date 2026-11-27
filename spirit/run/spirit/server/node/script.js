@@ -425,7 +425,7 @@ const pageStreams = new Set();
 // running server is asked subscribe under this node's own key, naming itself as the family, the existing verb a peer
 // reconnects with (spirit/server/app/script.js, pushToPages). Set once the app client is (below); none is waited for.
 let pageConnectedTo = null;
-const events = spirit.requireScript('spirit/event/event.js').createEvents({
+const events = spirit.requireScript('spirit/eventEngine/script.js').createEvents({
   jobs: jobs, relayEvents: relayEvents, arrivals: arrivals, renames: hub.contactRenames, pageStreams: pageStreams,
   readJsonBody: function (req) { return readJsonBody(req); }, bodyRefused: bodyRefused,
   pageConnected: function () { if (pageConnectedTo) pageConnectedTo(); },
@@ -438,7 +438,7 @@ function serveGet(pathname, res) {
   common.serveStatic(ROOT_DIR, pathname, res);
 }
 
-// THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/event/event.js, the events family's subscribe.
+// THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/eventEngine/script.js, the events family's subscribe.
 
 function handleCreateJob(req, res) {
   readJsonBody(req).then((body) => {
@@ -466,7 +466,7 @@ function handleCreateJob(req, res) {
   }).catch((e) => bodyRefused(req, res, e));
 }
 
-// job.update's handler (handleJobUpdate) STOOD HERE: it is event.publish now (spirit/event/event.js), the one path
+// job.update's handler (handleJobUpdate) STOOD HERE: it is event.publish now (spirit/eventEngine/script.js), the one path
 // to publish (Andy, 2026-10-25: "ONE path for everybody to publish events").
 
 // The id is a field, beside the verb. This one took no
@@ -1829,10 +1829,11 @@ catch (e) {
 
   // THE EVENTS FAMILY (goal/G40.6): the node's one dispatcher, owner only like fs. subscribe is a stream (its handler
   // keeps the response open); publish is a process's state or object on its own job, where job.update stood.
-  loopbackVerbs.mount('event', path.join(__dirname, '..', '..', 'event'), {
+  // Since goal/G49.23 (box v22 Part 2) these two are the spirit branch's, mounted with the node's verbs below.
+  const SPIRIT_STREAM_VERBS = {
     'subscribe': { request: {}, reply: {}, handler: events.handleSubscribe },
     'publish': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: events.handlePublish },
-  });
+  };
 
   // ── THE CONFIG FAMILY, EMPTY (goal/G30.20) ─────────────────────────────
   //
@@ -1905,7 +1906,11 @@ catch (e) {
   // promises a caller.
   //
   // "More to come" is Andy's, and is why this is a namespace.
-  loopbackVerbs.mount('node', path.join(__dirname, '..', '..', 'node'), {
+  // THE SPIRIT BRANCH (goal/G49.23, box v22 Part 2: "the node and event branches verbs move into the spirit branch"; "on the wire
+  // they are spirit.card, ... spirit.publish, spirit.subscribe; node.* and event.* are gone"): mounted under its path's name,
+  // spirit, its folder spirit/ where its <verb>.json stand, each verb's arguments from spirit/script.js (spirit.verbs) and every
+  // call checked against them before its handler, which does what it did before.
+  loopbackVerbs.mount('spirit', path.join(__dirname, '..', '..'), checkedVerbs('spirit', { verbs: spirit.verbs }, Object.assign(SPIRIT_STREAM_VERBS, {
     'card': { request: {}, reply: { ok: true, name: '', description: '', publicKey: '', descriptionMax: 0 }, handler: function (rq, rs) { hub.handleNodeCard(rq, rs); } },
     // THE NODE'S OWN DEBUG (desk/G2.5), shaped like relay.debug: {debug: {}} reads,
     // {debug: {on}} sets; both answer the state that resulted. "node.debug: yes."
@@ -1935,7 +1940,7 @@ catch (e) {
         rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));
       }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
-  });
+  })));
 
   // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)
   //

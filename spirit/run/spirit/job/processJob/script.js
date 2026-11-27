@@ -24,7 +24,7 @@ function bytesOf(o) { try { return Buffer.byteLength(JSON.stringify(o), 'utf8');
 
 function report(patch) {
   if (!JOB) return Promise.reject(refusal('no-job', 'this process was not started by a node as a job (SPIRIT_JOB_ID is unset)'));
-  return Promise.resolve(spirit.requireScript('spirit/event/api.js')).then(function (event) { return event.publish(Object.assign({ id: JOB }, patch)); });
+  return Promise.resolve(spirit.requireScript('spirit/script.js')).then(function (event) { return event.publish(Object.assign({ id: JOB }, patch)); });
 }
 function log(message) { return report({ logMessage: message }); }
 function complete(data) { return report({ status: 'completed', data: data }); }
