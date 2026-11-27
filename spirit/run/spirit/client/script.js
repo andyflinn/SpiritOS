@@ -75,7 +75,7 @@
   function familyOf(name) {
     var n = String(name);
     if (!families[n]) {
-      families[n] = { data: null, cache: Object.create(null) };
+      families[n] = { name: n, data: null, cache: Object.create(null) };
       if (!(n in api)) api[n] = families[n];
     }
     return families[n];
@@ -502,6 +502,24 @@
       if (Object.prototype.hasOwnProperty.call(out, k)) return;
       Object.defineProperty(out, k, Object.getOwnPropertyDescriptor(reads, k));
     });
+    // A HANDLE ON ONE OF ITS OWN BRANCHES (goal/G49.23; an element asks for no client and no store, so a generic element, the
+    // search, a row form, the panel, is handed this instead of a path): handle(branch) answers { path, rows(), whole(), seat(items),
+    // watch(fn), ready(now) } for that branch of this client's own family alone, its node the page's. Not enumerable.
+    if (!Object.prototype.hasOwnProperty.call(out, 'handle') && fam.name) {
+      var famName = fam.name;
+      Object.defineProperty(out, 'handle', { enumerable: false, configurable: true, value: function (b) {
+        var V = at(null, famName);
+        var br = String(b || '');
+        return {
+          get path() { return V.path(br); },
+          rows: function () { return V.rows(br); },
+          whole: function () { return V.branch(br); },
+          seat: function (items) { V.seat(br, items); },
+          watch: function (fn) { return V.watch(br, fn); },
+          ready: function (now) { return V.ready(br, now); },
+        };
+      } });
+    }
     return out;
   }
 
