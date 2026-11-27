@@ -22,7 +22,10 @@ function promptOf(p) { return (p ? 'spirit.' + p : 'spirit') + ': '; }
 // with the path it ran at ahead of it, "app.desk item.get id=goal/G48", it is offered only at that path, without it.
 function inScope(line, here) {
   const m = /^path (.+)$/.exec(line);
-  if (!m) return here && line.indexOf(here + ' ') === 0 ? line.slice(here.length + 1) : null;
+  // AT THE ROOT A VERB OF THE SPIRIT BRANCH (goal/G49.23, box v22 Part 2: the root is the spirit branch's): a line logged there has
+  // no path before it, and is the root's when its first word is one of spirit.verbs.
+  if (!m && !here) return Object.prototype.hasOwnProperty.call(spirit.verbs || {}, String(line).split(' ')[0]) ? line : null;
+  if (!m) return line.indexOf(here + ' ') === 0 ? line.slice(here.length + 1) : null;
   if (m[1] === '<<') return here ? line : null;
   if (!here) return line;
   return m[1].indexOf(here + '.') === 0 ? 'path ' + m[1].slice(here.length + 1) : null;
