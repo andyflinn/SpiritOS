@@ -402,6 +402,16 @@ function sweepProfiles() {
     const w = spawn(process.execPath, ['-e', code, tempFolder.path(PROFILES)], { stdio: 'ignore', detached: true, windowsHide: true });
     w.unref();
   } catch (e) { /* swept by the next test */ }
+  // Chrome's own scratch in the system temp folder (.com.google.Chrome.*, .org.chromium.Chromium.*), once an hour old
+  // (goal/G49.23; Andy: "they still fucking litter, and fill the temp folders").
+  const chromeScratch = 'const fs = require("fs"); const path = require("path"); const dir = process.argv[1]; const old = Date.now() - 3600000;' +
+    ' let names = []; try { names = fs.readdirSync(dir); } catch (e) {}' +
+    ' names.forEach(function (n) { if (n.indexOf(".com.google.Chrome.") !== 0 && n.indexOf(".org.chromium.Chromium.") !== 0) return;' +
+    ' const p = path.join(dir, n); try { if (fs.lstatSync(p).mtimeMs < old) fs.rmSync(p, { recursive: true, force: true }); } catch (e) {} });';
+  try {
+    const w = spawn(process.execPath, ['-e', chromeScratch, require('os').tmpdir()], { stdio: 'ignore', detached: true, windowsHide: true });
+    w.unref();
+  } catch (e) { /* swept by the next test */ }
   // Under every node's temp root too, since each scratch node has its own (Andy: "WHERE ARE THE FIXES FOR TESTS THAT
   // LITTER ALL OVER THE FUCKING PLACE?"; 150 Chrome processes found on WSL, up to 38 hours old, their watchers gone).
   try {
@@ -539,9 +549,10 @@ async function chromePage(chrome) {
   // to the system temp folder beside its profile, where no sweep owns them, and a Chrome that crashed under WSL left a core
   // dump of 669 GB in its crash folder. Its temp is a folder inside its profile, so the profile's removal takes it; its crash
   // reporter is off; and on Linux it starts with core dumps at zero (exec keeps its process id, so its watch and its kill hold).
-  const scratch = path.join(profile, 'tmp');
-  fs.mkdirSync(scratch, { recursive: true });
-  const env = Object.assign({}, process.env, { TEMP: scratch, TMP: scratch, TMPDIR: scratch });
+  // Its temp stays the system's: Chrome makes its sockets in its temp folder, and a temp inside the profile, under the
+  // node's temp root, is too long a path for a socket, so no page answered (wsl, 2026-11-28: the text page 5/18 with it,
+  // 18/18 without). What it leaves there, sweepProfiles removes once an hour old.
+  const env = process.env;
   const args = ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
     '--disable-breakpad', '--disable-crash-reporter', '--window-size=1280,800', 'about:blank'];
   const how = { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: env };
