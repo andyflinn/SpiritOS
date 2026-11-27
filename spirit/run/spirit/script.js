@@ -155,7 +155,7 @@
     } else {
       var keys = placeKeys(raw);
       T = required;
-      for (var i = 0; i < keys.length && T; i += 1) T = T[keys[i]];
+      for (var i = 0; i < keys.length && T; i += 1) T = own(T, keys[i]);
       if (!T || typeof T.isValid !== 'function') return function () { return ''; };
     }
     if (!T) return null;
@@ -469,11 +469,12 @@
     var keys = placeKeys(p);
     var o = rootObj;
     for (var i = 0; i < keys.length - 1; i += 1) {
-      if (o[keys[i]] == null || (typeof o[keys[i]] !== 'object' && typeof o[keys[i]] !== 'function')) o[keys[i]] = holder();
+      var at = own(o, keys[i]);
+      if (at == null || (typeof at !== 'object' && typeof at !== 'function')) o[keys[i]] = holder();
       o = o[keys[i]];
     }
     var last = keys[keys.length - 1];
-    var was = o[last];
+    var was = own(o, last);
     if (was && was !== value && (typeof was === 'object' || typeof was === 'function') && value && (typeof value === 'object' || typeof value === 'function')) {
       Object.keys(was).forEach(function (k) { if (!(k in value)) value[k] = was[k]; });
     }
@@ -593,6 +594,9 @@
   var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
   function isHolder(o) { return !!(holders && o && typeof o === 'object' && holders.has(o)); }
   function holder() { var h = {}; if (holders) holders.add(h); return h; }
+  // A PLACE'S OWN MEMBER, or undefined (goal/G49.23): the walks ask the object itself, never what it inherits, so the spirit object
+  // read while it is still loading in node (a module's exports in a circular require) makes node warn of nothing on stderr.
+  function own(o, k) { return o && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined; }
   // Its first levels made here, so a reader asking spirit.required.spirit.element.<x> before any helper ran reads undefined
   // instead of throwing (goal/G43.32). Holders, as any folder's place: spirit/app/manager/script.js takes spirit.required.spirit.app
   // and keeps the spirit/app/ scripts placed under it.
@@ -613,11 +617,12 @@
     var o = rootObj;
     for (var i = 0; i < keys.length - 1; i += 1) {
       var k = keys[i];
-      if (o[k] == null || (typeof o[k] !== 'object' && typeof o[k] !== 'function')) o[k] = holder();
+      var at = own(o, k);
+      if (at == null || (typeof at !== 'object' && typeof at !== 'function')) o[k] = holder();
       o = o[k];
     }
     var last = keys[keys.length - 1];
-    var was = o[last];
+    var was = own(o, last);
     if (was === value) return value;
     if (was === undefined || isHolder(was)) {
       if (isHolder(was) && value && (typeof value === 'object' || typeof value === 'function')) {
@@ -636,13 +641,13 @@
   function placedAt(p) {
     var keys = placeKeys(p);
     var o = required;
-    for (var i = 0; i < keys.length && o; i += 1) o = o[keys[i]];
+    for (var i = 0; i < keys.length && o; i += 1) o = own(o, keys[i]);
     return o && (typeof o === 'object' || typeof o === 'function') && !isHolder(o) ? o : null;
   }
   function keptAt(p) {
     var keys = placeKeys(p);
     var o = required;
-    for (var i = 0; i < keys.length && o; i += 1) o = o[keys[i]];
+    for (var i = 0; i < keys.length && o; i += 1) o = own(o, keys[i]);
     if (o && (typeof o === 'object' || typeof o === 'function') && !isHolder(o)) return o;
     return placeAt(required, p, {});
   }
