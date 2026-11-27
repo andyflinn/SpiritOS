@@ -38,6 +38,7 @@ function text(root) { return all(root).map(function (k) { return String(k.textCo
 function holds(root, cls) { return all(root).some(function (k) { return new RegExp('\\b' + cls + '\\b').test(k.className || ''); }); }
 
 // What the tests make, shared by the tests after them.
+let recording = true;
 let SRC, asked, required, loaded, sels, forms, answer, bundle, STANDS, watches, arrive, E, box, made, input, add, rf,
   sel, r0, w0;
 test.run('the bundle editor names no api-branch selector and no description: a bundle is a label, and its branches are the branch editor\'s', 0.2, function () {
@@ -79,6 +80,8 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
+  global.window.spirit.dataStore = global.window.spirit.required.spirit.data;
   global.window.spirit.nodeFacts = { key: 'KEY+BUNDLE/EDITOR==' };
   global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
   // A branch's cache: the bundle branch's script brings its client, as the real spirit/bundle/script.js does, run once on
@@ -88,7 +91,9 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   const family = function () {
     if (bundleData) return;
     bundleData = true;
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'bundle', 'client', 'script.js'), 'utf8'), { filename: 'spirit/bundle/client/script.js' });
+    // What the branch's own client asks as it runs is the branch's, not the editor's (goal/G49.23): not recorded.
+    recording = false;
+    try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'bundle', 'client', 'script.js'), 'utf8'), { filename: 'spirit/bundle/client/script.js' }); } finally { recording = true; }
     const count = function () {
       const T = ((global.window.spirit.required.spirit.data || {}).bundle || {}).data;
       if (T && !T.counted) {
@@ -104,7 +109,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.bundle', data: { row: { id: id, label: label, owner: 'node' } } }); };
   // The data store is answered as spirit.requireScript('spirit/client/script.js') hands it back (goal/G49.23): the one this
   // window ran above.
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/client/script.js') return Promise.resolve(global.window.spirit.required.spirit.data); if (p === 'spirit/bundle/script.js') family(); if (p === 'spirit/bundle/script.js') return Promise.resolve(bundle); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
+  global.window.spirit.requireScript = function (p) { if (recording) required.push(String(p)); if (p === 'spirit/client/script.js') return Promise.resolve(global.window.spirit.required.spirit.data); if (p === 'spirit/bundle/script.js') family(); if (p === 'spirit/bundle/script.js') return Promise.resolve(bundle); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
   // The bundle branch is answered by its script's path (goal/G49.6: never by a name).
   PAGE_LOAD.runAsPage(FILE);
   await settle();
