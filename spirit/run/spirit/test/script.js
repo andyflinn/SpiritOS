@@ -983,6 +983,57 @@ test.run('a scratch node comes up with a headless page on it', 0.2, async functi
   if (!L.node.up || !L.page || L.page.error) { L.page = null; return false; }
   return true;
 }, test.limit.slow);
+// THE SPIRIT BRANCH, PART 2 (goal/G49.23, box v22 Part 2; Andy: "GO ON PART TWO"): "the node and event branches verbs move into
+// the spirit branch"; "on the wire they are spirit.card, spirit.debug, spirit.setName, spirit.setDescription, spirit.rotateCipher,
+// spirit.publish, spirit.subscribe; node.* and event.* are gone".
+const SPIRIT_VERBS = {
+  card: {},
+  debug: { debug: 'spirit/type/object/payload/script.js' },
+  setName: { name: 'spirit/type/string/label/script.js' },
+  setDescription: { description: 'spirit/type/string/description/script.js' },
+  rotateCipher: {},
+  publish: { id: 'spirit/type/string/path/script.js', status: 'spirit/type/string/word/script.js?', data: 'spirit/type/object/payload/script.js?', logMessage: 'spirit/type/string/paragraph/script.js?', app: 'spirit/type/object/payload/script.js?' },
+  subscribe: {},
+};
+test.run('spirit/script.js puts out the spirit branch\'s seven verbs, card, debug, setName, setDescription, rotateCipher, publish and subscribe, each argument a type script by its path', 0.2, function () {
+  const v = s.verbs;
+  if (!v || typeof v !== 'object') return false;
+  return JSON.stringify(Object.keys(v).sort()) === JSON.stringify(Object.keys(SPIRIT_VERBS).sort()) &&
+    Object.keys(SPIRIT_VERBS).every(function (k) { return JSON.stringify(v[k] || null) === JSON.stringify(SPIRIT_VERBS[k]); }) || false;
+}, test.limit.quick);
+// One call on the node's door, as a page sends it: its status, and its body read as JSON when it is one; a stream is let go
+// once its head has come.
+async function door(call, args) {
+  if (!L.node || !L.node.up) return null;
+  const ac = new AbortController();
+  try {
+    const r = await fetch(L.node.base + '/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }), signal: ac.signal });
+    const type = String(r.headers.get('content-type') || '');
+    if (/event-stream/.test(type)) { ac.abort(); return { status: r.status, stream: true }; }
+    let body = null; try { body = await r.json(); } catch (e) { body = null; }
+    return { status: r.status, body: body };
+  } catch (e) { return { status: 0, error: String(e && e.message || e) }; }
+}
+test.run('on the node, spirit.card answers the node\'s card, and node.card is refused', 0.2, async function () {
+  const yes = await door('spirit.card', {});
+  const no = await door('node.card', {});
+  return (!!yes && yes.status === 200 && !!yes.body && typeof yes.body.publicKey === 'string' && !!no && no.status !== 200) || false;
+}, test.limit.slow);
+test.run('on the node, spirit.subscribe opens the stream, and event.subscribe is refused', 0.2, async function () {
+  const yes = await door('spirit.subscribe', {});
+  const no = await door('event.subscribe', {});
+  return (!!yes && yes.status === 200 && yes.stream === true && !!no && no.status !== 200 && !no.stream) || false;
+}, test.limit.slow);
+test.run('spirit/node/ and spirit/event/ are gone, and each of the seven verbs has its spirit/<verb>.json', 0.2, function () {
+  const RUNP = path.resolve(__dirname, '..', '..');
+  const gone = !fs.existsSync(path.join(RUNP, 'spirit', 'node')) && !fs.existsSync(path.join(RUNP, 'spirit', 'event'));
+  return (gone && Object.keys(SPIRIT_VERBS).every(function (k) { return fs.existsSync(path.join(RUNP, 'spirit', k + '.json')); })) || false;
+}, test.limit.quick);
+// "spirit/event/event.js, the stream's engine on the node, becomes spirit/eventEngine/script.js"
+test.run('spirit/eventEngine/script.js is the stream\'s engine: it puts out createEvents', 0.2, async function () {
+  let e = null; try { e = await s.requireScript('spirit/eventEngine/script.js'); } catch (x) { e = null; }
+  return (!!e && typeof e.createEvents === 'function') || false;
+}, test.limit.quick);
 test.run('the page called verbs as it loaded', 0.2, async function () {
   if (!L.page) return false;
   // The home page as a user opens it, then a while for it to settle.
