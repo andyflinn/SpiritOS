@@ -245,8 +245,7 @@ function deskWorld(goal, items) {
     // the desk's publishes through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
     readyPromise: Promise.resolve({}),
     callOutcome: function (p) { return p; } };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, and the helper answered, so each element
-  // places itself by installSpiritElement as it runs.
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, so each element is placed at its path as it runs.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.

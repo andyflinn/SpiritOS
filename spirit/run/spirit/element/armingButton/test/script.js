@@ -54,7 +54,6 @@ function world() {
   };
   win.window = win;
   win.spirit = { element: {} };
-  // goal/G43.32: armingButton.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   if (fs.existsSync(FILE)) win.spirit.requireScript(SUBJECT);
   return win;

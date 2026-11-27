@@ -39,7 +39,8 @@
   // button, and the jobs family's interface, spirit/job/script.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  var parts = Promise.all([keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/search/job/row/script.js')]);
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs are its job.data.
+  var parts = Promise.all([keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/search/job/row/script.js'), Promise.resolve(window.spirit.readyPromise)]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -53,7 +54,7 @@
     error: '⚠️',
   };
 
-  function data() { return ((S.required.spirit.data || {}).job || {}).data || null; }
+  function data() { return ((window.spirit.dataStore || {}).job || {}).data || null; }
 
   // A facts bubble: the old shell's factRow markup and classes, drawn here (new code requires nothing of the old shell).
   function factRow(pairs) {

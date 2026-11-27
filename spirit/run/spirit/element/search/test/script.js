@@ -101,6 +101,9 @@ LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, 
   'spirit/limits/script.js': LOADER.requireScript('spirit/limits/script.js'),
   // fieldInput, a page helper, stands in: it holds the words to their rule, which the page test judges, not this one.
   'spirit/element/fieldInput/script.js': { attach: function () {} },
+  // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the search reads it from what spirit/client/script.js hands back, never
+  // at spirit.required. The tests below swap the data set the page holds, so the answer is the one the page holds at each read.
+  'spirit/client/script.js': new Proxy({}, { get: function (t, k) { const D = window.spirit.required.spirit.data; return D ? D[k] : undefined; } }),
 });
 // The element, once the first test has run its file.
 let PS = null;
@@ -997,7 +1000,15 @@ test.run('over the real spirit.required.spirit.data, two rows filed apart in the
   try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'spirit/client/script.js' }); } catch (e) { return false; }
   // The node's grants, as a node's stream hands them (spirit/grant/client/script.js; goal/G49.21, once spirit/auth/data.js),
   // the branch the Grants app's list views.
-  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' }); } catch (e) { return false; }
+  // goal/G49.23: the client files into the data set once requireScript('spirit/client/script.js') has handed it back, a promise;
+  // this window's loader was taken away above, so for the client's ask it answers the data set this test ran, and goes again.
+  const hadRequire = Object.prototype.hasOwnProperty.call(window.spirit, 'requireScript') ? window.spirit.requireScript : undefined;
+  window.spirit.requireScript = function (p) { return p === 'spirit/client/script.js' ? Promise.resolve(window.spirit.required.spirit.data) : Promise.reject(new Error('no stand-in for ' + p)); };
+  let ranGrant = true;
+  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' }); } catch (e) { ranGrant = false; }
+  await tick();
+  if (hadRequire === undefined) delete window.spirit.requireScript; else window.spirit.requireScript = hadRequire;
+  if (!ranGrant) return false;
   const D = window.spirit.required.spirit.data;
   const X = D && D.grant && D.grant.data;
   if (!X || typeof D.takeJob !== 'function') return false;
@@ -1087,7 +1098,6 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
   // asked, as a page's fetches may: whatever order the files land in, the list must work once they are in.
   asked10 = [];
   global.window = { spirit: { element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   wait = 60;
   global.window.spirit.requireScript = function (p) {
@@ -1099,6 +1109,8 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
         // Each answer is what its file exposes (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object
         // or a function... or fail/throw"): the three files run as the page's loader runs them, fieldInput a stand-in, any other {}.
         if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) resolve(PAGE_LOAD.runAsPage(path.join(RUN, rel)));
+        // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the one the page holds at each read, as above.
+        else if (rel === 'spirit/client/script.js') resolve(new Proxy({}, { get: function (t, k) { const D = window.spirit.required.spirit.data; return D ? D[k] : undefined; } }));
         else resolve(rel === 'spirit/element/fieldInput/script.js' ? { attach: function () {} } : {});
       }, delay);
     });

@@ -37,6 +37,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app
+  // family's cache, whose rows a layer's bar follows, is its app.data; asked as this file runs.
+  function apps() { return window.spirit.dataStore.app.data; }
   function createAppSelector(options) {
     var o = options || { face: 'tiles' };
     var hide = ['app'].concat(Array.isArray(o.hide) ? o.hide : []);
@@ -81,10 +84,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       Promise.resolve(stack.open(kind + '/' + key, spec)).then(function (layer) {
         if (!layer || gone) return;
         if (look) {
-          look.set = function () { layer.set(barOf(S.required.spirit.data.app.data.rows()[key] || row, look)); };
+          look.set = function () { layer.set(barOf(apps().rows()[key] || row, look)); };
           if (look.file) look.set();
         }
-        watches.push(S.required.spirit.data.app.data.watch(key, function (now) {
+        watches.push(apps().watch(key, function (now) {
           if (!now) return;
           layer.set(barOf(now, look));
           // Q11: a launched app switched off leaves the view; it stays loaded.

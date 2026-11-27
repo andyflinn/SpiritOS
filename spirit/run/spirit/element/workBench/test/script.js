@@ -78,7 +78,6 @@ let loadError, W, mounted, tool, c1, wb, ids, want, at, prefixes, c1b, tagOf, bo
   wb3, w0, settled, r0, threw;
 test.run('it loads onto window.spirit.required at its own path, with a create', 0.2, function () {
   global.window = { spirit: { element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   loadError = null;
   try { PAGE_LOAD.runAsPage(FILE); } catch (e) { loadError = e; }

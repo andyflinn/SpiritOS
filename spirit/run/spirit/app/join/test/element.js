@@ -32,8 +32,8 @@ function world(o) {
     console: { log: function () {}, error: function () {} } };
   win.window = win;
   vm.createContext(win);
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so join.js places itself by
-  // installSpiritElement at spirit.required.spirit.app.join.element; joinList stands where it reads it.
+  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so join.js is placed at
+  // spirit.required.spirit.app.join.element; joinList stands where it reads it.
   win.spirit = { required: { spirit: { element: els, app: {} } },
     requireScript: function (p) {
       w.required.push(String(p));

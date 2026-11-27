@@ -10,8 +10,8 @@ require('../script.js');
 // gives one (shell/boot.js apiFor). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
 // by the elements own test script"): the element that stands at spirit.required.<the file's path> once it is required,
-// put there by its own installSpiritElement call (goal/G43.32; Andy: "element scripts installed by the above logic place
-// their element-factory at spirit.element.<path-of-fucking-element-script>"); none there fails and says where it looked.
+// put there by the loader from its module.exports (goal/G49.9, G49.23; Andy, G43.32: "element scripts installed by the above
+// logic place their element-factory at spirit.element.<path-of-fucking-element-script>"); none there fails and says where it looked.
 // /shell.css is the shell's one sheet, a link and not a script. What happened is on
 // window.spiritMount: { state: loading | mounted | failed, error, box, destroy }.
 'use strict';

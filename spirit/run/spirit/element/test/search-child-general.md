@@ -24,7 +24,7 @@ decisions."*
 - The job branch has its search, `spirit/element/search/job/script.js`; `spirit/element/job.js` and `jobDetail.js` are gone
   from `spirit/element/` (the box: *"The job search is made from spirit/element/job.js and jobDetail.js."*).
 - For each search `<name>`:
-  - `search/<name>/script.js` is the selector, an element placing a create through installSpiritElement by its own path.
+  - `search/<name>/script.js` is the selector, an element whose `module.exports` offers a create, placed by its own path.
   - `search/<name>/list/script.js`, `row/script.js` and `detail/script.js` are there, each an element placed by its path.
     Branch and icon have no detail: none is ever opened (Andy: *"branch and icon: if no details are ever openened, there
     needs to be now detail panel."*).

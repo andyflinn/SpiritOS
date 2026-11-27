@@ -16,7 +16,6 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'script.js');
 global.window = { spirit: {} };
-// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
 LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
 // The element, once the first test has run its file.
 let R = null;

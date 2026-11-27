@@ -288,9 +288,9 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'dataStore', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
-  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
+  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts', 'dataStore'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
 // BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): a bound branch's subscribe takes
 // {branch, run?, since?}.
@@ -906,6 +906,14 @@ test.run('on a page, once spirit.js has started, spirit.required.spirit.data is 
   const cq = T.cq = page();
   try { await cq.spirit.startPage(); } catch (e) { /* the cache is the question here */ }
   return isCache(cq.spirit.required.spirit.data) || false;
+}, test.limit.quick);
+// spirit.dataStore (goal/G49.23; Andy: "wsl, no review, you INFORM cw", "spirit.dataStore is fine with me"):
+// the spirit object loads its own client and offers the store as a member, so an element reads it and asks for no client script.
+test.run('in node, spirit.dataStore is the store, the one spirit/client/script.js gives', 0.2, function () {
+  return (isCache(s.dataStore) && s.dataStore === s.requireScript('spirit/client/script.js')) || false;
+}, test.limit.quick);
+test.run('on a page, once spirit.js has started, spirit.dataStore is the store', 0.2, function () {
+  return (!!T.cq && isCache(T.cq.spirit.dataStore) && T.cq.spirit.dataStore === T.cq.spirit.required.spirit.data) || false;
 }, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
 // loads with a files element (rule/26); spirit.js loads the cache and no data script.

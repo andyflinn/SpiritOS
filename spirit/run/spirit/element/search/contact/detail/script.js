@@ -33,6 +33,8 @@
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/label/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the contacts are its contact.data.
+  function STORE() { return window.spirit.dataStore || {}; }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/faceForm/script.js');
@@ -1931,12 +1933,12 @@ var ndPage = ({
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
     ndStops.push(Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () {
-      if (ndGone || !((window.spirit.required.spirit.data || {}).contact || {}).data) return function () {};
-      return window.spirit.required.spirit.data.contact.data.watch(ndHearRow);
+      if (ndGone || !(STORE().contact || {}).data) return function () {};
+      return STORE().contact.data.watch(ndHearRow);
     }));
     // ITS REPORT, ON THE RELAY EVENT (goal/G41.32): whole, paced by the node (presenceNode.js), so this keeps no timer.
     // Through spirit.required.spirit.data, which takes the node's stream for every client (goal/G43.5).
-    ndStops.push(Promise.resolve(window.spirit.required.spirit.data.addTranslator({ onRelay: function (event) {
+    ndStops.push(Promise.resolve(STORE().addTranslator({ onRelay: function (event) {
       if (ndGone || !event || event.kind !== 'status' || !event.report || !ndBadge || event.relay !== ndUrl) return;
       ndBadge.report = event.report;
       ndRender();
@@ -2088,7 +2090,7 @@ function ndHearRow(key, row) {
   if (key !== ndKey) return;
   // A change with no value is not a row gone until the cache says so.
   if (!row) {
-    if (window.spirit.required.spirit.data.contact.data.contact(key)) return;
+    if (STORE().contact.data.contact(key)) return;
     ndBadge = null; ndUnlisted = true; ndRender(); return;
   }
   var next = Object.assign({}, ndBadge || {}, row);
@@ -2179,7 +2181,7 @@ function ndTypeFields(scope) {
     // IT KNOWS THE CONTACT'S TYPE (goal/G43.32; Andy: "the contact list already knows the difference between contact types. so
     // should the detail panel."): a relay's details are drawn by cdRelay, above; a person's are this panel. options.relay
     // says so, else the contact family's cache, as the list has the row.
-    var C = ((window.spirit.required.spirit.data || {}).contact || {}).data;
+    var C = (STORE().contact || {}).data;
     var held = C && typeof C.contact === 'function' ? C.contact(o.key) : null;
     var relay = o.relay === true || (o.relay !== false && !!held && held.relay === true);
     if (relay) return cdRelay(container, o);

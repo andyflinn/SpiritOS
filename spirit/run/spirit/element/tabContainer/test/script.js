@@ -86,7 +86,6 @@ let loadError, T, mounted, tab, c1, tc, ids, iTabs, iContent, c1b, m0, firstMoun
   row, mounts, press, content;
 test.run('it loads on window.spirit.required.spirit.element.tabContainer with create', 0.2, function () {
   global.window = { spirit: { element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   loadError = null;
   try { PAGE_LOAD.runAsPage(FILE); } catch (e) { loadError = e; }

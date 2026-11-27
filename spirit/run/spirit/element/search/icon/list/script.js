@@ -41,8 +41,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var SET = 'spirit/iconSet.json';
 
   // The fs family's cache, where the set is kept and the file followed.
-  var cache = window.spirit.requireScript('spirit/fs/script.js');
-  function F() { return ((window.spirit.required.spirit.data || {}).fs || {}).data || null; }
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the file tree is its fs.data,
+  // the set's rows read through its rowsOf.
+  var cache = Promise.all([window.spirit.requireScript('spirit/fs/script.js'), Promise.resolve(window.spirit.readyPromise)]);
+  function STORE() { return window.spirit.dataStore || {}; }
+  function F() { return (STORE().fs || {}).data || null; }
 
   // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.
   var reading = null;
@@ -52,7 +55,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function stampOf(row) { return row ? String(row.modified) + ':' + String(row.size) : ''; }
   function held() {
     var I = F() && F().icons;
-    var rows = I && window.spirit.required.spirit.data.rowsOf ? window.spirit.required.spirit.data.rowsOf(I.branch) || [] : [];
+    var rows = I && STORE().rowsOf ? STORE().rowsOf(I.branch) || [] : [];
     if (!rows.length) return null;
     var set = {};
     rows.forEach(function (r) { set[r.glyph || r.key] = Array.isArray(r.keywords) ? r.keywords : []; });

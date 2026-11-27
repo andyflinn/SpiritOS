@@ -24,7 +24,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/row/script.js', 'spirit/element/icon/script.js', 'spirit/element/search/app/rowFormAppActive/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
-  var appReady = Promise.resolve(keepAnswer('spirit/app/script.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app rows are its app.data.
+  var storeReady = Promise.resolve(window.spirit.readyPromise);
+  function appReads() { return ((window.spirit.dataStore || {}).app || {}).data; }
+  var appReady = Promise.all([keepAnswer('spirit/app/script.js'), storeReady]).then(function () { return appReads(); });
 
   var apps = null;
   function dispatch(idx) {
@@ -37,7 +40,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || ''), icon: String(v.icon || '') }); });
       });
     }
-    listen(((window.spirit.required.spirit.data || {}).app || {}).data);
+    listen(appReads());
     if (!off) appReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

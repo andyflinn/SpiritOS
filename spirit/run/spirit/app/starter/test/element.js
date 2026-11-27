@@ -57,8 +57,8 @@ function world(card, hold) {
     // The node's branch by its api.js path (goal/G49.6: never by a name).
     requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(String(p) === 'spirit/node/api.js' ? family : {}); },
   };
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js places itself by
-  // installSpiritElement at spirit.required.spirit.app.starter.element as it runs.
+  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js is placed at
+  // spirit.required.spirit.app.starter.element as it runs.
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.win = win;

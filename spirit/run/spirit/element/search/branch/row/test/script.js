@@ -54,7 +54,6 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   };
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js): the stream's branch rows land there.
@@ -79,7 +78,9 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
     const v = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required);
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : standIn(p)); };
+  // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back,
+  // the store this window ran above.
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : p === 'spirit/client/script.js' ? DATA : standIn(p)); };
   // The branch branch is answered by its script.js path (goal/G49.6: never by a name; goal/G49.21).
   PAGE_LOAD.runAsPage(FILE);
   await settle();

@@ -2,7 +2,7 @@
 
 One provider row in the page (goal/G41.4): its fields, handed to the tables' row element (`../row.js`, tested in its
 own folder), which edits them, saves each as it changes and deletes the row. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs in node on a window of its
-own; the row element is a stand-in placed by the real `installSpiritElement` as its own file places it, keeping what it
+own; the row element is a stand-in handed as `spirit.requireScript`'s answer, keeping what it
 was handed. The same world as the other tables' `elementRow` tests.
 
 - Before it runs there is no `spirit.required.spirit.app.agent.element.table.provider.elementRow`; once it has, it stands

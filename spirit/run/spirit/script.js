@@ -579,8 +579,8 @@
   required.spirit.element = holder();
   required.spirit.app = holder();
   // THE ELEMENTS STAND HERE TOO (goal/G49.5; Andy, of his G43.32 Q5: "that ruling is reversed, since the element factory is
-  // fine where it is loaded"): an element's factory is at spirit.required.<its path>, put there by
-  // spirit/element/installSpiritElement/script.js as the script runs; there is no spirit.element.
+  // fine where it is loaded"): an element's factory is at spirit.required.<its path>, put there by the loader from the
+  // script's module.exports (goal/G49.9; installSpiritElement deleted, goal/G49.23); there is no spirit.element.
   // A PATH'S PLACE, ITS KEYS (goal/G49.9, box v5; Andy: "every single script into it's own named folder, is exactly so that
   // anything exposed by the script has a private (own) contained inside of the spirit object"): one key per folder, the
   // file's name without .js the last, and a folder's script.js at its folder's own name: spirit/element/busyButton/script.js
@@ -1153,7 +1153,9 @@
     // translator, which its type loads; a process follows a stream only through appServer's listener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.required.spirit.data is there now.
     module.exports = self;
-    requireOne('spirit/client/script.js');
+    // spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"): the spirit object loads its own
+    // client and offers the store as a member, so an element reads spirit.dataStore and asks for no client script.
+    self.dataStore = requireOne('spirit/client/script.js');
     return;
   }
 
@@ -1210,7 +1212,8 @@
       // cache it made.
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
-      return parsed().then(function () { return requireOne('spirit/client/script.js'); });
+      // spirit.dataStore (goal/G49.23, as in node above): the store, a member once the page has started.
+      return parsed().then(function () { return requireOne('spirit/client/script.js'); }).then(function (st) { self.dataStore = st; });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a

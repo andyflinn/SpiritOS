@@ -1270,15 +1270,24 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // (goal/G41.28) and each table's list and editor live in spirit/app/agent/table/ since goal/G43.12, which no pattern below
 // matches; there they are neither, and are not mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
 // WHAT IS A PAGE MODULE (goal/G43.32; Andy: "helpers with no create are no fucking elements. they live in require.
-// element scripts place their factories in spirit.required.<their path>"): a file is mounted when its own code places its
-// factory by installSpiritElement; a switch (agent.js), a server or a helper is not. Read from the file, not guessed from
-// its path.
-function kindOf(file) {
-  const f = String(file || '');
-  if (!/^spirit\/.+\.js$/.test(f) || /(^|\/)test\//.test(f)) return '';
-  if (f === 'spirit/element/installSpiritElement/script.js') return '';
-  try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
+// element scripts place their factories in spirit.required.<their path>"): a file is mounted when it is an element script;
+// a switch (agent.js), a server or a helper is not.
+// AN ELEMENT SCRIPT, BY ITS PLACE AND ITS EXPORTS (goal/G49.23: the loader places a script's module.exports, goal/G49.9): a
+// script under spirit/element/, or an app's element.js or under its element/, whose module.exports has a create. Its exports
+// are what it sets when it runs as the page's loader runs it (spirit/test/headLessChrome.js runAsPage), in a bare world of its
+// own whose spirit answers no require; a script that throws there has none.
+const ELEMENT_PLACE = /^spirit\/(?:element\/|app\/.+\/element(?:\/|\.js$))/;
+function exportsCreate(f) {
+  const vm = require('vm');
+  const never = function () { return new Promise(function () {}); };
+  const w = { console: { log: function () {}, error: function () {}, warn: function () {} }, setTimeout: function () { return 0; }, clearTimeout: function () {}, setInterval: function () { return 0; }, clearInterval: function () {} };
+  w.window = w;
+  w.spirit = { required: {}, requireScript: never, readyPromise: never() };
+  vm.createContext(w);
+  try { const e = H.runAsPage(f, w); return !!e && typeof e.create === 'function'; } catch (e) { return false; }
 }
+function isElementScript(rel) { const f = String(rel || ''); return /\.js$/.test(f) && ELEMENT_PLACE.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)) && exportsCreate(f); }
+function kindOf(file) { return isElementScript(file) ? 'element' : ''; }
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
@@ -1834,12 +1843,10 @@ function strayElementReaches(rel) {
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
 // spirit.requireScript()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
-// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.required.<its
-// path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
+// judged. An element script (isElementScript above) has a factory with a create at spirit.required.<its path> once
+// required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
-// The helper itself defines installSpiritElement and places nothing: it is required, no element.
-function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement/script.js' && /\binstallSpiritElement\s*\(/.test(codeOf(readSource(rel), true)); }
 // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system
 // that pollutes global name-spaces.", "go on this"; judged in oneFile below). It took the place of requireOnNode, which
 // nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
@@ -1892,12 +1899,11 @@ function nodeGlobalsIn(run, rel, full) {
     .concat((r.p || []).filter(function (n) { return assigns('process', n); }).map(function (n) { return 'process.' + n; }));
   return { err: r.err, leaks: leaks };
 }
-// THE ONE HELPER (goal/G43.32; Andy: "this can be done with ONE single helper function
-// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.required or
-// spirit.elements by hand.
+// THE LOADER PLACES ELEMENTS (goal/G43.32; goal/G49.9: a script sets module.exports and the loader places it): no element
+// script puts itself on spirit.required or spirit.elements by hand.
 function placedByHand() {
   return productScripts().filter(function (f) {
-    if (f === 'spirit/element/installSpiritElement/script.js' || f === 'spirit/script.js') return false;
+    if (f === 'spirit/script.js') return false;
     const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
     return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
   });
@@ -1916,10 +1922,7 @@ function every() {
     return (!!E.tracked && E.tracked.length > 0 && !named.length) || false;
   }, test.limit.quick);
 
-  // elements are placed by installSpiritElement alone
-  test.run('spirit/element/installSpiritElement/script.js is there', 0.4, function () {
-    return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement', 'script.js')) || false;
-  }, test.limit.quick);
+  // elements are placed by the loader alone
   test.run('no product script puts an element on spirit.required or spirit.elements by hand', 0.4, function () {
     const hand = placedByHand();
     return !hand.length || false;
@@ -2299,7 +2302,7 @@ function oneFile(P) {
     return !moduleRules(full).bad.length;
   }, test.limit.quick);
   if (!kindOf(rel)) {
-    test.run('it places no element (it calls no installSpiritElement): a switch, a server or a helper, not mounted', 0.4, function () {
+    test.run('it places no element (no create in its exports): a switch, a server or a helper, not mounted', 0.4, function () {
       return !kindOf(rel) || false;
     }, test.limit.quick);
     return;

@@ -200,8 +200,12 @@ function personWorld(person, relayRows) {
     // A PART WITH NO STAND-IN NEVER ARRIVES (goal/G49.9, box v5): the detail keeps only what a require hands back, and an empty
     // answer would be taken for the part itself (fieldInput's attach, the face form's offers); an answer still on its way leaves
     // it out, as a part the page has not loaded yet, and refuses nothing the detail asks without a catch.
-    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING); const b = branchAt(families, p); return b ? Promise.resolve(b) : new Promise(function () {}); },
+    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
+      const b = branchAt(families, p); return b ? Promise.resolve(b) : new Promise(function () {}); },
     readyPromise: Promise.resolve({}),
+    // THE DATA SET IS spirit.dataStore (goal/G49.23): the one object a test plants its rows in; the element reads it there and
+    // asks no client script.
+    dataStore: {},
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
   };
   // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
@@ -211,12 +215,10 @@ function personWorld(person, relayRows) {
     attach: function (button, opts) { return record('attach', button, opts); },
     create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
   };
-  // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
-  // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = recorder;
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row/script.js, openDetails).
   w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return w.detail.create(box, { key: key, layer: layer }); };
@@ -288,12 +290,12 @@ function relayWorld(rows, relayStatus) {
     eventStream: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
     // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
-    // "every api.js requires it's companion data.js"); here that data stands in as spirit.required.spirit.data.contact.data, whose rows
+    // "every api.js requires it's companion data.js"); here that data stands in as spirit.dataStore.contact.data, whose rows
     // the page watches. A data.js asked for directly is only recorded.
     requireScript: function (p) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
-      if (at === 'spirit/contact/script.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
+      if (at === 'spirit/contact/script.js' && !win.spirit.dataStore.contact) (win.spirit.dataStore.contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
       // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
       if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
       if (at === 'spirit/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
@@ -314,7 +316,10 @@ function relayWorld(rows, relayStatus) {
         return got;
       });
     },
-    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P }, data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } } } },
+    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P } } },
+    // THE DATA SET IS spirit.dataStore (goal/G49.23): the one object a test plants its rows in; the element reads it there and
+    // asks no client script.
+    dataStore: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
   };
   // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object
   // or a function... or fail/throw"): the armingButton, handed when the element asks for it.
@@ -322,12 +327,10 @@ function relayWorld(rows, relayStatus) {
     attach: function (button, opts) { return record('attach', button, opts); },
     create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
   };
-  // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
-  // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = recorder;
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row/script.js, openDetails).
   w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return w.detail.create(box, { key: key, layer: layer, relay: true }); };
@@ -886,7 +889,7 @@ test.run('A relay\'s detail sends its title to the layer it is drawn in', 0.2, f
 // ONE DETAIL FOR EVERY KIND OF CONTACT (goal/G43.32; Andy: "the contact list already knows the difference between contact
 // types. so should the detail panel."): not told, the contact family's cache says what the row is.
 // it knows the contact's type, from the contact family's cache when not told
-const held = function (wx, relay) { (wx.win.spirit.required.spirit.data = wx.win.spirit.required.spirit.data || {}).contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
+const held = function (wx, relay) { wx.win.spirit.dataStore.contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
 test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s details and does not ask for a person\'s row', 0.2, async function () {
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);

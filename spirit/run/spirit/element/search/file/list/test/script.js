@@ -51,11 +51,12 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
       lists.push(l); return l;
     } }; },
     'spirit/element/search/file/row/script.js': function () { return { create: function (row) { return { kind: 'file', row: row }; } }; },
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
+    'spirit/client/script.js': function () { return global.window.spirit.required.spirit.data; },
     'spirit/element/fstat/script.js': function () { return { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   const made = {};
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });

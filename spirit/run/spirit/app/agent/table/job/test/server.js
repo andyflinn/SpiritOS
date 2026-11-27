@@ -193,8 +193,7 @@ test.run('the two element files place spirit.required.spirit.app.agent.element.t
     // object for anything else they ask (the agent branch's api.js).
     return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
-  // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
-  // runs (spirit/test/headLessChrome.js pageSpirit).
+  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file is placed at its path as it runs.
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A family's

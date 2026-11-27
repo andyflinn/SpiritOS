@@ -85,7 +85,7 @@ function world() {
   // data (the api tree comes through readyPromise), and the list's row and detail, which no check here opens.
   const ANSWERS = { 'spirit/node/api.js': {}, 'spirit/node/data.js': {}, 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
   win.window = win;
-  // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
+  // The page's spirit.requireScript, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/client/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', SUBJECT] });
   vm.createContext(win);
   // The tree index is one of the spirit object's own, there before any element.

@@ -20,7 +20,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   var S = window.spirit = window.spirit || {};
-  var parts = Promise.all([keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/monitor/value/script.js')]);
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs
+  // family's cache is its job.data.
+  var parts = Promise.all([keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/monitor/value/script.js'), Promise.resolve(window.spirit.readyPromise)]);
+  function store() { return window.spirit.dataStore; }
   function valueOf(d) { return String(((d.jobs || {}).byStatus || {}).running || 0); }
 
   function create(container, options) {
@@ -30,7 +33,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var tile = null;
     function paint() {
       if (gone || !tile) return;
-      var job = S.required.spirit.data.job.data.job('spirit');
+      var job = store().job.data.job('spirit');
       var d = job && job.data && job.data.stats;
       tile.set(d ? valueOf(d) : '–');
     }
@@ -38,7 +41,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (gone) return;
       tile = ANSWER['spirit/element/monitor/value/script.js'].create(container, { icon: '🏃', label: 'Jobs running', mode: o.mode });
       paint();
-      off = S.required.spirit.data.job.data.watch('spirit', paint);
+      off = store().job.data.watch('spirit', paint);
     });
     return {
       destroy: function () {

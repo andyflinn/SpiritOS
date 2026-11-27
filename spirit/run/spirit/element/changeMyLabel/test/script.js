@@ -82,14 +82,12 @@ function world(answer) {
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
-  // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
   const REAL = [SUBJECT, 'spirit/type/string/label/script.js', 'spirit/client/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/(?:app\/)?[^/]+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = function (p) { return REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   w.stands = {
     'spirit/element/rowForm/script.js': win.spirit.zzRowForm,
     'spirit/element/fieldInput/script.js': { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } },

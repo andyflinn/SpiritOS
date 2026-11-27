@@ -22,6 +22,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   keepAnswer('spirit/element/search/app/rowFormToggle/script.js');
   keepAnswer('spirit/app/script.js');
   keepAnswer('spirit/job/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started.
+  function STORE() { return window.spirit.dataStore || {}; }
 
   var LIVE = { running: true, pending: true };
 
@@ -33,9 +35,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var gone = false;
     var serves = false;
     var offJobs = function () {};
-    function label() { var A = S.required.spirit.data.app && S.required.spirit.data.app.data; var r = A ? A.rows()[key] : null; return (r && r.label) || key; }
+    function label() { var A = STORE().app && STORE().app.data; var r = A ? A.rows()[key] : null; return (r && r.label) || key; }
     function job() {
-      var J = S.required.spirit.data.job && S.required.spirit.data.job.data;
+      var J = STORE().job && STORE().job.data;
       return J ? J.find(function (j) { return !!j && j.kind === 'server' && j.module === module && LIVE[j.status] === true; }) : null;
     }
     // WHAT THE SERVER SAID WHEN ASKED (its DEBUG {}): a page opened after the server started finds no job in its cache, since the
@@ -61,10 +63,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     Promise.resolve(keepAnswer('spirit/job/script.js')).then(function () {
       if (gone) return;
-      offJobs = S.required.spirit.data.job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
+      offJobs = STORE().job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();
     }, function () { /* no jobs, no server to show */ });
-    var offRow = S.required.spirit.data.app.data.watch(key, paint);
+    var offRow = STORE().app.data.watch(key, paint);
     S.readyPromise.then(function () { return keepAnswer('spirit/fs/script.js'); }).then(function (s) { return s.loadFile(S.slashedPath(key) + '/' + S.slashedPath(key).split('/').pop() + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);

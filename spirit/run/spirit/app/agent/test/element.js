@@ -135,7 +135,7 @@ function load(w) {
   global.window.spirit.nodeFacts = { key: 'KEY+AGENT/APP==' };
   global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app is placed at its path as it runs.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The app's own answer, what it set as module.exports (goal/G49.9).
   return PAGE_LOAD.runAsPage(FILE);
@@ -946,7 +946,7 @@ async function tabOpens(kind, row) {
       },
     };
     win.spirit.readyPromise = Promise.resolve(win.spirit);
-    // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file places itself by installSpiritElement as it runs.
+    // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file is placed at its path as it runs.
     SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
     vm.createContext(win);
     loaded['spirit/client/script.js'] = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit/client/script.js'), win);

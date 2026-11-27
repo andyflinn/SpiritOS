@@ -51,14 +51,14 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
       lists.push(l); return l;
     } }); },
     // The real row element requires the auth family's api.js as it runs (goal/G41.28, G47.1); its stand-in does the same.
-    'spirit/element/search/branch/row/script.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/branch/row/script.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
+    // goal/G49.23: written at its place as the stand-ins beside it.
+    'spirit/element/search/branch/row/script.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); ((E.search = E.search || {}).branch = E.search.branch || {}).row = { create: function (row) { return { kind: 'branch', row: row }; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api/script.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client.

@@ -75,8 +75,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, required: { spirit: {} }, normalizeString: LOADER.normalizeString,
     readyPromise: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;
-  // goal/G43.32: the element places itself by installSpiritElement, and fieldInput, a helper, stands in spirit.required
-  // (spirit/test/headLessChrome.js pageSpirit).
+  // goal/G43.32: fieldInput, a helper, stands in spirit.required (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
@@ -90,15 +89,22 @@ test.run('the bundle editor requires the field input and the bundle selector thr
     if (bundleData) return;
     bundleData = true;
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'bundle', 'client', 'script.js'), 'utf8'), { filename: 'spirit/bundle/client/script.js' });
-    const T = ((global.window.spirit.required.spirit.data || {}).bundle || {}).data;
-    if (T && !T.counted) {
-      const own = T.watch; T.counted = true;
-      T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
-    }
+    const count = function () {
+      const T = ((global.window.spirit.required.spirit.data || {}).bundle || {}).data;
+      if (T && !T.counted) {
+        const own = T.watch; T.counted = true;
+        T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
+      }
+    };
+    // goal/G49.23: the client files into the data set once requireScript('spirit/client/script.js') has handed it back, a
+    // promise it asked for as it ran; the count is put on its rows after that answer, as soon as they stand.
+    count(); Promise.resolve().then(count);
   };
   // A bundle row on the node's own job spirit.bundle, as the bundle branch's client takes it (goal/G43.20, G49.21).
   arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.bundle', data: { row: { id: id, label: label, owner: 'node' } } }); };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/bundle/script.js') family(); if (p === 'spirit/bundle/script.js') return Promise.resolve(bundle); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
+  // The data store is answered as spirit.requireScript('spirit/client/script.js') hands it back (goal/G49.23): the one this
+  // window ran above.
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/client/script.js') return Promise.resolve(global.window.spirit.required.spirit.data); if (p === 'spirit/bundle/script.js') family(); if (p === 'spirit/bundle/script.js') return Promise.resolve(bundle); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
   // The bundle branch is answered by its script's path (goal/G49.6: never by a name).
   PAGE_LOAD.runAsPage(FILE);
   await settle();

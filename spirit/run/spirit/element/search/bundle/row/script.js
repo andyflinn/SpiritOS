@@ -34,7 +34,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // A NODE'S BUNDLES ARE THE bundle BRANCH'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
   // are the family's own data.js's (spirit/bundle/client/script.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.bundle.data.
-  var authReady = Promise.resolve(keepAnswer('spirit/bundle/script.js')).then(function () { return window.spirit.required.spirit.data.bundle.data; });
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the bundles are its bundle.data.
+  var storeReady = Promise.resolve(window.spirit.readyPromise);
+  function bundleReads() { return ((window.spirit.dataStore || {}).bundle || {}).data; }
+  var authReady = Promise.all([keepAnswer('spirit/bundle/script.js'), storeReady]).then(function () { return bundleReads(); });
   // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
@@ -49,7 +52,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(((window.spirit.required.spirit.data || {}).bundle || {}).data);
+    listen(bundleReads());
     if (!off) authReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

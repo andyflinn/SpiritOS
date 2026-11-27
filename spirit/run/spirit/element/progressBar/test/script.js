@@ -5,7 +5,7 @@
 // rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // The progress bar (goal/G29.14): one shared shell element, drawn from (done, total, text). The browser file runs in node
-// on a window of its own, placing itself by the real installSpiritElement (spirit/test/headLessChrome.js pageSpirit); the
+// on a window of its own, placed at its path by its module.exports (spirit/test/headLessChrome.js pageSpirit); the
 // markup it answers is read as text.
 
 const fs = require('fs');

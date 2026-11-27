@@ -551,10 +551,8 @@ async function chromePage(chrome) {
 }
 
 // A FAKE PAGE'S SPIRIT, AS AN ELEMENT FINDS IT (goal/G43.32): a test that runs an element script in a world of its own
-// (vm) hands that world's spirit object here. It gets spirit.required, the real installSpiritElement resident at
-// spirit.required.spirit.element.installSpiritElement, and a spirit.requireScript that answers what is already loaded at once,
-// as spirit.requireScript does a second time: the helper, or any path the test hands in loaded. So an element script run there
-// places its factory at spirit.required.<its path> by its own call, as it runs. Answers the spirit object.
+// (vm) hands that world's spirit object here. It gets spirit.required and a spirit.requireScript that answers what is already
+// loaded at once, as spirit.requireScript does a second time: any path the test hands in loaded. Answers the spirit object.
 // A SCRIPT OF THE TREE BY ITS PATH, RUN IN THAT WORLD (goal/G49.6; Andy: "make every single test use spirit.requireScript() to
 // load product files"): o.window, the world's own object (made a vm context if it is not one yet), and o.real, the run-root
 // paths the test has loaded as they are, its subject and any part it does not stand in for. spirit.requireScript(one of them)
@@ -614,12 +612,8 @@ function pageSpirit(s, loaded, o) {
       return Promise.resolve(typeof f === 'function' ? f(v) : v);
     } };
   };
-  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement', 'script.js'));
   sp.required = sp.required || {};
-  sp.required.spirit = sp.required.spirit || {};
-  sp.required.spirit.element = sp.required.spirit.element || {};
-  sp.required.spirit.element.installSpiritElement = helper;
-  const have = Object.assign({ 'spirit/element/installSpiritElement/script.js': helper }, loaded || {});
+  const have = Object.assign({}, loaded || {});
   const own = sp.requireScript;
   sp.requireScript = function (p) {
     const at = String(p || '').replace(/^\/+/, '');
@@ -627,6 +621,11 @@ function pageSpirit(s, loaded, o) {
     if (opts.window && isReal(at) && fs.existsSync(path.join(RUN, at))) return runReal(at);
     return typeof own === 'function' ? own.apply(this, arguments) : Promise.resolve({});
   };
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"): a world's spirit holds the store
+  // the test hands in for spirit/client/script.js, or the real one when the test loads it as it is, as spirit.js keeps it.
+  const STORE = 'spirit/client/script.js';
+  if (sp.dataStore === undefined && Object.prototype.hasOwnProperty.call(have, STORE)) sp.dataStore = have[STORE];
+  else if (sp.dataStore === undefined && opts.window && isReal(STORE)) { runReal(STORE); sp.dataStore = placedAt(STORE) || (sp.required.spirit && sp.required.spirit.data); }
   return sp;
 }
 

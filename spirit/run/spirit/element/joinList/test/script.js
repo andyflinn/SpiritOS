@@ -49,15 +49,18 @@ function world(join) {
   };
   w.publish = function (id, j) { w.fns.slice().forEach(function (fn) { fn(id, j); }); };
   win.spirit = {
-    required: { spirit: { element: {}, app: {}, data: { job: { data: jobs } } } },
+    required: { spirit: { element: {}, app: {} } },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
     readyPromise: Promise.resolve({
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
       relay: { status: function () { return Promise.resolve({ body: { rows: [] } }); } },
     }),
     // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here, nor
-    // the job branch's api.js, whose data.js's reads stand above as spirit.required.spirit.data.job.data.
-    requireScript: function () { return Promise.resolve({}); },
+    // the job branch's api.js.
+    requireScript: function (p) { return Promise.resolve({}); },
+    // The data store, whose job.data are the jobs above, at spirit.dataStore (goal/G49.23: the element reads it there,
+    // never at spirit.required, and asks no client script).
+    dataStore: { job: { data: jobs } },
   };
   // joinSteps, the real one, and the subject: run in this window by their paths, through the page stand-in (goal/G49.6).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps/script.js', SUBJECT] });

@@ -234,8 +234,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     if (p === AGENT) return Promise.resolve(made.family);
     return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
-  // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
-  // (spirit/test/headLessChrome.js pageSpirit).
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file is placed at its path as it runs.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's

@@ -57,7 +57,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var STEPS = 'spirit/app/join/join.json';
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/joinSteps/script.js', 'spirit/element/joinForm/script.js',
-    'spirit/element/search/contact/list/script.js', 'spirit/element/icon/script.js'].map(function (p) { return S.requireScript(p); }));
+    'spirit/element/search/contact/list/script.js', 'spirit/element/icon/script.js'].map(function (p) { return S.requireScript(p); })
+    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs
+    // family's cache, whose spirit job holds the join steps, is its job.data.
+    .concat([Promise.resolve(window.spirit.readyPromise)]));
   // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
   var DONE = '☑️';
   var OPEN = '⬜';
@@ -169,7 +172,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       return S.requireScript('spirit/job/script.js');
     }).then(function () {
       if (gone) return;
-      var J = ((S.required.spirit.data || {}).job || {}).data;
+      var J = ((window.spirit.dataStore || {}).job || {}).data;
       if (!J) return;
       // THE JOIN STEPS, news of spirit (goal/G43.20): { join }.
       var take = function (j) { if (j && j.id === 'spirit' && j.data && j.data.join) { job = j.data.join; show(); } };

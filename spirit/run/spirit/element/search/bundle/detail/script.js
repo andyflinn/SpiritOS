@@ -35,12 +35,15 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/search/api/script.js', 'spirit/element/search/branch/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton/script.js') : null, keepAnswer('spirit/bundle/script.js'), keepAnswer('spirit/branch/script.js')]));
+  }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton/script.js') : null, keepAnswer('spirit/bundle/script.js'), keepAnswer('spirit/branch/script.js'),
+    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: bundles and branches are its own.
+    Promise.resolve(window.spirit.readyPromise)]));
+  function STORE() { return window.spirit.dataStore || {}; }
 
   function mount(box, o) {
     box.innerHTML = '';
-    var BUNDLES = ((window.spirit.required.spirit.data || {}).bundle || {}).data;
-    var BRANCHES = ((window.spirit.required.spirit.data || {}).branch || {}).data;
+    var BUNDLES = (STORE().bundle || {}).data;
+    var BRANCHES = (STORE().branch || {}).data;
     // ITS DELETION HEARD, FROM THIS SCREEN OR ANY OTHER: the mounter closes it.
     var offBundle = BUNDLES && typeof o.gone === 'function' ? BUNDLES.watch(function (key, v) {
       if (String(key) === String(o.bundle) && !v) o.gone();

@@ -43,7 +43,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   if (window.spirit.requireScript) ['spirit/element/search/file/row/script.js', 'spirit/element/search/file/tile/script.js', 'spirit/element/search/script.js', 'spirit/element/fstat/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
   keepAnswer('spirit/fs/script.js');
-  function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the file tree is its fs.data.
+  function fsReads() { return (window.spirit && ((window.spirit.dataStore || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;

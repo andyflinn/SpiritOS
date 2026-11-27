@@ -50,25 +50,24 @@ test.run('the selector runs on a bare window', 0.2, async function () {
   code = SRC.replace(/\/\/.*$/gm, '');
   lists = [];
   required = [];
+  // goal/G49.23: a stand-in is requireScript's answer, made once (goal/G49.9, box v5).
   const STANDS = {
-    'spirit/element/search/bundle/list/script.js': function (E) { LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/bundle/list/script.js', { create: function (host, o) {
+    'spirit/element/search/bundle/list/script.js': function () { return { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, refresh: function () { l.refreshed += 1; }, destroy: function () {} };
       lists.push(l); return { list: l, refresh: l.refresh, destroy: l.destroy };
-    } }); },
+    } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
-    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); }
+    if (STANDS[p]) return Promise.resolve(STANDS[p].made = STANDS[p].made || STANDS[p]());
     return placedAnswer(p);
   };
   PAGE_LOAD.runAsPage(FILE, null, SRC);
-  // goal/G43.32: it places itself once installSpiritElement is in hand.
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   made = E.search.bundle;

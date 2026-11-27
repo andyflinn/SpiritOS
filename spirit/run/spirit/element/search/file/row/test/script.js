@@ -41,7 +41,10 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
   // fail/throw"): the real shared row element and the real fstat, each run as the page's loader runs it and its answer handed
   // on; any other part (the icon, word) answers an empty object.
-  const STANDS = { 'spirit/element/row/script.js': function () { return PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
+  const STANDS = {
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
+    'spirit/client/script.js': function () { return global.window.spirit.required.spirit.data; },
+    'spirit/element/row/script.js': function () { return PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
     // What says a file's kind (goal/G43.17), the real one, should the row ask it.
     'spirit/element/fstat/script.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat', 'script.js'); return fs.existsSync(f) ? PAGE_LOAD.runAsPage(f) : {}; } };
   const made = {};
@@ -56,7 +59,6 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // loaded already in this process (the test reporter loads it), and then a later require of it hands back its cached copy
   // and fills nothing here, so the row fell back to "2048 B".
   (function () { const real = require(path.join(RUN, 'spirit', 'script.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
-  // goal/G43.32: every element places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   D = global.window.spirit.required.spirit.data;

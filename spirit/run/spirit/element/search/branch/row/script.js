@@ -36,7 +36,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // A NODE'S BRANCHES ARE THE branch BRANCH'S CACHE (goal/G41.28): what a branch row on the stream means, and its branch,
   // are the family's own data.js's (spirit/branch/client/script.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.branch.data.
-  var authReady = Promise.resolve(window.spirit.requireScript('spirit/branch/script.js')).then(function () { return window.spirit.required.spirit.data.branch.data; });
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the branches are its branch.data.
+  var storeReady = Promise.resolve(window.spirit.readyPromise);
+  function branchReads() { return ((window.spirit.dataStore || {}).branch || {}).data; }
+  var authReady = Promise.all([window.spirit.requireScript('spirit/branch/script.js'), storeReady]).then(function () { return branchReads(); });
   // THE KIND'S INDEX: one watch on the branches for every branch row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var branches = null;
@@ -51,7 +54,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(((window.spirit.required.spirit.data || {}).branch || {}).data);
+    listen(branchReads());
     if (!off) authReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

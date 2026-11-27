@@ -142,27 +142,8 @@ function useScript(a) {
   rel = full ? path.relative(RUN, full).split(path.sep).join('/') : a;
   ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
 }
-// WHAT IS MOUNTED IS KNOWN BY ITS PATH (goal/G41.19, box v17; Andy: "the test knows bloody fucking well if a scripts is
-// an app (from the path pattern), why the fuck would would it need manifests for standard patterns?",
-// "the test knows fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
-// under spirit/element/. Anything else in its reach is neither, and is not mounted.
-// THE AGENT TABLES' PAGES (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element, its row editor
-// (goal/G41.28) and each table's list and editor live in spirit/app/agent/table/ since goal/G43.12, which no pattern below
-// matches; there they are neither, and are not mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
-// WHAT IS A PAGE MODULE (goal/G43.32; Andy: "helpers with no create are no fucking elements. they live in require.
-// element scripts place their factories in spirit.required.<their path>"): a file is mounted when its own code places its
-// factory by installSpiritElement; a switch (agent.js), a server or a helper is not. Read from the file, not guessed from
-// its path.
-function kindOf(file) {
-  const f = String(file || '');
-  if (!/^spirit\/.+\.js$/.test(f) || /(^|\/)test\//.test(f)) return '';
-  if (f === 'spirit/element/installSpiritElement/script.js') return '';
-  try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
-}
 // A PAGE SCRIPT IT JUDGES (goal/G47.1, box v121: "it judges the scripts scriptClassify says load in a page"; testicle hands it
 // only those): known by its path alone, no code read; whether it installs an element the bare page says (session).
-// installSpiritElement.js among them: it runs on a page too and installs no element, so it is judged as such a script is
-// (box v121), not refused; testicle hands it this suite, as a script both node and page run.
 function pageScript(file) {
   const f = String(file || '');
   return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f);
@@ -646,12 +627,15 @@ function productScripts() {
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
 // spirit.requireScript()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
-// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.required.<its
-// path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
+// judged. An element script (isElementScript below) has a factory with a create at spirit.required.<its path> once
+// required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
-// The helper itself defines installSpiritElement and places nothing: it is required, no element.
-function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement/script.js' && /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
+// AN ELEMENT SCRIPT, BY ITS PLACE AND ITS EXPORTS (goal/G49.23: the loader places a script's module.exports, goal/G49.9): a
+// script under spirit/element/, or an app's element.js or under its element/, whose module.exports has a create: what
+// spirit.requireScript answered for it on the page (r.answered below).
+const ELEMENT_PLACE = /^spirit\/(?:element\/|app\/.+\/element(?:\/|\.js$))/;
+function isElementScript(rel, r) { return ELEMENT_PLACE.test(String(rel || '')) && !!r && r.answered === true; }
 function requireOnNode(run, rel) {
   return new Promise(function (resolve) {
     // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
@@ -675,12 +659,11 @@ function requireOnNode(run, rel) {
     });
   });
 }
-// THE ONE HELPER (goal/G43.32; Andy: "this can be done with ONE single helper function
-// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.required or
-// spirit.elements by hand.
+// THE LOADER PLACES ELEMENTS (goal/G43.32; goal/G49.9: a script sets module.exports and the loader places it): no element
+// script puts itself on spirit.required or spirit.elements by hand.
 function placedByHand() {
   return productScripts().filter(function (f) {
-    if (f === 'spirit/element/installSpiritElement/script.js' || f === 'spirit/script.js') return false;
+    if (f === 'spirit/script.js') return false;
     const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
     return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
   });
@@ -718,20 +701,21 @@ function every() {
     const page = E.page = await chromePage(chrome);
     if (!page || page.error) return false;
     E.pageLoaded = []; E.pageBad = []; E.noFactory = [];
-    E.elements = E.req.filter(isElementScript);
+    E.elements = [];
     for (const f of E.req) {
       await page.send('Page.navigate', { url: E.node.base + '/' });
       await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, WAIT);
       const keys = JSON.stringify(placeKeys(f));
+      // goal/G49.23: what requireScript answered (its module.exports) told apart from what stands at its place.
       const got = await page.evaluate('window.spirit.readyPromise.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.requireScript(' + JSON.stringify(f) + '); })' +
-        '.then(function () { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
-        ' var el = at(spirit.required); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
-        ' function () { return JSON.stringify({ err: true, placed: false, factory: false }); })');
-      let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false }; }
-      if (r.err) { if (E.elements.indexOf(f) !== -1) E.noFactory.push(f); continue; }
+        '.then(function (ans) { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
+        ' var el = at(spirit.required); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function", answered: !!ans && typeof ans.create === "function", same: el === ans }); },' +
+        ' function () { return JSON.stringify({ err: true, placed: false, factory: false, answered: false, same: false }); })');
+      let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false, answered: false, same: false }; }
+      if (r.err) continue;
       E.pageLoaded.push(f);
       if (!r.placed) E.pageBad.push(f);
-      if (E.elements.indexOf(f) !== -1 && !r.factory) E.noFactory.push(f);
+      if (isElementScript(f, r)) { E.elements.push(f); if (!r.factory || !r.same) E.noFactory.push(f); }
     }
     try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
@@ -741,7 +725,7 @@ function every() {
     if (!E.pageLoaded) return false;
     return (E.pageLoaded.length > 0 && !E.pageBad.length) || false;
   }, test.limit.quick);
-  test.run('every element script puts its factory in spirit.required under its own path, through its own installSpiritElement', 0.4, function () {
+  test.run('every element script\'s module.exports, a factory with a create, stands in spirit.required under its own path', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
@@ -874,8 +858,8 @@ async function session() {
     return JSON.parse(own).concat(lexAfter.filter(function (k) { return lexBefore.indexOf(k) === -1; }));
   }());
   // NO ELEMENT INSTALLED, KNOWN BY THE PAGE, NOT BY READING ITS CODE (goal/G47.1, box v121: "no code reading: after
-  // loading, the page looks at window.spirit.required at the script's own path, where installSpiritElement puts an element
-  // with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
+  // loading, the page looks at window.spirit.required at the script's own path, where [the loader, since goal/G49.9]
+  // puts an element with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
   // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser.js).
   // Since goal/G49.5's step 2 an element stands at spirit.required.<its path>, and the bare page names that place.
   if (report && report.state === 'failed' && /places no element with a create at spirit\.required\./.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }

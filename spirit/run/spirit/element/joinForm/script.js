@@ -31,6 +31,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the contact
+  // family's cache, whose relay rows it follows, is its contact.data.
+  var store = window.spirit && typeof window.spirit.requireScript === 'function' ? Promise.resolve(Promise.resolve(window.spirit.readyPromise)) : Promise.resolve();
+  function contacts() { return ((window.spirit.dataStore || {}).contact || {}).data; }
   // Its email field's limit, fieldInput's email rule (goal/G47.1, -browser: "every input it draws has a maxlength").
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
   // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
@@ -164,8 +168,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       draw(box);
     }
     var left = false;
-    Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () {
-      if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
+    Promise.all([keepAnswer('spirit/contact/script.js'), store]).then(function () {
+      if (!left && contacts()) stop = contacts().watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
     function go() {

@@ -38,14 +38,14 @@
     keepAnswer('spirit/element/search/api/detail/script.js'), keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js'),
     keepAnswer('spirit/node/api.js')]);
 
-  // THE NODE'S API TREE IN spirit.requireScript('spirit/client/script.js')'s answer (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
-  // apiTree branch of spirit.requireScript('spirit/client/script.js')'s answer, read again when a server job changes, and the family, verb and app-server selectors
-  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (spirit.requireScript('spirit/client/script.js')'s answer.node.data:
+  // THE NODE'S API TREE IN spirit.dataStore (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
+  // apiTree branch of spirit.dataStore, read again when a server job changes, and the family, verb and app-server selectors
+  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (spirit.dataStore.node.data:
   // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A server
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    ANSWER['spirit/client/script.js'].node.data.keepTree(tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js']);
+    window.spirit.dataStore.node.data.keepTree(tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js']);
   }
   var reading = null;
   function readOwnTree() {
@@ -60,8 +60,8 @@
   function follow(D) {
     if (D && typeof D.addTranslator === 'function') D.addTranslator({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
   }
-  if (window.spirit && ANSWER['spirit/client/script.js']) follow(ANSWER['spirit/client/script.js']);
-  else if (window.spirit && window.spirit.requireScript) Promise.resolve(keepAnswer('spirit/client/script.js')).then(function () { follow(ANSWER['spirit/client/script.js']); }, function () {});
+  if (window.spirit && window.spirit.dataStore) follow(window.spirit.dataStore);
+  else if (window.spirit && window.spirit.requireScript) Promise.resolve(Promise.resolve(window.spirit.readyPromise)).then(function () { follow(window.spirit.dataStore); }, function () {});
 
   function createFamilyList(options) {
     options = options || {};
@@ -83,7 +83,7 @@
     root.value = '';
     root.tree = null;
 
-    // EVERY TREE IS A spirit.requireScript('spirit/client/script.js')'s answer BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
+    // EVERY TREE IS A spirit.dataStore BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
     // branch, another party's the apiTree branch under that party's node (spirit/node/data.js keepTree's party); root.party
     // names whose it draws, '' for this node's own.
     root.party = typeof options.tree === 'function' ? partyOf(options.party) : '';
@@ -98,7 +98,7 @@
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a server…'),
         all: isPane ? undefined : options.all,
-        data: ANSWER['spirit/client/script.js'].node.data.treeBranchOf(root.party),
+        data: window.spirit.dataStore.node.data.treeBranchOf(root.party),
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         element: function (row, key) { return ANSWER['spirit/element/search/api/row/script.js'].create(Object.assign({ name: key }, row)); },
@@ -135,7 +135,7 @@
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
-        if (party) ANSWER['spirit/client/script.js'].node.data.keepTree(root.tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'], party);
+        if (party) window.spirit.dataStore.node.data.keepTree(root.tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'], party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });

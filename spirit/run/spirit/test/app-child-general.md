@@ -38,11 +38,11 @@ every other sub-folder `spirit/app/<name>/`:
   while handling a request?"* It says at least one: `shell.mount` (a face), `node.mount` (a server living with the
   node), `node.run` (a run).
 - Rule 4: *"if the application has a face, its main screen element must be spirit/app/[name]/element.js."* With a
-  face, `element.js` is there and places a create through installSpiritElement by its own path; with none, there is no
+  face, `element.js` is there and its `module.exports` offers a create, placed by its own path; with none, there is no
   `element.js`.
 - Rule 5: *"if the app is intrinsic, its additional elements belong in spirit/element/ if the app is not intrinsic, the
-  additional elements belong in spirit/app/[name]/element/."* An element is a script that places a create through
-  installSpiritElement (Andy: *"helpers with no create are no fucking elements. they live in require."*). An intrinsic
+  additional elements belong in spirit/app/[name]/element/."* An element is a script whose `module.exports` offers a
+  create (Andy: *"helpers with no create are no fucking elements. they live in require."*). An intrinsic
   app's folder holds none but `element.js`; a non-intrinsic app's others stand in its `element/`.
 - Rule 6: *"an app that serves verbs must also contain, in the spirit/app/[name]/ folder a valid api.js, a data.js and a
   json description file for each verb it serves."* An app with a server has an `api.js`. With one, it loads and declares

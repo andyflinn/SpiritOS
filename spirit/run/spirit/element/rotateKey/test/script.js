@@ -121,12 +121,10 @@ function world(answer) {
       },
     },
   };
-  // goal/G43.32: every element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
-  // (spirit/test/headLessChrome.js pageSpirit), at once, held or not.
   const recorder = win.spirit.requireScript;
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT, 'spirit/element/armingButton/script.js'] });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = recorder;
   if (SRC) pageRequire(SUBJECT);
   w.win = win;
   w.button = function (host) { return host.querySelector('[data-rotate]'); };
@@ -314,7 +312,7 @@ test.run('destroyed before its arming button loads, rotateKey draws and attaches
   late = world(rotated);
   letGo = null;
   late.hold = new Promise(function (r) { letGo = r; });
-  // goal/G43.32: installSpiritElement overwrites no element that stands; the run again takes the place of a fresh page's.
+  // goal/G43.32: the run again takes the place of a fresh page's, where no element stands yet.
   delete late.win.spirit.required.spirit.element.rotateKey;
   // Its text run here, not through spirit.requireScript (goal/G49.6): requireScript loads a file once and hands back the same
   // one, as a page does, and this check needs it run a second time on a window that ran it already.

@@ -311,7 +311,7 @@ that one; given none, every tracked production `.js` file.
 
 ## generalRules (was script-sibling-generalRules.js; its file-reading checks are this part, its node checks script-sibling-node.js, its page checks script-sibling-browser.js)
 
-Given no file, the tree's rules: no module names spirit/run/process; elements placed by installSpiritElement alone and
+Given no file, the tree's rules: no module names spirit/run/process; elements placed by the loader alone and
 none reading spirit.elements; run://test/ moved into run://spirit/test/ and named nowhere; testModule.js listing no tool as
 a test; .gitignore covering run:// but run://spirit/; every product script holding the shape, taking spirit.js first,
 its require paths within the rule; every file that paints icons loading the icon element. Given a file, its code: no

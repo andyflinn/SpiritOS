@@ -35,7 +35,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['spirit/element/fieldInput/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript('spirit/bundle/script.js')]));
+  }).concat([window.spirit.requireScript('spirit/bundle/script.js'),
+    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the bundle
+    // branch's cache is its bundle.data.
+    Promise.resolve(window.spirit.readyPromise)]));
   // The label's type, required here by its full path (goal/G49.13), and the text tidied as it is stored.
   function labelOf(text) {
     var T = ANSWER['spirit/type/string/label/script.js'];
@@ -83,7 +86,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // (spirit.required.spirit.data.bundle.data), which the pane is a view of, so it shows there by itself; once it is there, Add's
       // label is cleared and the add is said.
       var waitingFor = '';
-      stop = window.spirit.required.spirit.data.bundle.data.watch(function (key, v) {
+      stop = window.spirit.dataStore.bundle.data.watch(function (key, v) {
         if (!waitingFor || !v || String(v.label || '') !== waitingFor) return;
         waitingFor = '';
         input.value = '';

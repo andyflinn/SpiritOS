@@ -48,8 +48,8 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so info.js places itself by installSpiritElement
-  // at spirit.required.spirit.app.info.element as it runs; nodeInfo is what its require answers.
+  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so info.js is placed at
+  // spirit.required.spirit.app.info.element as it runs; nodeInfo is what its require answers.
   win.spirit = { required: { spirit: { element: els, app: {} } },
     requireScript: function (p) {
       w.required.push(String(p));

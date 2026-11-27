@@ -20,6 +20,9 @@
   keepAnswer('spirit/element/icon/script.js');
   keepAnswer('spirit/element/search/icon/list/script.js');
   keepAnswer('spirit/app/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app
+  // family's cache, whose row it shows, is its app.data; asked as this file runs, so it is in before create.
+  function store() { return window.spirit.dataStore; }
 
   function create(host, options) {
     var S = window.spirit;
@@ -29,7 +32,7 @@
     // NO APP NAMED, NOTHING TO FOLLOW (goal/G41.19, box v23: an element missing its options "mounts and says it is not
     // configured"): it watches no row and asks nothing.
     if (!key) { host.textContent = 'No app named: not configured.'; return { destroy: function () { host.innerHTML = ''; } }; }
-    function row() { var A = S.required.spirit.data.app && S.required.spirit.data.app.data; return A ? A.rows()[key] || null : null; }
+    function row() { var A = store().app && store().app.data; return A ? A.rows()[key] || null : null; }
     // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Change is busy until the node answers.
     var form = ANSWER['spirit/element/rowForm/script.js'].create(host, { icon: '✏️', button: 'Change', press: function () {
@@ -50,11 +53,11 @@
     }
     function ask() {
       S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
-        if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
+        if (!gone) store().seatRows(store().app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
-    var offRow = S.required.spirit.data.app.data.watch(key, paint);
-    var offAll = S.required.spirit.data.app.data.watch(function (k) { if (!k) ask(); });
+    var offRow = store().app.data.watch(key, paint);
+    var offAll = store().app.data.watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();
     return { destroy: function () { gone = true; offRow(); offAll(); list.destroy(); host.innerHTML = ''; } };

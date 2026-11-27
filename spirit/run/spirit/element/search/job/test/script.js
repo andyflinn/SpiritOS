@@ -46,11 +46,12 @@ test.run('the selector runs on a bare window', 0.2, async function () {
   const SRC = fs.readFileSync(FILE, 'utf8');
   lists = [];
   required = [];
+  // goal/G49.23: a stand-in is requireScript's answer, made once (goal/G49.9, box v5).
   const STANDS = {
-    'spirit/element/search/job/list/script.js': function () { LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/job/list/script.js', { create: function (host, o) {
+    'spirit/element/search/job/list/script.js': function () { return { create: function (host, o) {
       const l = { host: host, o: o, destroyed: 0 };
       lists.push(l); return { destroy: function () { l.destroyed += 1; } };
-    } }); },
+    } }; },
   };
   global.document = { createElement: element };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
@@ -58,7 +59,7 @@ test.run('the selector runs on a bare window', 0.2, async function () {
   global.spirit = global.window.spirit;
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
-    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); }
+    if (STANDS[p]) return Promise.resolve(STANDS[p].made = STANDS[p].made || STANDS[p]());
     return placedAnswer(p);
   };
   PAGE_LOAD.runAsPage(FILE, null, SRC);

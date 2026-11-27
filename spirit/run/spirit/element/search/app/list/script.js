@@ -26,6 +26,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/search/script.js', 'spirit/element/search/app/row/script.js', 'spirit/element/search/app/tile/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   window.spirit.requireScript('spirit/app/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started.
+  function STORE() { return window.spirit.dataStore || {}; }
 
   function create(host, opts) {
     var o = opts || {};
@@ -41,7 +43,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      data: window.spirit.required.spirit.data.app.data.branch,
+      data: STORE().app.data.branch,
       api: 'spirit/app/script.js',
       verb: 'search',
       face: o.face,
@@ -61,13 +63,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // RUN APPS IN THE PANE ONLY (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane
         // mode, bacause it they have no shell-mount."): a filter with no button, the row as the family's cache holds it.
         .concat([{ name: 'runs', when: function () { return false; }, test: function (row) {
-          var held = row && window.spirit.required.spirit.data.app.data.rows()[row.key];
+          var held = row && STORE().app.data.rows()[row.key];
           return face === 'pane' || !(held && held.run === true) ? 1 : 0;
         } }])
         // NO TILE WITHOUT shell.mount (goal/G43.20; Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"): as tiles, only the apps
         // whose <name>.json says shell.mount true; the pane and the dropdown list every app.
         .concat([{ name: 'tiles', when: function () { return false; }, test: function (row) {
-          var held = row && window.spirit.required.spirit.data.app.data.rows()[row.key];
+          var held = row && STORE().app.data.rows()[row.key];
           return face !== 'tiles' || !!(held && held.shellMount === true) ? 1 : 0;
         } }]),
       // Andy, box: "the appSelector will only show icon and label in the list."
@@ -80,7 +82,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     list.refresh();
     // A CONNECT FORGETS WHAT IS KEPT (spirit/client/script.js's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
     // again (spirit/app/manager/script.js), so a forgotten branch, told with no row, asks again, or its list would stay empty.
-    var off = window.spirit.required.spirit.data.app.data.watch(function (key) { if (!key) list.refresh(); });
+    var off = STORE().app.data.watch(function (key) { if (!key) list.refresh(); });
     return {
       list: list,
       refresh: function () { list.refresh(); },

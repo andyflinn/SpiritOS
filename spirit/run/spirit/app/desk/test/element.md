@@ -4,7 +4,7 @@ The desk on a page (goal/G43.27, requirement 23): the page half of `./desk.js`, 
 agent's (Andy: *"look at agent.js, that's how it's done..."*, *"NO FUCKING HACKS."*). The shell's app selector launches
 it; it draws the Desk page, `./element/desk/desk.js`, which it requires itself. Owed since the rule *"every production
 script has its own test"* (goal/G47.1, box v72). It runs in node on a window of its own; the Desk page is a stand-in,
-placed by the real `installSpiritElement` as its own file places it.
+placed at its path as the page's loader places a script's `module.exports`.
 
 - Before it runs there is no `spirit.required.spirit.app.desk.element`; once it has, it stands there with `create`.
 - It asks for `spirit/app/desk/element/desk/desk.js` itself, and the Desk page keeps its own place beside it,

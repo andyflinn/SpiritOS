@@ -45,9 +45,9 @@ const asked = ARGS[0] ? String(ARGS[0]).replace(/\\/g, '/').replace(/^\.\//, '')
 const askedApp = (/^spirit\/app\/([^/]+)\//.exec(asked) || [])[1] || '';
 const TARGETS = askedApp && askedApp !== BRANCH_TESTS ? APPS.filter(function (n) { return n === askedApp; }) : APPS;
 
-// An element script: it places a factory with a create through installSpiritElement (goal/G43.32; Andy: "helpers with no
-// create are no fucking elements. they live in require.").
-function isElement(rel) { const c = code(rel); return /\binstallSpiritElement\s*\(/.test(c) && /\bcreate\b/.test(c); }
+// An element script: its module.exports is a factory with a create, which the loader places by the script's path (goal/G43.32,
+// G49.9, G49.23; Andy: "helpers with no create are no fucking elements. they live in require.").
+function isElement(rel) { const c = code(rel); return /\bmodule\.exports\s*=/.test(c) && /\bcreate\b/.test(c); }
 function manifestOf(n) {
   const rel = 'spirit/app/' + n + '/' + n + '.json';
   if (!isFile(rel)) return { rel: rel, missing: true };
@@ -174,7 +174,7 @@ function appRules(all) {
   if (faced.length) {
     test.run('the app has a face, and its main element is element.js, placed by its path', 0.4, function () {
       return each(faced, function (f) {
-        return (isFile(f.main) && isElement(f.main) && code(f.main).indexOf("'" + f.main + "'") !== -1) ? true : false;
+        return (isFile(f.main) && isElement(f.main)) ? true : false;
       });
     }, test.limit.quick);
   }

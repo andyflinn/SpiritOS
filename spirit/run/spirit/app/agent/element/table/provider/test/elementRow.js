@@ -5,7 +5,7 @@
 // test, owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 // One provider row in the page (goal/G41.4): the fields the provider table names, handed to the tables' row element
 // (../row.js, tested in its own folder). The browser file runs in node on a window of its own; the row element is a
-// stand-in placed by the real installSpiritElement as its own file places it, keeping what it was handed. The same world
+// stand-in handed as spirit.requireScript's answer, keeping what it was handed. The same world
 // as the other tables' elementRow tests. One test.run per test (goal/G47.2).
 
 const fs = require('fs');

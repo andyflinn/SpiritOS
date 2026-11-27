@@ -37,6 +37,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the contact
+  // family's cache, whose relay rows it follows, is its contact.data.
+  var store = window.spirit && typeof window.spirit.requireScript === 'function' ? Promise.resolve(Promise.resolve(window.spirit.readyPromise)) : Promise.resolve();
+  function contacts() { return ((window.spirit.dataStore || {}).contact || {}).data; }
   // And fieldInput, which holds the face name to its type as it is typed (goal/G48.4, box v22: "ever input field in every
   // element must validate the input with the new type checks.").
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
@@ -129,7 +133,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var mineNow = function (r) { return r && (r.key === key || (row && row.url && r.url === row.url)); };
       if (!row) {
         // A change with no value is not a row gone until the cache says so.
-        if (window.spirit.required.spirit.data.contact.data.contact(key)) return;
+        if (contacts().contact(key)) return;
         box._spFace.relays = now.filter(function (r) { return !mineNow(r); });
       } else {
         if (row.relay !== true) return;
@@ -149,8 +153,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
     }
     var left = false;
-    Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () {
-      if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
+    Promise.all([keepAnswer('spirit/contact/script.js'), store]).then(function () {
+      if (!left && contacts()) stop = contacts().watch(take);
     });
     box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
 

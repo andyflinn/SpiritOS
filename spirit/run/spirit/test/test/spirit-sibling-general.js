@@ -47,12 +47,14 @@ PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit
 // what shows the result, so it does listen, through its child"; cw: "A child it mounts on a branch counts as its listening"):
 // an element that writes and mounts a child it requires, handed a branch by name, the child searching that branch; and one
 // that writes and listens to nothing. Planted in a folder of their own, so the five above stay the garbage folder's.
-const LISTENS = 'spirit/zzListen/writer.js';
-const DEAF = 'spirit/zzListen/deaf.js';
+// goal/G49.23: an element is known by its place under spirit/element/ and the create its module.exports holds, so the
+// plants stand there and set module.exports; the loader places them.
+const LISTENS = 'spirit/element/zzListen/writer.js';
+const DEAF = 'spirit/element/zzListen/deaf.js';
 const WRITES = 'it sends writes and watches spirit.required.spirit.data';
-PLANT['spirit/zzListen/child.js'] = '\'use strict\';\nwindow.spirit.requireScript(\'spirit/element/search/script.js\');\nfunction branchOf(n) { return \'zz/\' + n; }\nvar made = function (o) { return { data: branchOf(o.table) }; };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/child.js\', { create: made });\n';
-PLANT[LISTENS] = '\'use strict\';\nwindow.spirit.requireScript(\'spirit/zzListen/child.js\');\nvar ask = { op: \'set\', table: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/writer.js\', { create: function () { return ask; } });\n';
-PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/deaf.js\', { create: function () { return ask; } });\n';
+PLANT['spirit/element/zzListen/child.js'] = '\'use strict\';\nwindow.spirit.requireScript(\'spirit/element/search/script.js\');\nfunction branchOf(n) { return \'zz/\' + n; }\nvar made = function (o) { return { data: branchOf(o.table) }; };\nmodule.exports = { create: made };\n';
+PLANT[LISTENS] = '\'use strict\';\nwindow.spirit.requireScript(\'spirit/element/zzListen/child.js\');\nvar ask = { op: \'set\', table: \'zz\' };\nmodule.exports = { create: function () { return ask; } };\n';
+PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nmodule.exports = { create: function () { return ask; } };\n';
 
 // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system that
 // pollutes global name-spaces.", "go on this"): a node script that assigns a name onto global, and one that hands out its

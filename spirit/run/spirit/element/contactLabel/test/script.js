@@ -38,7 +38,6 @@ const asked = [];
 const captions = { KB: 'Bert' };
 let labelAnswer = null; let labelRefuse = null;
 global.window = { spirit: {} };
-// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
 LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
 global.spirit = window.spirit;
 // What readyPromise answers holds no branch (goal/G49.6); the contact branch is answered by its api.js path.
@@ -55,10 +54,8 @@ const contactBranch = {
 // fieldInput is not loaded here, so the label's input is drawn without it.
 const labelType = { isValid: function (t) { if (t.length > 8) throw new Error('too long'); return true; } };
 const STANDS = { 'spirit/contact/script.js': contactBranch, 'spirit/type/string/label/script.js': labelType };
-const pageRequire = window.spirit.requireScript;
 window.spirit.requireScript = function (p) {
   if (Object.prototype.hasOwnProperty.call(STANDS, String(p))) return Promise.resolve(STANDS[String(p)]);
-  if (/installSpiritElement\.js$/.test(String(p))) return pageRequire.apply(this, arguments);
   return Promise.reject(new Error('no stand-in for ' + p));
 };
 // contactLabel.js still reads the label type at its spirit.required place (its save, not yet swept): the stand-in stands there too.

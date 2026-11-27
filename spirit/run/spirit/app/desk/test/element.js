@@ -5,7 +5,7 @@
 // "every production script has its own test" (goal/G47.1, box v72).
 // The desk on a page (goal/G43.27, requirement 23): the page half of ./desk.js, as spirit/app/agent/element.js is the
 // agent's. The browser file runs in node on a window of its own; the Desk page it draws (./element/desk/desk.js, tested in
-// its own folder) is a stand-in placed by the real installSpiritElement as the page's own would be, keeping what it was
+// its own folder) is a stand-in placed at its path as the page's loader would place it, keeping what it was
 // handed. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -30,13 +30,14 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
   if (!fs.existsSync(FILE)) return false;
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = S.requireScript('spirit/element/installSpiritElement/script.js');
+  // goal/G49.23: the stand-in stands at its place as the loader puts a script's module.exports.
+  const placeAsLoader = function (p, v) { const keys = p.replace(/\.js$/, '').split('/'); let o = global.window.spirit.required; keys.slice(0, -1).forEach(function (k) { o = o[k] = o[k] || {}; }); o[keys[keys.length - 1]] = v; };
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     // THE DESK PAGE IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
     // "spirit.requireScript must allways return either an object or a function... or fail/throw"), and stands at its place as the
     // loader puts it there; desk's api.js an empty object.
-    if (p === DESK) { if (!W.page) { W.page = { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } }; helper(global.window.spirit, DESK, W.page); } return Promise.resolve(W.page); }
+    if (p === DESK) { if (!W.page) { W.page = { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } }; placeAsLoader(DESK, W.page); } return Promise.resolve(W.page); }
     return Promise.resolve({});
   };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);

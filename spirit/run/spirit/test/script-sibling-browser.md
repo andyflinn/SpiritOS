@@ -117,7 +117,7 @@ cheapest catch-all making sure the container constraints, instead of trying to m
   opened only once the server answers its interface (Andy: *"a server MUST be mounted if a mountable server exists in that
   app folder before a test is conducted"*); one that does not come up in 30 s fails the world, never the element.
 - **No code reading:** whether a script installs an element, the page says: it looks at `window.spirit.required` at the
-  script's own path, where `installSpiritElement` puts an element with its `create`. With none there, the page reports
+  script's own path, where the loader puts an element's `module.exports` with its `create`. With none there, the page reports
   "places no element with a create", what it runs is still judged (nothing thrown, no missing file, no console error), and
   the element rules are skipped, said as a comment, never counted green.
 - **An element, mounted empty** (no made-up data), judged as drawn before any press:
@@ -375,9 +375,10 @@ vendored code left out; with no file, all of them in one check; with a file, tha
   node (in the scratch copy beside the scratch node, a process of its own) and on a page (the scratch node's face
   page, a fresh page each). Where it loads, it stands at `spirit.required.<its path>`, and on the node the answer came
   at once, not a promise; a branch's `api.js` binds its branch (decided 8), so it is waited on and judged by its place. Where it does not load nothing is judged; that some load on each side is itself checked.
-- **An element script**, one that calls `installSpiritElement`, has a factory with a `create` at
-  `spirit.required.<its path>` once required on a page.
-- **One helper places elements**: `spirit/element/installSpiritElement/script.js` is there, and no other product script puts
+- **An element script**, one under `spirit/element/` or an app's `element.js` or `element/` whose `module.exports` (what
+  `spirit.requireScript` answers for it on the page) has a `create`, has that factory at `spirit.required.<its path>` once
+  required on a page; at least one element is judged, or the check is red.
+- **The loader places elements**: no product script puts
   an element on `spirit.required` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
   `spirit/script.js`, which makes the spirit object, excepted.
 - **The old place is gone** (decided 6: an app's element is placed like every element, and *"the shell, the app selector,

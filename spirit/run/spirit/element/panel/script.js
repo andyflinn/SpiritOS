@@ -30,7 +30,10 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: a server's
+  // published remote row is its <server>.remote; asked as this file runs, so it is in before a layer is opened.
   var parts = Promise.all([keepAnswer('spirit/element/rowForm/script.js'), keepAnswer('spirit/element/icon/script.js')]);
+  function store() { return window.spirit.dataStore; }
 
   function create(host, under) {
     var layers = Object.create(null);
@@ -84,10 +87,10 @@
         }
         // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/client/script.js"): the server's
         // published remote row, filed there by spirit/client/script.js, is followed as it comes.
-        var unwatchRemote = S.required.spirit.data && typeof S.required.spirit.data.watchPath === 'function' ? S.required.spirit.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
+        var unwatchRemote = store() && typeof store().watchPath === 'function' ? store().watchPath('remote/' + server, function (p, r) { take(r); }) : null;
         keepAnswer('spirit/element/search/script.js').then(function () {
           if (dropped) return;
-          take(S.required.spirit.data && S.required.spirit.data[server] && S.required.spirit.data[server].remote);
+          take(store() && store()[server] && store()[server].remote);
           var fam = function () { return Promise.resolve(S.requireScript(S.slashedPath(server) + '/api.js')); };
           opts = {
             face: 'dropdown', placeholder: 'remote…',

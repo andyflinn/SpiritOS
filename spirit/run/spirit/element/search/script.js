@@ -75,6 +75,9 @@
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: every search is a view of
+  // one of its branches.
+  function STORE() { return window.spirit.dataStore || null; }
   // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
   // their fields are and require that type"): the types fieldInput holds its fields to.
   if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/description/script.js'); }
@@ -336,8 +339,8 @@
     // { key: id, ...fields }, and a row with a field named key (a grant's, the contact's key) overwrote its id, so every
     // grant of one contact landed on one entry, one row per user. The row keeps its own fields as they are.
     function pageRows() {
-      if (o.data && window.spirit.required.spirit.data) {
-        var held = window.spirit.required.spirit.data.branchAt(o.data) || {};
+      if (o.data && STORE()) {
+        var held = STORE().branchAt(o.data) || {};
         return Object.keys(held).map(function (id) { return { id: id, row: Object.assign({ key: id }, held[id]) }; });
       }
       // EVERY SEARCH IS A VIEW OF A spirit.required.spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
@@ -587,7 +590,7 @@
     // THE SERVER'S ANSWERS ONLY FEED THE CACHE.
     function take(answer) {
       // A VIEW: the answer goes into the tree, and the tree's write redraws this list and every other one of that type.
-      if (o.data && window.spirit.required.spirit.data) { window.spirit.required.spirit.data.seatRows(o.data, answer && answer.items); return; }
+      if (o.data && STORE()) { STORE().seatRows(o.data, answer && answer.items); return; }
       (answer && Array.isArray(answer.items) ? answer.items : []).forEach(function (it) {
         var row = null;
         try { row = JSON.parse(it.label); } catch (e) { row = null; }
@@ -844,12 +847,12 @@
     }
     if (dropdown && typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', outside);
     if (typeof o.published === 'function') off = o.published(function () { ask(); });
-    var unwatch = o.data && window.spirit && window.spirit.required.spirit.data ? window.spirit.required.spirit.data.watchPath(o.data, function () { draw(); }) : null;
+    var unwatch = o.data && window.spirit && STORE() ? STORE().watchPath(o.data, function () { draw(); }) : null;
     // WHAT CHANGED WHILE DOWN COMES IN (goal/G47.1, the box, "Reload Problems with the face": "on a reconnect every search a
     // page shows (the shared search element, spirit/element/search/script.js) runs once more and its answer is merged into the
     // cache, in that one place for every app"): the cache, which alone takes the node's stream, says the stream came back,
     // and the search it shows is asked again.
-    var D0 = window.spirit && window.spirit.required.spirit.data;
+    var D0 = window.spirit && STORE();
     var unreconnect = D0 && typeof D0.whenReconnected === 'function' ? D0.whenReconnected(function () { if (live) ask(); }) : null;
 
     self.refresh = function () { draw(); ask(); };

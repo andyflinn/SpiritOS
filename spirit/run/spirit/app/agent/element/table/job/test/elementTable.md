@@ -2,8 +2,8 @@
 
 The job table in the page (goal/G41.4): its rows in the tables' shared element (`../tableElement.js`, tested in its
 own folder), a row picked opening in its editor (`./elementRow.js`) in the page's detail pane. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs in node
-on a window of its own; the shared element and the row editor are stand-ins placed by the real `installSpiritElement` as
-their own files place them, keeping what they were handed. The same world as the other tables' `elementTable` tests.
+on a window of its own; the shared element and the row editor are stand-ins handed as `spirit.requireScript`'s
+answers, keeping what they were handed. The same world as the other tables' `elementTable` tests.
 
 - Before it runs there is no `spirit.required.spirit.app.agent.element.table.job.elementTable`; once it has, it stands
   there with `create`, and the row editor keeps its own place beside it.

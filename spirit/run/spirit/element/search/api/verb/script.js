@@ -25,7 +25,10 @@
   var parts = Promise.all([window.spirit.requireScript ? keepAnswer('spirit/element/search/script.js') : null,
     window.spirit.requireScript ? keepAnswer('spirit/element/search/api/list/script.js') : null,
     window.spirit.requireScript ? keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js') : null,
-    keepAnswer('spirit/node/api.js')]);
+    keepAnswer('spirit/node/api.js'),
+    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the node
+    // family's cache, keeper of the verbs, is its node.data.
+    Promise.resolve(window.spirit.readyPromise)]);
 
   function createApiVerbSelector(options) {
     options = options || {};
@@ -51,7 +54,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        data: window.spirit.required.spirit.data.node.data.verbsBranchOf(party),
+        data: window.spirit.dataStore.node.data.verbsBranchOf(party),
         filters: [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },

@@ -40,10 +40,10 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
       lists.push(l); return l;
     } }); },
     // The real row element requires the auth branch's interface as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/bundle/row/script.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/bundle/row/script.js', { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
+    // goal/G49.23: written at its place as the stand-ins above.
+    'spirit/element/search/bundle/row/script.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); ((E.search = E.search || {}).bundle = E.search.bundle || {}).row = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client.
@@ -209,7 +209,6 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
   if (!fo) return false;
   LIST = (function () {
     const win = { window: null, spirit: { element: {} }, console: console };
-    // goal/G43.32: search.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
     // The search and what it ranks with, run in this world by their paths through the page stand-in (goal/G49.6).
     const REAL = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'];
     win.window = win;

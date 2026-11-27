@@ -31,7 +31,9 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the row form, the jobs family's interface (which loads its cache), and the
   // job row element that holds the Cancel or Delete rule.
-  var parts = Promise.all(['spirit/element/rowForm/script.js', 'spirit/job/script.js', 'spirit/element/search/job/row/script.js'].map(function (p) { return S.requireScript(p); }));
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs
+  // family's cache is its job.data.
+  var parts = Promise.all(['spirit/element/rowForm/script.js', 'spirit/job/script.js', 'spirit/element/search/job/row/script.js'].map(function (p) { return S.requireScript(p); }).concat([Promise.resolve(window.spirit.readyPromise)]));
   var WORD = { run: 'Run', cancel: 'Cancel', 'delete': 'Delete' };
 
   function create(container, options) {
@@ -50,7 +52,7 @@
     var said = null;
     var label = name;
 
-    function cache() { return S.required.spirit.data && S.required.spirit.data.job && S.required.spirit.data.job.data ? S.required.spirit.data.job.data : null; }
+    function cache() { var D = window.spirit.dataStore; return D && D.job && D.job.data ? D.job.data : null; }
     function job() { var J = cache(); return J && typeof J.job === 'function' ? J.job(id) : null; }
     function actionOf(j) { return j ? ANSWER['spirit/element/search/job/row/script.js'].actionOf(j) : 'run'; }
     function messageOf(j) {

@@ -38,9 +38,8 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 let C = null, D = null, CD = null, V = null;
 let kept, stranger, relay, blocked, ha, hb, ho, found, hf, labelField, gets = null, m = 0;
 
-test.run('the contact row runs on a window of its own, with the data set and the contact branch\'s data real', 0.2, function () {
+test.run('the contact row runs on a window of its own, with the data set and the contact branch\'s data real', 0.2, async function () {
   global.window = { spirit: {} };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = window.spirit;
   // What readyPromise answers holds no branch (goal/G49.6); the branches are answered by their api.js paths, below.
@@ -54,9 +53,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // goal/G43.32: what the row opens stands where an element now finds it, spirit.required.spirit.element.
   (((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {})).element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
   // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
-  // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
-  const pageRequire = window.spirit.requireScript;
   // The contact branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself
   // to the data set.
   let contactData = false;
@@ -64,7 +61,9 @@ test.run('the contact row runs on a window of its own, with the data set and the
     required.push(p);
     if (p === 'spirit/contact/script.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'client', 'script.js')); } return Promise.resolve(BRANCHES.contact); }
     if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
-    if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the contact client (spirit/contact/client/script.js) files into
+    // what spirit/client/script.js hands back, the store this window ran below; the row reads it at spirit.dataStore.
+    if (p === 'spirit/client/script.js') return Promise.resolve(window.spirit.required.spirit.data);
     // A type is the real one, by its full path (goal/G49.13).
     if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p));
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
@@ -76,12 +75,17 @@ test.run('the contact row runs on a window of its own, with the data set and the
     return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
   load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
+  // THE DATA SET IS spirit.dataStore (goal/G49.23): the real one, as spirit.js keeps it once the page has started.
+  window.spirit.dataStore = window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };
   window.spirit.required.spirit.data.homeNode(NODE_KEY);
   load(path.join(JS, 'row', 'script.js'));
   load(path.join(JS, 'search', 'contact', 'row', 'script.js'));
+  // goal/G49.23: the contact client files into the data set once requireScript('spirit/client/script.js') has handed it back,
+  // a promise; the answers are let settle before the contact branch's data is read.
+  for (let i = 0; i < 5; i += 1) await new Promise(function (r) { setImmediate(r); });
   C = window.spirit.required.spirit.element.search.contact.row;
   D = window.spirit.required.spirit.data;
   CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
@@ -154,9 +158,8 @@ test.run('open loads the detail it opens first, through spirit.requireScript, fo
   const pages = required.slice(-2).join(',');
   return pages === 'spirit/element/search/contact/detail/script.js,spirit/element/search/contact/detail/script.js' ? true : false;
 }, test.limit.quick);
-// goal/G43.32, decided 5: every element script also requires installSpiritElement, to place itself; that is no part it draws with.
 test.run('the row loads the shared row element it is built on itself, through spirit.requireScript', 0.2, function () {
-  const parts = required.filter(function (p) { return p !== 'spirit/element/installSpiritElement/script.js'; });
+  const parts = required;
   // goal/G49.9: it keeps what its requires answer, the field rules among them, so the row element need not be the first asked.
   return parts.indexOf('spirit/element/row/script.js') !== -1 ? true : false;
 }, test.limit.quick);

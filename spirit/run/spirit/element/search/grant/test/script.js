@@ -38,13 +38,13 @@ const W = { required: [], made: [], ANSWER: { list: {}, refresh: function () {},
 
 test.run('the grant selector runs on a window of its own', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
+  const listStand = { create: function (host, opts) { W.made.push({ host: host, opts: opts }); return W.ANSWER; } };
   global.window = { spirit: { element: {}, requireScript: function (p) {
     W.required.push(String(p));
-    // Its list, a recorder in its place, placed where the real one places itself.
-    if (p === LIST) LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, LIST, { create: function (host, opts) { W.made.push({ host: host, opts: opts }); return W.ANSWER; } });
+    // Its list, a recorder, requireScript's answer (goal/G49.23; goal/G49.9, box v5).
+    if (p === LIST) return Promise.resolve(listStand);
     return placedAnswer(p);
   } } };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   global.spirit = global.window.spirit;
   PAGE_LOAD.runAsPage(FILE);

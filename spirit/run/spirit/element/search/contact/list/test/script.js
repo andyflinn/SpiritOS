@@ -36,7 +36,6 @@ let L = null, F = null, dataSubscribed = 0, pane = null, o = null, CD = null, el
 
 test.run('the contacts list runs on a window of its own, with its row element and the data set real', 0.2, function () {
   global.window = { spirit: {} };
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = window.spirit;
   window.spirit.readyPromise = Promise.resolve({
@@ -78,10 +77,8 @@ test.run('the contacts list runs on a window of its own, with its row element an
     natterDetails: { open: function (opts) { asked.push({ verb: 'natterDetails', body: opts }); } },
   });
   // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
-  // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
-  const pageRequire = window.spirit.requireScript;
   // A branch's api.js (spirit.requireScript('spirit/contact/script.js')): its real companion data.js runs once, attaching itself to
   // the data set loaded below, as the real api.js requires it (goal/G47.1).
   const ran = {};
@@ -102,7 +99,6 @@ test.run('the contacts list runs on a window of its own, with its row element an
     // none.
     const b = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(p));
     if (b) return Promise.resolve(window.spirit.readyPromise).then(function (f) { if (!f || !f[b[1]]) throw new Error('not-found ' + p); return f[b[1]]; });
-    if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
     // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
     // stands at its place, a stand-in above or a real file loaded, and a path with nothing there is refused.
@@ -114,6 +110,8 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
   window.spirit.eventStream = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
   load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
+  // THE DATA SET IS spirit.dataStore (goal/G49.23): the real one, as spirit.js keeps it once the page has started.
+  window.spirit.dataStore = window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };
@@ -207,7 +205,7 @@ test.run('the named filter is never a button, and it lets through a row with a n
 }, test.limit.quick);
 
 // create hands the search element the one table
-test.run('the list is a view of spirit.required.spirit.data.contact.data.branch, with filters and columns presence, status, label and add', 0.2, function () {
+test.run('the list is a view of spirit.dataStore.contact.data.branch, with filters and columns presence, status, label and add', 0.2, function () {
   if (!L) return false;
   const host = { isConnected: true, addEventListener: function (t, fn) { if (t === 'click') clicks.push(fn); } };
   // The mounter's panel stack's open (goal/G43.18), filling its pane at once.
@@ -215,7 +213,7 @@ test.run('the list is a view of spirit.required.spirit.data.contact.data.branch,
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): it is handed no api; its search is its own data source.
   pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   o = made.opts;
-  CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
+  CD = ((window.spirit.dataStore || {}).contact || {}).data;
   return required.indexOf('spirit/contact/script.js') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
     ? true : false;
 }, test.limit.quick);
@@ -359,7 +357,7 @@ test.run('a table\'s row is a plain row of its label, no contact', 0.2, function
 test.run('naming the contacts\' own table is the same as naming none', 0.2, function () {
   if (!L) return false;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/contact/search' });
-  const res = made.opts.data === window.spirit.required.spirit.data.contact.data.branch && made.opts.filters.length === L.filters.length ? true : false;
+  const res = made.opts.data === window.spirit.dataStore.contact.data.branch && made.opts.filters.length === L.filters.length ? true : false;
   window.spirit.readyPromise = realReady;
   global.spirit = window.spirit;
   return res;

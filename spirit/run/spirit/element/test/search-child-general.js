@@ -57,11 +57,11 @@ const asked = ARGS[0] ? String(ARGS[0]).replace(/\\/g, '/').replace(/^\.\//, '')
 const askedName = (new RegExp('^' + SEARCH + '/([^/.]+)').exec(asked) || [])[1] || '';
 const TARGETS = askedName && askedName !== 'test' && askedName !== 'script' ? NAMES.filter(function (n) { return n === askedName; }) : NAMES;
 
-// An element: it places a create through installSpiritElement, by its own path.
+// An element: its module.exports offers a create, placed by its own path.
 // PLACED BY ITS PATH, AS THE LOADER PLACES IT (goal/G49.9, box v5: "the loader places that module.exports at the script's own place";
 // "a script never places itself: it sets module.exports, and the loader places it"): it sets module.exports, offers a create,
 // and puts nothing into spirit.required by hand.
-function placesItself(rel) { const c = code(rel); return /\bmodule\.exports\s*=/.test(c) && /\bcreate\b/.test(c) && !/\binstallSpiritElement\s*\(/.test(c) && !/\.required\b[^;\n]*=(?!=)/.test(c); }
+function placesItself(rel) { const c = code(rel); return /\bmodule\.exports\s*=/.test(c) && /\bcreate\b/.test(c) && !/\.required\b[^;\n]*=(?!=)/.test(c); }
 const PARTS = ['list', 'row', 'detail'];
 // A search's selector and its parts, at their places since goal/G49.5's element batch: ./<name>/script.js.
 function selectorOf(n) { return SEARCH + '/' + n + '/script.js'; }

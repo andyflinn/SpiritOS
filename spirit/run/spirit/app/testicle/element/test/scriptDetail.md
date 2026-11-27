@@ -10,7 +10,7 @@ tab's file detail)"*). It was `fileDetail` in `../element.js`. Its test: `./scri
 
 - **It loads its own parts** (box v142: *"all of testicle's elements must subscribe to the data they display"*; rule/26):
   testicle's `api.js` and its cache manager (`data.js`, which the page's one stream feeds), the suite search
-  `spirit/app/testicle/element/search/suite.js` it draws with, and `installSpiritElement`, by which it places itself at
+  `spirit/app/testicle/element/search/suite.js` it draws with; its `module.exports` the loader places at
   `spirit.required.spirit.app.testicle.element.scriptDetail`. Mounted alone, on a page nothing else loaded them on, it has
   them. A node with no testicle refuses the interface; that refusal is never left unhandled.
 - **Its box:** one `.testicle-detail` into its container, with a title line, a line for the own test, and the part below.

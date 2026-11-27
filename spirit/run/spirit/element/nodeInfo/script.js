@@ -65,7 +65,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/changeMyLabel/script.js', 'spirit/element/changeMyDescription/script.js', 'spirit/element/joinForm/script.js',
-    'spirit/element/faceForm/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/panel/script.js'].map(function (p) { return keepAnswer(p); }));
+    'spirit/element/faceForm/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/panel/script.js'].map(function (p) { return keepAnswer(p); })
+    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the node
+    // cache, where the card is kept, is its node.data.
+    .concat([Promise.resolve(window.spirit.readyPromise)]));
 
   function create(container, opts) {
     var o = opts || {};
@@ -152,7 +155,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (gone) return;
         var card = r && r.body;
         if (!card || !card.ok) { say((card && card.error) || 'node.card did not answer'); return; }
-        S.required.spirit.data.node.data.card.keep(card);
+        window.spirit.dataStore.node.data.card.keep(card);
       });
     }, function () { say('Info could not be loaded.'); });
     // TWO CALLS, NOT ONE AWAITING THE OTHER: the card is a file on this disk and lands at once; the relays take as long as

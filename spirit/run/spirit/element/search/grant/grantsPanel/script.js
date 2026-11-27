@@ -45,7 +45,10 @@
   // And the grant branch's cache manager, which nodeGrants (below) reads, and the branch branch, which a bundle's paths come from.
   var parts = Promise.all(['spirit/element/search/contact/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/search/api/script.js',
     'spirit/element/search/grant/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/armingButton/script.js'].map(function (p) { return window.spirit.requireScript ? window.spirit.requireScript(p) : null; })
-    .concat([window.spirit.requireScript('spirit/grant/script.js'), window.spirit.requireScript('spirit/branch/script.js')]));
+    .concat([window.spirit.requireScript('spirit/grant/script.js'), window.spirit.requireScript('spirit/branch/script.js'),
+      // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the grants are its grant.data.
+      window.spirit.requireScript ? Promise.resolve(window.spirit.readyPromise) : null]));
+  function STORE() { return window.spirit.dataStore || {}; }
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): verb called on the branch at its api.js path (goal/G49.6: never
   // by a name), once the page is ready, answering { status, body } as a list reads it.
@@ -72,9 +75,9 @@
     return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
   }
   var nodeGrants = {
-    get branch() { return window.spirit.required.spirit.data.grant.data.branch; },
+    get branch() { return STORE().grant.data.branch; },
     // watch(fn): fn(id + newline + path, row) on every grant kept or let go; answers its release.
-    watch: function (fn) { return window.spirit.required.spirit.data.grant.data.watch(fn); },
+    watch: function (fn) { return STORE().grant.data.watch(fn); },
     key: 'key',
     label: 'label',
     // spirit.grant.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
@@ -158,7 +161,7 @@
     }
     function askAgain() {
       return Promise.resolve(g.search(chosenText())).then(function (got) {
-        var D = window.spirit.required.spirit.data;
+        var D = window.spirit.dataStore;
         if (!gone && D && typeof D.seatRows === 'function' && got && Array.isArray(got.items)) D.seatRows(String(g.branch), got.items);
         redraw();
       }, function () { /* the cache stands; the next choice asks again */ });

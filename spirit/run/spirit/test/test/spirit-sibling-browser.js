@@ -175,7 +175,8 @@ test.run('a change written into a row of true or false fields alone redraws the 
     '    var un = V.watch(\'zz/flag\', paint); paint();',
     '    return { destroy: function () { if (typeof un === \'function\') un(); el.remove(); } };',
     '  }',
-    '  S.requireScript(\'spirit/element/installSpiritElement/script.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + FLAG + '\', { create: create }); });',
+    // goal/G49.23: an element sets module.exports, and the loader places it at its path.
+    '  module.exports = { create: create };',
     '})();', ''].join('\n'));
   let out = '';
   const kid = spawn(process.execPath, [SUBJECT, FLAG], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -195,7 +196,8 @@ function planted(top, wrapped) {
   const body = [
     '  var S = window.spirit;',
     '  function create(container) { var el = document.createElement(\'div\'); el.style.overflow = \'hidden\'; container.appendChild(el); return { destroy: function () { el.remove(); } }; }',
-    '  S.requireScript(\'spirit/element/installSpiritElement/script.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + LEAK + '\', { create: create }); });'];
+    // goal/G49.23: an element sets module.exports, and the loader places it at its path.
+    '  module.exports = { create: create };'];
   return ['\'use strict\';', '// planted by spirit/test/test/script-sibling-browser.js: what it leaves on the window', top]
     .concat(wrapped ? ['(function () {'].concat(body, ['}());']) : ['(function () {'].concat(body, ['}());'])).concat(['']).join('\n');
 }

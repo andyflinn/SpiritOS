@@ -170,14 +170,15 @@ function world(o) {
     // The node's branches by their api.js paths (goal/G49.6: never by a name): the contact and the node stand above.
     if (p === 'spirit/contact/script.js') return Promise.resolve(S.contact);
     if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
+    // The data store, the real one this window ran above, as spirit.requireScript hands it back (goal/G49.23: the elements
+    // read it there, never at spirit.required).
+    if (p === 'spirit/client/script.js') return Promise.resolve(S.required.spirit.data);
     return Promise.resolve({});
   };
-  // goal/G43.32: nodeInfo.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
-  // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = S.requireScript;
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S, null, { window: win, real: REAL });
   const pageRequire = S.requireScript;
-  S.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  S.requireScript = recorder;
   if (SRC) pageRequire(SUBJECT);
   w.win = win; w.S = S; w.page = page; w.els = els;
   w.slot = function (host, name) { return host.querySelector('[data-info="' + name + '"]'); };
@@ -556,12 +557,9 @@ function formsPart() {
     S.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
     // The two forms are the real files, run on this window as a page runs them; every other part a stand-in.
     const real = { 'spirit/element/joinForm/script.js': 1, 'spirit/element/faceForm/script.js': 1 };
-    // goal/G43.32: each element places itself by installSpiritElement, handed by the page stand-in
-    // (spirit/test/headLessChrome.js pageSpirit).
     LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S, null, { window: win, real: REAL2 });
     const pageRequire = S.requireScript;
     S.requireScript = function (p) {
-      if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
       if (real[p]) { delete real[p]; return pageRequire(p); }
       // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
       const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
@@ -578,6 +576,8 @@ function formsPart() {
       if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
       // fieldInput is not loaded here, so the forms draw without it: its require fails, as a script that is not there does.
       if (p === 'spirit/element/fieldInput/script.js') return Promise.reject(new Error('not loaded here: ' + p));
+      // The data store, the real one this window ran above, as spirit.requireScript hands it back (goal/G49.23).
+      if (p === 'spirit/client/script.js') return Promise.resolve(S.required.spirit.data);
       return Promise.resolve({});
     };
     pageRequire(SUBJECT);

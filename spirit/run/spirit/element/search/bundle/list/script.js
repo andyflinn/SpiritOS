@@ -32,6 +32,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   if (window.spirit.requireScript) ['spirit/element/search/script.js', 'spirit/element/search/bundle/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // And the auth family's cache manager, whose bundles branch the list is a view of (goal/G41.28).
   window.spirit.requireScript('spirit/bundle/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started.
+  function STORE() { return window.spirit.dataStore || {}; }
   var COLUMNS = {
     label: { field: 'label', label: 'Bundle', sort: 'text' },
     owner: { field: 'owner', label: 'Owner', sort: 'text' },
@@ -58,7 +60,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's bundles, the rows the bundle branch's manager keeps (spirit.required.spirit.data.bundle.data.branch).
-      data: window.spirit.required.spirit.data.bundle.data.branch,
+      data: STORE().bundle.data.branch,
       api: 'spirit/bundle/script.js',
       verb: 'bundle',
       face: o.face,

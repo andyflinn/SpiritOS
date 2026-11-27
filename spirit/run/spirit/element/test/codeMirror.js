@@ -83,12 +83,11 @@ function world() {
       return Promise.resolve({});
     },
   };
-  // goal/G43.32: codeMirror.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
-  // (spirit/test/headLessChrome.js pageSpirit), and writes down only what the element asks for besides.
+  // The recorder writes down only what the element asks for besides itself (spirit/test/headLessChrome.js pageSpirit).
   const own = win.spirit.requireScript;
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || p === SUBJECT ? pageRequire(p) : own(p); };
+  win.spirit.requireScript = function (p) { return p === SUBJECT ? pageRequire(p) : own(p); };
   vm.createContext(win);
   return { w: w, win: win };
 }

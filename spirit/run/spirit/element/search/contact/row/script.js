@@ -38,8 +38,10 @@
   // A NODE'S CONTACTS ARE THE contact FAMILY'S CACHE (goal/G41.28): what the stream means for them, and their branch, are
   // the family's own data.js's (spirit/contact/client/script.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.contact.data.
-  function contactReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).contact || {}).data) || null; }
-  var contactReady = Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () { return contactReads(); });
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the contacts are its contact.data.
+  var storeReady = Promise.resolve(window.spirit.readyPromise);
+  function contactReads() { return (window.spirit && ((window.spirit.dataStore || {}).contact || {}).data) || null; }
+  var contactReady = Promise.all([keepAnswer('spirit/contact/script.js'), storeReady]).then(function () { return contactReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

@@ -40,7 +40,9 @@
   // cache manager.
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/element/search/job/row/script.js', 'spirit/element/panel/script.js',
     'spirit/element/search/job/detail/script.js']
-    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/script.js')]));
+    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/script.js'),
+      // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs are its job.data.
+      Promise.resolve(window.spirit.readyPromise)]));
 
   function J() { return ANSWER['spirit/element/search/job/script.js']; }
 
@@ -78,7 +80,7 @@
       var box = container.firstElementChild;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
       if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel/script.js'].create(container, box);
-      var data = S.required.spirit.data.job.data;
+      var data = window.spirit.dataStore.job.data;
       var kindOf = J().row.kindOf;
       list = ANSWER['spirit/element/search/script.js'].create(box, {
         data: data.branch,

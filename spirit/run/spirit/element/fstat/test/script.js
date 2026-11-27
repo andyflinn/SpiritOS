@@ -84,8 +84,8 @@ function world(o) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // goal/G43.32: fstat.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit), at its path; it is
-  // loaded by that path through the page's spirit.requireScript (goal/G49.6), run in this world.
+  // fstat.js is loaded by its path through the page's spirit.requireScript (goal/G49.6; spirit/test/headLessChrome.js
+  // pageSpirit), run in this world, and placed at its path.
   H.pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT).then(null, function (e) { w.error = e; });
   w.E = (((win.spirit.required || {}).spirit || {}).element || {}).fstat;

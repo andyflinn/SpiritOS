@@ -65,7 +65,7 @@ function world() {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
+  // The page's spirit.requireScript, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return p === 'spirit/client/script.js' || p === 'spirit/fuckingGarbage/apiTreeIndex.js' || /^spirit\/.+\/data\.js$/.test(p); } });
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).

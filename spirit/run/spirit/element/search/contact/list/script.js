@@ -60,6 +60,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   if (window.spirit.requireScript) ['spirit/element/search/contact/row/script.js', 'spirit/element/search/script.js', 'spirit/element/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.requireScript('spirit/contact/script.js');
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the contacts are its contact.data.
+  function STORE() { return window.spirit.dataStore || {}; }
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, or relay.
   function is(kind) {
@@ -216,7 +218,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       search: search,
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.required.spirit.data.contact.data.branch); an
       // ID table of another family is the branch its caller names.
-      data: o.data || (table ? undefined : window.spirit.required.spirit.data.contact.data.branch),
+      data: o.data || (table ? undefined : STORE().contact.data.branch),
       face: o.face,
       placeholder: o.placeholder || 'choose a contact…',
       all: o.all,

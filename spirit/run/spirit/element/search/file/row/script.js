@@ -37,9 +37,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
   // data.js's (spirit/fs/client/script.js), which this element loads itself (rule/26), with the data set
   // it fills; a row reads spirit.required.spirit.data.fs.data.
-  function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
+  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the file tree is its fs.data.
+  var storeReady = Promise.resolve(window.spirit.readyPromise);
+  function fsReads() { return (window.spirit && ((window.spirit.dataStore || {}).fs || {}).data) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.resolve(window.spirit.requireScript('spirit/fs/script.js')).then(function () { return fsReads(); });
+  var fsReady = Promise.all([window.spirit.requireScript('spirit/fs/script.js'), storeReady]).then(function () { return fsReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

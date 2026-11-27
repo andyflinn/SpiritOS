@@ -83,6 +83,8 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
     'spirit/element/search/bundle/detail/script.js': function () { return { open: function (o) { opened.push(o); return {}; } }; },
     // The bundle branch's interface (goal/G49.21): its client run once, as the real spirit/bundle/script.js requires it.
     'spirit/bundle/script.js': function () { load('spirit/bundle/client/script.js'); return bundleBranch; },
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
+    'spirit/client/script.js': function () { return global.window.spirit.required.spirit.data; },
   };
   const made = {};
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
@@ -90,7 +92,6 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     required: { spirit: {} }, normalizeString: LOADER.normalizeString, readyPromise: Promise.resolve({ bundle: bundleBranch }), bundle: bundleBranch, element: {} } };
   global.spirit = global.window.spirit;
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream's rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });

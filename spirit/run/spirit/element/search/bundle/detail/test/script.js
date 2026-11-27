@@ -81,12 +81,13 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
     element: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
   // goal/G43.32: spirit.required is a plain place, no getter: the branch editor, now strict, sets spirit.required itself.
-  // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // goal/G49.21: the bundles and the branches are each their own branch's data, spirit.required.spirit.data.bundle and .branch.
-  const DATA_HERE = (global.window.spirit.required.spirit.data = global.window.spirit.required.spirit.data || {});
+  // goal/G49.21: the bundles and the branches are each their own branch's data, the store's bundle and branch.
+  const DATA_HERE = {};
   (DATA_HERE.bundle = {}).data = { watch: function (fn) { bundleWatches.push(fn); return function () {}; } };
   (DATA_HERE.branch = {}).data = { watch: function () { return function () {}; } };
+  // THE DATA SET IS spirit.dataStore (goal/G49.23): the element reads it there, never at spirit.required, and asks no client script.
+  global.window.spirit.dataStore = DATA_HERE;
   // The bundle and branch branches are answered by their script.js paths (goal/G49.6: never by a name).
   const made = {};
   // As the loader places what it loaded, at the path's place: the detail still reads its parts there (cw's half of the sweep).
