@@ -28,7 +28,7 @@
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 // Each by its api.js path, never by a name (goal/G49.6): the relay and node branches.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js', 'spirit/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -147,14 +147,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       rotate.button.addEventListener('click', function () { openRotate(); });
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.node.data, and each of
       // the two fields draws itself from it.
-      return keepAnswer('spirit/node/api.js').then(function () {
-        return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.card({}); }));
+      return keepAnswer('spirit/script.js').then(function () {
+        return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/script.js'); }).then(function (s) { return s.card({}); }));
       }).then(function (r) {
         if (gone) return;
         var card = r && r.body;
         if (!card || !card.ok) { say((card && card.error) || 'node.card did not answer'); return; }
         // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): kept in the node branch's reads, its data.
-        ANSWER['spirit/node/api.js'].data.card.keep(card);
+        ANSWER['spirit/script.js'].client.card.keep(card);
       });
     }, function () { say('Info could not be loaded.'); });
     // TWO CALLS, NOT ONE AWAITING THE OTHER: the card is a file on this disk and lands at once; the relays take as long as

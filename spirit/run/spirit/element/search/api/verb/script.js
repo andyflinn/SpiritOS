@@ -25,13 +25,13 @@
   var parts = Promise.all([window.spirit.requireScript ? keepAnswer('spirit/element/search/script.js') : null,
     window.spirit.requireScript ? keepAnswer('spirit/element/search/api/list/script.js') : null,
     window.spirit.requireScript ? keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js') : null,
-    keepAnswer('spirit/node/api.js'),
+    keepAnswer('spirit/script.js'),
     Promise.resolve(window.spirit.readyPromise)]);
 
   // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the node branch's reads, its data, as spirit.requireScript handed
   // it back; this node's own tree and verbs through its handle. The node's handle is on the page's node alone, so another
   // party's branch is read through the reads that name a party, with no watch of its own: whoever keeps its tree redraws.
-  function nodeReads() { var b = ANSWER['spirit/node/api.js']; return (b && b.data) || null; }
+  function nodeReads() { var b = ANSWER['spirit/script.js']; return (b && b.client) || null; }
   function handleOn(branch, party) {
     var N = nodeReads();
     if (!party) return N.handle(branch);

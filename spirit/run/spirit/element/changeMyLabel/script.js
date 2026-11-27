@@ -10,7 +10,7 @@
 // node.setName, and the field shows what the node STORED, not what was typed (rule/19): the node normalises what it keeps.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function (root) {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -32,7 +32,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var store = root.spirit.requireScript ? Promise.resolve(Promise.resolve(window.spirit.readyPromise)) : Promise.resolve();
   // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the card is the node branch's reads, on the branch spirit.requireScript
   // handed back (an old-shape branch's, its data).
-  function card() { return ANSWER['spirit/node/api.js'].data.card; }
+  function card() { return ANSWER['spirit/script.js'].client.card; }
 
   function label() { return ANSWER['spirit/type/string/label/script.js'] || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
@@ -71,7 +71,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var bad = '';
       if (L) { try { L.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
+      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return keepAnswer('spirit/script.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         card().keep({ name: String(body.name == null ? '' : body.name) });
@@ -88,7 +88,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       input.defaultValue = name;
       input.value = name;
     }
-    Promise.all([keepAnswer('spirit/node/api.js'), store]).then(function () {
+    Promise.all([keepAnswer('spirit/script.js'), store]).then(function () {
       if (gone) return;
       stop = card().watch(show);
       show(card().get());

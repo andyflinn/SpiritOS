@@ -15,7 +15,7 @@
 // comes first, because pressing a red button twice only protects someone who knows what they are agreeing to. The button is
 // the shell's two-press one (armingButton): red when armed, disarmed the moment attention moves. Every create starts
 // disarmed and without an old result: two presses must mean two presses in this visit. The rotation is the node family's
-// own verb, spirit.requireScript('spirit/node/api.js')'s answer.rotateCipher.
+// own verb, spirit.requireScript('spirit/script.js')'s answer.rotateCipher.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -74,7 +74,7 @@
     function rotate() {
       busy = true;
       draw();
-      S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.rotateCipher({}); })).then(function (r) {
+      S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/script.js'); }).then(function (s) { return s.rotateCipher({}); })).then(function (r) {
         busy = false;
         result = r && r.status === 200 && r.body ? r.body : { ok: false, error: (r && r.body && (r.body.error || r.body.code)) || 'no answer' };
         draw();

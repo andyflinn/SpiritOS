@@ -36,11 +36,11 @@
   // the reader of the api tree, and the node family's cache manager, the keeper of the api tree (goal/G41.28).
   var parts = Promise.all([keepAnswer('spirit/element/search/script.js'), keepAnswer('spirit/element/search/api/row/script.js'),
     keepAnswer('spirit/element/search/api/detail/script.js'), keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js'),
-    keepAnswer('spirit/node/api.js')]);
+    keepAnswer('spirit/script.js')]);
   // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the node branch's reads, its data, as spirit.requireScript handed
   // it back; this node's own tree and verbs through its handle. The node's handle is on the page's node alone, so another
   // party's branch is read through the reads that name a party, with no watch of its own: whoever keeps its tree redraws.
-  function nodeReads() { var b = ANSWER['spirit/node/api.js']; return (b && b.data) || null; }
+  function nodeReads() { var b = ANSWER['spirit/script.js']; return (b && b.client) || null; }
   function handleOn(branch, party) {
     var N = nodeReads();
     if (!party) return N.handle(branch);
@@ -57,7 +57,7 @@
 
   // THE NODE'S API TREE IN THE NODE BRANCH'S READS (goal/G41.28, G49.23; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
   // apiTree branch of the data set, read again when a server job changes, and the family, verb and app-server selectors
-  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (the node branch's data, spirit/node/data.js:
+  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (the node branch's data, spirit/client/script.js:
   // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A server
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
@@ -101,7 +101,7 @@
     root.tree = null;
 
     // EVERY TREE IS A BRANCH OF THE NODE BRANCH'S READS (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
-    // branch, another party's the apiTree branch under that party's node (spirit/node/data.js keepTree's party); root.party
+    // branch, another party's the apiTree branch under that party's node (spirit/client/script.js keepTree's party); root.party
     // names whose it draws, '' for this node's own.
     root.party = typeof options.tree === 'function' ? partyOf(options.party) : '';
     // A party's tree with no name of its party is kept under one shared party slot, never in this node's own.
