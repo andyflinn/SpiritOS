@@ -8,7 +8,6 @@
 // whether it serves a path today. Pure, dual target: driven in node, and once in a window of its own (vm) as a page
 // loads it.
 
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
@@ -17,7 +16,6 @@ const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/fuckingGarbage/apiTreeIndex.js';
-const FILE = path.join(RUN, SUBJECT);
 const T = LOADER.requireScript(SUBJECT);
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -82,12 +80,14 @@ test.run('serves only reports, so asking leaves the tree as it was and a depreca
 }, test.limit.quick);
 
 // ── in a page ──
-test.run('in a page it is window.spirit.required.spirit.fuckingGarbage.apiTreeIndex, the same three, with no require', 0.2, function () {
-  const win = { spirit: {} };
-  const ctx = { window: win };
-  try { vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), ctx, { filename: FILE }); }
+// goal/G49.23 (box v21, Part 1): where a script stands is the loader's to test (spirit/test/script.js); this judges what the
+// script puts out when the page's loader runs it, in a world with no require.
+test.run('in a page, run as the loader runs it with no require, it puts out the same three', 0.2, function () {
+  const ctx = vm.createContext({ spirit: {} });
+  ctx.window = ctx;
+  let t;
+  try { t = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx); }
   catch (e) { return false; }
-  const t = win.spirit.required.spirit.fuckingGarbage.apiTreeIndex;
   if (!t) return false;
   return (short(t.servers(TREE)) === short(['desk', 'fs']) && short(t.verbs(TREE, 'fs')) === short(['read', 'write']) && t.serves(TREE, 'desk.add') === true) || false;
 }, test.limit.quick);

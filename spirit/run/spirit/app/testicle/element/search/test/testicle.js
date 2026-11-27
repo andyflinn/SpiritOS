@@ -179,7 +179,12 @@ test.run('tests of the planted scripts are set on the node', 0.2, async function
     { script: A, suite: GEN, test: FLIPS, verified: true, severity: 0 },
   ];
   const out = [];
-  for (const a of sets) { out.push(await call(N.base, 'spirit.app.testicle.testicle.set', a)); await sleep(20); }
+  // THE TESTICLE SERVER UP FIRST (goal/G49.23, cw's find): until it runs, a set answers 503 app-not-running. The first set,
+  // asked again until the server takes it; a set of the same test replaces its row, so the asks before count for nothing.
+  let first = null;
+  await until(function () { return call(N.base, 'spirit.app.testicle.testicle.set', sets[0]).then(function (r) { first = r; return r.status !== 503; }); }, 30000);
+  out.push(first);
+  for (const a of sets.slice(1)) { out.push(await call(N.base, 'spirit.app.testicle.testicle.set', a)); await sleep(20); }
   out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: GEN, test: FLIPS, verified: false, severity: 0 }));
   planted = out.every(function (r) { return r.status === 200; });
   out.forEach(function (r, i) { const b = r.body || {}; if (r.status === 200 && b.key) current[i === 3 ? FLIPS : i === 0 ? LONG : i === 1 ? FAILS : 'replaced'] = b; });

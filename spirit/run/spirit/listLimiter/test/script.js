@@ -12,7 +12,6 @@
 // Sizes below are the objects' JSON in an array: ["a"] is 5 bytes, [{"n":"a"}] is 11.
 
 const path = require('path');
-const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
@@ -183,12 +182,16 @@ test.run('sort with no function changes nothing', 0.2, function () {
 test.run('the module answers createProbabilityBucket alone', 0.2, function () {
   return short(Object.keys(B)) === short(['createProbabilityBucket']) || false;
 }, test.limit.quick);
-test.run('in a page too, loaded as a plain script, it stands at spirit.required.spirit.listLimiter, and its names stay its own', 0.2, function () {
-  const win = { spirit: { required: { spirit: { other: 1 } } } };
-  const ctx = { window: win };
-  vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'listLimiter', 'script.js'), 'utf8'), ctx);
-  const f = win.spirit.required.spirit.listLimiter.createProbabilityBucket;
-  if (typeof f !== 'function') return false;
-  const leaked = Object.keys(ctx).filter(function (k) { return k !== 'window'; });
-  return (win.spirit.required.spirit.other === 1 && leaked.length === 0) || false;
+// goal/G49.23 (box v21, Part 1): where a script stands is the loader's to test (spirit/test/script.js); this judges what the
+// script puts out when the page's loader runs it, and that it adds no name of its own to the page.
+test.run('in a page, run as the loader runs it, it puts out createProbabilityBucket, and adds no name of its own to the page', 0.2, function () {
+  const ctx = vm.createContext({ spirit: {} });
+  ctx.window = ctx;
+  const before = Object.keys(ctx).sort();
+  const out = S.requireScript('spirit/test/headLessChrome.js').runAsPage('spirit/listLimiter/script.js', ctx);
+  if (!out || typeof out.createProbabilityBucket !== 'function') return false;
+  const b = out.createProbabilityBucket(1000);
+  b.seatFor(0.2, 'a'); b.seatFor(0.5, 'b');
+  const works = short(b.serialize().items) === short(['b', 'a']);
+  return (works && short(Object.keys(ctx).sort()) === short(before)) || false;
 }, test.limit.quick);

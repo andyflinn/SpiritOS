@@ -2832,9 +2832,15 @@ if (!GIVEN.length) {
     'spirit/branch/script.js', 'spirit/branch/client/script.js'].forEach(function (rel) {
     test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
   });
-  ['spirit/client', 'spirit/boxes', 'spirit/apiAuth', 'spirit/authTableInterface', 'spirit/grant/tables', 'spirit/auth'].forEach(function (rel) {
+  ['spirit/boxes', 'spirit/apiAuth', 'spirit/authTableInterface', 'spirit/grant/tables', 'spirit/auth'].forEach(function (rel) {
     test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
   });
+  // spirit/client CAME BACK AS THE STORE (goal/G49.23; Andy: "do move spirit/data/ to spirit/client/ first"): what G49.21 took
+  // out of it stays out; it holds the store, spirit/client/script.js.
+  ['spirit/client/packet.js', 'spirit/client/apiTreeIndex.js'].forEach(function (rel) {
+    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+  });
+  test.run('spirit/client/script.js is there', 0.2, function () { return inTree('spirit/client/script.js') || false; }, test.limit.quick);
   test.run('no product script requires spirit/client/packet.js; the spirit object requires spirit/peer/packet/script.js', 0.2, function () {
     const files = productCode();
     if (files.length < 100) return false;

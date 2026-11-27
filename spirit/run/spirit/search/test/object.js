@@ -9,7 +9,6 @@
 // (goal/G43.6). Pure; the page half is loaded in a vm with a planted window.
 
 const path = require('path');
-const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
@@ -17,7 +16,6 @@ const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/search/object.js';
-const FILE = path.join(RUN, SUBJECT);
 const O = LOADER.requireScript(SUBJECT);
 const p = O.probabilityStringObjectMatch;
 
@@ -114,14 +112,17 @@ test.run('a key whose value is false is never matched', 0.2, function () {
 }, test.limit.quick);
 
 // ── in a page ──
-test.run('in a page it stands at spirit.required.spirit.search.object, and reads the string match there when called, not at load', 0.2, function () {
-  const win = {};
-  vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), { window: win });
-  const Q = (((win.spirit || {}).required || {}).spirit || {}).search || {};
-  const P = Q.object;
+// goal/G49.23 (box v21, Part 1): where a script stands is the loader's to test (spirit/test/script.js); this judges what the
+// script puts out when the page's loader runs it, and that the string match it uses is the one spirit.requireScript hands it.
+test.run('in a page, run as the loader runs it, it puts out measureObject and probabilityStringObjectMatch, matching through the string match spirit.requireScript hands it', 0.2, async function () {
+  const asked = [];
+  const stub = { probabilityStringMatch: function (a, b) { return a === b ? 1 : 0; } };
+  const ctx = vm.createContext({ spirit: { requireScript: function (p) { asked.push(p); return Promise.resolve(p === 'spirit/search/string.js' ? stub : {}); } } });
+  ctx.window = ctx;
+  const P = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx);
   if (!P || typeof P.probabilityStringObjectMatch !== 'function' || typeof P.measureObject !== 'function') return false;
-  Q.string = { probabilityStringMatch: function (a, b) { return a === b ? 1 : 0; } };
-  return near(P.probabilityStringObjectMatch('andy', { andy: 'andy' }), 1) || false;
+  for (let i = 0; i < 5; i += 1) await Promise.resolve();
+  return (short(asked) === short(['spirit/search/string.js']) && near(P.probabilityStringObjectMatch('andy', { andy: 'andy' }), 1)) || false;
 }, test.limit.quick);
 test.run('the module answers measureObject and probabilityStringObjectMatch', 0.2, function () {
   return short(Object.keys(O).sort()) === short(['measureObject', 'probabilityStringObjectMatch']) || false;

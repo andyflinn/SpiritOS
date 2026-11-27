@@ -8,7 +8,6 @@
 // change. Encode, decode, decorate, isEnvelope, randomId; the bound it enforces is asked of spirit/limits/script.js, never
 // restated. Pure and dual target: driven in node, and loaded in a window of its own (vm) as a page loads it.
 
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
@@ -17,7 +16,6 @@ const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/peer/packet/script.js';
-const FILE = path.join(RUN, SUBJECT);
 const P = LOADER.requireScript(SUBJECT);
 const limits = LOADER.requireScript('spirit/limits/script.js');
 
@@ -148,31 +146,35 @@ test.run('decorate marks a plain chat line as a legacy packet, with no app, no i
 }, test.limit.quick);
 
 // ── in a page ──
-test.run('in a page, with limits loaded first, it is window.spirit.required.spirit.peer.packet', 0.2, function () {
-  const win = { spirit: { required: { spirit: { limits: { PAYLOAD_MAX: limits.PAYLOAD_MAX, PLAINTEXT_MAX: limits.PLAINTEXT_MAX, SEALED_MAX: limits.SEALED_MAX } } } } };
-  const ctx = { window: win, TextEncoder: TextEncoder, globalThis: null };
-  ctx.globalThis = { crypto: require('crypto').webcrypto };
-  try { vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), ctx, { filename: FILE }); }
+// goal/G49.23 (box v21, Part 1): where a script stands is the loader's to test (spirit/test/script.js); these judge what the
+// script puts out when the page's loader runs it, with the limits as the world's spirit.requireScript hands them.
+function pageWorld(requireScript) {
+  const ctx = vm.createContext({ spirit: { requireScript: requireScript }, TextEncoder: TextEncoder, crypto: require('crypto').webcrypto });
+  ctx.window = ctx;
+  return ctx;
+}
+function limitsCopy() { return { PAYLOAD_MAX: limits.PAYLOAD_MAX, PLAINTEXT_MAX: limits.PLAINTEXT_MAX, SEALED_MAX: limits.SEALED_MAX }; }
+test.run('in a page, run as the loader runs it with the limits already in, it puts out the packet api filled at once', 0.2, function () {
+  const asked = [];
+  // A then-able answering at once, as the loader answers a script it has loaded already.
+  const ctx = pageWorld(function (p) { asked.push(p); const v = p === 'spirit/limits/script.js' ? limitsCopy() : {}; return { then: function (f) { return Promise.resolve(f ? f(v) : v); } }; });
+  let p;
+  try { p = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx); }
   catch (e) { return false; }
-  const p = win.spirit.required.spirit.peer.packet;
-  if (!p) return false;
+  if (!p || typeof p.encode !== 'function') return false;
   const r = p.encode('chat', 'x');
-  return (p.MAX_TEXT === limits.SEALED_MAX && r.ok === true && /^[0-9a-f]{32}$/.test(r.envelope.id)) || false;
+  return (asked.join() === 'spirit/limits/script.js' && p.MAX_TEXT === limits.SEALED_MAX && r.ok === true && /^[0-9a-f]{32}$/.test(r.envelope.id)) || false;
 }, test.limit.quick);
 // WHAT IT NEEDS, IT LOADS ITSELF (goal/G47.1, Andy: "cw, FIX IT!"): in a page with no limits yet it asks spirit.requireScript for
-// spirit/limits/script.js, and is window.spirit.required.spirit.peer.packet once that is in.
-test.run('in a page without limits.js it asks for spirit/limits/script.js itself, and is spirit.required.spirit.peer.packet once it is in', 0.2, async function () {
+// spirit/limits/script.js, and what it put out is filled once that is in.
+test.run('in a page without limits.js it asks spirit.requireScript for spirit/limits/script.js itself, and what it put out is filled once they are in', 0.2, async function () {
   const asked = [];
-  const win = { spirit: {} };
-  win.spirit.requireScript = function (p) {
-    asked.push(p);
-    return Promise.resolve().then(function () { ((win.spirit.required = win.spirit.required || {}).spirit = win.spirit.required.spirit || {}); win.spirit.required.spirit.limits = { PAYLOAD_MAX: limits.PAYLOAD_MAX, PLAINTEXT_MAX: limits.PLAINTEXT_MAX, SEALED_MAX: limits.SEALED_MAX }; return {}; });
-  };
-  const ctx = { window: win, TextEncoder: TextEncoder, globalThis: { crypto: require('crypto').webcrypto } };
-  try { vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), ctx, { filename: FILE }); }
+  const ctx = pageWorld(function (p) { asked.push(p); return new Promise(function (r) { setTimeout(function () { r(p === 'spirit/limits/script.js' ? limitsCopy() : {}); }, 10); }); });
+  let p;
+  try { p = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx); }
   catch (e) { return false; }
-  const before = !!(((win.spirit.required || {}).spirit || {}).client || {}).packet;
+  if (!p || typeof p !== 'object') return false;
+  const before = typeof p.encode === 'function';
   await new Promise(function (r) { setTimeout(r, 50); });
-  const p = win.spirit.required.spirit.peer.packet;
-  return (asked.join() === 'spirit/limits/script.js' && !before && !!p && p.MAX_TEXT === limits.SEALED_MAX && p.encode('chat', 'x').ok === true) || false;
+  return (asked.join() === 'spirit/limits/script.js' && !before && p.MAX_TEXT === limits.SEALED_MAX && typeof p.encode === 'function' && p.encode('chat', 'x').ok === true) || false;
 }, test.limit.quick);

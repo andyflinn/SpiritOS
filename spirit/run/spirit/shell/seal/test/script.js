@@ -27,15 +27,15 @@ const W = {};
 test.run('face/seal.js is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'face', 'seal.js')) || false;
 }, test.limit.quick);
-test.run('the browser seal loads on spirit.required.shell.seal with supported, newKey, seal and open', 0.2, function () {
+// goal/G49.23 (box v21, Part 1): where a script stands is the loader's to test (spirit/test/script.js); this judges what the
+// script puts out when the page's loader runs it, and the tests after it use that.
+test.run('in a page, run as the loader runs it, the browser seal puts out supported, newKey, seal and open', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  const win = { crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer };
+  const win = vm.createContext({ crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer, spirit: {} });
   win.window = win;
-  // Run in this world by its path, through the page stand-in (goal/G49.6).
-  win.spirit = {};
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
-  win.spirit.requireScript(SUBJECT);
-  const S = win.spirit && win.spirit.required.shell.seal;
+  let S;
+  try { S = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, win); }
+  catch (e) { return false; }
   W.S = S;
   return S && ['supported', 'newKey', 'seal', 'open'].every(function (f) { return typeof S[f] === 'function'; }) ? true : false;
 }, test.limit.quick);

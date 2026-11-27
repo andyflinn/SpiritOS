@@ -8,7 +8,6 @@
 // distance and case added by goal/G29.1 and the shorter token first by goal/G41.28. Pure: two strings in, one number out.
 
 const path = require('path');
-const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
@@ -120,12 +119,14 @@ test.run('a whole word beats a part of one', 0.2, function () {
 test.run('the module answers probabilityStringMatch alone', 0.2, function () {
   return short(Object.keys(M)) === short(['probabilityStringMatch']) || false;
 }, test.limit.quick);
-test.run('loaded in a page as a plain script, it stands at spirit.required.spirit.search.string, and it keeps its names to itself', 0.2, function () {
-  const win = { spirit: { required: { spirit: { other: 1 } } } };
-  const ctx = { window: win };
-  vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'search', 'string.js'), 'utf8'), ctx);
-  const f = win.spirit.required.spirit.search.string.probabilityStringMatch;
-  if (typeof f !== 'function') return false;
-  const leaked = Object.keys(ctx).filter(function (k) { return k !== 'window'; });
-  return (win.spirit.required.spirit.other === 1 && leaked.length === 0) || false;
+// goal/G49.23 (box v21, Part 1): where a script stands is the loader's to test (spirit/test/script.js); this judges what the
+// script puts out when the page's loader runs it, and that it adds no name of its own to the page.
+test.run('in a page, run as the loader runs it, it puts out probabilityStringMatch, and adds no name of its own to the page', 0.2, function () {
+  const ctx = vm.createContext({ spirit: {} });
+  ctx.window = ctx;
+  const before = Object.keys(ctx).sort();
+  const out = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage('spirit/search/string.js', ctx);
+  if (!out || typeof out.probabilityStringMatch !== 'function') return false;
+  const works = out.probabilityStringMatch('andy', 'andy') === 1 && out.probabilityStringMatch(1, '1') === 0;
+  return (works && short(Object.keys(ctx).sort()) === short(before)) || false;
 }, test.limit.quick);
