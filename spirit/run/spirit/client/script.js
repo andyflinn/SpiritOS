@@ -491,7 +491,19 @@
     addTranslator: translate, setQuietly: quietly, readyBranch: ready, branchAt: branch, searchAll: search, forgetAll: forget, byteCap: cap,
     recordPaths: recording, nodeId: nodeId, homeNode: home, viewAt: at, allBranches: branches,
     // For a suite: the stream's events fed by hand.
-    takeJob: onJob, takeRename: onRename };
+    takeJob: onJob, takeRename: onRename, handOut: handOut };
+  // A CLIENT'S READS ONTO WHAT IT PUT OUT (goal/G49.23, box v22 Part 1: the client "puts out its reads as it runs"): every member of
+  // what its make() answered, a getter as a getter, onto the object the client put out, which the loader placed at its path.
+  // Answers that object.
+  function handOut(out, fam) {
+    var reads = fam && fam.data;
+    if (!out || typeof out !== 'object' || !reads || typeof reads !== 'object') return out;
+    Object.getOwnPropertyNames(reads).forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(out, k)) return;
+      Object.defineProperty(out, k, Object.getOwnPropertyDescriptor(reads, k));
+    });
+    return out;
+  }
 
   // FED BY THE PAGE'S ONE STREAM, spirit.eventStream.subscribe (goal/G40.6). A relay's own events go to whichever translator
   // keeps them (onRelay), as everything else on that stream does.

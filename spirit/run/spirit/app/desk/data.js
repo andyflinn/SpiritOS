@@ -22,7 +22,12 @@
 // One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check); the
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
-(function family(given) {
+(function family(given, out) {
+  // WHAT IT PUTS OUT, ITS READS (goal/G49.23, box v22 Part 1: "they stand at <branch path>.client, where the loader puts the
+  // branch's client/script.js by its path"; an old-shape data.js at <its folder>.data): the object is put out as the file runs, so
+  // the loader places it, and filled with what the store made once it has come back.
+  var OUT = out || {};
+  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;
   // THE CACHE RULES ARE NODE'S (goal/G41.28; Andy: "the file has to fit into MAX_PAYLOAD."): keep, shed and the kept
   // reads, in ./cacheRules.js, required in node alone (appServer, deskClient), handed this file's names; a page has none.
   // THE NAMES, here alone.
@@ -39,8 +44,8 @@
   // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
-  D.makeFamily('spirit.app.desk', function () {
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
+  D.handOut(OUT, D.makeFamily('spirit.app.desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.required.spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
     // family's view of one node. A row from the stream is filed under its job's node (fromNode); every read is of the
@@ -197,7 +202,7 @@
       answer: function (verb, args, room) { return cache ? cache.answer(verb, args, HOME, room) : null; },
     };
     return deskReads;
-  });
+  }));
   // In node, for the subscribing appServer and deskClient: the cache rules, as the module's export.
-  if (typeof module !== 'undefined' && module && module.exports) module.exports = { cache: cache };
+  OUT.cache = cache;
 }());

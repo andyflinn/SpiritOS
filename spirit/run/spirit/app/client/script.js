@@ -8,15 +8,20 @@
 //   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount, nodeRemote }, what app.search answered (seated by the list that is a view of it), and the
 //          whole table the apps news of the node's own job spirit.app holds (spirit/app/manager/script.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
-(function family(given) {
+(function family(given, out) {
+  // WHAT IT PUTS OUT, ITS READS (goal/G49.23, box v22 Part 1: "they stand at <branch path>.client, where the loader puts the
+  // branch's client/script.js by its path"; an old-shape data.js at <its folder>.data): the object is put out as the file runs, so
+  // the loader places it, and filled with what the store made once it has come back.
+  var OUT = out || {};
+  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;
   var APPS = 'apps';
   var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : given;
   // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
   // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
-  D.makeFamily('app', function () {
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
+  D.handOut(OUT, D.makeFamily('app', function () {
     var HOME = D.viewAt(null, 'app');
     D.addTranslator({
       onJob: function (job) {
@@ -49,5 +54,5 @@
       get branch() { return HOME.path(APPS); },
     };
     return appReads;
-  });
+  }));
 }());

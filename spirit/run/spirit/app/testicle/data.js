@@ -16,7 +16,12 @@
 // course, publishes changes." The server publishes each row it writes, its job's app { testicle: { table, row } }
 // (testicle.js), as the agent's tables publish theirs: the row is merged into its table's branch, so a list that is a view
 // of the branch follows it. What a search answers is kept the same way (keep).
-(function family(given) {
+(function family(given, out) {
+  // WHAT IT PUTS OUT, ITS READS (goal/G49.23, box v22 Part 1: "they stand at <branch path>.client, where the loader puts the
+  // branch's client/script.js by its path"; an old-shape data.js at <its folder>.data): the object is put out as the file runs, so
+  // the loader places it, and filled with what the store made once it has come back.
+  var OUT = out || {};
+  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;
   var TABLES = ['script', 'suite', 'testicle'];
   // The monitor's one row, in its own branch (spirit.required.spirit.data keeps rows as branch/key): what the stream last said of busy and
   // of the last change.
@@ -28,8 +33,8 @@
   // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
-  D.makeFamily('spirit.app.testicle', function () {
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
+  D.handOut(OUT, D.makeFamily('spirit.app.testicle', function () {
     var HOME = D.viewAt(null, 'spirit.app.testicle');
     // A TEST ROW KEPT WITH ITS FILE NAMES, scriptName and suiteName, the last part of each path: the testicle search shows and
     // sorts its script and suite columns by them (goal/G47.1, the search cycle, the box: "The script column and the suite
@@ -133,5 +138,5 @@
       watch: function (fn) { return HOME.watch(PREFERENCES, function () { if (typeof fn === 'function') fn(HOME.get(PREFERENCES) || {}); }); },
     };
     return testicleReads;
-  });
+  }));
 }());

@@ -11,7 +11,12 @@
 //   chats   peer -> that chat's row as chats.search answers it { at, sent, seq, unanswered }
 // Every line the server publishes ({ line }, goal/G4.2: each kept line, written or received, and each change of a
 // written line's mark) is kept as it came; a reader seats the lines a read or a search answered (keep). It asks nothing.
-(function family(given) {
+(function family(given, out) {
+  // WHAT IT PUTS OUT, ITS READS (goal/G49.23, box v22 Part 1: "they stand at <branch path>.client, where the loader puts the
+  // branch's client/script.js by its path"; an old-shape data.js at <its folder>.data): the object is put out as the file runs, so
+  // the loader places it, and filled with what the store made once it has come back.
+  var OUT = out || {};
+  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;
   var LINES = 'lines';
   var CHATS = 'chats';
   function keyOf(peer, sent, seq) { return String(peer) + '\n' + Number(sent) + ':' + Number(seq); }
@@ -24,8 +29,8 @@
   // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
-  D.makeFamily('spirit.app.chat', function () {
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
+  D.handOut(OUT, D.makeFamily('spirit.app.chat', function () {
     var HOME = D.viewAt(null, 'spirit.app.chat');
     function put(V, peer, l) {
       if (!peer || !l || l.seq === undefined || l.sent === undefined) return;
@@ -81,5 +86,5 @@
       keyOf: keyOf,
     };
     return chatReads;
-  });
+  }));
 }());

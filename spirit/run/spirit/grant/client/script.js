@@ -7,7 +7,12 @@
 //   rows   key + newline + path -> the grant row, a row of node.db's grant table
 // The rows come on the node's own job spirit.grant, each grant given or taken back, gone when taken back.
 // Every event ends in set or del; it asks nothing.
-(function family(given) {
+(function family(given, out) {
+  // WHAT IT PUTS OUT, ITS READS (goal/G49.23, box v22 Part 1: "they stand at <branch path>.client, where the loader puts the
+  // branch's client/script.js by its path"; an old-shape data.js at <its folder>.data): the object is put out as the file runs, so
+  // the loader places it, and filled with what the store made once it has come back.
+  var OUT = out || {};
+  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;
   var ROWS = 'rows';
   function grantKey(key, path) { return String(key) + '\n' + String(path); }
   var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : given;
@@ -15,8 +20,8 @@
   // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1): on a page that has not loaded it yet, this file loads it and
   // runs again.
-  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
-  D.makeFamily('grant', function () {
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }
+  D.handOut(OUT, D.makeFamily('grant', function () {
     var HOME = D.viewAt(null, 'grant');
     D.addTranslator({
       onJob: function (job) {
@@ -38,5 +43,5 @@
       get branch() { return HOME.path(ROWS); },
       grantKey: grantKey,
     };
-  });
+  }));
 }());
