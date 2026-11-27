@@ -522,6 +522,16 @@
         };
       } });
     }
+    // A SERVER'S remote ROW ON ITS OWN CLIENT (goal/G49.23, box v22 Part 1: a branch's rows from its client, never from the store by
+    // name): remote, the row the server last published, and watchRemote(fn), fn(row) on every new one, answering its release; for
+    // the title bar's Remote dropdown. Not enumerable.
+    if (!Object.prototype.hasOwnProperty.call(out, 'remote') && fam.name) {
+      var remoteName = fam.name;
+      Object.defineProperty(out, 'remote', { enumerable: false, configurable: true, get: function () { return (families[remoteName] || {}).remote; } });
+      Object.defineProperty(out, 'watchRemote', { enumerable: false, configurable: true, value: function (fn) {
+        return watch('remote/' + remoteName, function (p, r) { if (typeof fn === 'function') fn(r); });
+      } });
+    }
     return out;
   }
 
