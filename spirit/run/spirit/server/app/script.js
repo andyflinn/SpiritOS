@@ -884,7 +884,9 @@ function withChecked(verbs, script) {
   if (!fs.existsSync(path.join(RUN_ROOT, apiPath))) return verbs;
   // spirit.requireScript places the file at once; its binding asks a node, which this check needs nothing of.
   try { Promise.resolve(spirit.requireScript(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }
-  const api = (dir + '/api').split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit.required);
+  // Its place since goal/G49.23 is on the spirit object itself, spirit/app/desk/api.js at spirit.app.desk.api (box v21: no
+  // spirit.required). Still a read at its place, as before: Andy's to say whether the loader should hand it back at once in node.
+  const api = (dir + '/api').split('/').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit);
   const declaredVerbs = api && api.verbs && typeof api.verbs === 'object' ? api.verbs : null;
   if (!declaredVerbs) return verbs;
   const out = Object.assign({}, verbs);

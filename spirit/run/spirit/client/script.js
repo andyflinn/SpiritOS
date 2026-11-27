@@ -435,9 +435,17 @@
       return { match: require('../script.js').requireScript('spirit/search/object.js').probabilityStringObjectMatch,
         bucket: require('../script.js').requireScript('spirit/listLimiter/script.js').createProbabilityBucket, limits: require('../script.js').requireScript('spirit/limits/script.js') };
     }
-    // On a page each at its one place, spirit.required.<its path> (goal/G49.4).
-    var q = ((root.spirit && root.spirit.required) || {}).spirit || {};
-    return { match: ((q.search || {}).object || {}).probabilityStringObjectMatch, bucket: (q.listLimiter || {}).createProbabilityBucket, limits: q.limits };
+    // On a page each as spirit.requireScript handed it back (goal/G49.23; goal/G49.9: never read at its place).
+    return PAGE_RANK;
+  }
+  // ON A PAGE, WHAT THE SEARCH NEEDS, REQUIRED AS THIS FILE RUNS (rule/26: a part loads what it uses), kept as each comes back.
+  var PAGE_RANK = { match: null, bucket: null, limits: null };
+  if (onPage && root.spirit && typeof root.spirit.requireScript === 'function') {
+    [['spirit/search/object.js', function (m) { PAGE_RANK.match = (m && m.probabilityStringObjectMatch) || null; }],
+      ['spirit/listLimiter/script.js', function (m) { PAGE_RANK.bucket = (m && m.createProbabilityBucket) || null; }],
+      ['spirit/limits/script.js', function (m) { PAGE_RANK.limits = m || null; }]].forEach(function (x) {
+      try { Promise.resolve(root.spirit.requireScript(x[0])).then(x[1], function () { /* not there: ranks nothing */ }); } catch (e) { /* not there */ }
+    });
   }
   function defaultRoom(limits) {
     // appClient.ANSWER_MAX is half a sealed packet; the desk's ANSWER_ROOM leaves 512 bytes of it for the envelope.
@@ -522,11 +530,7 @@
       onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
   }
   api.followStream = follow;
-  // ONE PLACE, spirit.required.spirit.data (goal/G43.32, G49.4; Andy: "if all of data functionality is already in
-  // spirit.required.data, why the fuck would it waste more namespace as spirit.data?"): in node the loader places the exports
-  // there; on a page this file has no module box, so it places itself, and the loader answers what stands there.
-  var sr = (root.spirit = root.spirit || {});
-  var req = (sr.required = sr.required || {});
-  (req.spirit = req.spirit || {}).data = api;
+  // WHAT IT HANDS OUT GOES THROUGH THE LOADER (goal/G49.23, box v21: objects stand in the spirit object, no longer under
+  // spirit.required): its module box on a page as in node; the loader places it at its path, spirit.client, and places nothing else.
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof window !== 'undefined' ? window : globalThis));

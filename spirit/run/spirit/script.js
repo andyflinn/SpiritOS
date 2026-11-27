@@ -572,8 +572,12 @@
   // script>. - no name collisions - easily checkable if script is already loaded." One key per folder of its run-root path,
   // its name without .js the last: spirit/relayUrl/script.js at spirit.required.spirit.relayUrl. On the node it is the module's
   // exports; on a page, where a script installs itself as it runs, an empty object marks it loaded.
+  // ON THE SPIRIT OBJECT ITSELF (goal/G49.23, box v21, Part 1: "spirit.requireScript() places it's return objects in the spirit
+  // object, and no longer on spirit.required.spirit"): the tree's root step spirit is the spirit object, so spirit/fs/script.js
+  // stands at spirit.fs and spirit/fs/client/script.js at spirit.fs.client. Its own helpers all hold an uppercase letter
+  // (goal/G49.6), a folder's name none, so no path takes a helper's name. There is no spirit.required.
   var required = Object.create(null);
-  self.required = required;
+  required.spirit = self;
   // A folder's place made before its file is required holds only what was placed under it; the file's answer takes the
   // place and keeps those (no name collision: x.js and x/y.js both stand, whichever comes first).
   var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
@@ -582,9 +586,6 @@
   // Its first levels made here, so a reader asking spirit.required.spirit.element.<x> before any helper ran reads undefined
   // instead of throwing (goal/G43.32). Holders, as any folder's place: spirit/app/manager/script.js takes spirit.required.spirit.app
   // and keeps the spirit/app/ scripts placed under it.
-  required.spirit = holder();
-  required.spirit.element = holder();
-  required.spirit.app = holder();
   // THE ELEMENTS STAND HERE TOO (goal/G49.5; Andy, of his G43.32 Q5: "that ruling is reversed, since the element factory is
   // fine where it is loaded"): an element's factory is at spirit.required.<its path>, put there by the loader from the
   // script's module.exports (goal/G49.9; installSpiritElement deleted, goal/G49.23); there is no spirit.element.
@@ -662,9 +663,13 @@
   // the cache (the fs branch's own load needs scripts that would then wait for it). An element's folder above (the search
   // element's, above the file search) is none. The spirit object itself is loaded already.
   var branchFolder = Object.create(null);
+  // THE STORE AND THE LIMITS AS THE REQUIRE HANDS THEM BACK (goal/G49.23; goal/G49.9: never read at their place), kept for the
+  // loader's own reads: the fs cache's branch marks, the page's home node, a face call's size.
+  var STORE = null;
+  var LIMITS = null;
   var looked = Object.create(null);
   function isBranchFolder(dir) {
-    var fsData = required.spirit && required.spirit.data && required.spirit.data.fs && required.spirit.data.fs.data;
+    var fsData = STORE && STORE.fs && STORE.fs.data;
     if (fsData && typeof fsData.ready === 'function' && fsData.ready() && typeof fsData.file === 'function') {
       var row = fsData.file(dir);
       return Promise.resolve(!!(row && row.branch === true));
@@ -816,7 +821,7 @@
     var p = runPathOf(elementPath);
     var loaded = isNode() ? Promise.resolve(requireOne('spirit/fs/dataset/script.js')) : Promise.resolve(requireOne('spirit/fs/script.js'));
     return loaded.then(function () {
-      var fsData = required.spirit && required.spirit.data && required.spirit.data.fs && required.spirit.data.fs.data;
+      var fsData = STORE && STORE.fs && STORE.fs.data;
       if (!fsData) return '';
       return new Promise(function (resolve) {
         if (fsData.ready()) { resolve(); return; }
@@ -1168,7 +1173,8 @@
     module.exports = self;
     // spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"): the spirit object loads its own
     // client and offers the store as a member, so an element reads spirit.dataStore and asks for no client script.
-    self.dataStore = requireOne('spirit/client/script.js');
+    self.dataStore = STORE = requireOne('spirit/client/script.js');
+    LIMITS = requireOne('spirit/limits/script.js');
     return;
   }
 
@@ -1226,7 +1232,7 @@
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
       // spirit.dataStore (goal/G49.23, as in node above): the store, a member once the page has started.
-      return parsed().then(function () { return requireOne('spirit/client/script.js'); }).then(function (st) { self.dataStore = st; });
+      return parsed().then(function () { return requireOne('spirit/client/script.js'); }).then(function (st) { STORE = st || null; self.dataStore = st; return requireOne('spirit/limits/script.js'); }).then(function (l) { LIMITS = l || null; }, function () { /* no limits: the default sizes */ });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a
@@ -1235,7 +1241,7 @@
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
         (self.nodeFacts = self.nodeFacts && typeof self.nodeFacts === 'object' ? self.nodeFacts : {}).key = key;
-        if (self.required.spirit.data && typeof self.required.spirit.data.homeNode === 'function') self.required.spirit.data.homeNode(key);
+        if (STORE && typeof STORE.homeNode === 'function') STORE.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
     }).then(function () { return self; });
     if (readyNow) readyNow(started);
@@ -1284,10 +1290,10 @@
   // (faceHome.js) answers 202 to each but the last, whose answer is this call's. The relay reads none of them.
   function postCall(t) {
     var once = function (x) { return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: x }); };
-    var BODY_MAX = (self.required.spirit.limits && self.required.spirit.limits.BODY_MAX) || 23552;
+    var BODY_MAX = (LIMITS && LIMITS.BODY_MAX) || 23552;
     var bytes = new TextEncoder().encode(t);
     if (bytes.length <= BODY_MAX - 1024) return once(t);
-    var b64 = self.required.shell.seal.toB64(bytes);
+    var b64 = SEAL.toB64(bytes);
     var size = BODY_MAX - 1024;
     var of = Math.ceil(b64.length / size);
     var id = randomId();
@@ -1305,11 +1311,11 @@
     var parts = [];
     return lines.reduce(function (chain, l) {
       return chain.then(function () {
-        return self.required.shell.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
+        return SEAL.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
       }).then(function (got) {
         if (!got) throw new Error('an answer did not open');
         if (!head) head = JSON.parse(got.text);
-        else parts.push(self.required.shell.seal.fromB64(got.text));
+        else parts.push(SEAL.fromB64(got.text));
       });
     }, Promise.resolve()).then(function () { return { head: head, parts: parts }; });
   }
@@ -1323,7 +1329,7 @@
   // One request to the home node through the relay: { status, type, bytes }. Sealed when this page can seal.
   function linkCall(request) {
     var sending = faceLink.sealed
-      ? self.required.shell.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) { s.k = faceLink.key.publicKey; return s; })
+      ? SEAL.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) { s.k = faceLink.key.publicKey; return s; })
       : Promise.resolve(request);
     return sending.then(function (body) { return postCall(JSON.stringify(body)); }).then(function (r) {
       if (r.status === 503 || r.status === 504) linkDown();
@@ -1341,7 +1347,7 @@
     var each = typeof onPiece === 'function' ? onPiece : function () {};
     var request = { get: String(p || '').replace(/^\/+/, '') };
     if (!faceLink.sealed) return linkCall(request).then(function (r) { if (r.status === 200) each(r.bytes); return r; });
-    return self.required.shell.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) {
+    return SEAL.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) {
       s.k = faceLink.key.publicKey;
       return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(s) });
     }).then(function (r) {
@@ -1356,11 +1362,11 @@
       var chain = Promise.resolve();
       function open(l) {
         chain = chain.then(function () {
-          return self.required.shell.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
+          return SEAL.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
         }).then(function (got) {
           if (!got) throw new Error('an answer did not open');
           if (!head) { head = JSON.parse(got.text); return; }
-          var piece = self.required.shell.seal.fromB64(got.text);
+          var piece = SEAL.fromB64(got.text);
           parts.push(piece);
           if ((head.status || 0) === 200) each(piece);
         });
@@ -1386,7 +1392,7 @@
     var of = Math.max(1, Math.ceil(bytes.length / UPLOAD_PART));
     var id = randomId();
     function next(n) {
-      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: self.required.shell.seal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
+      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: SEAL.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
       return linkCall({ upload: part }).then(function (r) {
         if (n === of - 1 || r.status !== 202) return r;
         return next(n + 1);
@@ -1408,18 +1414,20 @@
     return linkCall({ call: String(verb), args: args || {} }).then(asAnswer);
   }
   // Made once, logged in: the home node's keys, then this page's own key when the browser can seal.
+  var SEAL = null;
   function makeLink() {
-    return requireOne('spirit/shell/seal/script.js').then(function () { return linkCall({ keys: 1 }); }).then(function (r) {
+    // THE SEAL AS THE REQUIRE HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): kept for every sealed call.
+    return Promise.resolve(requireOne('spirit/shell/seal/script.js')).then(function (s) { SEAL = s || null; return linkCall({ keys: 1 }); }).then(function (r) {
       var keys = null;
       try { keys = JSON.parse(linkText(r.bytes)); } catch (e) { keys = null; }
       if (r.status !== 200 || !keys || !keys.publicKey) throw refusal('no-home', 'the home node did not answer', { status: r.status });
       faceLink.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
       // The tab says whose face this is (goal/G30.15).
       if (keys.name && root.document) root.document.title = String(keys.name);
-      return (self.required.shell || {}).seal && faceLink.node.sealKey ? self.required.shell.seal.supported() : false;
+      return SEAL && faceLink.node.sealKey ? SEAL.supported() : false;
     }).then(function (can) {
       if (!can) return null;
-      return self.required.shell.seal.newKey().then(function (key) { faceLink.key = key; faceLink.sealed = true; });
+      return SEAL.newKey().then(function (key) { faceLink.key = key; faceLink.sealed = true; });
     }).then(function () {
       self.faceLink = {
         get sealed() { return faceLink.sealed; }, get key() { return faceLink.key; }, get node() { return faceLink.node; },
