@@ -195,7 +195,7 @@ test.run('a Chrome page opens for this suite', 0.2, async function () {
 test.run('the face shell opens in that page with its spirit ready', 0.2, async function () {
   if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/' });
-  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
+  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream && document.body && document.readyState !== "loading")'); }, 20000));
   if (W.page) await W.c.evaluate(HANDS);
   return W.page || false;
 }, test.limit.quick);

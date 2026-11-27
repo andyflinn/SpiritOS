@@ -81,7 +81,8 @@ test.run('a Chrome page opens', 0.2, async function () {
 test.run('the face shell has its spirit', 0.2, async function () {
   if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/' });
-  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
+  // The page has its body before a check appends to it (goal/G49.23, cw: the spirit object runs in the head, before the body).
+  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream && document.body && document.readyState !== "loading")'); }, 20000));
   return W.page || false;
 }, test.limit.quick);
 

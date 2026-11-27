@@ -329,7 +329,7 @@ test.run('a server\'s bundle is planted in the node\'s database', 0.2, async fun
 test.run('the face page has its spirit', 0.2, async function () {
   if (!B.chrome) return false;
   await B.chrome.send('Page.navigate', { url: B.base + '/' });
-  B.page = !!(await H.until(function () { return B.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
+  B.page = !!(await H.until(function () { return B.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream && document.body && document.readyState !== "loading")'); }, 20000));
   return B.page || false;
 }, test.limit.quick);
 // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
@@ -697,7 +697,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   test.run('the wrapper\'s face page has its spirit', 0.2, async function () {
     if (!R.c) return false;
     await R.c.send('Page.navigate', { url: R.N.base + '/' });
-    R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
+    R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream && document.body && document.readyState !== "loading")'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
     return R.page || false;
   }, test.limit.quick);

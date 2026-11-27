@@ -343,7 +343,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
   test.run('the face page has its spirit', 0.2, async function () {
     if (!R.c) return false;
     await R.c.send('Page.navigate', { url: R.N.base + '/' });
-    R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
+    R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream && document.body && document.readyState !== "loading")'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
     return R.page || false;
   }, test.limit.quick);
