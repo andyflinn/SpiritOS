@@ -39,6 +39,11 @@ const { spawn } = require('child_process');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
+// The face's tag-run scripts, spirit.js's FACE list as spirit.js writes it.
+const FACE_SCRIPTS = (function () {
+  const m = /var FACE = \[([^\]]*)\]/.exec(fs.readFileSync(path.join(RUN, 'spirit', 'script.js'), 'utf8'));
+  return m ? (m[1].match(/'[^']+'/g) || []).map(function (q) { return q.slice(1, -1); }) : [];
+}());
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.join(RUN, '..', '..');
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
@@ -727,7 +732,10 @@ function every() {
       let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false, answered: false, same: false }; }
       if (r.err) { if (LACKS_NODE.test(String(r.why || ''))) E.nodeOnly.push(f); continue; }
       E.pageLoaded.push(f);
-      if (!r.placed) E.pageBad.push(f);
+      // THE FACE'S OWN SCRIPTS, RUN BY A TAG (goal/G49.23; Andy: "boot.js MUST be an exception to the rules"): the ones spirit.js
+      // injects itself as its FACE list are run by their tag, not required, so nothing asks them for anything and the loader
+      // places none; the list is spirit.js's own, read from it, never named here.
+      if (!r.placed && FACE_SCRIPTS.indexOf(f) === -1) E.pageBad.push(f);
       if (isElementScript(f, r)) { E.elements.push(f); if (!r.factory || !r.same) E.noFactory.push(f); }
     }
     try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
