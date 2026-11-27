@@ -38,9 +38,9 @@ test.after(function () {
 });
 require(path.join(RUN, 'spirit', 'script.js'));
 const J = S.requireScript('spirit/job/joinStepsJob/script.js');
-const relayKeys = spirit.requireScript('spirit/relayKeys/script.js');
+const relayKeys = spirit.requireScript('spirit/peer/relay/key/script.js');
 const ownerBadge = spirit.requireScript('spirit/ownerBadge/script.js');
-const contacts = spirit.requireScript('spirit/contact/script.js');
+const contacts = spirit.requireScript('spirit/contact/engine/script.js');
 const auth = spirit.requireScript('spirit/relayAuth/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

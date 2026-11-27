@@ -23,7 +23,7 @@ let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayRequest/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayRequest'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const limits = S.requireScript('spirit/limits/script.js');
-const pipePathFor = S.requireScript('spirit/appClient/script.js').pipePathFor;
+const pipePathFor = S.requireScript('spirit/app/adapter/script.js').pipePathFor;
 const R = S.requireScript('spirit/relayRequest/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

@@ -66,7 +66,7 @@ var chIconPart = window.spirit && typeof window.spirit.requireScript === 'functi
 // NEEDS"; spirit/test/script-sibling-browser.js): chat's own, the node's (its card) and contacts' (the peers it lists), and
 // chat's cache manager; none is left to another part having loaded it first.
 var chInterfaces = window.spirit && typeof window.spirit.requireScript === 'function'
-  ? Promise.all(['spirit/app/chat/api.js', 'spirit/node/api.js', 'spirit/contact/api.js'].map(function (p) { return Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); })
+  ? Promise.all(['spirit/app/chat/api.js', 'spirit/node/api.js', 'spirit/contact/script.js'].map(function (p) { return Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); })
     .concat([typeof window.spirit.requireScript === 'function' ? Promise.resolve(keepAnswer('spirit/app/chat/api.js')).catch(function () {}) : null]))
   : Promise.resolve();
 

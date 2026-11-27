@@ -37,7 +37,7 @@ test.after(function () {
   try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
 const B = S.requireScript('spirit/ownerBadge/script.js');
-const relayKeys = S.requireScript('spirit/relayKeys/script.js');
+const relayKeys = S.requireScript('spirit/peer/relay/key/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function scratch() { return ownTemp('spirit-ownerbadge-'); }

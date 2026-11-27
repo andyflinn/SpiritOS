@@ -19,7 +19,7 @@ let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/test/nodeAgent/' + name + tempAsked); }
 // Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
-const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
+const appClient = SPIRIT.requireScript('spirit/app/adapter/script.js');
 
 const DIR = path.join(__dirname, '..', '..');
 const SERVER = path.join(DIR, 'agent.js');

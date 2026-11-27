@@ -64,15 +64,15 @@ function statFile(filePath) {
 
 // ONLY CORE FILES ARE WRITE-PROTECTED (goal/G30.21). Andy: "only "core" files are write-protected, manifests are no
 // longer core", "any non-core file is fair game", and "the notion that we dictate to a user how to organize his file
-// is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (spirit/coreFiles/script.js,
+// is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (spirit/fs/coreFiles/script.js,
 // the commit check's own rule), a node's state at any depth, a sidecar's own path, and the node's root-level files,
 // every one of them: no root-level file is writable (goal/G43.17, the last one it named gone). A server's own state is
 // its spirit/state/<name>/data/, handed to it as --state; no page writes there (goal/G43.20).
 
-// A CORE FILE, by the one rule the commit check reads (spirit/coreFiles/script.js): spirit/run/spirit/, spirit/run/spirit/element/, the
+// A CORE FILE, by the one rule the commit check reads (spirit/fs/coreFiles/script.js): spirit/run/spirit/, spirit/run/spirit/element/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
 function isCoreFile(canonical) {
-  return spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
+  return spirit.requireScript('spirit/fs/coreFiles/script.js').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
 }
 // The one sidecar per annotated file gets a suffix, never a same-name
 // extension swap — <file>.sidecar.json can never collide with the
@@ -272,7 +272,7 @@ function writeBucket(bucket, filePath, payload) {
   }
   if (!stat || !stat.isFile()) return { ok: false, reason: 'file-not-found' };
   const sidecar = readSidecar(filePath);
-  // INTRINSIC IS NO NODE'S TO WRITE: an app's own <name>.json says it (spirit/coreFiles/script.js), so it is never kept in a sidecar.
+  // INTRINSIC IS NO NODE'S TO WRITE: an app's own <name>.json says it (spirit/fs/coreFiles/script.js), so it is never kept in a sidecar.
   const part = Object.assign({}, payload || {});
   if (bucket === 'face') delete part.intrinsic;
   sidecar[bucket] = part;

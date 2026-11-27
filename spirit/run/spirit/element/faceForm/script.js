@@ -26,7 +26,7 @@
 
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -149,7 +149,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
     }
     var left = false;
-    Promise.resolve(keepAnswer('spirit/contact/api.js')).then(function () {
+    Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () {
       if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
@@ -162,10 +162,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (!name.value.trim()) { box._faceSaid = { text: 'a face name is needed', bad: true }; say(box._faceSaid.text, true); return Promise.resolve(); }
       busy = true;
       say('asking the relay…', false);
-      // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/api.js')'s answer.face answers the reply's body, or refuses with
+      // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/script.js')'s answer.face answers the reply's body, or refuses with
       // the node's words; the relay named by its row's public key (goal/G49.11), the row the picked url is.
       var picked = (box._spFace.relays || []).filter(function (r) { return r && r.url === relay.value; })[0] || {};
-      return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.face({ key: picked.key || '', name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.face({ key: picked.key || '', name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
           : { text: said.error || 'the relay did not answer', bad: true };

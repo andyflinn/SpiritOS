@@ -20,7 +20,7 @@ require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const nodeStore = spirit.requireScript('spirit/nodeStore/script.js');
-const contacts = spirit.requireScript('spirit/contact/script.js');
+const contacts = spirit.requireScript('spirit/contact/engine/script.js');
 const limits = spirit.requireScript('spirit/limits/script.js');
 const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
@@ -197,7 +197,7 @@ function createApiAuth(opts) {
       if (a.path === 'spirit.fs' || a.path.indexOf('spirit.fs.') === 0) return Promise.resolve(refuse('owner-only'));
       // 😏 IS THE OWNER'S (goal/G41.30; goal/G47.4, box v33: contact.faceable "does what own did"): a faceable relay opens
       // this node's face. Never granted.
-      if (a.path === 'contact.faceable') return Promise.resolve(refuse('owner-only'));
+      if (a.path === 'spirit.contact.faceable') return Promise.resolve(refuse('owner-only'));
       const s = store();
       if (s.has(a.key, a.path)) return Promise.resolve(refuse('already-granted'));
       // Andy: "only if the path is known from a previous configuration, where owner has not pruned yet", so that

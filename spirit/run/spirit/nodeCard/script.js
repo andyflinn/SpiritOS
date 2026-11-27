@@ -55,7 +55,7 @@ const LABEL = spirit.requireScript('spirit/type/string/label/script.js');
 const DESCRIPTION = spirit.requireScript('spirit/type/string/description/script.js');
 function problemOf(T, v) { try { T.isValid(v); return ''; } catch (e) { return (e && e.message) || 'not valid'; } }
 // The node layer's one reading of what arrived (N1, goal/G16.5).
-const arrivals = spirit.requireScript('spirit/arrivals/script.js');
+const arrivals = spirit.requireScript('spirit/peer/arrivals/script.js');
 
 // ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
 //

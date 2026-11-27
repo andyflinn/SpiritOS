@@ -11,7 +11,7 @@ require('../script.js');
 //   pack(entries)   -> the first of them that fit one delivery, at least one, in order (spirit/server/app/script.js, the publisher)
 //   unpack(json)    -> the entries of a delivery's json, each a plain object, in order; null when it is no JSON array
 //                      (both listeners of spirit/server/app/script.js, and the console's log wait once envelopeOf in
-//                      spirit/arrivals/script.js has opened the envelope)
+//                      spirit/peer/arrivals/script.js has opened the envelope)
 
 const limits = spirit.requireScript('spirit/limits/script.js');
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;

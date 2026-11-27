@@ -26,7 +26,7 @@
 //     options.placeholder, options.all, options.empty, options.className   handed to the list or its root
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -58,7 +58,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the one contact list, and what that list draws with, before it draws it.
     Promise.all(['spirit/element/search/contact/list/script.js', 'spirit/element/search/script.js', 'spirit/element/row/script.js',
-      'spirit/element/search/contact/row/script.js'].map(function (p) { return window.spirit.requireScript(p); }).concat([window.spirit.requireScript('spirit/contact/api.js')])).then(function () {
+      'spirit/element/search/contact/row/script.js'].map(function (p) { return window.spirit.requireScript(p); }).concat([window.spirit.requireScript('spirit/contact/script.js')])).then(function () {
       if (gone) return;
       made = ANSWER['spirit/element/search/contact/list/script.js'].create(root, {
         face: isPane ? 'pane' : 'dropdown',

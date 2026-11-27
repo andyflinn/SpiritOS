@@ -21,7 +21,7 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 var contactsEscapeHtml = spirit.escapeHtml;
 
 // NO CHOICE ABOUT STRANGERS (goal/G43.17): the node ignores them always, and keeps their id only in its log. Andy: "so NO,
@@ -118,7 +118,7 @@ function contactCreate(container, options) {
       } catch (e) { ok = false; }
       if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
       out.textContent = 'adding ' + url + '…';
-      spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
+      spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
         out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });

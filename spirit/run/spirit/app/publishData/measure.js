@@ -142,16 +142,16 @@ async function measure(say) {
     const b = await labNode(lab); held.push(b);
     await sleep(2000);
     const relayAtRestRss = rssOf(r.child.pid);
-    const addA = await call(a.base, 'contact.add', { url: r.base, label: 'lab' });
-    const claimA = await call(a.base, 'contact.claim', { key: (addA.body && addA.body.relayKey) || '', name: 'a' });
+    const addA = await call(a.base, 'spirit.contact.add', { url: r.base, label: 'lab' });
+    const claimA = await call(a.base, 'spirit.contact.claim', { key: (addA.body && addA.body.relayKey) || '', name: 'a' });
     if (claimA.status < 200 || claimA.status >= 300) throw new Error('the lab node could not take its seat: ' + JSON.stringify(claimA.body).slice(0, 200));
     // The seat taken, its stream opens a moment later: the mint is asked until the relay is reached.
     let invite = null;
     await until(function () { return peerAsk(a, r.key, 'relay', { invite: { label: 'b', days: 1 } }, packet).then(function (x) { invite = x; return !!(x.body && x.body.invite && x.body.invite.token); }); }, 20000);
     const token = invite && invite.body && invite.body.invite && invite.body.invite.token;
     if (!token) throw new Error('the lab relay minted no invite: ' + (invite.error || JSON.stringify(invite.body)).slice(0, 200));
-    const addB = await call(b.base, 'contact.add', { url: r.base, label: 'lab' });
-    const claimB = await call(b.base, 'contact.claim', { key: (addB.body && addB.body.relayKey) || '', name: 'b', invite: token, inviteLabel: 'b' });
+    const addB = await call(b.base, 'spirit.contact.add', { url: r.base, label: 'lab' });
+    const claimB = await call(b.base, 'spirit.contact.claim', { key: (addB.body && addB.body.relayKey) || '', name: 'b', invite: token, inviteLabel: 'b' });
     if (claimB.status < 200 || claimB.status >= 300) throw new Error('the second lab node could not take its seat: ' + JSON.stringify(claimB.body).slice(0, 200));
     // Both streams open before the first ask is timed: the first ask, which also fetches b's card, is not counted.
     await until(function () { return peerAsk(a, b.key, '', { card: true }, packet).then(function (x) { return x.ok; }); }, 30000);

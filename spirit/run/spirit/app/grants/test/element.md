@@ -66,7 +66,7 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 
 #### 2. Intrinsic by its own `grants.json`
 
-- The node's `app.search` lists grants intrinsic, so always active. (Its leaving coreFiles.js's INTRINSIC list is `spirit/coreFiles/test/script.js`; the old shell's list, `spirit/client/test/shell-infoGrants.js`.)
+- The node's `app.search` lists grants intrinsic, so always active. (Its leaving coreFiles.js's INTRINSIC list is `spirit/fs/coreFiles/test/script.js`; the old shell's list, `spirit/client/test/shell-infoGrants.js`.)
 
 #### 3. In the shell as before
 

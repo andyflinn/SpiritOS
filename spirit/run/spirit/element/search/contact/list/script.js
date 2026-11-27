@@ -43,7 +43,7 @@
 // A table's rows are no contacts: each is a plain row of its label, with no contact filters and nothing to open.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -59,7 +59,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/contact/row/script.js', 'spirit/element/search/script.js', 'spirit/element/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.requireScript('spirit/contact/api.js');
+  window.spirit.requireScript('spirit/contact/script.js');
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, or relay.
   function is(kind) {
@@ -162,7 +162,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           return { status: 200, body: { ok: true, items: items, more: !!(got && got.more) } };
         });
       }
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.search({ q: q }); }).then(function (got) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/script.js'); }).then(function (s) { return s.search({ q: q }); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }

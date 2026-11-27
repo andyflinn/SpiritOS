@@ -52,7 +52,7 @@ test.run('hub.js\'s code, with its comments left out, still encodes packets with
 }, test.limit.quick);
 test.run('the one decoder, arrivals.js envelopeOf, is there', 0.2, function () {
   let envelopeOf = null;
-  try { envelopeOf = SPIRIT.requireScript('spirit/arrivals/script.js').envelopeOf; } catch (e) { envelopeOf = null; }
+  try { envelopeOf = SPIRIT.requireScript('spirit/peer/arrivals/script.js').envelopeOf; } catch (e) { envelopeOf = null; }
   return typeof envelopeOf === 'function' || false;
 }, test.limit.quick);
 
@@ -104,7 +104,7 @@ test.run('on a scratch node, forgetting a contact answers 200, forgotten', 0.2, 
     fs.mkdirSync(path.join(W.forgetHome, 'spirit', 'state'), { recursive: true });
     const relayAuth = SPIRIT.requireScript('spirit/relayAuth/script.js');
     relayAuth.saveIdentity(W.forgetHome, relayAuth.generateIdentity());
-    const book = SPIRIT.requireScript('spirit/contact/script.js');
+    const book = SPIRIT.requireScript('spirit/contact/engine/script.js');
     book.noteLabel(W.forgetHome, FORGOT_KEY, 'Gone');
     book.accept(W.forgetHome, FORGOT_KEY);
     W.store = SPIRIT.requireScript('spirit/nodeStore/script.js').open(W.forgetHome).auth;
@@ -159,7 +159,7 @@ test.run('on a scratch node, the hub has a handler for faceable and none for own
     W.seatedRelay = relayAuth.generateIdentity().publicKey; W.loneRelay = relayAuth.generateIdentity().publicKey;
     seen.set(W.seatedRelay, { relay: true, seated: true, label: 'seated' });
     seen.set(W.loneRelay, { relay: true, label: 'lone' });
-    const book = SPIRIT.requireScript('spirit/contact/script.js');
+    const book = SPIRIT.requireScript('spirit/contact/engine/script.js');
     W.ownedNode = relayAuth.generateIdentity(); W.freeNode = relayAuth.generateIdentity();
     book.setCard(W.faceHome, W.ownedNode.publicKey, ownCardOf(W.ownedNode, W.faceMe.publicKey));
     book.setCard(W.faceHome, W.freeNode.publicKey, ownCardOf(W.freeNode, ''));
@@ -171,7 +171,7 @@ test.run('on a scratch node, the hub has a handler for faceable and none for own
 test.run('a relay this node holds a seat on takes 😏, and its row says faceable', 0.2, async function () {
   if (!W.faceName) return false;
   const a = await faceAsk(W.seatedRelay, true);
-  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.seatedRelay) || {};
+  const row = SPIRIT.requireScript('spirit/contact/engine/script.js').byPublicKey(W.faceHome, W.seatedRelay) || {};
   return (a.status === 200 && row.faceable === true) || false;
 }, test.limit.quick);
 test.run('a relay with no seat is refused 😏', 0.2, async function () {
@@ -187,17 +187,17 @@ test.run('a node is refused 😏, even one whose card names this node', 0.2, asy
 test.run('😏 always comes off', 0.2, async function () {
   if (!W.faceName) return false;
   const off = await faceAsk(W.seatedRelay, false);
-  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.seatedRelay) || {};
+  const row = SPIRIT.requireScript('spirit/contact/engine/script.js').byPublicKey(W.faceHome, W.seatedRelay) || {};
   return (off.status === 200 && row.faceable !== true) || false;
 }, test.limit.quick);
 test.run('the star stands on a node whose card names this node, with no verb asked', 0.2, function () {
   if (!W.faceHome) return false;
-  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
+  const row = SPIRIT.requireScript('spirit/contact/engine/script.js').byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
   return row.mine === true || false;
 }, test.limit.quick);
 test.run('a node whose card names no owner has no star', 0.2, function () {
   if (!W.faceHome) return false;
-  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
+  const row = SPIRIT.requireScript('spirit/contact/engine/script.js').byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
   return row.mine !== true || false;
 }, test.limit.quick);
 
@@ -212,7 +212,7 @@ const forgetRelay = function (key) {
     setTimeout(function () { resolve(res); }, 2000);
   });
 };
-const listedKeys = function () { try { return SPIRIT.requireScript('spirit/relayKeys/script.js').listed(W.relayHome).map(function (r) { return r.key; }); } catch (e) { return []; } };
+const listedKeys = function () { try { return SPIRIT.requireScript('spirit/peer/relay/key/script.js').listed(W.relayHome).map(function (r) { return r.key; }); } catch (e) { return []; } };
 test.run('on a scratch node with three relays listed, noderoutes.net, a seated one and a plain one', 0.2, function () {
   try {
     W.relayHome = ownTemp('forgetRelay');

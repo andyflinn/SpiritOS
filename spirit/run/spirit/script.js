@@ -10,7 +10,7 @@
 //
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
-//   - The rest comes from the api.js every branch folder holds (spirit/fs/script.js, spirit/contact/api.js ...; a server's in
+//   - The rest comes from the api.js every branch folder holds (spirit/fs/script.js, spirit/contact/script.js ...; a server's in
 //     its app folder, spirit/app/<name>/api.js), written to this file's standard: module.exports = { verbs: { <verb>:
 //     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per branch: spirit.required.spirit.fs.api.load({path}),
 //     spirit.required.spirit.contact.api.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also

@@ -299,14 +299,14 @@
     var code = joinCode;
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
-    Promise.all([window.spirit.requireScript('spirit/element/joinSteps/script.js'), Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (sp) { return sp.search({ q: '*', relay: true }); })]).then(function (got) {
+    Promise.all([window.spirit.requireScript('spirit/element/joinSteps/script.js'), Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/contact/script.js'); }).then(function (sp) { return sp.search({ q: '*', relay: true }); })]).then(function (got) {
       // Join's steps as spirit.requireScript hands them back (goal/G49.9: never read at their spirit.required place).
       var S = got[0];
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');
       // contact.join names the relay by its row's public key (goal/G49.11), the key the link carries.
-      return ask('contact.join', { key: joinRelayKey, email: '', code: code });
+      return ask('spirit.contact.join', { key: joinRelayKey, email: '', code: code });
     }).then(function (r) {
       var b = (r && r.body) || {};
       // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31).

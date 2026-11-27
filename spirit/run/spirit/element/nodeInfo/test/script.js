@@ -168,7 +168,7 @@ function world(o) {
     if (p === 'spirit/element/panel/script.js') { els.panel = panel; return Promise.resolve(panel); }
     if (p === 'spirit/element/rotateKey/script.js') return Promise.resolve(rotateKey);
     // The node's branches by their api.js paths (goal/G49.6: never by a name): the contact and the node stand above.
-    if (p === 'spirit/contact/api.js') return Promise.resolve(S.contact);
+    if (p === 'spirit/contact/script.js') return Promise.resolve(S.contact);
     if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
     return Promise.resolve({});
   };
@@ -574,7 +574,7 @@ function formsPart() {
       if (p === 'spirit/element/panel/script.js') { at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } }; return Promise.resolve(at.panel); }
       if (p === 'spirit/element/rotateKey/script.js') return Promise.resolve({ create: function () { return { destroy: function () {} }; } });
       // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
-      if (p === 'spirit/contact/api.js') return Promise.resolve(S.contact);
+      if (p === 'spirit/contact/script.js') return Promise.resolve(S.contact);
       if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
       // fieldInput is not loaded here, so the forms draw without it: its require fails, as a script that is not there does.
       if (p === 'spirit/element/fieldInput/script.js') return Promise.reject(new Error('not loaded here: ' + p));
@@ -653,7 +653,7 @@ function partsPart() {
   test.run('nodeInfo asks relay.status, the relays this node holds a seat on', 0.2, function () {
     // The relay branch by its api.js path (goal/G49.6), its status asked of what that answered.
     // relay.status is gone (goal/G49.11): the contact branch by its api.js path, its relays listed by contact.search.
-    return (/'spirit\/contact\/api\.js'/.test(nodeInfo) && /\.search\(\{[^}]*relay:\s*true/.test(nodeInfo)) ? true : false;
+    return (/'spirit\/contact\/script\.js'/.test(nodeInfo) && /\.search\(\{[^}]*relay:\s*true/.test(nodeInfo)) ? true : false;
   }, test.limit.quick);
   test.run('nodeInfo puts the card from node.card into the node cache', 0.2, function () {
     return (/\bnode\W{1,4}card\b/.test(nodeInfo)) ? true : false;

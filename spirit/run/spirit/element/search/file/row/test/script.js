@@ -273,7 +273,7 @@ test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words 
   // The families these rows are coloured by are on the page the normal way: spirit.app and spirit.contact, each by
   // requiring its api.js (which brings its data.js). This page requires nothing else, and a family no file required is
   // not on the spirit object.
-  await page.evaluate('Promise.all([window.spirit.requireScript("spirit/app/script.js"), window.spirit.requireScript("spirit/contact/api.js")]).then(function () { return true; }, function () { return false; })');
+  await page.evaluate('Promise.all([window.spirit.requireScript("spirit/app/script.js"), window.spirit.requireScript("spirit/contact/script.js")]).then(function () { return true; }, function () { return false; })');
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
 }, test.limit.slow);

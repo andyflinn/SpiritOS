@@ -362,7 +362,7 @@ function installJobs(port) {
   function scriptOf(dir) { return dir + '/' + baseOf(dir) + '.js'; }
   function appActive(root, dir) {
     // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
-    if (spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(root, '..', '..'), dir) === true) return true;
+    if (spirit.requireScript('spirit/fs/coreFiles/script.js').appIntrinsic(path.resolve(root, '..', '..'), dir) === true) return true;
     try { return JSON.parse(fs.readFileSync(path.join(appState(root, dir), 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
   // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21): node.run in its <name>.json.
@@ -437,7 +437,7 @@ function installJobs(port) {
     const own = manifestOf(rootDir, dir);
     const values = {};
     ((own && Array.isArray(own.args)) ? own.args : []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, dir, process.platform);
+    const pipe = spirit.requireScript('spirit/app/adapter/script.js').pipePathFor(rootDir, dir, process.platform);
     // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/app/<name>/data/ (goal/G43.10), handed over as --state, so a
     // process never works out its own folder. Its folder, spirit/state/app/<name>/, holds node.json, cache/, data/ and on Linux
     // door.sock (goal/G43.20).
@@ -510,7 +510,7 @@ function installJobs(port) {
     updateJob(job.id, { status: 'running' });
     const state = path.join(appState(rootDir, dir), 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the run says why */ }
-    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, dir, process.platform);
+    const pipe = spirit.requireScript('spirit/app/adapter/script.js').pipePathFor(rootDir, dir, process.platform);
     // One run of the script, handed what a permanent server is handed: its pipe, its state folder, the node's facts and its
     // DEBUG; launch() gives it its job's id. A socket left by the run before is cleared first (off Windows a pipe is a file).
     const start = function () {
@@ -531,7 +531,7 @@ function installJobs(port) {
   // An app found off at boot: remembered, its row marked not served, no job.
   function rememberOneShot(rootDir, client, dir) {
     if (!client || typeof client.registerOneShot !== 'function') return;
-    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, dir, process.platform);
+    const pipe = spirit.requireScript('spirit/app/adapter/script.js').pipePathFor(rootDir, dir, process.platform);
     if (client.registerOneShot(idOf(dir), pipe, function () { return null; }, path.join(rootDir, ...dir.split('/'), 'api.js'))) client.serve(idOf(dir), false);
   }
 

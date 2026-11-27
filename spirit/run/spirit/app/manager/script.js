@@ -142,7 +142,7 @@ function createApp(opts) {
     // Its development team made it intrinsic, so no press switches it, and nothing is written for it (goal/G43.14). Refused by
     // name (goal/G43.15; Andy: "And what's even worse, the server allows it!!!!").
     const dir = dirOf(key);
-    if (dir && spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), dir) === true) {
+    if (dir && spirit.requireScript('spirit/fs/coreFiles/script.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), dir) === true) {
       return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
     }
     // ONE THAT IS ONLY RUN HAS NOTHING TO ACTIVATE (goal/G43.21; Andy: "and the node should know it, too."): refused by name, and

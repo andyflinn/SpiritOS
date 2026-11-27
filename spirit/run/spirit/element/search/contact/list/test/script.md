@@ -39,7 +39,7 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
   fields a row's ID and label are in. A table's rows are plain rows of their label, kind `id`: no contact filters, one
   column, nothing to open. Naming the contacts' own table is naming none.
 - **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/search/contact/row/script.js` and `spirit/element/search/script.js`
-  through `spirit.requireScript`, and the contact branch's interface (`spirit.requireScript('spirit/contact/api.js')`), and no data script (goal/G41.16): what the stream means for contacts is the contact branch's data.js's, which only its api.js requires (goal/G47.1).
+  through `spirit.requireScript`, and the contact branch's interface (`spirit.requireScript('spirit/contact/script.js')`), and no data script (goal/G41.16): what the stream means for contacts is the contact branch's data.js's, which only its api.js requires (goal/G47.1).
 
 ## What its test must try to break
 

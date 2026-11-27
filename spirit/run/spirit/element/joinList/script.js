@@ -17,7 +17,7 @@
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/job/script.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/job/script.js','spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -136,7 +136,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // this node lists, its seat, email and face.
     function withRelays(then) {
       // relaysOf() answers { status, text, body: { rows, ... } } itself (goal/G49.11), so it is read as it comes.
-      Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
+      Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/contact/script.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
         relays = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
       }, function () { relays = []; }).then(function () { if (!gone) then(); });
     }

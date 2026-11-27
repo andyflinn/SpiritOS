@@ -40,7 +40,7 @@ test.after(function () {
 require(path.join(RUN, 'spirit', 'script.js'));
 const PN = S.requireScript('spirit/presenceNode/script.js');
 const auth = S.requireScript('spirit/relayAuth/script.js');
-const relayKeys = S.requireScript('spirit/relayKeys/script.js');
+const relayKeys = S.requireScript('spirit/peer/relay/key/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = function () { return new Promise(function (r) { setTimeout(r, 30); }); };

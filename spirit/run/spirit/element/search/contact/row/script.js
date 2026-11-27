@@ -29,17 +29,17 @@
   if (window.spirit.requireScript) keepAnswer('spirit/element/row/script.js');
   // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
   // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-  if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+  if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
   // ITS DOT AND ITS MARK ARE THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting
   // all shell elements and apps."): an icon that stands alone, loaded here too.
   var iconReady = Promise.resolve(window.spirit.requireScript ? keepAnswer('spirit/element/icon/script.js') : null).then(null, function () { /* the glyph stays as text */ });
   var contacts = null;
 
   // A NODE'S CONTACTS ARE THE contact FAMILY'S CACHE (goal/G41.28): what the stream means for them, and their branch, are
-  // the family's own data.js's (spirit/contact/data.js), which this element loads itself
+  // the family's own data.js's (spirit/contact/client/script.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.contact.data.
   function contactReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).contact || {}).data) || null; }
-  var contactReady = Promise.resolve(keepAnswer('spirit/contact/api.js')).then(function () { return contactReads(); });
+  var contactReady = Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () { return contactReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -145,9 +145,9 @@
     var bookActions = [
       { name: 'open', label: 'Open', run: function (el) { return openDetails(co.open, 'contact', el.key); } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
-      { name: 'block', label: 'Block', run: function (el) { return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.block({ publicKey: el.key }); }); } },
-      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.unblock({ publicKey: el.key }); }); } },
-      { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.forget({ publicKey: el.key }); }); } },
+      { name: 'block', label: 'Block', run: function (el) { return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.block({ publicKey: el.key }); }); } },
+      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.unblock({ publicKey: el.key }); }); } },
+      { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.forget({ publicKey: el.key }); }); } },
     ];
     var strangerActions = [
       // Acquired at the relay that found them, under the name they gave it.
@@ -189,7 +189,7 @@
             var wanted = spirit.normalizeString(String(text || ''));
             var bad = labelProblem(wanted);
             if (bad) return Promise.resolve({ ok: false, error: bad });
-            return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.label({ publicKey: el.key, myLabel: wanted }); })
+            return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.label({ publicKey: el.key, myLabel: wanted }); })
               .then(function (body) { return { ok: true, body: body }; }, function (e) { return { ok: false, error: (e && e.message) || 'not renamed' }; });
           } },
         { name: 'add', from: ['keep', 'mine', 'blocked', 'relay'], paint: function (v) {
@@ -202,7 +202,7 @@
       actions: actions,
       expand: function (el) {
         if (relay || !bookOf(el.row)) return Promise.resolve(null);
-        return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.get({ key: el.key }); });
+        return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.get({ key: el.key }); });
       },
     });
     // Its icons made in each cell it paints: as it is mounted, once icon.js is in, and after each repaint.

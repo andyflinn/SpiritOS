@@ -74,7 +74,7 @@ function statOf(full, kind) {
 // <name>.json changes, never as the list is sent.
 function heldOf(p, full, kind) {
   const held = statOf(full, kind);
-  if (kind === 'file' && spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
+  if (kind === 'file' && spirit.requireScript('spirit/fs/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
   return held;
 }
 // A file row as a tree command: spirit/fs/dataset/script.js's, where a connect's whole tree is read too (goal/G49.2).
@@ -166,7 +166,7 @@ function start(rootDir, jobs) {
       Object.keys(files).forEach(function (p) {
         const h = files[p];
         if (h.kind !== 'file' || p.indexOf(under) !== 0 || p === rel) return;
-        const core = spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
+        const core = spirit.requireScript('spirit/fs/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
         if (core === (h.core === true)) return;
         send(commandOf('changeFile', p, new Date().toISOString(), Object.assign({}, h, { core: core })));
       });

@@ -248,7 +248,7 @@ appServer.serve({
       // Measured before anything is asked, with the largest number this line could carry.
       const made = packet.encode('api', bodyOf({ seq: Number.MAX_SAFE_INTEGER, at: new Date().toISOString(), text: text, reWriter: re.writer, reSeq: re.seq }));
       if (!made || !made.ok || !limits.fitsSealed(made.text)) throw refused('line-too-large');
-      return onNode(spirit.requireScript('spirit/contact/api.js'), function (contact) { return contact.get({ key: to }); }).then(function (r) {
+      return onNode(spirit.requireScript('spirit/contact/script.js'), function (contact) { return contact.get({ key: to }); }).then(function (r) {
         // A key the book never saw is nobody's block; a book that does not answer cannot vouch for one.
         if (r.status === 404) return null;
         // A to the node refuses outright (no key at all) is the caller's error, not a node that did not answer
@@ -296,7 +296,7 @@ appServer.serve({
       // does not answer refuses the search rather than show somebody it may have blocked.
       function offerRow(i) {
         if (i >= rows.length) return Promise.resolve();
-        return onNode(spirit.requireScript('spirit/contact/api.js'), function (contact) { return contact.get({ key: rows[i].peer }); }).then(function (r) {
+        return onNode(spirit.requireScript('spirit/contact/script.js'), function (contact) { return contact.get({ key: rows[i].peer }); }).then(function (r) {
           if (r.status !== 200 && r.status !== 404) throw refused('no-answer');
           const person = r.body && r.body.person;
           if (person && person.blocked === true) return offerRow(i + 1);

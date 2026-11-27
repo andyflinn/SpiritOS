@@ -961,7 +961,7 @@ function mountPart() {
   });
 
   test.run('a scratch node comes up for the throwaway app', 0.2, async function () {
-    ({ answer } = SPIRIT.requireScript('spirit/apiDoor/script.js'));
+    ({ answer } = SPIRIT.requireScript('spirit/peer/door/script.js'));
     ({ freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/test/headLessChrome.js'));
     s = scratch();
     ranHelper = path.join(s.root, 'helper-ran.txt');
@@ -1075,7 +1075,7 @@ function mountPart() {
     fs.writeFileSync(path.join(folder, id + '.json'), JSON.stringify({ key: SENDER, family: family, run: 'r', n: 1, rows: [{ kept: family }] }));
     const seen = path.join(s.root, 'row-seen.json');
     fs.rmSync(seen, { force: true });
-    const pipe = require(path.join(s.run, 'spirit', 'appClient', 'script.js')).pipePathFor(s.root, 'spirit/app/follower', process.platform);
+    const pipe = require(path.join(s.run, 'spirit', 'app', 'adapter', 'script.js')).pipePathFor(s.root, 'spirit/app/follower', process.platform);
     if (POSIX) fs.mkdirSync(path.dirname(pipe), { recursive: true });
     const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, 'follower.js'), '--pipe', pipe, '--state', path.join(s.run, 'spirit', 'state', 'app', 'follower', 'data')], { cwd: s.run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen }) });
     live.push(kid);

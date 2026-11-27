@@ -24,7 +24,7 @@ const isNode = typeof process !== 'undefined' && !!process.versions && !!process
 const auth = isNode ? require('../script.js').requireScript('spirit/relayAuth/script.js') : null;
 // Where this node holds a seat, and who each relay is. Both are records
 // this node keeps about itself — see probe.
-const relayKeys = isNode ? require('../script.js').requireScript('spirit/relayKeys/script.js') : null;
+const relayKeys = isNode ? require('../script.js').requireScript('spirit/peer/relay/key/script.js') : null;
 
 function normalizeUrl(u) {
   return String(u == null ? '' : u).trim().replace(/\/+$/, '');

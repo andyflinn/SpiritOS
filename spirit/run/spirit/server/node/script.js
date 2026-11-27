@@ -27,10 +27,10 @@ const nodeCard = spirit.requireScript('spirit/nodeCard/script.js');
 // has PROVEN onto a contact row that already exists. Everything else that
 // touches the book goes through hub; this does not, because it is a
 // stream event with no request behind it and no response to build.
-const contactBook = spirit.requireScript('spirit/contact/script.js');
+const contactBook = spirit.requireScript('spirit/contact/engine/script.js');
 // The keys this node has accepted for the relays it uses. Turning the URL
 // a packet arrived on into the relay KEY a route is made of.
-const relayKeys = spirit.requireScript('spirit/relayKeys/script.js');
+const relayKeys = spirit.requireScript('spirit/peer/relay/key/script.js');
 // The owner badge (ownerBadge.js). Required here for one call at boot:
 // a node with no relay is given the kept one (ensureRelays, a relay row
 // of node.db's one table through relayKeys).
@@ -100,9 +100,9 @@ const trafficLog = spirit.requireScript('spirit/trafficLog/script.js').createTra
 // A RELAY'S OWN ACTIVITY, ON ITS WAY TO A PANEL. The same seam shape as
 // arrivals and for the same reason: presenceNode receives, server.js
 // fans out, and neither knows about the other.
-const relayEvents = spirit.requireScript('spirit/arrivals/script.js').createFanOut();
+const relayEvents = spirit.requireScript('spirit/peer/arrivals/script.js').createFanOut();
 
-const arrivals = spirit.requireScript('spirit/arrivals/script.js').createArrivals({
+const arrivals = spirit.requireScript('spirit/peer/arrivals/script.js').createArrivals({
   // A packet that lands while no page is open waits IN THE LOG — a row
   // that is admitted and not yet taken. The seam keeps nothing of its
   // own and reaches the log through its api block, never through the
@@ -137,7 +137,7 @@ let shadowJob = null;
 // open or closed, a card read, a report, a relay's rename. Only when one did change. The report is not on a row.
 const relayFactsSaid = Object.create(null);
 function relayFactsOf(row) {
-  const known = spirit.requireScript('spirit/relayKeys/script.js').byKey(ROOT_DIR, row.publicKey);
+  const known = spirit.requireScript('spirit/peer/relay/key/script.js').byKey(ROOT_DIR, row.publicKey);
   return known && known.url ? hub.relayFacts(peerRouter, known.url) : null;
 }
 function shadowRow(row) {
@@ -150,7 +150,7 @@ function shadowRow(row) {
 function relayChanged(url) {
   if (!shadowJob) return;
   try {
-    const known = spirit.requireScript('spirit/relayKeys/script.js').byUrl(ROOT_DIR, url);
+    const known = spirit.requireScript('spirit/peer/relay/key/script.js').byUrl(ROOT_DIR, url);
     const row = known ? spirit.requireScript('spirit/nodeStore/script.js').open(ROOT_DIR).seen.get(known.key) : null;
     const facts = row ? relayFactsOf(row) : null;
     if (!facts || relayFactsSaid[row.publicKey] === JSON.stringify(facts)) return;
@@ -1265,7 +1265,7 @@ catch (e) {
   // THE RELAYS' OWN KEYS, pinned on first use (answerRelay.relayKey) and
   // the key a post to each is sealed to. It no longer answers any request:
   // the device-offer it answered was removed by goal/G16.2.
-  const answerer = spirit.requireScript('spirit/answerRelay/script.js').createAnswerer({
+  const answerer = spirit.requireScript('spirit/peer/relay/key/seal/script.js').createAnswerer({
     rootDir: ROOT_DIR,
     // THE RELAY'S CARD, through the router (goal/G22.6). Late-bound: the
     // router is built just below, and nothing asks before it exists.
@@ -1303,7 +1303,7 @@ catch (e) {
     // wanted answer: Contacts asks strangers for a card BEFORE adding
     // them, and a question must not write somebody into the book.
     keepCard: function (toKey, cardText) {
-      const book = spirit.requireScript('spirit/contact/script.js');
+      const book = spirit.requireScript('spirit/contact/engine/script.js');
       // ── A CARD WE ASKED FOR SITS ON THAT KEY'S ROW ──────────────
       //
       // After cycle 10 R5 a node cannot POST to somebody whose card it does not hold, so the card goes on the row,
@@ -1328,8 +1328,8 @@ catch (e) {
     // is: a card can arrive, and a key can rotate, while the process
     // runs. Empty means the post is refused — never sent plain.
     sealKeyFor: function (toKey) {
-      var row = spirit.requireScript('spirit/contact/script.js').byPublicKey(ROOT_DIR, toKey);
-      var fromCard = row && spirit.requireScript('spirit/contact/script.js').sealKeyOf(row);
+      var row = spirit.requireScript('spirit/contact/engine/script.js').byPublicKey(ROOT_DIR, toKey);
+      var fromCard = row && spirit.requireScript('spirit/contact/engine/script.js').sealKeyOf(row);
       if (fromCard) return fromCard;
       return answerer.relaySealKeyByKey ? answerer.relaySealKeyByKey(toKey) : '';
     },
@@ -1372,7 +1372,7 @@ catch (e) {
   // "boots": true into the node with seams of its own, and appClient.startAll, which spawned
   // spirit/server/script.js --app for a manifest with "serves": true; and puppetPost.js, the node's own
   // listener for Caddy, switched on by spirit/state/face.json. All three are gone.
-  const appClient = spirit.requireScript('spirit/appClient/script.js').createAppClient({
+  const appClient = spirit.requireScript('spirit/app/adapter/script.js').createAppClient({
     rootDir: ROOT_DIR,
     log: function (line) { console.log(line); },
     // No app named like a node family: they sit side by side in one flat table (goal/G30.4).
@@ -1478,7 +1478,7 @@ catch (e) {
     // appPair/G1.3, a node verb with Andy's yes on it ("yes to all of wsl
     // points"). apiDoor.js says the rest; appClient answers it. Only the
     // front door's 'known' counts.
-    arrivals.witness(spirit.requireScript('spirit/apiDoor/script.js').createApiDoor({
+    arrivals.witness(spirit.requireScript('spirit/peer/door/script.js').createApiDoor({
       servers: nodeDoor,
       // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
       post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, how); },
@@ -1785,6 +1785,14 @@ catch (e) {
   // require to validate incoming requests."): checkedByBranch(name, branch)(verb, handler) checks a call's arguments with
   // spirit.checkArgs against branch.verbs[verb] before the handler runs, and refuses 400 with the check's code. spirit.fs's
   // and spirit.job's alike.
+  // A WHOLE MOUNT'S VERBS CHECKED SO (goal/G49.22): each verb's request is its branch script's, and its handler runs behind the check.
+  function checkedVerbs(name, branch, verbs) {
+    const checkedBy = checkedByBranch(name, branch);
+    Object.keys(verbs).forEach(function (v) {
+      verbs[v] = Object.assign({}, verbs[v], { request: (branch.verbs && branch.verbs[v]) || verbs[v].request, handler: checkedBy(v, verbs[v].handler) });
+    });
+    return verbs;
+  }
   function checkedByBranch(name, branch) {
     return function (verb, handler) {
       return function (req, res) {
@@ -1984,7 +1992,14 @@ catch (e) {
   // does. The if-chain is gone: an unknown verb is now refused by a
   // table that knows every verb this node answers.
   const STANDING = { publicKey: '', keep: false, blocked: false };
-  loopbackVerbs.mount('contact', path.join(__dirname, '..', '..', 'contact'), {
+  // THE spirit.contact BRANCH, BY ITS OWN SCRIPT (goal/G49.22, box v16: "spirit/contact/api.js --> spirit/contact/script.js";
+  // "all verb names are adjusted using the same ... pattern as was using in spirit/app/ or spirit/fs/ or spirit/job/", "all verbs
+  // do the ... same shit they did before"): mounted under its path's name, spirit.contact, each verb's arguments from
+  // spirit/contact/script.js and every call checked against them before its handler. In node the script stands at once at its
+  // folder's name, spirit.required.spirit.contact; the binding it also starts asks this node, which this needs nothing of.
+  Promise.resolve(spirit.requireScript('spirit/contact/script.js')).then(null, function () { /* the binding; the verbs are read below */ });
+  const CONTACT_BRANCH = spirit.required.spirit.contact;
+  loopbackVerbs.mount('spirit.contact', path.join(__dirname, '..', '..', 'contact'), checkedVerbs('spirit.contact', CONTACT_BRANCH, {
     // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
     // (puppets/G2); the network search it starts asks the relays.
     'search': { request: { q: '', keep: false, mine: false, relay: false, seated: false, blocked: false }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
@@ -2025,7 +2040,7 @@ catch (e) {
     'leave': { request: { key: '' }, reply: { ok: true, key: '' }, handler: onRelayRow(function (b) { return hub.relayLeave({ key: b.url }, { router: peerRouter }); }) },
     // A relay's row is taken off the list first, with remove's refusals (goal/G49.11): hub.js's forget, handed the router.
     'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget', { router: peerRouter }); } },
-  });
+  }));
 
   // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────
   //

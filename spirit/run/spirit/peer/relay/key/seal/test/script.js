@@ -1,0 +1,173 @@
+'use strict';
+
+// spirit/run/spirit/peer/relay/key/seal/test/script.js
+// The tests of spirit/peer/relay/key/seal/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// "every production script has its own test" (goal/G47.1, box v72).
+//
+// createAnswerer(opts): what this node knows about the relays it talks to: each one's key, from its signed key
+// statement, pinned on first use (relayKeys.js) and refused when it changes, and the key a post to it is sealed to.
+// The relay's answer is planted (askKey), the pin lives in a scratch folder, and the statements are signed in process.
+
+const fs = require('fs');
+const path = require('path');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../../../../../tempFolder/script.js').tempFolder;
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/answerRelay/' + name + tempAsked); }
+// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
+// folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
+// suite's folder (a node.db at <root>/spirit/state/node.db) is closed first.
+function closeStoresUnder(top) {
+  const NS = S.requireScript('spirit/nodeStore/script.js');
+  (function walk(dir, depth) {
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch (e) { return; }
+    if (names.indexOf('node.db') !== -1 && path.basename(dir) === 'state') { try { NS.open(path.dirname(path.dirname(dir))).close(); } catch (e) { /* closed */ } }
+    if (depth > 6) return;
+    names.forEach(function (n) { const p = path.join(dir, n); try { if (fs.statSync(p).isDirectory()) walk(p, depth + 1); } catch (e) { /* gone */ } });
+  }(top, 0));
+}
+test.after(function () {
+  const top = tempFolder.path('spirit/test/answerRelay');
+  closeStoresUnder(top);
+  try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
+});
+const { createAnswerer } = S.requireScript('spirit/peer/relay/key/seal/script.js');
+const auth = S.requireScript('spirit/relayAuth/script.js');
+const relayKeys = S.requireScript('spirit/peer/relay/key/script.js');
+
+// A relay's key statement, signed by the identity it names, over both keys and the label (cycle 10, R9).
+function statement(id, label) {
+  return { relayPublicKey: id.publicKey, relaySealKey: id.sealPublicKey, relayLabel: label, keySig: auth.sign(id.privateKey, auth.relayKeyMessage(id.publicKey, id.sealPublicKey, label)) };
+}
+// An answerer on root whose relay answers what `answers[url]` holds (a function may reject), counting each ask.
+function answerer(root, answers, extra) {
+  const said = { asked: [], changed: [] };
+  said.a = createAnswerer(Object.assign({
+    rootDir: root,
+    askKey: function (url) { said.asked.push(url); const a = answers[url]; return typeof a === 'function' ? a() : Promise.resolve(a); },
+    onKeyChanged: function (url, was, now) { said.changed.push({ url: url, was: was, now: now }); },
+  }, extra || {}));
+  return said;
+}
+const ROOT = ownTemp('spirit-answerrelay-');
+const URL_A = 'https://relay-a.example';
+const URL_B = 'https://relay-b.example';
+const A = auth.generateIdentity('relay-a');
+const A2 = auth.generateIdentity('relay-a-rebuilt');
+const B = auth.generateIdentity('relay-b');
+
+// ── first use: the key, pinned ──
+let W = null;
+let got = null;
+test.run('a relay never met before answers its signed key statement', 0.2, async function () {
+  W = answerer(ROOT, { [URL_A]: statement(A, 'a'), [URL_B]: statement(B, 'b') });
+  got = await W.a.relayKey(URL_A);
+  return W.asked.length === 1 || false;
+}, test.limit.quick);
+test.run('relayKey answers the relay\'s own public key', 0.2, function () {
+  if (!W) return false;
+  return got === A.publicKey || false;
+}, test.limit.quick);
+test.run('trust on first use: a relay nobody has met is accepted and its key pinned on disc', 0.2, function () {
+  if (!W) return false;
+  return relayKeys.pinned(ROOT, URL_A) === A.publicKey || false;
+}, test.limit.quick);
+test.run('one fetch per run: asked again, it answers the same key without asking the relay', 0.2, async function () {
+  if (!W) return false;
+  const again = await W.a.relayKey(URL_A);
+  return (again === A.publicKey && W.asked.length === 1) || false;
+}, test.limit.quick);
+test.run('relaySealKey answers the key a post to that relay is sealed to, from the same signed answer', 0.2, function () {
+  if (!W) return false;
+  return W.a.relaySealKey(URL_A) === A.sealPublicKey || false;
+}, test.limit.quick);
+test.run('relaySealKeyByKey answers the same seal key, asked by the relay\'s identity', 0.2, function () {
+  if (!W) return false;
+  return W.a.relaySealKeyByKey(A.publicKey) === A.sealPublicKey || false;
+}, test.limit.quick);
+test.run('a seal key is never learned on its own: a relay not yet asked, an unknown key and no key answer nothing', 0.2, function () {
+  if (!W) return false;
+  const r = [W.a.relaySealKey(URL_B), W.a.relaySealKeyByKey(B.publicKey), W.a.relaySealKeyByKey(''), W.a.relaySealKeyByKey(null)];
+  return r.every(function (x) { return x === ''; }) || false;
+}, test.limit.quick);
+
+// ── an answer that does not verify yields no key at all ──
+test.run('a statement whose seal key was swapped after signing yields no key, no pin and no seal key', 0.2, async function () {
+  const root = ownTemp('spirit-answerrelay-');
+  const forged = Object.assign(statement(A, 'a'), { relaySealKey: B.sealPublicKey });
+  const s = answerer(root, { [URL_A]: forged });
+  const k = await s.a.relayKey(URL_A);
+  return (k === '' && !relayKeys.pinned(root, URL_A) && s.a.relaySealKey(URL_A) === '' && s.a.relaySealKeyByKey(A.publicKey) === '') || false;
+}, test.limit.quick);
+test.run('an unsigned statement, one with its label changed, and one with no key each yield no key', 0.2, async function () {
+  const root = ownTemp('spirit-answerrelay-');
+  const unsigned = statement(A, 'a'); delete unsigned.keySig;
+  const relabelled = Object.assign(statement(A, 'a'), { relayLabel: 'not-a' });
+  const s = answerer(root, { 'https://u.example': unsigned, 'https://l.example': relabelled, 'https://n.example': { ok: true } });
+  const r = [await s.a.relayKey('https://u.example'), await s.a.relayKey('https://l.example'), await s.a.relayKey('https://n.example')];
+  return r.every(function (x) { return x === ''; }) || false;
+}, test.limit.quick);
+test.run('a relay that does not answer, its key ask rejecting or throwing, yields no key, and relayKey never rejects', 0.2, async function () {
+  const root = ownTemp('spirit-answerrelay-');
+  const s = answerer(root, { 'https://down.example': function () { return Promise.reject(new Error()); }, 'https://boom.example': function () { throw new Error(); } });
+  let r;
+  try { r = [await s.a.relayKey('https://down.example'), await s.a.relayKey('https://boom.example')]; }
+  catch (e) { return false; }
+  return r.every(function (x) { return x === ''; }) || false;
+}, test.limit.quick);
+
+// ── a restart: the pin outlives the process, and is re-checked ──
+test.run('after a restart the relay is asked again, though its key is pinned: the re-check is once per process', 0.2, async function () {
+  if (!W) return false;
+  const s = answerer(ROOT, { [URL_A]: statement(A, 'a') });
+  const k = await s.a.relayKey(URL_A);
+  return (k === A.publicKey && s.asked.length === 1) || false;
+}, test.limit.quick);
+let R = null;
+let rk = null;
+test.run('a relay answering with another key than the pin is refused: no key', 0.2, async function () {
+  if (!W) return false;
+  R = answerer(ROOT, { [URL_A]: statement(A2, 'a') });
+  rk = await R.a.relayKey(URL_A);
+  return rk === '' || false;
+}, test.limit.quick);
+test.run('the refusal is said out loud: onKeyChanged is told the url, the pinned key and the key answered', 0.2, function () {
+  if (!R) return false;
+  const c = R.changed[0] || {};
+  return (R.changed.length === 1 && c.url === URL_A && c.was === A.publicKey && c.now === A2.publicKey) || false;
+}, test.limit.quick);
+test.run('a refusal never moves the pin: only a deliberate accept does', 0.2, function () {
+  if (!R) return false;
+  return relayKeys.pinned(ROOT, URL_A) === A.publicKey || false;
+}, test.limit.quick);
+test.run('a refused relay stays refused: asked again, still no key, and nothing to seal to by its key', 0.2, async function () {
+  if (!R) return false;
+  const again = await R.a.relayKey(URL_A);
+  const seal = [R.a.relaySealKeyByKey(A2.publicKey), R.a.relaySealKeyByKey(A.publicKey)];
+  return (again === '' && seal.every(function (x) { return x === ''; })) || false;
+}, test.limit.quick);
+// The seal key is kept only once relayKey's pin check takes the key: a relay refused for a changed key has no seal key
+// answered by url either.
+test.run('a refused relay has nothing to seal to by its url either: relaySealKey answers no key for it', 0.2, function () {
+  if (!R) return false;
+  const k = R.a.relaySealKey(URL_A);
+  return k === '' || false;
+}, test.limit.quick);
+test.run('onKeyChanged is a witness, never a participant: one that throws changes nothing', 0.2, async function () {
+  if (!W) return false;
+  const s = answerer(ROOT, { [URL_A]: statement(A2, 'a') }, { onKeyChanged: function () { throw new Error(); } });
+  let k;
+  try { k = await s.a.relayKey(URL_A); } catch (e) { return false; }
+  return (k === '' && relayKeys.pinned(ROOT, URL_A) === A.publicKey) || false;
+}, test.limit.quick);
+test.run('with no onKeyChanged given, a changed key is still refused', 0.2, async function () {
+  if (!W) return false;
+  const s = answerer(ROOT, { [URL_A]: statement(A2, 'a') }, { onKeyChanged: undefined });
+  const k = await s.a.relayKey(URL_A);
+  return k === '' || false;
+}, test.limit.quick);

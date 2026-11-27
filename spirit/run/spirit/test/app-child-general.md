@@ -49,7 +49,7 @@ every other sub-folder `spirit/app/<name>/`:
   verbs and `data.js` is there. Each verb's `<verb>.json` is judged by `script-sibling-general.js` on every branch, apps
   and system alike, both ways and with its arguments (goal/G47.4).
 - Rule 8 (goal/G48.8; Andy: *"wsl, let the verb list be checked by a general test like app-child-general"*): what the
-  console offers at `spirit.app.<name>`, asked of `spirit/console/command.js`'s `verbsAt`, is the app's `api.js` verbs,
+  console offers at `spirit.app.<name>`, asked of `spirit/console/command/script.js`'s `verbsAt`, is the app's `api.js` verbs,
   and beside them `remote` and `DEBUG`, the auto-verbs every app server serves, when the app has a server, and only then.
 
 ## What its test must try to break

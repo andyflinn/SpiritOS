@@ -49,7 +49,7 @@ function isCall(x) {
 // holds a starred relay, or the login mail, can run programs on this machine until G42 (goal/G41.30, Andy's compromise).
 // The one thing never asked from a face is 😏 itself (box v29: "Starring is never asked from a face (contact.own), or a
 // face could star a second relay and open a full face there"; goal/G47.4, box v33: contact.faceable "does what own did").
-const NEVER_ON_THE_FACE = ['contact.faceable'];
+const NEVER_ON_THE_FACE = ['spirit.contact.faceable'];
 function faceRefuses(request) {
   const verb = String((request && request.call) || '');
   return NEVER_ON_THE_FACE.indexOf(verb) !== -1 ? verb + ' is never asked from a face' : '';

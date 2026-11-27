@@ -960,7 +960,7 @@ function refreshRemote() {
   if (remote.refreshing) return;
   remote.refreshing = true;
   const me = selfKey();
-  Promise.resolve(spirit.requireScript('spirit/contact/api.js')).then(function (c) {
+  Promise.resolve(spirit.requireScript('spirit/contact/script.js')).then(function (c) {
     return c && typeof c.search === 'function' ? c.search({ q: '', keep: true }) : { items: [] };
   }).then(function (got) {
     const people = ((got && got.items) || []).filter(function (i) { return i && i.key && i.key !== me; }).slice(0, REMOTE_ASK_MAX);

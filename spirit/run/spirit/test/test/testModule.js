@@ -28,7 +28,7 @@ const KINDS = ['spirit/test/script-sibling-browser.js', 'spirit/test/script-sibl
 const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-/.test(n) && /.js$/.test(n); })
   .map(function (n) { return 'spirit/test/' + n; }).sort();
 // The module judged: an opted-in product module under spirit/run/spirit/ (it has its own spirit/test/<name>.js).
-const MODULE = 'spirit/apiDoor/script.js';
+const MODULE = 'spirit/peer/door/script.js';
 // What testsFor answers, asked once by the test that first needs it.
 const W = { radius: null, all: null };
 function radius() { return W.radius || (W.radius = testsFor(MODULE)); }
@@ -41,22 +41,22 @@ test.run('spirit/test/ holds the general tests of spirit.js, of the three kinds 
 test.run('spirit.js, the module they are named after, is spirit/script.js, and none is at the run root', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'script.js')) && !fs.existsSync(path.join(RUN, 'spirit.js'))) || false;
 }, test.limit.quick);
-test.run('spirit/apiDoor/script.js is a product module with its own test, so it is opted in', 0.2, function () {
-  return (fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'apiDoor', 'test', 'script.js'))) || false;
+test.run('spirit/peer/door/script.js is a product module with its own test, so it is opted in', 0.2, function () {
+  return (fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'peer', 'door', 'test', 'script.js'))) || false;
 }, test.limit.quick);
 
 // a module's blast radius
-test.run('the blast radius of spirit/apiDoor/script.js holds its own test', 0.2, function () {
-  return radius().some(function (e) { return e.test === 'spirit/apiDoor/test/script.js'; }) || false;
+test.run('the blast radius of spirit/peer/door/script.js holds its own test', 0.2, function () {
+  return radius().some(function (e) { return e.test === 'spirit/peer/door/test/script.js'; }) || false;
 }, test.limit.quick);
 // Each general rule test written out, so that each check has a plain title of its own.
 function onRadius(g) {
   const hit = radius().filter(function (e) { return e.test === g && e.file === MODULE; });
   return hit.length === 1 || false;
 }
-test.run('spirit/test/script-sibling-general.js judges spirit/apiDoor/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-general.js'); }, test.limit.quick);
-test.run('spirit/test/script-sibling-node.js judges spirit/apiDoor/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-node.js'); }, test.limit.quick);
-test.run('spirit/test/script-sibling-browser.js judges spirit/apiDoor/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-browser.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-general.js judges spirit/peer/door/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-general.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-node.js judges spirit/peer/door/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-node.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-browser.js judges spirit/peer/door/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-browser.js'); }, test.limit.quick);
 
 // ONE TEST FILE PER SCRIPT (goal/G45.1; spirit/run/spirit/test/TEST_SYSTEM.md; Andy: "there is ONE FUCKING test file in the
 // test folder per script file, and every fucking test that applies to that file must be inserted in the that one file"):
@@ -111,9 +111,9 @@ function onWhole(g) {
   const judged = all().filter(function (e) { return e.test === g && e.file; });
   return judged.some(function (e) { return e.file === MODULE; }) || false;
 }
-test.run('spirit/test/script-sibling-general.js judges modules on the whole list, spirit/apiDoor/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-general.js'); }, test.limit.quick);
-test.run('spirit/test/script-sibling-node.js judges modules on the whole list, spirit/apiDoor/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-node.js'); }, test.limit.quick);
-test.run('spirit/test/script-sibling-browser.js judges modules on the whole list, spirit/apiDoor/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-browser.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-general.js judges modules on the whole list, spirit/peer/door/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-general.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-node.js judges modules on the whole list, spirit/peer/door/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-node.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-browser.js judges modules on the whole list, spirit/peer/door/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-browser.js'); }, test.limit.quick);
 
 // THE BRANCH RULES JUDGE A SCRIPT'S BRANCH FROM THE SCRIPT (goal/G47.1, box v94, 2: they are a part of
 // script-sibling-general.js, which is one entry per module like every general test): no entry is a branch folder.

@@ -18,7 +18,7 @@ const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/nodeDesk/' + name + tempAsked); }
-const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
+const appClient = SPIRIT.requireScript('spirit/app/adapter/script.js');
 
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function tracked(dir) { return execSync('git ls-files -- "' + dir + '"', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }

@@ -1,6 +1,6 @@
 # The general rules judge the product modules
 
-goal/G43.23, item 4. Its test is `./testModule.js`: `testsFor()` of `../testModule.js` on this tree, read only, for `spirit/apiDoor/script.js`, a product module under `spirit/run/spirit/` with its own test.
+goal/G43.23, item 4. Its test is `./testModule.js`: `testsFor()` of `../testModule.js` on this tree, read only, for `spirit/peer/door/script.js`, a product module under `spirit/run/spirit/` with its own test.
 
 The box: *"the general rules judge no module: testModule.js looks for ./spirit.js."*
 

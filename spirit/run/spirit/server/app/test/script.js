@@ -139,7 +139,7 @@ const fake = {
     // at its app's api.js path (appApiPath): routing only, this test writes no family path of its own.
     // The node's contacts, as the background check of remote asks them (goal/G47.5): one that lets this node in, one whose
     // server refuses it, one that stays silent.
-    if (/spirit\/contact\/api\.js$/.test(q)) {
+    if (/spirit\/contact\/script\.js$/.test(q)) {
       return Promise.resolve({ search: function () { return Promise.resolve({ items: [{ key: 'KEY-PEER', name: 'Peer' }, { key: 'KEY-NOGRANT', name: 'No grant' }, { key: 'KEY-SILENT', name: 'Silent' }], more: false }); } });
     }
     if (key === 'KEY-SILENT' && /\/api\.js$/.test(q)) return Promise.reject(Object.assign(new Error('no answer'), { status: 0 }));
@@ -196,7 +196,7 @@ Module._load = function (request, parent) {
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
-if (process.platform === 'win32') PIPE = LOADER.requireScript('spirit/appClient/script.js').pipePathFor(TMP, 'spirit/app/' + NAME, 'win32');
+if (process.platform === 'win32') PIPE = LOADER.requireScript('spirit/app/adapter/script.js').pipePathFor(TMP, 'spirit/app/' + NAME, 'win32');
 const childArgv = process.argv.slice();
 process.argv = [process.argv[0], path.join(RUN, 'spirit', 'app', NAME, NAME + '.js'), '--pipe', PIPE, '--state', path.join(stateOf(NAME), 'data')];
 
@@ -530,7 +530,7 @@ function gateSection() {
     const src = [
       "require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
       "const A = spirit.requireScript('spirit/server/app/script.js');",
-      "const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(process.argv[1], 'spirit/app/zzStatusZero', process.platform);",
+      "const pipe = spirit.requireScript('spirit/app/adapter/script.js').pipePathFor(process.argv[1], 'spirit/app/zzStatusZero', process.platform);",
       "require('fs').mkdirSync(require('path').dirname(pipe), { recursive: true });",
       "const s = A.createAppServer({ zero: { request: {}, reply: {}, handler: function () { return {}; } }, ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } },",
       "  { gate: function (verb) { return verb === 'zero' ? Promise.resolve({ status: 0, body: { ok: false, code: 'peer-unreachable' } }) : null; } });",
@@ -631,7 +631,7 @@ function stateCachePart() {
     const saved = path.join(root, 'saved-' + kids.length + '.json');
     // A door of its own in a short temp folder: under the scratch tree's spirit/state/app/follower/ the path passes the
     // 107 bytes a unix socket may name, and the follower cannot listen (EINVAL).
-    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, 'spirit/app/' + NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
+    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'app', 'adapter', 'script.js')).pipePathFor(root, 'spirit/app/' + NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
     if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
     const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe, '--state', path.join(state, 'data')], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
     kids.push(kid);
@@ -704,7 +704,7 @@ function stateCachePart() {
     const saved = path.join(root, 'saved-x' + kids.length + '.json');
     // A door of its own in a short temp folder: under the scratch tree's spirit/state/app/follower/ the path passes the
     // 107 bytes a unix socket may name, and the follower cannot listen (EINVAL).
-    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, 'spirit/app/' + NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
+    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'app', 'adapter', 'script.js')).pipePathFor(root, 'spirit/app/' + NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
     if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
     const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe, '--state', path.join(state, 'data')], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
     kids.push(kid);

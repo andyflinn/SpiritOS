@@ -54,7 +54,7 @@ const contactBranch = {
 // the label type (goal/G48.4), a stand-in that refuses past 8. Any other path fails, as a script that is not there does:
 // fieldInput is not loaded here, so the label's input is drawn without it.
 const labelType = { isValid: function (t) { if (t.length > 8) throw new Error('too long'); return true; } };
-const STANDS = { 'spirit/contact/api.js': contactBranch, 'spirit/type/string/label/script.js': labelType };
+const STANDS = { 'spirit/contact/script.js': contactBranch, 'spirit/type/string/label/script.js': labelType };
 const pageRequire = window.spirit.requireScript;
 window.spirit.requireScript = function (p) {
   if (Object.prototype.hasOwnProperty.call(STANDS, String(p))) return Promise.resolve(STANDS[String(p)]);

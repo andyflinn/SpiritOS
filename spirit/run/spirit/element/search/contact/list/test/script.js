@@ -5,7 +5,7 @@
 // create hands the search element, a row's button and a pressed row (spec: ./script.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
 // list and not the search under it; the rows are the real contact row element (search/contact/row.js), over the real data set
-// and the contact family's data.js (goal/G41.28), loaded by its api.js as a page's spirit.requireScript('spirit/contact/api.js') loads it,
+// and the contact family's data.js (goal/G41.28), loaded by its api.js as a page's spirit.requireScript('spirit/contact/script.js') loads it,
 // the page's node known as spirit.startPage makes it known (spirit.nodeFacts.key, then data.homeNode).
 
 const fs = require('fs');
@@ -81,7 +81,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   const pageRequire = window.spirit.requireScript;
-  // A branch's api.js (spirit.requireScript('spirit/contact/api.js')): its real companion data.js runs once, attaching itself to
+  // A branch's api.js (spirit.requireScript('spirit/contact/script.js')): its real companion data.js runs once, attaching itself to
   // the data set loaded below, as the real api.js requires it (goal/G47.1).
   const ran = {};
   window.spirit.requireScript = function (p) {
@@ -207,7 +207,7 @@ test.run('the list is a view of spirit.required.spirit.data.contact.data.branch,
   pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   o = made.opts;
   CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
-  return required.indexOf('spirit/contact/api.js') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
+  return required.indexOf('spirit/contact/script.js') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
     ? true : false;
 }, test.limit.quick);
 test.run('it fills as soon as it is drawn: one refresh at create', 0.2, function () {

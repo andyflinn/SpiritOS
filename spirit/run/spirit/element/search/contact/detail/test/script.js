@@ -288,7 +288,7 @@ function relayWorld(rows, relayStatus) {
     requireScript: function (p) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
-      if (at === 'spirit/contact/api.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
+      if (at === 'spirit/contact/script.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
       // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
       if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
       if (at === 'spirit/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });

@@ -99,7 +99,7 @@ test.run('boot reads no sidecar of Join', 0.2, function () {
   return !(/join[\w.]*\.sidecar\.json/).test(boot) || false;
 }, test.limit.quick);
 test.run('boot, the seal, the sheet, the icon and the Join app whole are core', 0.2, function () {
-  const core = LOADER.requireScript('spirit/coreFiles/script.js');
+  const core = LOADER.requireScript('spirit/fs/coreFiles/script.js');
   const mustCore = ['spirit/shell/boot/script.js', 'spirit/shell/seal/script.js', 'spirit/shell/face.css', 'spirit/shell/favicon.svg', 'spirit/app/join/element.js', 'spirit/app/join/join.json'];
   const notCore = mustCore.filter(function (p) { return core.isCore('spirit/run/' + p, REPO) !== true; });
   return !notCore.length || false;

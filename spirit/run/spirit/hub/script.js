@@ -11,8 +11,8 @@ const auth = require('../script.js').requireScript('spirit/relayAuth/script.js')
 // invites.js STOOD HERE, required and never used — it is the relay's
 // waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
 const ownerBadge = require('../script.js').requireScript('spirit/ownerBadge/script.js');
-const contactBook = require('../script.js').requireScript('spirit/contact/script.js');
-const relayKeys = require('../script.js').requireScript('spirit/relayKeys/script.js');
+const contactBook = require('../script.js').requireScript('spirit/contact/engine/script.js');
+const relayKeys = require('../script.js').requireScript('spirit/peer/relay/key/script.js');
 // WHAT A SEARCH LEARNED, kept until it becomes useful. A search answer
 // says where each person lives, and that was thrown away — see
 // seenPeers.js. A row of the one table, never kept: a search result is
@@ -574,11 +574,11 @@ function createHub(rootDir) {
   // A kept rename of a contact, on its way to every open page (the events
   // family's stream carries it as contact.rename). The same seam shape as
   // arrivals: the hub notes, the stream fans out, neither knows the other.
-  var contactRenames = require('../script.js').requireScript('spirit/arrivals/script.js').createFanOut();
+  var contactRenames = require('../script.js').requireScript('spirit/peer/arrivals/script.js').createFanOut();
   // A grant revoked because its contact was forgotten (goal/G47.4, Q3; Andy: "When you forget a contact, should the node
   // revoke all of its grants at once?" "yes. it should."), { key, path }, on its way to the auth tables' job as a revoked
   // grant (server.js), so every open grants list lets it go.
-  var grantsRevoked = require('../script.js').requireScript('spirit/arrivals/script.js').createFanOut();
+  var grantsRevoked = require('../script.js').requireScript('spirit/peer/arrivals/script.js').createFanOut();
   function fail(res, status, msg) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: msg }));
@@ -2026,7 +2026,7 @@ function createHub(rootDir) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
       // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
-      try { var env = require('../script.js').requireScript('spirit/arrivals/script.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
+      try { var env = require('../script.js').requireScript('spirit/peer/arrivals/script.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
       return { ok: true, status: 200, url: row.url, name: said.name, email: said.email };
@@ -2058,7 +2058,7 @@ function createHub(rootDir) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
       // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
-      try { var env = require('../script.js').requireScript('spirit/arrivals/script.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
+      try { var env = require('../script.js').requireScript('spirit/peer/arrivals/script.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
       relayKeys.unseat(rootDir, row.url);

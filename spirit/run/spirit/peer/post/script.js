@@ -50,7 +50,7 @@ const postQueue = spirit.requireScript('spirit/postQueue/script.js');
 const presenceNode = spirit.requireScript('spirit/presenceNode/script.js');
 const spiritErrors = spirit.requireScript('spirit/error/script.js');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
-const arrivals = spirit.requireScript('spirit/arrivals/script.js');
+const arrivals = spirit.requireScript('spirit/peer/arrivals/script.js');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -535,7 +535,7 @@ function createPeerPost(opts) {
   // Only where holdStreams was called: the table and the streams exist there.
   // The relay table is relayKeys.js's, keyed by relay key; a url is handed
   // in for lookup. Required lazily, here.
-  function relayTable() { return spirit.requireScript('spirit/relayKeys/script.js'); }
+  function relayTable() { return spirit.requireScript('spirit/peer/relay/key/script.js'); }
   function plainUrl(url) { return relayTable().normalizeUrl(url); }
   // THE REFUSAL STANDS WHILE THE SEAT IS GONE (goal/G40.11: the refusal is not stored, seated is). What this process
   // heard refused, on a relay this node is not seated on; a claim or a join seats it again, and the refusal is over.

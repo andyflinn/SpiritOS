@@ -20,7 +20,7 @@
 
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -101,7 +101,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (T) { try { T.isValid(email); } catch (e) { bad = (e && e.message) || 'not an email address'; } } else if (!email) bad = 'an email address is needed';
     if (bad) return Promise.resolve({ ok: false, text: bad });
     if (!key) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
-    // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/api.js')'s answer.join answers the reply's body, or refuses with
+    // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/script.js')'s answer.join answers the reply's body, or refuses with
     // the node's words; the relay named by its row's public key (goal/G49.11).
     // THE CALLER'S LINK (goal/G40.10, box v25): the link the shell wants the mail to open, which only the shell knows
     // (spirit.shell.joinLink); without a shell that says, the node puts its own face on the loopback.
@@ -109,7 +109,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var joinLink = shell && typeof shell.joinLink === 'function' ? String(shell.joinLink() || '') : '';
     var args = { key: key, email: email, code: '' };
     if (joinLink) args.link = joinLink;
-    return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.join(args); }).then(function (said) {
+    return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.join(args); }).then(function (said) {
       said = said || {};
       // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
       if (said.ok) return { ok: true, text: 'An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.' };
@@ -164,7 +164,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       draw(box);
     }
     var left = false;
-    Promise.resolve(keepAnswer('spirit/contact/api.js')).then(function () {
+    Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () {
       if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };

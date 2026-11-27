@@ -28,7 +28,7 @@
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 // Each by its api.js path, never by a name (goal/G49.6): the relay and node branches.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/script.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -120,7 +120,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     // relaysOf() answers { status, text, body: { rows, ... } } itself (goal/G49.11), so it is read as it comes.
     function loadRelays() {
-      return Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
+      return Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
         var said = (r && r.body) || {};
         relays = Array.isArray(said.rows) ? said.rows : [];
       }, function () { relays = []; }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });

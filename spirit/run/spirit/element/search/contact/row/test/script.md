@@ -2,9 +2,9 @@
 
 One contact as a row element: `spirit.required.search.contact.row.create(row, options)` builds it through the shared
 `row.create` (`spirit/element/row/script.js`). Its subject is a public key; it reads the node's contacts as the contact
-family's cache manager keeps them (`spirit/run/spirit/contact/data.js`, `spirit.required.spirit.data.contact.data`; goal/G41.28:
+family's cache manager keeps them (`spirit/run/spirit/contact/client/script.js`, `spirit.required.spirit.data.contact.data`; goal/G41.28:
 in `spirit.required.spirit.data` under the serving node, `<node>/contact/contacts/<key>`), requires the contact interface, which brings that data script
-(`spirit.requireScript('spirit/contact/api.js')`), and repaints from it. The test loads it as a page does, the page's node known
+(`spirit.requireScript('spirit/contact/script.js')`), and repaints from it. The test loads it as a page does, the page's node known
 (`spirit.nodeFacts.key`, `data.homeNode`).
 
 ## API
@@ -44,7 +44,7 @@ HTML name; a blank name; a relay that is also kept; acting a verb the row lacks;
 ## What the stream means for contacts (goal/G41.16)
 
 The contacts' translation, `spirit/element/search/contact/data.js` until G41.16, then this element's, is since goal/G41.28 the contact
-family's cache manager's (`spirit/contact/data.js`), which this element gets through `spirit/contact/api.js`, the one script that requires it (Andy: *"get rid of thos FUCKING
+family's cache manager's (`spirit/contact/client/script.js`), which this element gets through `spirit/contact/script.js`, the one script that requires it (Andy: *"get rid of thos FUCKING
 data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*; G30.18: rowElements carry the listeners a subject
 needs). The manager registers one translation with `spirit.required.spirit.data.addTranslator` as it loads; the element requires no data
 script. It writes only through `merge`, `seat` and `del`.

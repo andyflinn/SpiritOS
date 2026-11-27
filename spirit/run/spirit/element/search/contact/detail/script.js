@@ -118,7 +118,7 @@ function cdStatus(text) {
 var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relaysOf()
 function cdRelayClaim() {
   cdClaim = null;
-  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
+  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
     ((r.body && r.body.rows) || []).forEach(function (row) {
       if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
     });
@@ -144,13 +144,13 @@ function cdFaceBlock() {
     '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-faceable">' + (cdPerson.faceable ? 'Take 😏 away' : 'Give it 😏') + '</button></div></div>';
 }
 function cdFaceable() {
-  return cdPost('spirit/contact/api.js', 'faceable', { key: cdKey, faceable: !cdPerson.faceable }).then(function () { return cdLoad(); });
+  return cdPost('spirit/contact/script.js', 'faceable', { key: cdKey, faceable: !cdPerson.faceable }).then(function () { return cdLoad(); });
 }
 
 function cdLoad() {
   // ONE PERSON, BY KEY (puppets/G2): contact.get, where this used to read
   // the whole book to keep one row of it.
-  return cdPost('spirit/contact/api.js', 'get', { key: cdKey })
+  return cdPost('spirit/contact/script.js', 'get', { key: cdKey })
     .then(function (r) { return JSON.parse(r.text); })
     .then(function (data) {
       cdPerson = (data && data.ok && data.person) || null;
@@ -271,7 +271,7 @@ function cdRender() {
   // OFFERED IN BOTH STATES, unlike Accept and Unblock, because it is not
   // about the relationship: it is about this node's own book. A blocked
   // person can be forgotten without being unblocked — the node's forget
-  // (spirit/contact/script.js) downgrades that row rather than deleting it, or the block would evaporate and
+  // (spirit/contact/engine/script.js) downgrades that row rather than deleting it, or the block would evaporate and
   // they would be readmitted the moment they wrote.
   //
   // Two presses, for the same reason Block has two: it is at the end of a
@@ -321,7 +321,7 @@ function cdRender() {
 function cdPeerAction(action, extra) {
   var body = { publicKey: cdKey };
   Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
-  return cdPost('spirit/contact/api.js', action, body).then(function (r) {
+  return cdPost('spirit/contact/script.js', action, body).then(function (r) {
     if (r.status !== 200) {
       cdStatus(action + ' failed: ' + r.status + ' ' + r.text);
       return false;
@@ -634,7 +634,7 @@ function ndLoad() {
   ndUnlisted = false;
 // THE RELAYS AS A SCREEN WANTS THEM: relaysOf() below, from the contact branch (goal/G49.11; the relay branch's status() before it)
   // lists the relays by contact.search, gets each by contact.get, and hands back the same shape (goal/G40.11).
-  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ndLabel || ''); }).then(function (r) { return r && r.body; })
+  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return relaysOf(s, ndLabel || ''); }).then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];
@@ -816,7 +816,7 @@ function ndFaceableHtml() {
 }
 // What it changes comes back on its row.
 function ndFaceable() {
-  return ndPost('spirit/contact/api.js', 'faceable', { key: ndRelayKey(), faceable: !ndBadge.faceable });
+  return ndPost('spirit/contact/script.js', 'faceable', { key: ndRelayKey(), faceable: !ndBadge.faceable });
 }
 
 function ndRemoveHtml() {
@@ -834,7 +834,7 @@ function ndLeaveHtml() {
 }
 function ndLeave(button) {
   button.disabled = true;
-  return ndPost('spirit/contact/api.js', 'leave', { key: ndKey }).then(function (r) {
+  return ndPost('spirit/contact/script.js', 'leave', { key: ndKey }).then(function (r) {
     var said = (r && r.body) || {};
     var out = ndContainer.querySelector('.nd-leave-out');
     if (said.ok) { if (out) out.textContent = 'You left this relay.'; return; }
@@ -847,7 +847,7 @@ function ndLeave(button) {
 // goal/G49.11). The node asks the same rule.
 function ndRemove() {
   if (ndRemoveRefusal()) return;
-  return ndPost('spirit/contact/api.js', 'forget', { publicKey: ndKey }).then(function (r) {
+  return ndPost('spirit/contact/script.js', 'forget', { publicKey: ndKey }).then(function (r) {
     var said = (r && r.body) || {};
     if (said.forgotten) { if (typeof ndLayer.close === 'function') ndLayer.close(); return; }
     var out = ndContainer.querySelector('.nd-remove-out');
@@ -1771,7 +1771,7 @@ function ndClaim(button) {
   if (token) body.invite = token;
   if (onInvite) body.inviteLabel = onInvite;
 
-  ndPost('spirit/contact/api.js', 'claim', body).then(function (r) {
+  ndPost('spirit/contact/script.js', 'claim', body).then(function (r) {
     // 201 is a new seat. 409 is only us when the peer already on the
     // relay carries OUR key — the node sets `mine` for exactly that. Any
     // other 409 is somebody else's label, and claiming it would fail the
@@ -1930,7 +1930,7 @@ var ndPage = ({
     // ITS ROW, FROM THE ONE TABLE (goal/G40.11), THE CONTACT FAMILY'S CACHE (goal/G41.28): painted as it changes, with no
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
-    ndStops.push(Promise.resolve(keepAnswer('spirit/contact/api.js')).then(function () {
+    ndStops.push(Promise.resolve(keepAnswer('spirit/contact/script.js')).then(function () {
       if (ndGone || !((window.spirit.required.spirit.data || {}).contact || {}).data) return function () {};
       return window.spirit.required.spirit.data.contact.data.watch(ndHearRow);
     }));

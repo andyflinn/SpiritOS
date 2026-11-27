@@ -92,9 +92,9 @@ test.run('create appends its root to the container it is given and answers that 
   loaded = atLoad.concat(required.slice(from));
   return box.children.length === 1 && box.children[0] === drop ? true : false;
 }, test.limit.quick);
-test.run('on a bare page it requires the one contact list and spirit/contact/api.js, and no data.js, then draws it', 0.2, function () {
+test.run('on a bare page it requires the one contact list and spirit/contact/script.js, and no data.js, then draws it', 0.2, function () {
   if (!loaded) return false;
-  return loaded.indexOf('spirit/element/search/contact/list/script.js') !== -1 && loaded.indexOf('spirit/contact/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  return loaded.indexOf('spirit/element/search/contact/list/script.js') !== -1 && loaded.indexOf('spirit/contact/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('the dropdown is the list in its dropdown face, drawn into its root with its words handed on', 0.2, function () {
   if (!box) return false;
