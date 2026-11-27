@@ -58,7 +58,7 @@ function rowTable(db, def, publish) {
   const listed = Array.isArray(def.listed) ? def.listed : ['icon', 'label'];
   // NO INVALID ROW GETS ONTO A TABLE (Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!", "# mandatory fields
   // (server AND ui)"): an add without one of these, or a change that would empty one, is refused, naming each missing.
-  const required = Array.isArray(def.required) ? def.required : [];
+  const required = Array.isArray(def['required']) ? def['required'] : [];
   function missing(r) { return required.filter(function (f) { return r[f] === undefined || r[f] === null || String(r[f]).trim() === ''; }); }
   const t = '"' + name + '"';
   db.exec('CREATE TABLE IF NOT EXISTS ' + t + ' (id TEXT PRIMARY KEY, privateKey TEXT NOT NULL, sealPublicKey TEXT NOT NULL, ' +

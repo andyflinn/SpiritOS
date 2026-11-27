@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/agent/element/table/tableElement.js
 // WHAT THE TABLES' ELEMENTS SHARE (goal/G41.4), in the page: each table's elementTable.js and elementRow.js name their
 // columns and fields and build on these two. Andy, box v22:
@@ -76,10 +80,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   // without its branch.
   spirit.requireScript('spirit/app/agent/api.js');
   function branchOf(table) {
-    if (!((window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
-    return window.spirit.required.spirit.data['spirit.app.agent'].data.branch(table);
+    if (!((KEPT_DATA || {})['spirit.app.agent'] || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
+    return KEPT_DATA['spirit.app.agent'].data.branch(table);
   }
-  function D() { return window.spirit.required.spirit.data; }
+  function D() { return KEPT_DATA; }
 
   // EVERY PANE'S LOOK, IN THIS ONE PLACE (Andy, on G41.4: "is it possible to organize the code so that my changes so far
   // are only done in one place?"; "both the list pane and detail pane should have similarly styled title areas ... these

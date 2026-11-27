@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/testicle/element/scriptDetail.js
 // THE SCRIPT DETAIL, AN ELEMENT OF ITS OWN (goal/G47.1, box v134-135: "every part of testicle's face is an element of its own,
 // just spirit/app/testicle/element/<element-name>.js", "element/scriptDetail.js (the script tab's file detail)"; Andy: "what
@@ -50,14 +54,14 @@
     if (file) {
       var own = file.slice(0, file.lastIndexOf('/') + 1) + 'test/' + file.slice(file.lastIndexOf('/') + 1);
       var drawOwn = function () {
-        var F = S.required.spirit.data && S.required.spirit.data.fs && S.required.spirit.data.fs.data;
+        var F = KEPT_DATA && KEPT_DATA.fs && KEPT_DATA.fs.data;
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
       Promise.resolve(keepAnswer('spirit/fs/script.js')).then(function () {
         if (gone) return;
         drawOwn();
-        release = S.required.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
+        release = KEPT_DATA.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
       }, function () {});
       parts.then(function () {
         return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['script.get']({ name: file }));

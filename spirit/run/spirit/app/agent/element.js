@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/agent/element.js
 // THE AGENT FACE APP (goal/G41.1): the face of the agent server, built on the workBench element, on the face on
 // loopback and through a relay alike. Its contract and its test: ./test/browserAgent.md and ./test/browserAgent.js. Loaded
@@ -87,7 +91,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       function follow(spec, name) {
         // Asked of the agent family's cache, which alone names its addresses: its table's branch, watch(id, fn)
         // (spirit/app/agent/data.js).
-        var B = (((window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data || {})[spec.table];
+        var B = (((KEPT_DATA || {})['spirit.app.agent'] || {}).data || {})[spec.table];
         if (!B) return function () {};
         return B.watch(spec.id, function (value) {
           if (value === undefined) { tabs.close(name); return; }
@@ -102,7 +106,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           var adding = !s.id;
           var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
           var T = ANSWER['spirit/app/agent/element/table/tableElement.js'];
-          var kept = !adding && T && window.spirit.required.spirit.data ? window.spirit.required.spirit.data.getPath(T.branchOf(s.table) + '/' + s.id) : null;
+          var kept = !adding && T && KEPT_DATA ? KEPT_DATA.getPath(T.branchOf(s.table) + '/' + s.id) : null;
           var off = null;
           tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
             // Once, with the tab: a press on a row already open adds nothing here.

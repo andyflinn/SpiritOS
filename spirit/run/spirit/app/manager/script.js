@@ -40,8 +40,10 @@ function isManifest(p) { const parts = String(p).split('/'); return parts.length
 // The branch's interface through spirit.requireScript (goal/G43.32; since goal/G49.20 spirit/app/script.js, a branch of the new
 // shape): in node placed at once at its folder's own name, spirit.required.spirit.app, the verbs read from there; the binding it
 // also starts asks this node, which this file needs nothing of.
-Promise.resolve(spirit.requireScript('spirit/app/script.js')).then(null, function () { /* the binding; the verbs are read below */ });
-const VERBS = spirit.required.spirit.app.verbs;
+// The verbs as spirit.requireScript hands the branch back (goal/G49.23; goal/G49.9: never read at its place), kept once bound:
+// they are asked only when a folder is judged, never as this file loads.
+let VERBS = {};
+Promise.resolve(spirit.requireScript('spirit/app/script.js')).then(function (b) { VERBS = (b && b.verbs) || {}; }, function () { /* not bound: no verb name is held back */ });
 
 function tree() { return spirit.requireScript('spirit/fs/dataset/script.js'); }
 // AN APP IS KNOWN BY ITS FOLDER'S PATH (goal/G49.19, box: "ALL aspects of jobs/processes identify them by the full path of

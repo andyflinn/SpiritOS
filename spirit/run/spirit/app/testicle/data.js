@@ -16,17 +16,19 @@
 // course, publishes changes." The server publishes each row it writes, its job's app { testicle: { table, row } }
 // (testicle.js), as the agent's tables publish theirs: the row is merged into its table's branch, so a list that is a view
 // of the branch follows it. What a search answers is kept the same way (keep).
-(function family() {
+(function family(given) {
   var TABLES = ['script', 'suite', 'testicle'];
   // The monitor's one row, in its own branch (spirit.required.spirit.data keeps rows as branch/key): what the stream last said of busy and
   // of the last change.
   var MONITOR = 'monitor/now';
   // The preferences, one row of their own: what the preferences verb answered last, or the stream told since.
   var PREFERENCES = 'preferences/now';
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
+  // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('spirit.app.testicle', function () {
     var HOME = D.viewAt(null, 'spirit.app.testicle');
     // A TEST ROW KEPT WITH ITS FILE NAMES, scriptName and suiteName, the last part of each path: the testicle search shows and

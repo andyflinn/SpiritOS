@@ -8,12 +8,14 @@
 //   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount, nodeRemote }, what app.search answered (seated by the list that is a view of it), and the
 //          whole table the apps news of the node's own job spirit.app holds (spirit/app/manager/script.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
-(function family() {
+(function family(given) {
   var APPS = 'apps';
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
+  // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('app', function () {
     var HOME = D.viewAt(null, 'app');
     D.addTranslator({

@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/testicle/element/settingsPanel.js
 // THE ⚙ SETTINGS PANEL, AN ELEMENT OF ITS OWN (goal/G47.1, box v134-135: "every part of testicle's face is an element of its
 // own, just spirit/app/testicle/element/<element-name>.js", "element/settingsPanel.js (the ⚙ settings panel)"). It was
@@ -56,7 +60,7 @@
         } });
       return Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).then(function () {
         if (gone) return;
-        var P = S.required.spirit.data['spirit.app.testicle'].data.preferences;
+        var P = KEPT_DATA['spirit.app.testicle'].data.preferences;
         draw(P.get());
         release = P.watch(draw);
         // What it stands at before anything streamed: asked once, kept in the branch the switch follows.

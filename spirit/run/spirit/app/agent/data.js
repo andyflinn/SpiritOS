@@ -12,12 +12,14 @@
 // removed } } for one gone (./table/rowTable.js), moved here from the four tables' row elements (goal/G41.16): the row is
 // merged into its table's branch, so the table's list and editors, views of that branch, follow it. Another table's
 // rows, another module's, or a row with no id write nothing. It asks nothing.
-(function family() {
+(function family(given) {
   var TABLES = ['job', 'model', 'persona', 'provider'];
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
+  // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('spirit.app.agent', function () {
     var HOME = D.viewAt(null, 'spirit.app.agent');
     D.addTranslator({

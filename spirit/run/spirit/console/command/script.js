@@ -100,12 +100,6 @@ function pathCommand(s, arg) {
 // A BRANCH'S INTERFACE, IN EITHER SHAPE (goal/G49.22: fs, job, app, grant, bundle, branch and contact are of the new shape): its
 // script.js where it is a branch of the new shape, else its old api.js. The console asked api.js alone, and reached none of them.
 function apiFiles(p) { const dir = spirit.slashedPath('spirit.' + p); return [dir + '/script.js', dir + '/api.js']; }
-// Where the loader places a script: one key per folder, a folder's script.js at its folder's own name.
-function placed(file) {
-  const keys = file.replace(/\.js$/, '').split('/');
-  if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-  return keys.reduce(function (o, k) { return o && o[k]; }, spirit.required);
-}
 // THE BRANCH'S INTERFACE AT A PATH, or null: its verbs, and the functions it may name for them (spirit.js, def.functions).
 function apiAt(p) {
   if (!p) return Promise.resolve(null);
@@ -116,8 +110,8 @@ function apiAt(p) {
     const file = files[i];
     return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: file }); }).then(function () {
       return spirit.requireScript(file);
-    }).then(function () {
-      const at = placed(file);
+    }).then(function (at) {
+      // The interface as spirit.requireScript hands it back (goal/G49.23), never read at its place.
       return at && at.verbs && typeof at.verbs === 'object' ? at : null;
     }).then(null, function () { return null; }).then(function (at) { return at || one(i + 1); });
   };

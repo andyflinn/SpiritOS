@@ -19,8 +19,13 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   // page's own node key, or a contact spirit.required.spirit.data.contact.data holds; until the contact api is loaded, the form decides.
   var knows;
   var ownOnDisc = '';
+  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place), kept once loaded.
+  var pageData = null;
+  if (typeof require !== 'function' && root && root.spirit && typeof root.spirit.requireScript === 'function') {
+    Promise.resolve(root.spirit.requireScript('spirit/data/script.js')).then(function (d) { pageData = d || null; }, function () { /* not loaded: the form decides */ });
+  }
   function onPage() {
-    var C = root && root.spirit && root.spirit.required.spirit.data && root.spirit.required.spirit.data.contact && root.spirit.required.spirit.data.contact.data;
+    var C = pageData && pageData.contact && pageData.contact.data;
     if (!C || typeof C.contact !== 'function') return null;
     return function (k) { var N = root.spirit.nodeFacts; return (N && N.key === k) || !!C.contact(k); };
   }

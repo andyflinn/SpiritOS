@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/file/element.js
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
@@ -46,7 +50,7 @@
     // opener app's icon, its label, a colon and the file's name, from what the node says of that app; a ❔ file, which only
     // fstat shows, its icon and its name.
     function barOf(opener, name, t) {
-      var app = (S.required.spirit.data && S.required.spirit.data.app && S.required.spirit.data.app.data ? S.required.spirit.data.app.data.rows()[S.dottedPath(opener)] : null) || {};
+      var app = (KEPT_DATA && KEPT_DATA.app && KEPT_DATA.app.data ? KEPT_DATA.app.data.rows()[S.dottedPath(opener)] : null) || {};
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {

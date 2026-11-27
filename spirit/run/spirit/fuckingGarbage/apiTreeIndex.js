@@ -69,9 +69,9 @@ var apiTreeIndexApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = apiTreeIndexApi;
 } else if (typeof window !== 'undefined') {
-  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
-  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
-  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  ((R.spirit = R.spirit || {}).fuckingGarbage = R.spirit.fuckingGarbage || {}).apiTreeIndex = apiTreeIndexApi;
+  // WHAT IT HANDS OUT GOES THROUGH THE LOADER (goal/G49.23, box v9: "spirit.requireScript() places it's return objects"; goal/G49.9:
+  // a script reaches another only through what spirit.requireScript hands back): on a page as in node, the module box the loader
+  // hands every own script; it places the object at its path, and nothing here writes spirit.required.
+  if (typeof module !== 'undefined' && module) module.exports = apiTreeIndexApi;
 }
 }());

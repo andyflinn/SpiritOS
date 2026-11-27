@@ -28,12 +28,16 @@
 
 // In node the module beside it; in a page the one at spirit.required.spirit.search.string, read when it is called (goal/G41.18): a
 // part that loads both itself may have this one run first, so nothing is read from the page as this file loads.
-var nodeStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
+// On a page, the string match as spirit.requireScript hands it back (goal/G49.23), kept once it has loaded; this file's own
+// load waits for it, being part of its tree.
+var stringMatch = typeof require === 'function'
   ? require('../script.js').requireScript('spirit/search/string.js').probabilityStringMatch
   : null;
+if (!stringMatch && typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') {
+  Promise.resolve(window.spirit.requireScript('spirit/search/string.js')).then(function (got) { stringMatch = got && got.probabilityStringMatch; }, function () { /* not loaded: a search answers nothing */ });
+}
 function probabilityStringMatch(a, b) {
-  var f = nodeStringMatch || (((((window.spirit && window.spirit.required) || {}).spirit || {}).search || {}).string || {}).probabilityStringMatch;
-  return f(a, b);
+  return stringMatch ? stringMatch(a, b) : 0;
 }
 
 function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -85,10 +89,4 @@ function probabilityStringObjectMatch(string, object) {
 
 // IN NODE AND IN A PAGE ALIKE (goal/G27.14): a page finds it at spirit.required.spirit.search.object.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { measureObject: measureObject, probabilityStringObjectMatch: probabilityStringObjectMatch };
-if (typeof window !== 'undefined' && window) {
-  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
-  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
-  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  ((R.spirit = R.spirit || {}).search = R.spirit.search || {}).object = { measureObject: measureObject, probabilityStringObjectMatch: probabilityStringObjectMatch };
-}
 }());

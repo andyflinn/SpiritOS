@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/testicle/element/search/suite/list.js
 // THE SUITE LIST, AN ELEMENT (goal/G47.1, the UI cycle): the suites of one production file, what testicle's file detail
 // draws through the suite selector (../suite.js). Its row is ./row.js; no row opens a detail.
@@ -50,7 +54,7 @@
 
     parts.then(function () {
       if (gone) return;
-      var data = S.required.spirit.data['spirit.app.testicle'].data;
+      var data = KEPT_DATA['spirit.app.testicle'].data;
       var ask = function (text) {
         return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
           data.keep('suite', rowsOf(b));

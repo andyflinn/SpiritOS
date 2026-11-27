@@ -14,13 +14,15 @@
 // The tree comes as updates of one job, the spirit.fs job's: a connecting page is handed the tree as create commands, then
 // treeComplete: the branch fills quietly and its watchers hear one word at the end; after that each change is told by
 // path (goal/G30.18, moved here from the files row element). Every event ends in set or del; it asks nothing.
-(function family() {
+(function family(given) {
   var FILES = 'files';
   var ICONS = 'icons';
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
+  // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
     var HOME = D.viewAt(null, 'fs');

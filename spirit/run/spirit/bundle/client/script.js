@@ -5,10 +5,12 @@
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader asks spirit.required.spirit.data.bundle.data (below).
 //   rows   id -> { id, label, owner }, a row of node.db's bundle table
 // The rows come on the node's own job spirit.bundle, each changed row, gone when deleted. Every event ends in set or del.
-(function family() {
+(function family(given) {
   var ROWS = 'rows';
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
+  // again with it once it has loaded.
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('bundle', function () {
     var HOME = D.viewAt(null, 'bundle');
     D.addTranslator({

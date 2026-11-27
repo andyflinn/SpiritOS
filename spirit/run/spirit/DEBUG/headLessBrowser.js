@@ -23,7 +23,6 @@ function mountScript(file) {
     'var report = window.spiritMount = { state: "loading", error: "", box: box, destroy: null };\n' +
     'function failed(e) { report.state = "failed"; report.error = String((e && e.message) || e || "failed"); }\n' +
     'var file = ' + JSON.stringify(file) + ';\n' +
-    'function placed() { return file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required); }\n' +
     'function ask(verb, args) {\n' +
     '  var name = String(verb); var dot = name.indexOf(".");\n' +
     '  var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;\n' +
@@ -36,12 +35,11 @@ function mountScript(file) {
     '  launchApp: function () {}, callDialog: function () { return Promise.resolve(); }, closeDialog: function () {},\n' +
     '  setScreenTitle: function () {}, setScreenMark: function () {}, addTitlebarLink: function () {},\n' +
     '  armUntilElsewhere: function () {}, isVisible: function () { return true; }, refresh: function () {},\n' +
-    '  onJobs: function () { return function () {}; }, onFiles: function () { return function () {}; }, onRelayEvent: function () { return function () {}; },\n' +
-    '  ui: { element: window.spirit.required }\n' +
+    '  onJobs: function () { return function () {}; }, onFiles: function () { return function () {}; }, onRelayEvent: function () { return function () {}; }\n' +
     '};\n' +
     'var app = null;\n' +
     '(spirit.shell = spirit.shell || {}).activateApp = function (behavior) { app = behavior; };\n' +
-    'Promise.resolve(spirit.startPage()).then(function () { return spirit.requireScript(file); }).then(function () {\n' +
+    'Promise.resolve(spirit.startPage()).then(function () { return spirit.requireScript(file); }).then(function (el) {\n' +
     '  if (app && typeof app.mount === "function") {\n' +
     '    app.mount(box, api);\n' +
     '    if (typeof app.render === "function") app.render();\n' +
@@ -50,8 +48,8 @@ function mountScript(file) {
     '  }\n' +
     // AN INTERFACE IS NO ELEMENT (goal/G49.7; Andy's red on spirit/job/script.js): a branch's api.js stands at its place bound, its
     // verbs table beside its functions, and a verb named create (job's) is no element's factory; it is judged as no element.
-    '  var el = placed();\n' +
-    '  if (!el || typeof el.create !== "function" || (el.verbs && typeof el.verbs === "object")) throw new Error(file + " places no element with a create at spirit.required." + file.replace(/\\.js$/, "").split("/").join("."));\n' +
+    // The element is what spirit.requireScript hands back (goal/G49.23), never read at its place.
+    '  if (!el || typeof el.create !== "function" || (el.verbs && typeof el.verbs === "object")) throw new Error(file + " hands back no element with a create");\n' +
     '  return Promise.resolve(el.create(box)).then(function (m) {\n' +
     '    if (m && typeof m.destroy === "function") report.destroy = function () { return m.destroy(); };\n' +
     '    report.state = "mounted";\n' +

@@ -160,8 +160,10 @@
     }
     setConnected(true);
     if (!L.sealed) { deliver(got); return Promise.resolve(); }
-    return (((spirit || {}).required || {}).shell || {}).seal.open(L.key.privateKey, L.key.publicKey, L.node.publicKey, L.key.publicKey, got)
-      .then(function (o) { if (o) deliver(JSON.parse(o.text)); });
+    // The seal as spirit.requireScript hands it back (goal/G49.23), never read at its place.
+    return Promise.resolve(spirit.requireScript('spirit/shell/seal/script.js')).then(function (seal) {
+      return seal.open(L.key.privateKey, L.key.publicKey, L.node.publicKey, L.key.publicKey, got);
+    }).then(function (o) { if (o) deliver(JSON.parse(o.text)); });
   }
   function openStream() {
     if (state.home || stream) return;

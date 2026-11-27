@@ -1995,10 +1995,9 @@ catch (e) {
   // THE spirit.contact BRANCH, BY ITS OWN SCRIPT (goal/G49.22, box v16: "spirit/contact/api.js --> spirit/contact/script.js";
   // "all verb names are adjusted using the same ... pattern as was using in spirit/app/ or spirit/fs/ or spirit/job/", "all verbs
   // do the ... same shit they did before"): mounted under its path's name, spirit.contact, each verb's arguments from
-  // spirit/contact/script.js and every call checked against them before its handler. In node the script stands at once at its
-  // folder's name, spirit.required.spirit.contact; the binding it also starts asks this node, which this needs nothing of.
-  Promise.resolve(spirit.requireScript('spirit/contact/script.js')).then(null, function () { /* the binding; the verbs are read below */ });
-  const CONTACT_BRANCH = spirit.required.spirit.contact;
+  // spirit/contact/script.js and every call checked against them before its handler. The branch as spirit.requireScript hands it
+  // back (goal/G49.23; goal/G49.9: never read at its place), the mount waiting for it, as spirit.job's does.
+  Promise.resolve(spirit.requireScript('spirit/contact/script.js')).then(function (CONTACT_BRANCH) {
   loopbackVerbs.mount('spirit.contact', path.join(__dirname, '..', '..', 'contact'), checkedVerbs('spirit.contact', CONTACT_BRANCH, {
     // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
     // (puppets/G2); the network search it starts asks the relays.
@@ -2041,6 +2040,7 @@ catch (e) {
     // A relay's row is taken off the list first, with remove's refusals (goal/G49.11): hub.js's forget, handed the router.
     'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget', { router: peerRouter }); } },
   }));
+  }, function (e) { console.error('the spirit.contact branch could not be bound: ' + ((e && e.message) || e)); });
 
   // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────
   //

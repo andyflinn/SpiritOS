@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/agent/element/table/row.js
 // ONE ROW OF THE AGENT'S TABLES, EDITED IN THE PAGE (goal/G41.4), an element of its own (goal/G41.28; the general test:
 // a file registers one element). Each table's elementRow.js names its fields and builds on this one; the title row, the
@@ -48,7 +52,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   function nameOf(r, columns) { return A().nameOf(r, columns); }
   function columnsOf(table) { return A().columnsOf(table); }
   function search(host, o, more) { return A().search(host, o, more); }
-  function D() { return window.spirit.required.spirit.data; }
+  function D() { return KEPT_DATA; }
   var STRETCH = 'width:100%;box-sizing:border-box';
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
   // chosen with the shell's icon selector (spirit/element/search/icon/script.js).
@@ -105,9 +109,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     // THE ADD MODE (Andy: "the detail panel has and \"Add\" mode, with an \"Add new <provider|persona|job>\" button at the
     // bottom. Only when all fields, including icon, are filled, will the \"Add\" button not respopnd with an error."): an
     // editor with no id. It asks no get, a field changed saves nothing, and its button adds the whole row once every one
-    // of the table's mandatory fields (o.required, as its server names them) is filled; from then on it is that row's.
+    // of the table's mandatory fields (o['required'], as its server names them) is filled; from then on it is that row's.
     var adding = !o.id;
-    var required = Array.isArray(o.required) ? o.required : [];
+    var required = Array.isArray(o['required']) ? o['required'] : [];
     var path = branchOf(o.table) + '/' + o.id;
     var fields = [ICON_FIELD].concat(o.fields || []);
     function input(f) { return container.querySelector('#' + pre + f.field); }
@@ -333,7 +337,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     // agent family's cache, which alone names its addresses: its table's branch, watch(id, fn) (spirit/app/agent/data.js).
     var unwatch = function () {};
     function attach() {
-    var B = window.spirit.required.spirit.data['spirit.app.agent'].data[o.table];
+    var B = KEPT_DATA['spirit.app.agent'].data[o.table];
     unwatch = !B ? function () {} : B.watch(o.id, function (value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;

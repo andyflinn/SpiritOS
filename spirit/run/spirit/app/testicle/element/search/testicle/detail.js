@@ -1,4 +1,8 @@
 'use strict';
+// THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
+// spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
+var KEPT_DATA = null;
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/testicle/element/search/testicle/detail.js
 // ONE TEST'S DETAIL, AN ELEMENT (goal/G47.1, the search cycle): its history of flips, what testicle's face shows in a closable
 // tab when a test row of the testicle search is clicked (the box: "The testicle detail is a history of flips, and opens in a
@@ -101,14 +105,14 @@
     // branch holds, newest flip first, drawn again on every change the stream brings.
     var prefix = script + '|' + suite + '|' + test + '|';
     function fromBranch() {
-      var D = S.required.spirit.data['spirit.app.testicle'].data;
-      var b = S.required.spirit.data.getPath(D.branch('testicle'));
+      var D = KEPT_DATA['spirit.app.testicle'].data;
+      var b = KEPT_DATA.getPath(D.branch('testicle'));
       return Object.keys(b || {}).filter(function (k) { return k.indexOf(prefix) === 0; }).map(function (k) { return b[k]; })
         .sort(function (a, c) { return Number(c.id) - Number(a.id); });
     }
     function ask() {
       return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
-        .then(function (b) { S.required.spirit.data['spirit.app.testicle'].data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
+        .then(function (b) { KEPT_DATA['spirit.app.testicle'].data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
@@ -146,7 +150,7 @@
       if (gone) return;
       ask();
       forms();
-      release = S.required.spirit.data['spirit.app.testicle'].data.testicle.watch(function () { draw(fromBranch()); });
+      release = KEPT_DATA['spirit.app.testicle'].data.testicle.watch(function () { draw(fromBranch()); });
     }, function () { container.textContent = 'The history could not be loaded.'; });
 
     return {
