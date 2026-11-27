@@ -687,8 +687,8 @@
   // path in dots, and a call to it is spirit.fs.<verb>. Which script.js is a branch's is said by what it hands out: an object
   // holding verbs. On the node that is known before it is bound; on a page, once the file has run.
   function branchNameOf(p) {
-    var m = /^spirit\/(.+)\/script\.js$/.exec(p);
-    return m ? dottedPath('spirit/' + m[1]) : '';
+    var m = /^(spirit\/.+)\/script\.js$/.exec(p);
+    return m ? dottedPath(m[1]) : '';
   }
   function isInterface(v) { return !!v && typeof v === 'object' && !!v.verbs && typeof v.verbs === 'object'; }
   function nodeBranchName(p) {

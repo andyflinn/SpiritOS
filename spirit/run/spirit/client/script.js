@@ -442,10 +442,11 @@
   // ON A PAGE, WHAT THE SEARCH NEEDS, REQUIRED AS THIS FILE RUNS (rule/26: a part loads what it uses), kept as each comes back.
   var PAGE_RANK = { match: null, bucket: null, limits: null };
   if (onPage && root.spirit && typeof root.spirit.requireScript === 'function') {
-    [['spirit/search/object.js', function (m) { PAGE_RANK.match = (m && m.probabilityStringObjectMatch) || null; }],
-      ['spirit/listLimiter/script.js', function (m) { PAGE_RANK.bucket = (m && m.createProbabilityBucket) || null; }],
-      ['spirit/limits/script.js', function (m) { PAGE_RANK.limits = m || null; }]].forEach(function (x) {
-      try { Promise.resolve(root.spirit.requireScript(x[0])).then(x[1], function () { /* not there: ranks nothing */ }); } catch (e) { /* not there */ }
+    // Each by its path written out whole (the general rule: a requireScript is handed one full path as one string).
+    [[function () { return root.spirit.requireScript('spirit/search/object.js'); }, function (m) { PAGE_RANK.match = (m && m.probabilityStringObjectMatch) || null; }],
+      [function () { return root.spirit.requireScript('spirit/listLimiter/script.js'); }, function (m) { PAGE_RANK.bucket = (m && m.createProbabilityBucket) || null; }],
+      [function () { return root.spirit.requireScript('spirit/limits/script.js'); }, function (m) { PAGE_RANK.limits = m || null; }]].forEach(function (x) {
+      try { Promise.resolve(x[0]()).then(x[1], function () { /* not there: ranks nothing */ }); } catch (e) { /* not there */ }
     });
   }
   function defaultRoom(limits) {

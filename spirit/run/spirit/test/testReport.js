@@ -222,8 +222,20 @@ function settle(t, verdict) { if (current === t && !t.done) { t.done = true; t.v
 // FUCKING FAILURE STRING GETS DELETED FROM EVERY FUCKING TEST", and "THE TEST RUNNER DISREGARD ANY FUCKING MESSAGES FROM THE
 // TEST AND REGISTER THE FUCKING RESULT WITH THE FUCKING TEST FUCKING TITLE"): a verdict is pass or fail, a crash or a hang a
 // fail at 0.7; no text goes with it, printed or reported.
-process.on('uncaughtException', function () { if (current) settle(current, { pass: false, crash: true }); });
-process.on('unhandledRejection', function () { if (current) settle(current, { pass: false, crash: true }); });
+// A THROW OUTSIDE EVERY TEST ENDS THE RUN AS CRASHED (goal/G49.23, wsl's find: a suite that threw while it loaded was swallowed
+// here and kept alive, so it hung until testicle's job limit, and one stale require blocked testicle's whole queue): with no
+// test running, the throw counts as a failure, every hold is let go so the run ends, and its script is marked crashed.
+let crashedOutside = false;
+function thrown() {
+  if (current) { settle(current, { pass: false, crash: true }); return; }
+  if (!crashedOutside) test.failureCount++;
+  crashedOutside = true;
+  holds = 0;
+  start();
+  wake();
+}
+process.on('uncaughtException', thrown);
+process.on('unhandledRejection', thrown);
 // ASKED TO STOP, IT CLEANS UP AND ENDS BY ITSELF (goal/G48.4; Andy: "WHY THE FUCK ARE TEST RUNS STILL LITTERING SHIT ALL OVER
 // THE PLACE!!!???", then "step 1 for now. and we continue."): its test.after cleanups run, then it ends, so what it started
 // goes with it and nothing is left for the kill that follows. Asked by a stop message on its channel ({ stop: true }, the
@@ -343,6 +355,8 @@ async function runAll() {
     // IMMEDIATELY after completion of a test"): it is sent now, and goes out at once, never behind another report; the next
     // test no longer waits for it to land (goal/G49.8, Andy: "do it"), so 41 checks no longer cost 41 round trips.
   }
+  // A throw outside every test (thrown, above) leaves the script it came in crashed, never a success.
+  if (crashedOutside && doing !== null) { held[doing] = false; reasonOf[doing] = 'crashed'; }
   if (doing !== null) { succeeded(doing); await reportChain; }
   // A cleanup that throws is no test and has no title: nothing of it is printed or reported.
   await runAfters();

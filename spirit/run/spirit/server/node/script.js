@@ -1753,20 +1753,22 @@ catch (e) {
   // spirit.job's are. The handlers are spirit/grant/auth/script.js's; the bundle and branch tables take one operation per verb.
   // "the peer and relabel verbs go. die. perish." Local (wire: false).
   const withOp = function (op, work) { return function (b) { return work(Object.assign({}, b, { op: op })); }; };
+  // Each branch's script required by its path written out whole, its promise in the row (the general rule: a requireScript is
+  // handed one full path as one string).
   const tableBranches = [
-    ['spirit.grant', 'spirit/grant/script.js', 'grant', {
+    ['spirit.grant', spirit.requireScript('spirit/grant/script.js'), 'grant', {
       search: { reply: LIST, work: apiAuth.search },
       get: { reply: { allowed: false }, work: apiAuth.query },
       add: { reply: GRANT, work: apiAuth.grant },
       delete: { reply: { revoked: true }, work: apiAuth.revoke },
     }],
-    ['spirit.bundle', 'spirit/bundle/script.js', 'bundle', {
+    ['spirit.bundle', spirit.requireScript('spirit/bundle/script.js'), 'bundle', {
       search: { reply: LIST, work: withOp('search', apiAuth.bundle) },
       get: { reply: {}, work: withOp('get', apiAuth.bundle) },
       add: { reply: {}, work: withOp('add', apiAuth.bundle) },
       delete: { reply: {}, work: withOp('delete', apiAuth.bundle) },
     }],
-    ['spirit.branch', 'spirit/branch/script.js', 'branch', {
+    ['spirit.branch', spirit.requireScript('spirit/branch/script.js'), 'branch', {
       search: { reply: LIST, work: withOp('search', apiAuth.branch) },
       get: { reply: {}, work: withOp('get', apiAuth.branch) },
       add: { reply: {}, work: withOp('add', apiAuth.branch) },
@@ -1774,7 +1776,7 @@ catch (e) {
     }],
   ];
   tableBranches.forEach(function (t) {
-    Promise.resolve(spirit.requireScript(t[1])).then(function (BRANCH) {
+    Promise.resolve(t[1]).then(function (BRANCH) {
       const checkedBy = checkedByBranch(t[0], BRANCH);
       const verbs = {};
       Object.keys(t[3]).forEach(function (v) { verbs[v] = { request: BRANCH.verbs[v], reply: t[3][v].reply, handler: checkedBy(v, authVerb(t[3][v].work)) }; });
