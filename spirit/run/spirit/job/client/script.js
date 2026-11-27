@@ -73,7 +73,17 @@
     //                tables have it (5aa68f95; Andy: "that's a decision: a BRANCHE's what is called \"watch\""); goal/G43.32,
     //                for monitor, which shows the spirit job alone (Andy: "wsl, the clean fix, do it.").
     //   branch       the jobs' whole path, for a list that is a view of it (probabilitySearch's data)
+    // WHO HEARS EVERY JOB UPDATE (goal/G49.23, box v22 Part 1: an element hears the stream through the client that keeps those rows, never
+    // through the store): hear(fn) fn(job) on each, as the stream brings it; answers its release.
+    var hearers = [];
+    D.addTranslator({ onJob: function (job) { if (!job) return; hearers.slice().forEach(function (h) { try { h(job); } catch (e) { /* one hearer's fault */ } }); } });
+    function hear(fn) {
+      if (typeof fn !== 'function') return function () {};
+      hearers.push(fn);
+      return function () { var i = hearers.indexOf(fn); if (i !== -1) hearers.splice(i, 1); };
+    }
     var jobsReads = {
+      hear: hear,
       job: function (id) { return id ? HOME.get(JOBS + '/' + id) || null : null; },
       jobs: function () { return HOME.branch(JOBS); },
       events: function (id) { var k = id ? HOME.get(EVENTS + '/' + id) : null; return k && Array.isArray(k.lines) ? k.lines : []; },

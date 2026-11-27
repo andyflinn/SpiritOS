@@ -67,7 +67,17 @@
     //   contact(key)   a contact's row, or null;  contacts()  every contact kept, key -> row
     //   watch(fn)      fn(key, row) on every change, row undefined once it is gone; answers its release
     //   branch         the contacts' whole path, for a list that is a view of it (probabilitySearch's data)
+    // WHO HEARS THE STREAM'S RELAY EVENTS (goal/G49.23, box v22 Part 1: an element hears the stream through the client that keeps those rows, never
+    // through the store): hear(fn) fn(event) on each, as the stream brings it; answers its release.
+    var hearers = [];
+    D.addTranslator({ onRelay: function (event) { if (!event) return; hearers.slice().forEach(function (h) { try { h(event); } catch (e) { /* one hearer's fault */ } }); } });
+    function hear(fn) {
+      if (typeof fn !== 'function') return function () {};
+      hearers.push(fn);
+      return function () { var i = hearers.indexOf(fn); if (i !== -1) hearers.splice(i, 1); };
+    }
     var contactReads = {
+      hear: hear,
       contact: function (key) { return key ? HOME.get(CONTACTS + '/' + key) || null : null; },
       contacts: function () { return HOME.branch(CONTACTS); },
       watch: function (fn) { return HOME.watch(CONTACTS, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, CONTACTS), v); }); },
