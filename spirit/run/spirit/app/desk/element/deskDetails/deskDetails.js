@@ -42,6 +42,13 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
+// ONE INSTANCE PER DETAIL (goal/G49.8, point 4: "an app's row details, each in its own panel, shown again as left"): all it holds
+// is made anew for each create, and every part it draws is found inside its own container, never by id on the whole page, so
+// two items open in two layers hold two of everything and neither draws into the other's parts.
+function ddInstance() {
+var ddRoot = null;
+function ddEl(id) { return ddRoot ? ddRoot.querySelector('#' + id) : null; }
+var ddRelease = null;
 var ddApi = null;
 var ddId = '';
 var ddFacts = null;          // the item's facts, as the server last said them
@@ -106,15 +113,15 @@ function ddArming() {
   return ddParts.then(function () {
     var A = typeof window !== 'undefined' && ANSWER['spirit/element/armingButton/script.js'];
     var F = typeof window !== 'undefined' && ANSWER['spirit/element/fieldInput/script.js'];
-    var say = document.getElementById('dd-say');
+    var say = ddEl('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit/type/string/paragraph/script.js'); say.setAttribute('data-held', 'paragraph'); }
     // Your name for the item, a label (goal/G48.4, box v22).
-    var myName = document.getElementById('dd-name');
+    var myName = ddEl('dd-name');
     if (F && myName && !myName.getAttribute('data-held')) { F.attach(myName, 'spirit/type/string/label/script.js'); myName.setAttribute('data-held', 'label'); }
     // The box's text, held to the type box.write takes (spirit/type/string/box/script.js).
-    var boxText = document.getElementById('dd-box-input');
+    var boxText = ddEl('dd-box-input');
     if (F && boxText && !boxText.getAttribute('data-held')) { F.attach(boxText, 'spirit/type/string/box/script.js'); boxText.setAttribute('data-held', 'box'); }
-    var body = document.getElementById('dd-body');
+    var body = ddEl('dd-body');
     if (!A || !body || typeof body.querySelectorAll !== 'function') return;
     Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {
       if (typeof b.armed === 'function') return;
@@ -164,7 +171,7 @@ var ddBench = null;
 var ddBenchBoxes = {};
 var ddFrameN = 0;
 function ddFrame() {
-  var el = document.getElementById('dd-body');
+  var el = ddEl('dd-body');
   if (!el) return;
   if (ddBench && typeof ddBench.destroy === 'function') ddBench.destroy();
   ddBench = null;
@@ -213,7 +220,7 @@ var ddAddParts = typeof spirit !== 'undefined' && spirit.requireScript
 function ddMakeAdd(n) {
   var R = ANSWER['spirit/element/rowForm/script.js'];
   var F = ANSWER['spirit/element/fieldInput/script.js'];
-  var row = document.getElementById('dd-add-row');
+  var row = ddEl('dd-add-row');
   if (n !== ddFrameN || !R || typeof R.create !== 'function' || !row || row.firstChild) return;
   var form = R.create(row, { icon: '➕', button: 'Add', press: function () { return ddAdd(); } });
   var words = document.createElement('span');
@@ -238,15 +245,15 @@ function ddAdd() {
 }
 // The left pane shows today's panel of the tool shown; the strip's tool is the panel's key (DD_PANELS).
 function ddShowLeft(name) {
-  var left = document.getElementById('dd-left');
+  var left = ddEl('dd-left');
   var box = ddBenchBoxes[name];
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
   var W = ANSWER['spirit/element/workBench/script.js'];
-  var host = document.getElementById('dd-bench');
-  var hold = document.getElementById('dd-hold');
-  var centre = document.getElementById('dd-centre');
+  var host = ddEl('dd-bench');
+  var hold = ddEl('dd-hold');
+  var centre = ddEl('dd-centre');
   if (n !== ddFrameN || !W || typeof W.create !== 'function' || !host || !centre) return;
   ddBench = W.create(host, {
     left: DD_PANELS.map(function (p) {
@@ -345,7 +352,7 @@ var DD_PANELS = [
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 // The workBench draws the strip and marks the shown tool (goal/G41.22); a waiting icon on it blinks.
 function ddBlinkIcons() {
-  var body = document.getElementById('dd-body');
+  var body = ddEl('dd-body');
   if (!body || typeof body.querySelectorAll !== 'function') return;
   var blink = { qs: ddWaits('Q') || ddWaits('G') };
   Array.prototype.forEach.call(body.querySelectorAll('[data-side="left"][data-tool]'), function (b) {
@@ -421,11 +428,11 @@ var ddBoxView = null;
 var ddBoxViewAsked = '';
 function ddBoxText() {
   if (ddBoxView && ddBoxView.id === ddId) return ddBoxView.view.value();
-  var el = document.getElementById('dd-box-input');
+  var el = ddEl('dd-box-input');
   return el ? String(el.value || '') : '';
 }
 function ddBoxMount() {
-  var host = document.getElementById('dd-box-host');
+  var host = ddEl('dd-box-host');
   if (!host) return;
   if (!ddBoxView || ddBoxView.id !== ddId) {
     if (ddBoxViewAsked === ddId) return;
@@ -481,7 +488,7 @@ function ddBoxHtml() {
 // the answer he writes below it."
 function ddQuote(number) {
   var c = ddChecks.filter(function (x) { return x.number === number; })[0];
-  var say = document.getElementById('dd-say');
+  var say = ddEl('dd-say');
   if (!c || !say) return;
   var had = String(say.value || '');
   say.value = (had && !/\n$/.test(had) ? had + '\n' : had) + c.number + ': ' + c.words + '\n\n';
@@ -545,7 +552,7 @@ function ddChatPin(host) {
   new ResizeObserver(function () { if (ddChatPinned) host.scrollTop = host.scrollHeight; }).observe(host);
 }
 function ddChatSync() {
-  var host = document.getElementById('dd-chat');
+  var host = ddEl('dd-chat');
   if (!host) return;
   var want = ddChat.map(function (l) { return { k: ddChatKey(l), h: ddBubble(l) }; });
   var whole = host !== ddChatShown.host || !want.length || !ddChatShown.items.length || ddChatMore !== ddChatShown.more;
@@ -583,32 +590,32 @@ function ddChatSync() {
   if (grew) ddChatPin(host);
 }
 
-function ddSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
+function ddSet(id, html) { var el = ddEl(id); if (el) el.innerHTML = html; }
 
 // Repaints every part between the inputs; a name he is typing survives it.
 function ddPaint() {
   var typed = ddRenaming ? ddValue('dd-name') : '';
   ddSet('dd-name-row', ddButtonsHtml());
-  var box = ddRenaming && typed && document.getElementById('dd-name');
+  var box = ddRenaming && typed && ddEl('dd-name');
   if (box) box.value = typed;
   ddBlinkIcons();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed.
   if (!(ddPanelSel === 'box' && ddBoxFocused)) { ddSet('dd-panel', ddPanelHtml()); if (ddPanelSel === 'box') ddBoxMount(); }
   // The plunger's rowForm stands in the frame; it shows with its panel only.
-  var addRow = document.getElementById('dd-add-row');
+  var addRow = ddEl('dd-add-row');
   if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
   ddChatSync();
-  var err = document.getElementById('dd-error');
+  var err = ddEl('dd-error');
   if (err) err.textContent = ddNote;
   if (ddFacts && typeof ddApi.setScreenTitle === 'function') ddApi.setScreenTitle(ddId + ' — ' + (ddFacts.title || '') + (ddFacts.status ? ' (' + ddFacts.status + ')' : ''));
   ddArming();
 }
 
 function ddValue(id) {
-  var el = document.getElementById(id);
+  var el = ddEl(id);
   return el ? String(el.value || '').trim() : '';
 }
-function ddClear(id) { var el = document.getElementById(id); if (el) el.value = ''; }
+function ddClear(id) { var el = ddEl(id); if (el) el.value = ''; }
 
 // What the server published about this item, painted as it comes. A dropped publish (too large) reads the item again
 // (desk/G3.10); a jump in change numbers does not (below).
@@ -701,7 +708,7 @@ function ddProblem(T, v) { try { T.isValid(v); return ''; } catch (e) { return (
 function ddBytes(v) { return new TextEncoder().encode(window.spirit.normalizeString(v)).length; }
 function ddFieldWhy(id) {
   var rule = ddFieldRule();
-  var el = document.getElementById(id);
+  var el = ddEl(id);
   var value = el ? String(el.value || '') : '';
   if (!rule || !value.trim()) return '';
   var problem = ddProblem(rule, value);
@@ -711,14 +718,14 @@ function ddFieldWhy(id) {
 }
 function ddFieldCheck(id) {
   var rule = ddFieldRule();
-  var el = document.getElementById(id);
-  var left = document.getElementById(id + '-left');
+  var el = ddEl(id);
+  var left = ddEl(id + '-left');
   if (!rule || !el || !left) return;
   var bytes = ddBytes(String(el.value || ''));
   var why = ddFieldWhy(id);
   left.textContent = why || (rule.MAX_BYTES - bytes) + ' bytes left';
   left.className = why ? 'job-start-error' : 'job-manifest-note';
-  var action = document.getElementById(DD_FIELD_ACTION[id]);
+  var action = ddEl(DD_FIELD_ACTION[id]);
   if (action) action.disabled = !!why;
 }
 // HIS BLUR WRITES THE BOX (goal/G9.3): changed, box.write; unchanged, nothing. The version is the one the dialog read,
@@ -739,7 +746,7 @@ function ddBoxFocus() {
       ddBox = String(b.box || '');
       ddBoxAtFocus = ddBox;
       if (ddBoxView && ddBoxView.id === id) ddBoxView.view.cm.setValue(ddBox);
-      else { var el = document.getElementById('dd-box-input'); if (el) el.value = ddBox; }
+      else { var el = ddEl('dd-box-input'); if (el) el.value = ddBox; }
       ddPaint();
     });
   }).catch(function () { /* the box stays as it was read */ });
@@ -830,10 +837,11 @@ function ddLoad() {
 var ddApp = {
   mount: function (container, api) {
     ddApi = api;
+    ddRoot = container;
     // Its box keeps what it holds inside (goal/G47.1, the box: "an element container always must constrain its children's
     // display to its own size"; overflow not visible).
     container.innerHTML = '<div id="dd-body" class="fill" style="min-height:0;overflow:auto"></div>';
-    document.getElementById('dd-body').addEventListener('click', function (event) {
+    ddEl('dd-body').addEventListener('click', function (event) {
       var t = event.target;
       // THE STRIP IS THE workBench's (goal/G41.22): an icon shows its panel through the bench's changed (ddMakeBench).
       var question = t && t.closest ? t.closest('[data-question]') : null;
@@ -851,7 +859,7 @@ var ddApp = {
       if (id === 'dd-rename') {
         ddRenaming = true;
         ddPaint();
-        var nameBox = document.getElementById('dd-name');
+        var nameBox = ddEl('dd-name');
         if (nameBox) nameBox.value = (ddFacts && ddFacts.title) || '';
         return;
       }
@@ -859,12 +867,12 @@ var ddApp = {
       if (id === 'dd-say-send') ddSay();
     });
     // EVERY MARKED INPUT, CHECKED AS TYPED (rule/12): one listener on the body, which is repainted.
-    document.getElementById('dd-body').addEventListener('input', function (event) {
+    ddEl('dd-body').addEventListener('input', function (event) {
       var t = event && event.target;
       if (!t || !t.getAttribute || t.getAttribute('data-field') !== 'label') return;
       if (DD_FIELD_ACTION[t.id]) ddFieldCheck(t.id);
     });
-    document.getElementById('dd-body').addEventListener('keydown', function (event) {
+    ddEl('dd-body').addEventListener('keydown', function (event) {
       if (event.key === 'Enter' && !event.repeat && event.target && event.target.id === 'dd-name') {
         event.preventDefault();
         ddRename();
@@ -874,17 +882,17 @@ var ddApp = {
     // focusin and focusout are what the body hears. Leaving the dialog blurs the box first, which is the release on
     // close - the dialog cannot hear the shell's Back.
     ['focus', 'focusin'].forEach(function (type) {
-      document.getElementById('dd-body').addEventListener(type, function (event) {
+      ddEl('dd-body').addEventListener(type, function (event) {
         if (event && event.target && event.target.id === 'dd-box-input') ddBoxFocus();
       });
     });
     ['blur', 'focusout'].forEach(function (type) {
-      document.getElementById('dd-body').addEventListener(type, function (event) {
+      ddEl('dd-body').addEventListener(type, function (event) {
         if (event && event.target && event.target.id === 'dd-box-input') ddBoxBlur();
       });
     });
     // The desk server's changes, which the shell would otherwise hand only to Desk.
-    if (api && typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
+    if (api && typeof api.onPublished === 'function') ddRelease = api.onPublished(ddTake, 'desk');
   },
 
   // Every call: which item this is. Nothing stale from the last one.
@@ -911,15 +919,26 @@ var ddApp = {
     ddPaint();
     return ddLoad();
   },
+
+  // Destroyed: what it listened to let go, its box emptied.
+  destroy: function () {
+    if (typeof ddRelease === 'function') ddRelease();
+    ddRelease = null;
+    if (ddRoot) ddRoot.innerHTML = '';
+    ddRoot = null;
+  },
 };
+return ddApp;
+}
 // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
 module.exports = { create: function (container, opts) {
   // MOUNTED EMPTY, NO THROW (goal/G47.1, the box: "an element that throws when mounted empty is a red at 0.8"): with no
   // page's way to the node (opts.via) or no item, it draws its empty body and opens nothing.
   var o = opts || {};
+  var ddApp = ddInstance();
   ddApp.mount(container, o.via || null);
   if (o.via && o.id) ddApp.open(o);
-  return { destroy: function () { container.innerHTML = ''; } };
+  return { destroy: function () { ddApp.destroy(); } };
 } };
 }());
 }());

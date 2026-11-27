@@ -84,29 +84,31 @@ function deskHear(fn) {
   return function () { var i = deskHeard.indexOf(fn); if (i !== -1) deskHeard.splice(i, 1); };
 }
 // A dialog over the page: the element at file, made in a layer of its own kind; its close answers the dialog.
-// ONE LAYER PER KIND, FILLED AGAIN FOR EACH ROW (Andy: "after i closed "Fix api branches" the other items won't open for me",
-// "all i see, when opening another item is the titlebar of that item"): a closed layer is hidden, not destroyed (panel.js,
-// goal/G43.17 Q2/Q3), and the details find their parts by id on the page, so a second layer of the same kind drew into the
-// first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, and opening
-// another row fills that layer again with it.
-var deskPanes = {};
+// EACH ROW IN A LAYER OF ITS OWN, SHOWN AGAIN AS LEFT (goal/G49.8, point 4: "an app's row details, each in its own panel, shown
+// again as left"): an item opens in the layer keyed by its id, and opened again, that layer is shown as it was left, never
+// filled anew. A closed layer is hidden, not destroyed (panel.js, goal/G43.17 Q2/Q3). Before, every item shared one 'item'
+// layer, because the details found their parts by id on the whole page and a second layer drew into the first one's hidden
+// parts (Andy: "after i closed "Fix api branches" the other items won't open for me"); the details are one instance per
+// layer now, each finding its parts inside its own pane (deskDetails.js, ddInstance), so that cause is gone.
+// The open dialog of each layer answers its latest open: a close resolves the promise of the open that showed it.
+var deskCloses = {};
 function deskDialog(key, label, file, element, params) {
   var S = window.spirit;
   return new Promise(function (resolve) {
+    deskCloses[key] = resolve;
     var layer = null;
     var made = null;
     function fillWith(pane) {
       return S.requireScript(file).then(function (dialog) {
         // The dialog asks through the page's own way to the node; its close and its title are its layer's.
         var via = Object.assign({}, deskVia, {
-          closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); resolve(result || {}); },
+          closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); var r = deskCloses[key]; if (typeof r === 'function') r(result || {}); },
           setScreenTitle: function (text) { if (layer && typeof layer.set === 'function') layer.set({ icon: '🗂️', label: String(text || label) }); },
         });
         return dialog.create(pane, Object.assign({}, params, { via: via }));
       });
     }
     var spec = { icon: '🗂️', label: label, fill: function (pane, closed) {
-      deskPanes[key] = pane;
       made = fillWith(pane);
       return made.then(function (m) { return closed() ? null : m; });
     } };
@@ -114,11 +116,7 @@ function deskDialog(key, label, file, element, params) {
     Promise.resolve(opened).then(function (l) {
       layer = l;
       if (!layer) return;
-      // The layer was there already: shown as it was left, so it is filled again with this row, under this row's title.
-      if (!made && deskPanes[key]) {
-        if (typeof layer.set === 'function') layer.set({ icon: '🗂️', label: label });
-        fillWith(deskPanes[key]);
-      }
+      // The layer was there already: shown as it was left, its own row in it.
       if (typeof layer.show === 'function') layer.show();
     });
   });
@@ -128,7 +126,7 @@ var deskVia = {
   escapeHtml: function (t) { return window.spirit.escapeHtml(t); },
   onPublished: function (fn) { return deskHear(fn); },
   callDialog: function (target, params) {
-    return deskDialog('item', String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
+    return deskDialog('item:' + String(params && params.id), String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
   },
 };
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the

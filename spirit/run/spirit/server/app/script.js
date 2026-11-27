@@ -351,7 +351,7 @@ function shape(v) {
 // SINCE goal/G30.4 THERE IS NO AGENTS VERB: an app's AGENTS.md lives in its
 // family folder, the app folder itself (spirit/app/<name>/, goal/G43.27,
 // withAgents below), and is read with
-// spirit.required.spirit.fs.api.loadFile at its path (goal/G43.27; Andy: "easily changed, no?"),
+// spirit.fs.loadFile at its path (goal/G43.27; Andy: "easily changed, no?"),
 // an edit being the next read.
 
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:

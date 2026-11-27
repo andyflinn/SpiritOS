@@ -613,7 +613,7 @@
   // exports; on a page, where a script installs itself as it runs, an empty object marks it loaded.
   // ON THE SPIRIT OBJECT ITSELF (goal/G49.23, box v21, Part 1: "spirit.requireScript() places it's return objects in the spirit
   // object, and no longer on spirit.required.spirit"): the tree's root step spirit is the spirit object, so spirit/fs/script.js
-  // stands at spirit.fs and spirit/fs/client/script.js at spirit.fs.client. Its own helpers all hold an uppercase letter
+  // stands at spirit.fs and its client/script.js at spirit.fs.client. Its own helpers all hold an uppercase letter
   // (goal/G49.6), a folder's name none, so no path takes a helper's name. There is no spirit.required.
   var required = Object.create(null);
   required.spirit = self;
@@ -719,9 +719,15 @@
   // loader's own reads: the fs cache's branch marks, the page's home node, a face call's size.
   var STORE = null;
   var LIMITS = null;
+  // THE FS BRANCH'S CLIENT, as the loader placed it under the branch, at spirit.fs.client (goal/G49.23, box v22 Part 1); the loader
+  // reads what it placed itself, and names only the branch: spirit.js knows nothing of fs streaming (goal/G49.1, the fs dataset's rule),
+  // neither the client's file nor the dataset's. Null until something loaded the client.
+  function fsClient() {
+    var b = placedAt('spirit/fs/script.js');
+    return (b && b.client) || null;
+  }
   function isBranchFolder(dir) {
-    // The fs client as the loader placed it, at spirit.fs.client (goal/G49.23, box v22 Part 1); the loader reads what it placed itself.
-    var fsData = placedAt('spirit/fs/client/script.js');
+    var fsData = fsClient();
     if (fsData && typeof fsData.ready === 'function' && fsData.ready() && typeof fsData.file === 'function') {
       var row = fsData.file(dir);
       return Promise.resolve(!!(row && row.branch === true));
@@ -874,14 +880,15 @@
   // path nor the apps spirit path"): spirit.appPath(elementPath) "first calls spirit.requireScript('spirit/fs/script.js') and
   // waits for the file-cache to be ready", then "finds the app path by moving in the elementPath toward the trunk, catching the
   // app-mark on the fs-cache row". It answers a promise: the app's id, its folder in dots (spirit.app.desk), or '' when no
-  // folder on the way up is an app. In node the file cache is spirit/fs/dataset/script.js, which requires spirit/fs/script.js
-  // and, in a process no watcher feeds, follows the node's stream; on a page spirit/fs/script.js brings its client.
+  // folder on the way up is an app. In node and on a page alike it requires the fs branch, which brings its client; who feeds that
+  // client is no business of spirit.js (goal/G49.1, the fs dataset's rule "spirit.js knows nothing of fs streaming"): in node the
+  // watcher of the process, or the dataset a process required for itself. A binding the process is refused (no node to bind to)
+  // still leaves the client loaded.
   function appPath(elementPath) {
     var p = runPathOf(elementPath);
-    var loaded = isNode() ? Promise.resolve(requireOne('spirit/fs/dataset/script.js')) : Promise.resolve(requireOne('spirit/fs/script.js'));
-    // The fs reads as the require hands them back (goal/G49.23, box v22 Part 1): the dataset in node, the fs branch's client on a page.
-    return loaded.then(function (got) {
-      var fsData = isNode() ? got : (got && got.client);
+    var loaded = Promise.resolve(requireOne('spirit/fs/script.js')).then(null, function () { /* the binding; the client is here */ });
+    return loaded.then(function () {
+      var fsData = fsClient();
       if (!fsData) return '';
       return new Promise(function (resolve) {
         if (fsData.ready()) { resolve(); return; }
