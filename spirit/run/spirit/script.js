@@ -372,6 +372,8 @@
   // A BRANCH IS BOUND FROM THE CALLER'S OWN COPY OF ITS api.js, A PEER'S TOO (goal/G43.32; Andy: "ALL, DO IT! WITH CODE FROM
   // THE OWN NODE!"): in node the file on its own disc, required as it is; on a page what its own node answers for it. Only
   // the calls go where ask sends them, to this node or to a peer; nothing a peer hands over is run here.
+  // The interfaces a page's own run of a branch's script.js put out, by the branch's name (ONE RUN, below).
+  var scriptDefs = Object.create(null);
   function ownInterface(fam) {
     if (isNode()) {
       // The path it was asked by (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"): never
@@ -382,6 +384,11 @@
       if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) { nodeOnce[p] = require(file); placeAt(required, p, nodeOnce[p]); }
       return Promise.resolve(nodeOnce[p]);
     }
+    // ONE RUN (goal/G49.23; Andy: "don't you think the double run needs fixing now?", "agreed, then this gets done now"): a branch
+    // of the new shape whose script.js this page has run connects from what that run put out; the node is not asked for its
+    // interface a second time, so the interface is not run again, and its connect needs nothing below it. A branch of the old
+    // shape, its api.js never run on the page, still comes from the node's copy.
+    if (scriptDefs[fam]) return Promise.resolve(scriptDefs[fam]);
     return Promise.resolve(post('api', { branch: fam })).then(function (got) {
       if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the branch ' + fam);
       return loadInterface(got.body.interface, fam);
@@ -645,18 +652,17 @@
     return isInterface(nodeOnce[p]) ? name : '';
   }
   // PARENT BRANCHES FIRST, ON A PAGE (goal/G49.23; Andy: "parent first: spirit, then app, then text....", "i only meant parent
-  // branches....", and of cw's catch, "exception accepted."): before a script is loaded, each branch above it is, top down
-  // (spirit.app before spirit/app/text/element.js), so a branch is loaded, connected and in its place before anything under it
-  // lands there. A folder above is a branch by its mark in the fs cache (Andy: "the page knows from it's fs-cache which parent
-  // nodes in the file tree are branches."; spirit/fs/filter/branch/script.js: script.js and client/script.js); until that cache
-  // is ready, by looking its client/script.js up, once and remembered, never by waiting for the cache (the fs branch's own load
-  // needs scripts that would then wait for it). An element's folder above (the search element's, above the file search) is
-  // none, and is not waited for. The spirit object itself is loaded already. THE EXCEPTION: what a branch loads for itself as it
-  // runs (its client, and what that loads in turn) does not wait for it, since its own load waits for them: on a page its
-  // connect runs the interface the node hands over again, and that run asks for its client.
-  var loadedBy = Object.create(null);
-  var running = null;
+  // branches....", "if the connect is spirit-business, then no branch farther away from the root should need requiring at that
+  // time....", and his go): before a script is loaded, each branch above it is loaded and connected, top down (spirit.app before
+  // spirit/app/text/element.js), so it stands in its place before anything under it lands there. A branch connects as soon as its
+  // own script has run, needing nothing farther from the root; what lies under it waits for that connect only, so nothing waits
+  // in a circle, its own client neither. A folder above is a branch by its mark in the fs cache (Andy: "the page knows from it's
+  // fs-cache which parent nodes in the file tree are branches."; spirit/fs/filter/branch/script.js: script.js and
+  // client/script.js); until that cache is ready, by looking its client/script.js up, once and remembered, never by waiting for
+  // the cache (the fs branch's own load needs scripts that would then wait for it). An element's folder above (the search
+  // element's, above the file search) is none. The spirit object itself is loaded already.
   var branchFolder = Object.create(null);
+  var looked = Object.create(null);
   function isBranchFolder(dir) {
     var fsData = required.spirit && required.spirit.data && required.spirit.data.fs && required.spirit.data.fs.data;
     if (fsData && typeof fsData.ready === 'function' && fsData.ready() && typeof fsData.file === 'function') {
@@ -664,26 +670,33 @@
       return Promise.resolve(!!(row && row.branch === true));
     }
     if (!branchFolder[dir]) {
-      branchFolder[dir] = get(dir + '/client/script.js').then(function (r) { return !!r && r.status === 200; }, function () { return false; });
+      // Its answer is kept for the load that follows, so no file is fetched twice.
+      var lookedPath = dir + '/client/script.js';
+      branchFolder[dir] = get(lookedPath).then(function (r) { if (r && r.status === 200) looked[lookedPath] = r; return !!r && r.status === 200; }, function () { return false; });
     }
     return branchFolder[dir];
   }
-  function parentsFirst(p, by) {
+  // A script's connect, settled once it is connected, or once it turned out to be no branch, or failed to load.
+  var connects = Object.create(null);
+  function connectOf(pp) {
+    if (!connects[pp]) { var done = null; connects[pp] = new Promise(function (r) { done = r; }); connects[pp].done = done; }
+    return connects[pp];
+  }
+  function connected(pp) { connectOf(pp).done(); }
+  function parentsFirst(p) {
     var parts = String(p).split('/');
     var chain = Promise.resolve();
     for (var i = 2; i < parts.length; i += 1) {
       (function (dir) {
         var pp = dir + '/script.js';
-        if (pp === p || by.indexOf(pp) !== -1 || /\/client$/.test(dir)) return;
+        if (pp === p || /\/client$/.test(dir)) return;
         chain = chain.then(function () { return isBranchFolder(dir); }).then(function (yes) {
           if (!yes) return null;
           // Asked outside any tree: a parent's load is no part of whoever asked for the child.
-          var outer = collecting, outerRunning = running;
-          collecting = null; running = by.slice();
-          var got;
-          try { got = requireOne(pp); } finally { collecting = outer; running = outerRunning; }
-          // A branch that cannot be loaded or bound fails no child (as it fails no tree).
-          return Promise.resolve(got).then(null, function () { return null; });
+          var outer = collecting;
+          collecting = null;
+          try { Promise.resolve(requireOne(pp)).then(null, function () { connected(pp); }); } catch (e) { connected(pp); } finally { collecting = outer; }
+          return connectOf(pp);
         });
       }(parts.slice(0, i).join('/')));
     }
@@ -728,15 +741,11 @@
     }
     if (requiredOnce[p]) { if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
     // A script the page loaded by its own tag (the home shell's index.html) has run: it counts as required.
-    if (loadedByTag(p)) { requiredOnce[p] = Promise.resolve(keptAt(p)); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
-    // Who loads it: the scripts running as it is asked for, and whoever loaded them (the exception to parent first, above).
-    var by = loadedBy[p] = running ? running.slice() : [];
-    var answer = parentsFirst(p, by).then(function () { return get(p); }).then(function (r) {
+    if (loadedByTag(p)) { connected(p); requiredOnce[p] = Promise.resolve(keptAt(p)); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
+    var answer = parentsFirst(p).then(function () { var kept = looked[p]; if (kept) { delete looked[p]; return kept; } return get(p); }).then(function (r) {
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
       var outer = collecting;
-      var outerRunning = running;
       var tree = collecting = [];
-      running = by.concat([p]);
       // ON A PAGE A FILE RUNS AS A PLAIN SCRIPT (goal/G41.7; Andy: "script IS what codeMirror Is, use the require
       // interfaces that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): every shell element puts itself into
       // window.spirit as it runs, so none is handed a module box, and a file written for both node and a page
@@ -746,7 +755,7 @@
       // line as in node, and the loader places it at the script's place and answers with it. A vendored script gets no box,
       // so a file written for both (CodeMirror's) still takes its page branch (G41.7).
       var box = null;
-      try { box = injectBoxed(p, text(r.bytes)); } finally { collecting = outer; running = outerRunning; }
+      try { box = injectBoxed(p, text(r.bytes)); } finally { collecting = outer; }
       if (box && box.set) {
         if (!placeable(box.exports)) throw refusal('not-placeable', p + ' exposes ' + typeof box.exports + ': a script exposes an object');
         markPath(box.exports, p);
@@ -756,18 +765,22 @@
       var named = box && box.set && isInterface(box.exports) ? branchNameOf(p) : '';
       if (named) {
         pathOf[named] = pathOf[named] || p;
-        return Promise.all(tree).then(function () {
-          if (key) return bindPeer(key, named, how);
-          return bindOwn(named).then(function (m) { if (m && required !== m) standAt(required, p, m); return m; });
-        });
+        if (key) { connected(p); return Promise.all(tree).then(function () { return bindPeer(key, named, how); }); }
+        // IT CONNECTS AS SOON AS ITS SCRIPT HAS RUN (goal/G49.23, Andy: "if the connect is spirit-business ..."): the connect needs
+        // nothing of its tree; its require still answers once its tree has loaded too.
+        scriptDefs[named] = box.exports;
+        var binds = bindOwn(named).then(function (m) { if (m && required !== m) standAt(required, p, m); return m; });
+        binds.then(function () { connected(p); }, function () { connected(p); });
+        return Promise.all(tree).then(function () { return binds; });
       }
+      connected(p);
       // WHAT THE SCRIPT PUT OUT IS ITS ANSWER (goal/G49.23; Andy's Go on cw's find): never what stands at its place once its
       // tree has loaded, which a branch bound meanwhile may have replaced. A script that put nothing out answers its place.
       return Promise.all(tree).then(function () { return markPath(box && box.set ? box.exports : keptAt(p), p); });
     });
     requiredOnce[p] = answer;
     // A refused require is not kept: it may be asked again.
-    answer.then(null, function () { if (requiredOnce[p] === answer) delete requiredOnce[p]; });
+    answer.then(null, function () { connected(p); if (requiredOnce[p] === answer) delete requiredOnce[p]; });
     if (collecting) collecting.push(answer);
     return answer;
   }
@@ -1513,6 +1526,8 @@
         inject(p, text(r.bytes));
         // What the boot loaded counts as required (goal/G41.3): requiring it again runs nothing.
         requiredOnce[p] = Promise.resolve({});
+        // Loaded by the boot, it is no branch waiting to connect: nothing under it waits for it.
+        connected(p);
       });
     }, Promise.resolve());
   }
