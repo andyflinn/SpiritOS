@@ -117,7 +117,7 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
       });
       drawSuites();
       list = ANSWER['spirit/element/search/script.js'].create(container.firstElementChild, {
-        data: data.branch('testicle'),
+        data: data.handle('testicle'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.testicle.search, every script.
         search: function (args) {
           return ask(args || { text: '' }).then(function (b) { return { status: 200, body: { items: b.items, more: b.more } }; });

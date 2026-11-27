@@ -65,7 +65,7 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
         });
       };
       list = ANSWER['spirit/element/search/script.js'].create(container.firstElementChild, {
-        data: data.branch('suite'),
+        data: data.handle('suite'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.suite.search for this file.
         search: function (args) {
           return ask((args && args.text) || '').then(function (b) { return { status: 200, body: { items: (b && b.items) || [], more: !!(b && b.more) } }; });

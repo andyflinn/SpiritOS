@@ -130,7 +130,7 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
             return { status: 200, body: { ok: true, items: (b && b.items) || [], more: !!(b && b.more) } };
           }, function (e) { return { status: (e && e.status) || 500, body: { ok: false, error: String((e && e.message) || e) } }; });
         },
-        data: keptRows('spirit/app/icons/api.js').branch,
+        data: keptRows('spirit/app/icons/api.js').handle('icons'),
         api: 'spirit/app/icons/api.js',
         verb: 'icon',
         face: 'pane',

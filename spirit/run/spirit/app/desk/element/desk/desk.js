@@ -582,7 +582,8 @@ function deskMountList() {
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
-      data: K.branch,
+      // A handle on the desk's items, as its client puts it out (goal/G49.23, box v22 Part 1): the search takes a handle, no path.
+      data: K.handle('desk'),
       // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
       // publishes, which ask again.
       search: function (args, verb) { return deskVia.verb('spirit/app/desk/api.js', verb, args); },
