@@ -23,8 +23,8 @@
 // (a third of the height: the last event clicked, JSON.stringify(object, null, 2), in a read-only CodeMirror text view). The
 // log and the Extract box scroll inside themselves.
 //
-// LIVE THROUGH spirit.required.spirit.data (goal/G41.28): the job and its last events are the jobs family's cache manager's
-// (spirit.required.spirit.data.job.data, spirit/job/client/script.js), which keeps every job's events whatever is on screen, so a reopen shows what
+// LIVE THROUGH the store (spirit/client/script.js) (goal/G41.28): the job and its last events are the jobs family's cache manager's
+// (spirit.job.client, spirit/job/client/script.js), which keeps every job's events whatever is on screen, so a reopen shows what
 // came meanwhile. It repaints when its job changes there.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -39,7 +39,6 @@
   // button, and the jobs family's interface, spirit/job/script.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs are its job.data.
   var parts = Promise.all([keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/search/job/row/script.js'), Promise.resolve(window.spirit.readyPromise)]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
@@ -54,7 +53,9 @@
     error: '⚠️',
   };
 
-  function data() { return ((window.spirit.dataStore || {}).job || {}).data || null; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the jobs are the reads of the job branch
+  // spirit.requireScript handed back, at its client.
+  function data() { var b = ANSWER['spirit/job/script.js']; return (b && b.client) || null; }
 
   // A facts bubble: the old shell's factRow markup and classes, drawn here (new code requires nothing of the old shell).
   function factRow(pairs) {
@@ -175,7 +176,7 @@
         view = v;
         if (view && view.cm && typeof view.cm.setSize === 'function') view.cm.setSize('100%', '100%');
       }, function () { /* the Extract box stays empty */ });
-      // It repaints when its job changes in spirit.required.spirit.data, or when the whole set is read again. With no job named it shows
+      // It repaints when its job changes in the store (spirit/client/script.js), or when the whole set is read again. With no job named it shows
       // that none is listed and watches nothing: a watch it never redraws for is no listening (goal/G43.32, the general
       // rules' "redraws for none"; Andy: "fix what needs fixing.").
       if (J && id) off = J.watch(function (changed) { if (!changed || changed === id) render(); });

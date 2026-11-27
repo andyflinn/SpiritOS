@@ -30,10 +30,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: a server's
-  // published remote row is its <server>.remote; asked as this file runs, so it is in before a layer is opened.
   var parts = Promise.all([keepAnswer('spirit/element/rowForm/script.js'), keepAnswer('spirit/element/icon/script.js')]);
-  function store() { return window.spirit.dataStore; }
 
   function create(host, under) {
     var layers = Object.create(null);
@@ -85,13 +82,21 @@
           (Array.isArray(r.items) ? r.items : []).forEach(function (i) { labels[String(i.key)] = String(i.label || i.key); });
           showCurrent();
         }
-        // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/client/script.js"): the server's
-        // published remote row, filed there by spirit/client/script.js, is followed as it comes.
-        var unwatchRemote = store() && typeof store().watchPath === 'function' ? store().watchPath('remote/' + server, function (p, r) { take(r); }) : null;
+        // WHAT IS PUBLISHED AS ITS REMOTE IS WHAT IT SHOWS (Andy: "all, agreed. spirit/client/script.js"): the server's published
+        // remote row is followed as it comes.
+        // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the published remote row stands on the app's branch, as
+        // the require hands it back: remote, the row last published, and watchRemote(fn), at its client (new shape) or its
+        // data (old shape, an api.js) (cw's 66e1d112a).
+        var unwatchRemote = null;
         keepAnswer('spirit/element/search/script.js').then(function () {
           if (dropped) return;
-          take(store() && store()[server] && store()[server].remote);
           var fam = function () { return Promise.resolve(S.requireScript(S.slashedPath(server) + '/api.js')); };
+          fam().then(function (f) {
+            var reads = f && (f.client || f.data);
+            if (dropped || !reads) return;
+            if (reads.remote) take(reads.remote);
+            if (typeof reads.watchRemote === 'function') unwatchRemote = reads.watchRemote(take);
+          }, function () { /* no branch: the bar follows its own asks */ });
           opts = {
             face: 'dropdown', placeholder: 'remote…',
             // ITS OWN SOURCE: remote's rows are { key, label } with the label a name, while a list's rows ride as a label

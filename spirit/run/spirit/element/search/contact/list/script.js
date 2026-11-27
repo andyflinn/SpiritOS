@@ -9,7 +9,7 @@
 //   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
 //     the owner keeps, owns or blocked; and starts a network search on the node, whose finds stream in, one row each,
 //     stored as nothing (goal/G43.17). All of it lands in
-//     the contact family's cache (spirit.required.spirit.data.contact.data, goal/G41.28), and this list is a view of it: every list
+//     the contact family's cache (spirit.contact.client, goal/G41.28), and this list is a view of it: every list
 //     of contacts on the page shows the same rows.
 //   - One list, cached by key: one row per ID, a relay as well as a person. One row of filters instead of two folds:
 //     all, my puppets, blocked, relays, and at its end a network toggle, off at first (box v8): on, the rows the owner
@@ -59,9 +59,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/contact/row/script.js', 'spirit/element/search/script.js', 'spirit/element/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.requireScript('spirit/contact/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the contacts are its contact.data.
-  function STORE() { return window.spirit.dataStore || {}; }
+  keepAnswer('spirit/contact/script.js');
+  function CONTACTS() { return ANSWER['spirit/contact/script.js'].client; }
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, or relay.
   function is(kind) {
@@ -216,9 +215,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      // A view of the node's contacts, the branch the contact family's manager keeps (spirit.required.spirit.data.contact.data.branch); an
-      // ID table of another family is the branch its caller names.
-      data: o.data || (table ? undefined : STORE().contact.data.branch),
+      // A view of the node's contacts, a handle on the branch the contact client keeps (goal/G49.23: its handle('contacts')); an
+      // ID table of another family is the handle its caller hands.
+      data: o.data || (table ? undefined : CONTACTS().handle('contacts')),
       face: o.face,
       placeholder: o.placeholder || 'choose a contact…',
       all: o.all,

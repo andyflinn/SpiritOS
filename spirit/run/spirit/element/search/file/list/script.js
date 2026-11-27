@@ -3,7 +3,7 @@
 // The list the file selector, ../script.js, draws (goal/G43.32: it was search/file.js). Its test: ../test/script.js, through the selector.
 // THE FILES LIST, A DROP-IN SHELL ELEMENT (goal/G30.20): the node's files on the standard list-tool
 // (spirit/element/search/script.js), each row a file row element (file/row.js), the list a view of the fs family's
-// cache (spirit/fs/client/script.js, spirit.required.spirit.data.fs.data: the faceless layer's mirror of the node's tree). The Files app draws it as a pane, an app picking a file as a
+// cache (spirit/fs/client/script.js, spirit.fs.client: the faceless layer's mirror of the node's tree). The Files app draws it as a pane, an app picking a file as a
 // dropdown; it replaced the legacy file selector, deleted with it.
 //   - Names are ranked from the mirror at once; fs.search is asked only by contents, what the page cannot answer.
 //   - No words: the tree, in path order, every folder folded at first, 2em of indent per slash; a folder's press opens
@@ -43,8 +43,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   if (window.spirit.requireScript) ['spirit/element/search/file/row/script.js', 'spirit/element/search/file/tile/script.js', 'spirit/element/search/script.js', 'spirit/element/fstat/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
   keepAnswer('spirit/fs/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the file tree is its fs.data.
-  function fsReads() { return (window.spirit && ((window.spirit.dataStore || {}).fs || {}).data) || null; }
+  function fsReads() { var b = ANSWER['spirit/fs/script.js']; return (b && b.client) || null; }
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;
@@ -110,8 +109,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     list = ANSWER['spirit/element/search/script.js'].create(inner, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
-      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.required.spirit.data.fs.data.branch).
-      data: fsReads().branch,
+      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.fs.client's handle).
+      data: fsReads().handle('files'),
       api: 'spirit/fs/script.js',
       verb: 'search',
       face: o.face,

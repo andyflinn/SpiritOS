@@ -54,7 +54,8 @@
     var list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      data: String(g.branch),
+      // goal/G49.23, box v22 Part 1: the table's branch is a handle on it, as a client hands it out.
+      data: g.branch,
       verb: 'search',
       face: o.face === 'dropdown' ? 'dropdown' : 'pane',
       placeholder: o.placeholder || 'choose a grant…',

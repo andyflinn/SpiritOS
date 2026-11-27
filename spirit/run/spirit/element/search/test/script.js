@@ -101,8 +101,9 @@ LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, 
   'spirit/limits/script.js': LOADER.requireScript('spirit/limits/script.js'),
   // fieldInput, a page helper, stands in: it holds the words to their rule, which the page test judges, not this one.
   'spirit/element/fieldInput/script.js': { attach: function () {} },
-  // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the search reads it from what spirit/client/script.js hands back, never
-  // at its place (goal/G49.23: the store at spirit.client). The tests below swap the data set the page holds, so the answer is the one the page holds at each read.
+  // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): what spirit/client/script.js hands back, the store at spirit.client, for
+  // whatever part asks for it; the search itself asks none (box v22 Part 1): it is handed a handle on its branch. The tests below swap
+  // the data set the page holds, so the answer is the one the page holds at each read.
   'spirit/client/script.js': new Proxy({}, { get: function (t, k) { const D = window.spirit.client; return D ? D[k] : undefined; } }),
 });
 // The element, once the first test has run its file.
@@ -117,7 +118,8 @@ function loadData() { PAGE_LOAD.runAsPage('spirit/client/script.js'); return win
 let REAL_DATA = loadData();
 let BRANCHES = 0;
 function rowOf(r) { const v = Object.assign({}, r); delete v.key; return v; }
-function fill(b, rows) {
+function fill(h, rows) {
+  const b = h && typeof h === 'object' ? h.path : h;
   const D = window.spirit.client;
   const want = (rows || []).map(function (r) { return String(r.key); });
   const had = Object.keys(D.branchAt(b) || {});
@@ -129,15 +131,24 @@ function fill(b, rows) {
   if (!inPlace) kept.forEach(function (k) { D.delPath(b + '/' + k); });
   (rows || []).forEach(function (r) { D.setPath(b + '/' + r.key, rowOf(r)); });
 }
-function branchOf(rows) { const b = 'searchTest/search/b' + (++BRANCHES); fill(b, rows); return b; }
+// A HANDLE ON A BRANCH (goal/G49.23, box v22 Part 1): what a client's handle(branch) answers, { path, rows(), whole(), seat(items),
+// watch(fn), ready(now) }, here over the page's data set at each call, so a test that swaps it is read: the search is handed it.
+function handleOf(b) {
+  const D = function () { return window.spirit.client; };
+  return { get path() { return b; }, rows: function () { return D().rowsOf(b); }, whole: function () { return D().branchAt(b); },
+    seat: function (items) { D().seatRows(b, items); }, watch: function (fn) { return D().watchPath(b, fn); }, ready: function (now) { return D().readyBranch(b, now); } };
+}
+function branchOf(rows) { const b = 'searchTest/search/b' + (++BRANCHES); fill(b, rows); return handleOf(b); }
 // The same two on a page, over the page's own spirit.client (spirit.js loads spirit/client/script.js as it gets ready): window.__fill and
 // window.__branchOf, put on the page before a search is made there.
 const PAGE_DATA = 'window.__nb = window.__nb || 0; ' +
-  'window.__fill = function (b, rows) { var D = window.spirit.client; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
+  'window.__handleOf = function (b) { var D = function () { return window.spirit.client; }; return { get path() { return b; }, rows: function () { return D().rowsOf(b); }, whole: function () { return D().branchAt(b); }, ' +
+  'seat: function (items) { D().seatRows(b, items); }, watch: function (fn) { return D().watchPath(b, fn); }, ready: function (now) { return D().readyBranch(b, now); } }; }; ' +
+  'window.__fill = function (h, rows) { var b = h && typeof h === "object" ? h.path : h; var D = window.spirit.client; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
   'var had = Object.keys(D.branchAt(b) || {}); had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + "/" + k); }); ' +
   'var kept = had.filter(function (k) { return want.indexOf(k) !== -1; }); if (kept.join("|") !== want.slice(0, kept.length).join("|")) kept.forEach(function (k) { D.delPath(b + "/" + k); }); ' +
-  '(rows || []).forEach(function (r) { var v = Object.assign({}, r); delete v.key; D.setPath(b + "/" + r.key, v); }); return b; }; ' +
-  'window.__branchOf = function (rows) { window.__nb += 1; return window.__fill("searchTest/search/p" + window.__nb, rows); }; ';
+  '(rows || []).forEach(function (r) { var v = Object.assign({}, r); delete v.key; D.setPath(b + "/" + r.key, v); }); return h; }; ' +
+  'window.__branchOf = function (rows) { window.__nb += 1; return window.__fill(window.__handleOf("searchTest/search/p" + window.__nb), rows); }; ';
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 
@@ -970,7 +981,7 @@ test.run('with data its rows are the branch\'s, drawn at once', 0.2, function ()
   c7 = container();
   A7 = source('s');
   A7.answer = { status: 200, body: { ok: true, items: [{ key: 'p2', label: '{"name":"per"}' }] } };
-  L7 = PS.create(c7, { search: A7.search, server: 's', verb: 'v', data: 'people', columns: [{ field: 'name' }] });
+  L7 = PS.create(c7, { search: A7.search, server: 's', verb: 'v', data: handleOf('people'), columns: [{ field: 'name' }] });
   return (c7.shown().join() === 'p1') ? true : false;
 }, test.limit.quick);
 test.run('it watches its branch', 0.2, function () {
@@ -1019,7 +1030,7 @@ test.run('over the real spirit.client, two rows filed apart in the branch but sh
   ['desk.chat', 'jobs.list'].forEach(function (p) { D.takeJob({ id: 'spirit.grant', data: { row: { key: K, path: p, name: 'Ubu' } } }, NODE); });
   c7b = container();
   const A = source('s');
-  const L = PS.create(c7b, { search: A.search, server: 's', verb: 'v', data: X.branch, columns: [{ field: 'name' }, { field: 'path' }] });
+  const L = PS.create(c7b, { search: A.search, server: 's', verb: 'v', data: handleOf(X.branch), columns: [{ field: 'name' }, { field: 'path' }] });
   await tick();
   const shown = c7b.shown().length;
   L.destroy();

@@ -14,17 +14,15 @@
   var APP = /^spirit\/app\/([^/]+)\/\1\.js$/;
 
   function sp() { return window.spirit || {}; }
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app
-  // cache is its app.data.
-  var STORE = null;
-  var store = typeof sp().requireScript === 'function' ? Promise.resolve(sp().readyPromise).then(function () { STORE = sp().dataStore || null; }, function () { /* not started: no rows */ }) : Promise.resolve();
+  var APP_BRANCH = null;
+  var store = typeof sp().requireScript === 'function' ? Promise.resolve(sp().readyPromise).then(function () { return sp().requireScript('spirit/app/script.js'); }).then(function (b) { APP_BRANCH = b || null; }, function () { /* not started: no rows */ }) : Promise.resolve();
 
   // AN APP IN spirit/app: ONE STATE, THE ROW'S ACTIVE.
   function createForApp(host, key) {
     var gone = false;
     var off = function () {};
     var shown = null;
-    function reads() { return ((STORE || {}).app || {}).data; }
+    function reads() { return (APP_BRANCH && APP_BRANCH.client) || null; }
     function isOn() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.active === true; }
     // AN INTRINSIC APP GETS NO BUTTON (goal/G43.15): its row says so, and app.active would refuse it.
     function isIntrinsic() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.intrinsic === true; }

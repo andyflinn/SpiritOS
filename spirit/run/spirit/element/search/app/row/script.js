@@ -5,7 +5,7 @@
 //
 //   spirit.required.spirit.element.search.app.row.create(row) -> a row of kind app; row { key, label, icon }
 //
-// WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.required.spirit.data.app.data for every app row on the page, each change to the rows
+// WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.app.client for every app row on the page, each change to the rows
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -24,9 +24,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/row/script.js', 'spirit/element/icon/script.js', 'spirit/element/search/app/rowFormAppActive/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app rows are its app.data.
   var storeReady = Promise.resolve(window.spirit.readyPromise);
-  function appReads() { return ((window.spirit.dataStore || {}).app || {}).data; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the app rows are the reads of the app branch spirit.requireScript
+  // handed back, at its client.
+  function appReads() { var b = ANSWER['spirit/app/script.js']; return (b && b.client) || null; }
   var appReady = Promise.all([keepAnswer('spirit/app/script.js'), storeReady]).then(function () { return appReads(); });
 
   var apps = null;

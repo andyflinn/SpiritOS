@@ -84,7 +84,8 @@ function world() {
   win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } if (Object.prototype.hasOwnProperty.call(ANSWERS, p)) return Promise.resolve(ANSWERS[p]); return placedAnswer(p, win); };
   // What the halves require and this world does not run, as requireScript answers them: the node branch's interface and its
   // data (the api tree comes through readyPromise), and the list's row and detail, which no check here opens.
-  const ANSWERS = { 'spirit/node/api.js': {}, 'spirit/node/data.js': {}, 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
+  // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
+  const ANSWERS = { 'spirit/node/api.js': Object.defineProperty({}, 'data', { get: function () { return (win.spirit.node || {}).data; } }), 'spirit/node/data.js': {}, 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
   win.window = win;
   // The page's spirit.requireScript, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/client/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', SUBJECT] });
@@ -105,7 +106,8 @@ function world() {
 // another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
 let pageData = null;
 const names = function (l) {
-  const rows = l.opts.data ? (pageData ? pageData.rowsOf(l.opts.data) : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
+  // goal/G49.23: a list's branch is a handle; its rows are read through it.
+  const rows = l.opts.data ? (typeof l.opts.data.rows === 'function' ? l.opts.data.rows() : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
   return rows.filter(function (r) { return (l.opts.filters || []).every(function (f) { return typeof f.test !== 'function' || f.test(r, undefined) > 0; }); })
     .map(function (r) { return r.name != null ? r.name : r.key; }).sort();
 };

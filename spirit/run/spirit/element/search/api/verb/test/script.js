@@ -55,7 +55,9 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element.search.
   // function... or fail/throw"): the search, its list part and the node branch's interface, each an object.
   const SEARCH = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } };
-  const STANDS = { 'spirit/element/search/script.js': SEARCH, 'spirit/element/search/api/list/script.js': {}, 'spirit/node/api.js': {} };
+  const STANDS = { 'spirit/element/search/script.js': SEARCH, 'spirit/element/search/api/list/script.js': {},
+    // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
+    'spirit/node/api.js': Object.defineProperty({}, 'data', { get: function () { return ((win && win.spirit && win.spirit.node) || {}).data; } }) };
   win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
       requireScript: function (p) {
@@ -151,7 +153,7 @@ test.run('it requires spirit/node/api.js and no data.js, and its list is a view 
   await settle();
   m = w.lists[w.lists.length - 1];
   N = ((win.spirit.client || {}).node || {}).data;
-  return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
+  return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!m.opts.data && typeof m.opts.data.whole === 'function' && m.opts.data.path === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;

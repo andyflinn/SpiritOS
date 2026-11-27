@@ -180,6 +180,8 @@ function world() {
     // By its path, through the page stand-in, which runs it in this window (goal/G49.6).
     if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; pageRequire(companion); }
   };
+  // goal/G49.23, box v22 Part 1: a branch carries what its client put out, its reads, as the loader's branch does, read at each use.
+  [['spirit.grant', 'grant'], ['spirit.branch', 'branch']].forEach(function (b) { Object.defineProperty(b[0] === 'spirit.grant' ? grantTable : branchTable, 'client', { get: function () { return (win.spirit[b[1]] || {}).client; } }); });
   const appApi = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
     // The page knows its node: spirit.client files nothing before it does (goal/G41.28, Q10).
@@ -766,11 +768,11 @@ test.run('the request settles once every grant is answered, so the button is pla
 // grantsPanel.nodeGrants: the node's own grants table, one a caller picks by name (goal/G43.24)
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel." Since goal/G49.21: spirit.grant.search, add and delete over the grant branch's client.
-test.run('grantsPanel.nodeGrants\'s branch is spirit.client.grant.data.branch, keyed by key, labelled by label', 0.2, function () {
+test.run('grantsPanel.nodeGrants\'s branch is a handle on the grant client\'s branch, keyed by key, labelled by label', 0.2, function () {
   if (!GP) return false;
   g = GP.nodeGrants;
   A = ((w.win.spirit.client || {}).grant || {}).data;
-  return !!g && !!A && g.branch === A.branch && g.key === 'key' && g.label === 'label' ? true : false;
+  return !!g && !!A && !!g.branch && typeof g.branch.whole === 'function' && g.branch.path === A.branch && g.key === 'key' && g.label === 'label' ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel.nodeGrants has search, grant, revoke and watch, and no stream of its own', 0.2, function () {
   if (!g || !A) return false;

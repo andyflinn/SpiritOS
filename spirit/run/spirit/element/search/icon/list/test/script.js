@@ -69,11 +69,12 @@ async function faceOf(N, R) {
 // A list made in a box of the page, every read and every watch of the set kept. Answers what the page has asked so far.
 const MAKE = '(function () {' +
   // The fs branch bound first, by its api.js's path as the list binds it (goal/G49.6: nothing hands out a branch by its name,
-  // so what readyPromise answers holds no fs), and its loadFile kept at its one place, the object every require of it answers.
+  // so what readyPromise answers holds no fs), and its loadFile kept at its one place, the object every require of it answers. Its
+// watches are counted on its client (goal/G49.23, box v22 Part 1), the reads the list reads on that branch.
   ' return window.spirit.readyPromise.then(function () { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
   '  return Promise.resolve(window.spirit.requireScript("spirit/fs/script.js")).then(function (f) {' +
-  '  var read = f.loadFile; f.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
-  '  return window.spirit.requireScript("spirit/element/search/icon/list/script.js"); }).then(function () { var F = window.spirit.client.fs.data;' +
+  '  window.__fs = f; var read = f.loadFile; f.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
+  '  return window.spirit.requireScript("spirit/element/search/icon/list/script.js"); }).then(function () { var F = window.__fs.client;' +
   '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { window.__watches.push(typeof p === "function" ? "the tree" : String(p)); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
   '   window.__list = window.spirit.element.search.icon.list.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';

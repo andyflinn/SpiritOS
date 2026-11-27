@@ -58,8 +58,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/joinSteps/script.js', 'spirit/element/joinForm/script.js',
     'spirit/element/search/contact/list/script.js', 'spirit/element/icon/script.js'].map(function (p) { return S.requireScript(p); })
-    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs
-    // family's cache, whose spirit job holds the join steps, is its job.data.
     .concat([Promise.resolve(window.spirit.readyPromise)]));
   // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
   var DONE = '☑️';
@@ -170,9 +168,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
       return S.requireScript('spirit/job/script.js');
-    }).then(function () {
+    }).then(function (jobBranch) {
       if (gone) return;
-      var J = ((window.spirit.dataStore || {}).job || {}).data;
+      // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the jobs are the reads of the job branch the require handed back, at its client.
+      var J = (jobBranch && jobBranch.client) || null;
       if (!J) return;
       // THE JOIN STEPS, news of spirit (goal/G43.20): { join }.
       var take = function (j) { if (j && j.id === 'spirit' && j.data && j.data.join) { job = j.data.join; show(); } };

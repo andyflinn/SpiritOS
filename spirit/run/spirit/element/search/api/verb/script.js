@@ -26,9 +26,25 @@
     window.spirit.requireScript ? keepAnswer('spirit/element/search/api/list/script.js') : null,
     window.spirit.requireScript ? keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js') : null,
     keepAnswer('spirit/node/api.js'),
-    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the node
-    // family's cache, keeper of the verbs, is its node.data.
     Promise.resolve(window.spirit.readyPromise)]);
+
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the node branch's reads, its data, as spirit.requireScript handed
+  // it back; this node's own tree and verbs through its handle. The node's handle is on the page's node alone, so another
+  // party's branch is read through the reads that name a party, with no watch of its own: whoever keeps its tree redraws.
+  function nodeReads() { var b = ANSWER['spirit/node/api.js']; return (b && b.data) || null; }
+  function handleOn(branch, party) {
+    var N = nodeReads();
+    if (!party) return N.handle(branch);
+    var whole = function () { return (branch === 'apiTree' ? N.families(party) : N.verbs(party)) || {}; };
+    return {
+      get path() { return branch === 'apiTree' ? N.treeBranchOf(party) : N.verbsBranchOf(party); },
+      rows: function () { var w = whole(); return Object.keys(w).map(function (k) { return Object.assign({ key: k }, w[k]); }); },
+      whole: whole,
+      seat: function () {},
+      watch: function () { return function () {}; },
+      ready: function () { return true; },
+    };
+  }
 
   function createApiVerbSelector(options) {
     options = options || {};
@@ -54,7 +70,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        data: window.spirit.dataStore.node.data.verbsBranchOf(party),
+        data: handleOn('apiVerbs', party),
         filters: [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },

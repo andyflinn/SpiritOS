@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/appInstaller/test/script.js
 // The tests of spirit/element/appInstaller/script.js, and of no other module (spec: ./script.md; goal/G41.1, box v14). The
 // browser file runs in node on a window of its own: the spirit object's app family and the app family's cache
-// (the data store's app.data, at spirit.dataStore; goal/G43.9, G49.23) are stubs that keep what the element asked of them, and the test plays the node's
+// (the app branch's client, on the branch requireScript answers; goal/G43.9, G49.23) are stubs that keep what the element asked of them, and the test plays the node's
 // answers and the cache's changes.
 
 const fs = require('fs');
@@ -47,22 +47,20 @@ function world(rows) {
     getAnnotations: function () { w.fsAsked += 1; return Promise.resolve({}); },
     annotate: function () { w.fsAsked += 1; return Promise.resolve({ ok: true }); },
   };
-  // The data store, spirit.dataStore (goal/G49.23: the element reads it there, never at spirit.required, and asks no
-  // client script): its app family's cache, a stub.
+  // The app branch's client (goal/G49.23, box v22 Part 1: the element reads the rows from the branch spirit.requireScript hands
+  // back, and asks no client script): its reads, a stub.
   const STORE = { app: { data: {
     rows: function () { return w.rows; },
     watch: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },
   } } };
   const BRANCHES = { 'spirit/fs/script.js': fsApi,
-    'spirit/app/script.js': { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } };
+    'spirit/app/script.js': { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); }, client: STORE.app.data } };
   const win = { spirit: {
     // What readyPromise answers holds no branch (goal/G49.6); a branch is answered by its api.js path.
     readyPromise: Promise.resolve({}),
     // The one loader, a recorder: every path it is asked for.
     requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(BRANCHES[String(p)] || true); },
     escapeHtml: function (s) { return String(s); },
-    // goal/G49.23: the store a page's spirit holds once it has started.
-    dataStore: STORE,
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };
   win.window = win;
   // goal/G43.32: appInstaller.js places itself at its path as it runs (spirit/test/headLessChrome.js pageSpirit).

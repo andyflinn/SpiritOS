@@ -11,7 +11,7 @@
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
 // that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent
 // job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); the auth family's
-// cache manager (below) puts it into spirit.required.spirit.data.branch.data, and every branch row on the page repaints from there
+// cache manager (below) puts it into spirit.branch.client, and every branch row on the page repaints from there
 // through its kind's index. A row asks and draws nothing of its own (rule/19).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -35,11 +35,12 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   // A NODE'S BRANCHES ARE THE branch BRANCH'S CACHE (goal/G41.28): what a branch row on the stream means, and its branch,
   // are the family's own data.js's (spirit/branch/client/script.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.branch.data.
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the branches are its branch.data.
+  // (rule/26), as part of its tree; a row reads spirit.branch.client.
   var storeReady = Promise.resolve(window.spirit.readyPromise);
-  function branchReads() { return ((window.spirit.dataStore || {}).branch || {}).data; }
-  var authReady = Promise.all([window.spirit.requireScript('spirit/branch/script.js'), storeReady]).then(function () { return branchReads(); });
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the branches are the reads of the branch branch
+  // spirit.requireScript handed back, at its client.
+  function branchReads() { var b = ANSWER['spirit/branch/script.js']; return (b && b.client) || null; }
+  var authReady = Promise.all([keepAnswer('spirit/branch/script.js'), storeReady]).then(function () { return branchReads(); });
   // THE KIND'S INDEX: one watch on the branches for every branch row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var branches = null;

@@ -81,8 +81,6 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   // goal/G49.23: the store places nothing itself; run as the page's loader runs it, what it puts out is the store.
   STORE = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'client', 'script.js'));
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
-  global.window.spirit.dataStore = STORE;
   global.window.spirit.nodeFacts = { key: 'KEY+BUNDLE/EDITOR==' };
   STORE.homeNode(global.window.spirit.nodeFacts.key);
   // A branch's cache: the bundle branch's script brings its client, as the real spirit/bundle/script.js does, run once on
@@ -94,10 +92,12 @@ test.run('the bundle editor requires the field input and the bundle selector thr
     bundleData = true;
     // What the branch's own client asks as it runs is the branch's, not the editor's (goal/G49.23): not recorded.
     recording = false;
-    try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'bundle', 'client', 'script.js'), 'utf8'), { filename: 'spirit/bundle/client/script.js' }); } finally { recording = true; }
+    // goal/G49.23, box v22 Part 1: run as the page's loader runs it, what the client puts out is the bundle branch's client, its
+    // reads, which the editor reads on the branch its require answers.
+    try { bundle.client = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'bundle', 'client', 'script.js')); } finally { recording = true; }
     const count = function () {
-      const T = (STORE.bundle || {}).data;
-      if (T && !T.counted) {
+      const T = bundle.client;
+      if (T && typeof T.watch === 'function' && !T.counted) {
         const own = T.watch; T.counted = true;
         T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
       }
@@ -195,7 +195,7 @@ test.run('a valid label asks spirit.bundle.add to add it, as the rule writes it,
 }, test.limit.quick);
 test.run('once answered, but before the bundle is in the bundle branch\'s cache, the label stays and nothing is said added', 0.2, function () {
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
-  // via the spirit object"): what it adds, it listens for, in spirit.dataStore.bundle.data (goal/G49.23).
+  // via the spirit object"): what it adds, it listens for, in the bundle branch's client (goal/G49.23).
   return (input.value === '  Reader ' && !/\badded\b/.test(text(box))) ? true : false;
 }, test.limit.quick);
 test.run('another bundle arriving leaves the label as it is', 0.2, async function () {
@@ -203,7 +203,7 @@ test.run('another bundle arriving leaves the label as it is', 0.2, async functio
   await settle();
   return (input.value === '  Reader ') ? true : false;
 }, test.limit.quick);
-test.run('once the bundle it asked for is in spirit.dataStore.bundle.data, the input is empty and the add is said', 0.2, async function () {
+test.run('once the bundle it asked for is in the bundle branch\'s client, the input is empty and the add is said', 0.2, async function () {
   arrive(8, 'Reader');
   await settle();
   return (input.value === '' && /\badded\b/.test(text(box))) ? true : false;
@@ -236,7 +236,7 @@ test.run('destroy empties its box', 0.2, function () {
   made.destroy();
   return (box.kids.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('destroy lets its watch on spirit.dataStore.bundle.data go', 0.2, function () {
+test.run('destroy lets its watch on the bundle branch\'s client go', 0.2, function () {
   return (watches.released === w0 + 1) ? true : false;
 }, test.limit.quick);
 test.run('destroy lets its bundle pane go', 0.2, function () {

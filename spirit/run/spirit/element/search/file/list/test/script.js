@@ -51,7 +51,8 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
       lists.push(l); return l;
     } }; },
     'spirit/element/search/file/row/script.js': function () { return { create: function (row) { return { kind: 'file', row: row }; } }; },
-    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the fs client files into what spirit/client/script.js hands back; the
+    // element reads the fs branch's client (box v22 Part 1), never the store.
     'spirit/client/script.js': function () { return global.window.spirit.client; },
     'spirit/element/fstat/script.js': function () { return { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
@@ -66,9 +67,10 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   D.homeNode(NODE_KEY);
   // The fs family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
-  // itself to the data set. It answers the fs branch by that path (goal/G49.6: never by a name).
+  // itself to the data set. It answers the fs branch by that path (goal/G49.6: never by a name), carrying what the client put out as
+  // its client (goal/G49.23, box v22 Part 1), which the element reads.
   let ran = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/script.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'client', 'script.js'), 'utf8'), { filename: 'spirit/fs/client/script.js' }); } if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/script.js' && !ran) { ran = true; fsFamily.client = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'fs', 'client', 'script.js')); } if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = global.window.spirit.element || {};
@@ -113,7 +115,7 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
 }, test.limit.quick);
 test.run('it is a view of the fs branch\'s file tree in spirit.client.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
   if (!l) return false;
-  return typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
+  return typeof F.branch === 'string' && F.branch !== '' && !!o.data && typeof o.data.whole === 'function' && o.data.path === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
 }, test.limit.quick);
 test.run('its columns are name, size and changed', 0.2, function () {
   if (!l) return false;

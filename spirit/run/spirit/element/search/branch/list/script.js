@@ -32,9 +32,8 @@
   // (goal/G43.18, the box: "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too").
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/element/search/branch/row/script.js', 'spirit/element/search/api/script.js', 'spirit/element/search/api/verb/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript('spirit/branch/script.js')]));
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started.
-  function STORE() { return window.spirit.dataStore || {}; }
+  }).concat([keepAnswer('spirit/branch/script.js')]));
+  function BRANCHES() { return ANSWER['spirit/branch/script.js'].client; }
   var COLUMNS = {
     family: { field: 'family', label: 'Family', sort: 'text' },
     verb: { field: 'verb', label: 'Verb', sort: 'text' },
@@ -66,8 +65,8 @@
     list = ANSWER['spirit/element/search/script.js'].create(box, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      // A view of the node's branches, the rows the branch branch's manager keeps (spirit.required.spirit.data.branch.data.branch).
-      data: STORE().branch.data.branch,
+      // A view of the node's branches, the rows the branch branch's manager keeps (spirit.branch.client's handle).
+      data: BRANCHES().handle('rows'),
       api: 'spirit/branch/script.js',
       verb: 'branch',
       face: o.face,

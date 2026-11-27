@@ -7,15 +7,15 @@
 // revoke/delete that grant in the database"). row.js does the shared work; this file says what a grant is.
 //
 // NO STREAM OF ITS OWN (goal/G41.28; Andy: "get rid of thos FUCKING data.js scripts"): each grants table handed in has
-// its own branch of spirit.required.spirit.data, kept by its family's cache manager, and its own watch, so two tables on one page never
+// its own branch of the store (spirit/client/script.js), kept by its family's cache manager, and its own watch, so two tables on one page never
 // mix, and every grant row repaints from that watch through its table's index. A row asks and draws nothing of its own
 // (rule/19).
 //
 //   spirit.required.spirit.element.search.grant.row.create(row, opts) -> a row of kind grant
 //     row            a grant row, its id and whose grant it is in the fields its table names
 //     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), watch(fn(id + newline + path,
-//                    row)) }; branch is a whole spirit.required.spirit.data path (node/family/branch), its rows its family's cache
-//                    manager's
+//                    row)) }; branch is a handle on the table's branch, as its client hands it out (<client>.handle(branch),
+//                    goal/G49.23), its rows its family's client's
 //   A grant shows as it is, whether a server serves its path today or not (goal/G47.4; Andy: "get rid of that deprecated
 //   filter ... what the hell is it even for?").
 (function () {
@@ -40,7 +40,8 @@
   // repaints from the table's own watch, id + newline + path -> the grant row, or nothing once it is gone.
   var tables = {};
   function tableOf(g) {
-    var b = String(g.branch);
+    // goal/G49.23, box v22 Part 1: the table's branch is a handle; tables are told apart by its path.
+    var b = String((g.branch && g.branch.path) || g.branch);
     if (tables[b]) return tables[b];
     tables[b] = { index: null, dispatch: dispatch };
     // Its release answered, so the index lets the watch go with the table's last row (row.index, rule/8).

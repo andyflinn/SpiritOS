@@ -42,7 +42,8 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // fail/throw"): the real shared row element and the real fstat, each run as the page's loader runs it and its answer handed
   // on; any other part (the icon, word) answers an empty object.
   const STANDS = {
-    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the fs client files into what spirit/client/script.js hands back; the
+    // element reads the fs branch's client (box v22 Part 1), never the store.
     'spirit/client/script.js': function () { return global.window.spirit.client; },
     'spirit/element/row/script.js': function () { return PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
     // What says a file's kind (goal/G43.17), the real one, should the row ask it.
@@ -75,7 +76,8 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
     const old = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1];
     const neu = (/^(spirit\/(?:app\/)?[^/]+)\/script\.js$/.exec(p) || [])[1];
     const f = old ? path.join(RUN, old, 'data.js') : neu ? path.join(RUN, neu, 'client', 'script.js') : '';
-    if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); }
+    // goal/G49.23, box v22 Part 1: what the fs client puts out is the fs branch's client, on the branch its require answers.
+    if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; const out = PAGE_LOAD.runAsPage(f); if (/\/fs\/client\//.test(f)) fsFamily.client = out; }
   };
   global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);

@@ -46,9 +46,11 @@
   var parts = Promise.all(['spirit/element/search/contact/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/search/api/script.js',
     'spirit/element/search/grant/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/armingButton/script.js'].map(function (p) { return window.spirit.requireScript ? window.spirit.requireScript(p) : null; })
     .concat([window.spirit.requireScript('spirit/grant/script.js'), window.spirit.requireScript('spirit/branch/script.js'),
-      // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the grants are its grant.data.
       window.spirit.requireScript ? Promise.resolve(window.spirit.readyPromise) : null]));
-  function STORE() { return window.spirit.dataStore || {}; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the grants are the reads of the grant branch
+  // spirit.requireScript handed back, at its client.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/grant/script.js');
+  function GRANTS() { return ANSWER['spirit/grant/script.js'].client; }
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): verb called on the branch at its api.js path (goal/G49.6: never
   // by a name), once the page is ready, answering { status, body } as a list reads it.
@@ -64,7 +66,7 @@
   }
 
   // THE NODE'S GRANTS, AS A GRANTS TABLE (goal/G43.24, moved here from the Grants app): kept by the grant branch's cache
-  // manager (spirit.required.spirit.data.grant.data, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
+  // manager (spirit.grant.client, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
   // row arrives on the job spirit.grant (gone when taken back, goal/G41.14, G49.21). WHO ASKS FOR A CHANGE LISTENS FOR IT
   // (goal/G41.27): what grant and revoke send comes back through watch. The panel still knows no table of its own (Andy,
   // G41.16: "the callers ... should boody well know how to configure the damn grantsPanel element"): a caller picks this
@@ -75,9 +77,10 @@
     return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
   }
   var nodeGrants = {
-    get branch() { return STORE().grant.data.branch; },
+    // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): branch, a handle on the grants, as the grant client hands it out.
+    get branch() { return GRANTS().handle('rows'); },
     // watch(fn): fn(id + newline + path, row) on every grant kept or let go; answers its release.
-    watch: function (fn) { return STORE().grant.data.watch(fn); },
+    watch: function (fn) { return GRANTS().watch(fn); },
     key: 'key',
     label: 'label',
     // spirit.grant.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
@@ -154,15 +157,16 @@
     // A FILTER CHOSEN ASKS THE NODE AGAIN (goal/G47.4, the box: "the search therefore must find any user that has grants for
     // any branch/verb combination"; Andy: "the more i modify the search, the more records will be cached"): the grants table
     // answers one packet, so the ID, branch and verb chosen go to its search as its text, and what comes is seated in the
-    // list's branch of spirit.required.spirit.data, where the list draws it and the exact filters pick from it.
+    // list's branch of the store (spirit/client/script.js), where the list draws it and the exact filters pick from it.
     function chosenText() {
       return [filterId ? filterId.value : '', filterFamily ? filterFamily.family : '', filterFamily ? filterFamily.verb : '']
         .filter(function (w) { return !!w; }).join(' ');
     }
     function askAgain() {
       return Promise.resolve(g.search(chosenText())).then(function (got) {
-        var D = window.spirit.dataStore;
-        if (!gone && D && typeof D.seatRows === 'function' && got && Array.isArray(got.items)) D.seatRows(String(g.branch), got.items);
+        // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): seated through the table's handle on its branch.
+        var B = g.branch;
+        if (!gone && B && typeof B.seat === 'function' && got && Array.isArray(got.items)) B.seat(got.items);
         redraw();
       }, function () { /* the cache stands; the next choice asks again */ });
     }

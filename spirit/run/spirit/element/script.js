@@ -37,9 +37,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app
-  // family's cache, whose rows a layer's bar follows, is its app.data; asked as this file runs.
-  function apps() { return window.spirit.dataStore.app.data; }
+  keepAnswer('spirit/app/script.js');
+  function apps() { return ANSWER['spirit/app/script.js'].client; }
   function createAppSelector(options) {
     var o = options || { face: 'tiles' };
     var hide = ['app'].concat(Array.isArray(o.hide) ? o.hide : []);

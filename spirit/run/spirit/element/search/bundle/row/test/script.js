@@ -84,8 +84,9 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
     'spirit/element/search/bundle/detail/script.js': function () { return { open: function (o) { opened.push(o); return {}; } }; },
     // The bundle branch's interface (goal/G49.21): its client run once, as the real spirit/bundle/script.js requires it.
     // What the branch's own client asks as it runs is the branch's, not the row's (goal/G49.23): not recorded.
-    'spirit/bundle/script.js': function () { const was = recording; recording = false; try { load('spirit/bundle/client/script.js'); } finally { recording = was; } return bundleBranch; },
-    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at its place.
+    'spirit/bundle/script.js': function () { const was = recording; recording = false; try { bundleBranch.client = load('spirit/bundle/client/script.js'); } finally { recording = was; } return bundleBranch; },
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the bundle client files into what spirit/client/script.js hands back; the
+    // element reads the rows from the bundle branch's client (box v22 Part 1), the client run above, never from the store.
     'spirit/client/script.js': function () { return global.window.spirit.client; },
   };
   const made = {};
@@ -98,8 +99,6 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream's rows land there.
   // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
   DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
-  global.window.spirit.dataStore = DATA;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };

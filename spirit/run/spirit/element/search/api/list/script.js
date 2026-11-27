@@ -37,15 +37,32 @@
   var parts = Promise.all([keepAnswer('spirit/element/search/script.js'), keepAnswer('spirit/element/search/api/row/script.js'),
     keepAnswer('spirit/element/search/api/detail/script.js'), keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js'),
     keepAnswer('spirit/node/api.js')]);
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the node branch's reads, its data, as spirit.requireScript handed
+  // it back; this node's own tree and verbs through its handle. The node's handle is on the page's node alone, so another
+  // party's branch is read through the reads that name a party, with no watch of its own: whoever keeps its tree redraws.
+  function nodeReads() { var b = ANSWER['spirit/node/api.js']; return (b && b.data) || null; }
+  function handleOn(branch, party) {
+    var N = nodeReads();
+    if (!party) return N.handle(branch);
+    var whole = function () { return (branch === 'apiTree' ? N.families(party) : N.verbs(party)) || {}; };
+    return {
+      get path() { return branch === 'apiTree' ? N.treeBranchOf(party) : N.verbsBranchOf(party); },
+      rows: function () { var w = whole(); return Object.keys(w).map(function (k) { return Object.assign({ key: k }, w[k]); }); },
+      whole: whole,
+      seat: function () {},
+      watch: function () { return function () {}; },
+      ready: function () { return true; },
+    };
+  }
 
-  // THE NODE'S API TREE IN spirit.dataStore (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
-  // apiTree branch of spirit.dataStore, read again when a server job changes, and the family, verb and app-server selectors
-  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (spirit.dataStore.node.data:
+  // THE NODE'S API TREE IN THE NODE BRANCH'S READS (goal/G41.28, G49.23; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
+  // apiTree branch of the data set, read again when a server job changes, and the family, verb and app-server selectors
+  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (the node branch's data, spirit/node/data.js:
   // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A server
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    window.spirit.dataStore.node.data.keepTree(tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js']);
+    nodeReads().keepTree(tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js']);
   }
   var reading = null;
   function readOwnTree() {
@@ -57,11 +74,11 @@
     }, function () { reading = null; return null; });
     return reading;
   }
-  function follow(D) {
-    if (D && typeof D.addTranslator === 'function') D.addTranslator({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
+  // goal/G49.23, box v22 Part 1: a server job is heard through the job client's hear, on the job branch the require hands back.
+  function follow(J) {
+    if (J && typeof J.hear === 'function') J.hear(function (job) { if (job && job.kind === 'server') readOwnTree(); });
   }
-  if (window.spirit && window.spirit.dataStore) follow(window.spirit.dataStore);
-  else if (window.spirit && window.spirit.requireScript) Promise.resolve(Promise.resolve(window.spirit.readyPromise)).then(function () { follow(window.spirit.dataStore); }, function () {});
+  if (window.spirit && window.spirit.requireScript) Promise.resolve(window.spirit.requireScript('spirit/job/script.js')).then(function (b) { follow(b && b.client); }, function () {});
 
   function createFamilyList(options) {
     options = options || {};
@@ -83,7 +100,7 @@
     root.value = '';
     root.tree = null;
 
-    // EVERY TREE IS A spirit.dataStore BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
+    // EVERY TREE IS A BRANCH OF THE NODE BRANCH'S READS (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
     // branch, another party's the apiTree branch under that party's node (spirit/node/data.js keepTree's party); root.party
     // names whose it draws, '' for this node's own.
     root.party = typeof options.tree === 'function' ? partyOf(options.party) : '';
@@ -98,7 +115,7 @@
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a server…'),
         all: isPane ? undefined : options.all,
-        data: window.spirit.dataStore.node.data.treeBranchOf(root.party),
+        data: handleOn('apiTree', root.party),
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         element: function (row, key) { return ANSWER['spirit/element/search/api/row/script.js'].create(Object.assign({ name: key }, row)); },
@@ -135,7 +152,7 @@
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
-        if (party) window.spirit.dataStore.node.data.keepTree(root.tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'], party);
+        if (party) nodeReads().keepTree(root.tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'], party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });

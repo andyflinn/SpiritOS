@@ -8,7 +8,7 @@
 //
 // THE SET IS THE FS FAMILY'S, AND FOLLOWED (goal/G43.32; Andy: "It obviously must require the fs interface so it can
 // listen to changes in the file it loads for it's icon list...."): the file is read through the fs family, kept in the fs
-// family's cache (spirit.required.spirit.data.fs.data.icons), and the list draws that branch. Each list watches the file's row and reads it
+// family's cache (spirit.fs.client.icons), and the list draws that branch. Each list watches the file's row and reads it
 // again when it changes, and the fs tree for it coming back whole after a reconnect forgot the set; lists read together
 // read once. This ends
 // the set as a constant held beside spirit.required.spirit.data (goal/G43.11, "we make it a constant"): his newer words.
@@ -41,21 +41,17 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var SET = 'spirit/iconSet.json';
 
   // The fs family's cache, where the set is kept and the file followed.
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the file tree is its fs.data,
-  // the set's rows read through its rowsOf.
-  var cache = Promise.all([window.spirit.requireScript('spirit/fs/script.js'), Promise.resolve(window.spirit.readyPromise)]);
-  function STORE() { return window.spirit.dataStore || {}; }
-  function F() { return (STORE().fs || {}).data || null; }
+  var cache = Promise.all([keepAnswer('spirit/fs/script.js'), Promise.resolve(window.spirit.readyPromise)]);
+  function F() { var b = ANSWER['spirit/fs/script.js']; return (b && b.client) || null; }
 
   // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.
   var reading = null;
   // The file's row as last read (modified and size): a row written again unchanged is read only if the set is gone (a
-  // reconnect empties spirit.required.spirit.data, and the push sets the row again).
+  // reconnect empties the store (spirit/client/script.js), and the push sets the row again).
   var readStamp = '';
   function stampOf(row) { return row ? String(row.modified) + ':' + String(row.size) : ''; }
   function held() {
-    var I = F() && F().icons;
-    var rows = I && STORE().rowsOf ? STORE().rowsOf(I.branch) || [] : [];
+    var rows = F() && typeof F().handle === 'function' ? F().handle('icons').rows() || [] : [];
     if (!rows.length) return null;
     var set = {};
     rows.forEach(function (r) { set[r.glyph || r.key] = Array.isArray(r.keywords) ? r.keywords : []; });
@@ -106,7 +102,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
       api: 'spirit/fs/script.js',
       verb: 'search',
-      data: F().icons.branch,
+      data: F().handle('icons'),
       face: o.face,
       visible: typeof o.visible === 'function' ? o.visible : undefined,
       placeholder: o.placeholder || 'choose an icon…',

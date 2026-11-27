@@ -1195,9 +1195,9 @@
     // translator, which its type loads; a process follows a stream only through appServer's listener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.required.spirit.data is there now.
     module.exports = self;
-    // spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"): the spirit object loads its own
-    // client and offers the store as a member, so an element reads spirit.dataStore and asks for no client script.
-    self.dataStore = STORE = requireOne('spirit/client/script.js');
+    // NO spirit.dataStore (goal/G49.23, box v22 Part 1; Andy: "no spirit.dataStore"): the spirit object loads its own client and
+    // keeps the store for itself; an element reads a branch's rows from the branch spirit.requireScript hands back.
+    STORE = requireOne('spirit/client/script.js');
     LIMITS = requireOne('spirit/limits/script.js');
     return;
   }
@@ -1255,8 +1255,8 @@
       // cache it made.
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
-      // spirit.dataStore (goal/G49.23, as in node above): the store, a member once the page has started.
-      return parsed().then(function () { return requireOne('spirit/client/script.js'); }).then(function (st) { STORE = st || null; self.dataStore = st; return requireOne('spirit/limits/script.js'); }).then(function (l) { LIMITS = l || null; }, function () { /* no limits: the default sizes */ });
+      // The store, kept for itself (goal/G49.23, as in node above; Andy: "no spirit.dataStore"): no member of the spirit object.
+      return parsed().then(function () { return requireOne('spirit/client/script.js'); }).then(function (st) { STORE = st || null; return requireOne('spirit/limits/script.js'); }).then(function (l) { LIMITS = l || null; }, function () { /* no limits: the default sizes */ });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a

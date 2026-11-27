@@ -54,12 +54,10 @@ function world(join) {
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
       relay: { status: function () { return Promise.resolve({ body: { rows: [] } }); } },
     }),
-    // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here, nor
-    // the job branch's api.js.
-    requireScript: function (p) { return Promise.resolve({}); },
-    // The data store, whose job.data are the jobs above, at spirit.dataStore (goal/G49.23: the element reads it there,
-    // never at spirit.required, and asks no client script).
-    dataStore: { job: { data: jobs } },
+    // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here. The job
+    // branch is the one stand-in: its client's reads are the jobs above (goal/G49.23, box v22 Part 1: the element reads them from
+    // the branch spirit.requireScript hands back).
+    requireScript: function (p) { return Promise.resolve(p === 'spirit/job/script.js' ? { client: jobs } : {}); },
   };
   // joinSteps, the real one, and the subject: run in this window by their paths, through the page stand-in (goal/G49.6).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps/script.js', SUBJECT] });
@@ -101,7 +99,7 @@ test.run('with nothing done, every step is marked ⬜', 0.2, function () {
 test.run('it watches the jobs branch\'s cache once', 0.2, function () {
   return (w.watches === 1) ? true : false;
 }, test.limit.quick);
-test.run('a new join on the spirit job, taken into spirit.dataStore, redraws the steps', 0.2, async function () {
+test.run('a new join on the spirit job, taken into the client of the job branch, redraws the steps', 0.2, async function () {
   // what it watches redraws it
   w.publish('spirit', { id: 'spirit', data: { join: { seated: true, contact: false } } });
   await settle();

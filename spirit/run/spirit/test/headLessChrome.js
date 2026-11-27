@@ -621,11 +621,8 @@ function pageSpirit(s, loaded, o) {
     if (opts.window && isReal(at) && fs.existsSync(path.join(RUN, at))) return runReal(at);
     return typeof own === 'function' ? own.apply(this, arguments) : Promise.resolve({});
   };
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"): a world's spirit holds the store
-  // the test hands in for spirit/client/script.js, or the real one when the test loads it as it is, as spirit.js keeps it.
-  const STORE = 'spirit/client/script.js';
-  if (sp.dataStore === undefined && Object.prototype.hasOwnProperty.call(have, STORE)) sp.dataStore = have[STORE];
-  else if (sp.dataStore === undefined && opts.window && isReal(STORE)) { runReal(STORE); sp.dataStore = placedAt(STORE); }
+  // NO spirit.dataStore (goal/G49.23, box v22 Part 1; Andy: "no spirit.dataStore"): a world's spirit holds no store; an element
+  // reads a branch's rows from the branch its requireScript answers, which a test hands in.
   return sp;
 }
 

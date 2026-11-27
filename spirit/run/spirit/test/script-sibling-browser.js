@@ -160,8 +160,8 @@ const OWN_PROOF = {
   // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
   // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
   // Join app is joinList mounted, so its page takes the same proof.
-  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.dataStore, redraws the steps' },
-  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.dataStore, redraws the steps' },
+  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into the client of the job branch, redraws the steps' },
+  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into the client of the job branch, redraws the steps' },
 };
 // THE LONGEST FIELD THE TYPES ALLOW (goal/G49.13: the type files replaced fieldRules): the largest MAX_BYTES a type file under
 // spirit/type/ holds; a field that keeps more than this holds no rule at all.

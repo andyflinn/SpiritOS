@@ -60,8 +60,6 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   // The page's one data set (spirit/client/script.js): the stream's branch rows land there.
   // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
   DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
-  global.window.spirit.dataStore = DATA;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
@@ -71,7 +69,8 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   // that client once, attaching itself to the data set. A client asked for directly is only recorded; what the branch's own
   // client asks as it runs is the branch's, not the row's (goal/G49.23), so it is not.
   const ran = {};
-  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/script\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'client', 'script.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); } };
+  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/script\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'client', 'script.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; const out = PAGE_LOAD.runAsPage(f); if (b === 'spirit/branch') branchBranch.client = out; } };
+  // goal/G49.23, box v22 Part 1: what the branch branch's client puts out is that branch's client, on the branch its require answers.
   // The direct writes below are the branch branch's own view of the home node, its rows at rows/<id>, as its client files them.
   V = DATA.viewAt(null, 'branch');
   // EACH STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
@@ -82,8 +81,8 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
     const v = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); // goal/G49.23: on the spirit object itself
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back,
-  // the store this window ran above.
+  // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the branch client files into what spirit/client/script.js hands back,
+  // the store this window ran above; the element reads the rows from the branch branch's client.
   global.window.spirit.requireScript = function (p) { if (recording) required.push(String(p)); const was = recording; recording = false; try { dataScript(String(p)); } finally { recording = was; } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); } return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : p === 'spirit/client/script.js' ? DATA : standIn(p)); };
   // The branch branch is answered by its script.js path (goal/G49.6: never by a name; goal/G49.21).
   PAGE_LOAD.runAsPage(FILE);

@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/search/file/row/script.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
-// it reads the node's file tree as the fs family's cache manager keeps it (spirit.required.spirit.data.fs.data, goal/G41.28), which the
+// it reads the node's file tree as the fs family's cache manager keeps it (spirit.fs.client, goal/G41.28), which the
 // spirit.fs's stream keeps, so a change to a file repaints that file's cells and nothing else. row.js does the
 // shared work; this file says what a file is.
 //
@@ -36,12 +36,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
   // data.js's (spirit/fs/client/script.js), which this element loads itself (rule/26), with the data set
-  // it fills; a row reads spirit.required.spirit.data.fs.data.
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the file tree is its fs.data.
+  // it fills; a row reads spirit.fs.client.
   var storeReady = Promise.resolve(window.spirit.readyPromise);
-  function fsReads() { return (window.spirit && ((window.spirit.dataStore || {}).fs || {}).data) || null; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the files are the reads of the fs branch
+  // spirit.requireScript handed back, at its client.
+  function fsReads() { var b = ANSWER['spirit/fs/script.js']; return (b && b.client) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.all([window.spirit.requireScript('spirit/fs/script.js'), storeReady]).then(function () { return fsReads(); });
+  var fsReady = Promise.all([keepAnswer('spirit/fs/script.js'), storeReady]).then(function () { return fsReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

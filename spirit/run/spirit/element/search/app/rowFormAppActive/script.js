@@ -6,7 +6,7 @@
 //
 //   spirit.required.spirit.element.search.app.rowFormAppActive.create(host, { key }) -> { destroy() }
 //
-// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.requireScript('spirit/app/script.js')'s answer.activeApp, and
+// It follows the app's row in spirit.app.client (the row's active and intrinsic); a press asks the node, spirit.requireScript('spirit/app/script.js')'s answer.activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -21,15 +21,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   keepAnswer('spirit/element/search/app/rowFormToggle/script.js');
   keepAnswer('spirit/app/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started.
-  function STORE() { return window.spirit.dataStore || {}; }
+  function readsOf(p) { var b = ANSWER[p]; return (b && b.client) || null; }
 
   function create(host, options) {
     var S = window.spirit;
     var key = String((options && options.key) || '');
     var gone = false;
     var parts = [];
-    function row() { var A = STORE().app && STORE().app.data; return A ? A.rows()[key] || null : null; }
+    function row() { var A = readsOf('spirit/app/script.js'); return A ? A.rows()[key] || null : null; }
     function press() {
       var r = row();
       if (!r) return null;
@@ -53,7 +52,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     function ask() {
       S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
-        if (!gone) STORE().seatRows(STORE().app.data.branch, got.items);
+        if (!gone) readsOf('spirit/app/script.js').handle('apps').seat(got.items);
       }, function () { /* the row comes with the stream */ });
     }
     // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
@@ -66,8 +65,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       }).then(null, function () { /* a face that may not read the file: the words name no parts */ });
     }
     // WHO PAINTS, LISTENS (G41.32); a connect forgetting what is kept asks again.
-    var offRow = STORE().app.data.watch(key, function () { paint(); readParts(); });
-    var offAll = STORE().app.data.watch(function (k) { if (!k) ask(); });
+    var offRow = readsOf('spirit/app/script.js').watch(key, function () { paint(); readParts(); });
+    var offAll = readsOf('spirit/app/script.js').watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();
     readParts();

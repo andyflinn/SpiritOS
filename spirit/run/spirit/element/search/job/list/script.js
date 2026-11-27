@@ -15,8 +15,8 @@
 // jobsDetails", "the form on top should be gone." A row opens its job's detail (../detail/script.js) OVER JOBS, as contact
 // detail and icon detail do (goal/G43.29, Q1: "a job row opens detail panel overtop of jobs."), and that is all a row does.
 //
-// A VIEW OF THE NODE'S JOBS IN spirit.required.spirit.data (goal/G41.28): the probability search over the jobs branch the job family's cache
-// manager keeps (spirit.required.spirit.data.job.data, spirit/job/client/script.js), each row a job row element. Words match the whole job; the
+// A VIEW OF THE NODE'S JOBS IN the store (spirit/client/script.js) (goal/G41.28): the probability search over the jobs branch the job family's cache
+// manager keeps (spirit.job.client, spirit/job/client/script.js), each row a job row element. Words match the whole job; the
 // kind filter is one choice (all, node, servers, transient, and failed last: goal/G29.16). Columns: the green dot, status,
 // name (module, else type), kind, progress, updated.
 //
@@ -40,8 +40,7 @@
   // cache manager.
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/element/search/job/row/script.js', 'spirit/element/panel/script.js',
     'spirit/element/search/job/detail/script.js']
-    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/script.js'),
-      // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs are its job.data.
+    .map(function (p) { return S.requireScript(p); }).concat([keepAnswer('spirit/job/script.js'),
       Promise.resolve(window.spirit.readyPromise)]));
 
   function J() { return ANSWER['spirit/element/search/job/script.js']; }
@@ -80,10 +79,11 @@
       var box = container.firstElementChild;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
       if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel/script.js'].create(container, box);
-      var data = window.spirit.dataStore.job.data;
+      // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the jobs are the reads of the job branch the require handed back, at its client.
+      var data = ANSWER['spirit/job/script.js'].client;
       var kindOf = J().row.kindOf;
       list = ANSWER['spirit/element/search/script.js'].create(box, {
-        data: data.branch,
+        data: data.handle('jobs'),
         columns: [
           { field: 'latest', label: '' },
           { field: 'status', label: 'Status', sort: 'text' },

@@ -12,7 +12,7 @@
 // their data set. and the SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to the
 // fucking elements", "NO FUCKING DATA SCRIPT", "THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"): the node
 // publishes each changed bundle row on its permanent job 'bundles' ({ table: 'bundle', row }, gone when deleted); the
-// auth family's cache manager (below) puts it into spirit.required.spirit.data.bundle.data, and every bundle row on the page repaints from there through its
+// auth family's cache manager (below) puts it into spirit.bundle.client, and every bundle row on the page repaints from there through its
 // kind's index. A row asks and draws nothing of its own (rule/19): what it shows is what the stream said.
 //
 //   spirit.required.spirit.element.search.bundle.row.create(row) -> a row of kind bundle
@@ -33,10 +33,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   // A NODE'S BUNDLES ARE THE bundle BRANCH'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
   // are the family's own data.js's (spirit/bundle/client/script.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.bundle.data.
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the bundles are its bundle.data.
+  // (rule/26), as part of its tree; a row reads spirit.bundle.client.
   var storeReady = Promise.resolve(window.spirit.readyPromise);
-  function bundleReads() { return ((window.spirit.dataStore || {}).bundle || {}).data; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the bundles are the reads of the bundle branch
+  // spirit.requireScript handed back, at its client.
+  function bundleReads() { var b = ANSWER['spirit/bundle/script.js']; return (b && b.client) || null; }
   var authReady = Promise.all([keepAnswer('spirit/bundle/script.js'), storeReady]).then(function () { return bundleReads(); });
   // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.

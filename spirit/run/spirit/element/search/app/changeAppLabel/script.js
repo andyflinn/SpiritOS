@@ -5,7 +5,7 @@
 //
 //   spirit.required.spirit.element.search.app.changeAppLabel.create(host, { key }) -> { destroy() }
 //
-// Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
+// Its input holds the row's label in spirit.app.client and follows it while it is not being typed in; Change asks the node,
 // spirit.requireScript('spirit/app/script.js')'s answer.labelApp, and the row the stream then brings redraws it.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -21,8 +21,7 @@
   // their fields are and require that type"): the types fieldInput holds its fields to.
   if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
   keepAnswer('spirit/app/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the app rows are its app.data.
-  function STORE() { return window.spirit.dataStore || {}; }
+  function readsOf(p) { var b = ANSWER[p]; return (b && b.client) || null; }
 
   function create(host, options) {
     var S = window.spirit;
@@ -31,7 +30,7 @@
     // NO APP NAMED, NOTHING TO FOLLOW (goal/G41.19, box v23: an element missing its options "mounts and says it is not
     // configured"): it watches no row and asks nothing.
     if (!key) { host.textContent = 'No app named: not configured.'; return { destroy: function () { host.innerHTML = ''; } }; }
-    function row() { var A = STORE().app && STORE().app.data; return A ? A.rows()[key] || null : null; }
+    function row() { var A = readsOf('spirit/app/script.js'); return A ? A.rows()[key] || null : null; }
     // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Change is busy until the node answers.
     var input = null;
@@ -50,11 +49,11 @@
     }
     function ask() {
       S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
-        if (!gone) STORE().seatRows(STORE().app.data.branch, got.items);
+        if (!gone) readsOf('spirit/app/script.js').handle('apps').seat(got.items);
       }, function () { /* the row comes with the stream */ });
     }
-    var offRow = STORE().app.data.watch(key, paint);
-    var offAll = STORE().app.data.watch(function (k) { if (!k) ask(); });
+    var offRow = readsOf('spirit/app/script.js').watch(key, paint);
+    var offAll = readsOf('spirit/app/script.js').watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();
     return { destroy: function () { gone = true; offRow(); offAll(); host.innerHTML = ''; } };

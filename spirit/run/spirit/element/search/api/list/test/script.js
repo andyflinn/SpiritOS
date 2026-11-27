@@ -57,6 +57,9 @@ function world() {
         // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
         // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): the search element
         // stand-in for spirit/element/search/script.js, an object for every other part it asks (its row, its detail, node's api).
+        // goal/G49.23, box v22 Part 1: a branch's api.js answers the branch, its data.js's reads on it as data, read at each use, as the
+        // loader's branch carries them.
+        if (m) { const b = {}; Object.defineProperty(b, 'data', { get: function () { const at = m[1].split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, win.spirit); return at ? at.data : undefined; } }); return Promise.resolve(b); }
         return Promise.resolve(p === 'spirit/element/search/script.js' ? E.search : {});
       } },
     document: { createElement: function (t) { return node(t); } },
@@ -83,7 +86,8 @@ function world() {
 // another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
 let pageData = null;
 const names = function (l) {
-  const rows = l.opts.data ? (pageData ? pageData.rowsOf(l.opts.data) : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
+  // goal/G49.23: a list's branch is a handle; its rows are read through it.
+  const rows = l.opts.data ? (typeof l.opts.data.rows === 'function' ? l.opts.data.rows() : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
   return rows.filter(function (r) { return (l.opts.filters || []).every(function (f) { return typeof f.test !== 'function' || f.test(r, undefined) > 0; }); })
     .map(function (r) { return r.name != null ? r.name : r.key; }).sort();
 };

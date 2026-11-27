@@ -20,10 +20,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   var S = window.spirit = window.spirit || {};
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the jobs
-  // family's cache is its job.data.
   var parts = Promise.all([keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/monitor/value/script.js'), Promise.resolve(window.spirit.readyPromise)]);
-  function store() { return window.spirit.dataStore; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the jobs are the reads of the job branch spirit.requireScript
+  // handed back, at its client.
+  function jobs() { var b = ANSWER['spirit/job/script.js']; return (b && b.client) || null; }
   function fixed(x, n) { return typeof x === 'number' && isFinite(x) ? x.toFixed(n) : '–'; }
   function valueOf(d) { return fixed(d.eventLoop && d.eventLoop.p99Ms, 1) + ' ms'; }
 
@@ -34,7 +34,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var tile = null;
     function paint() {
       if (gone || !tile) return;
-      var job = store().job.data.job('spirit');
+      var job = jobs().job('spirit');
       var d = job && job.data && job.data.stats;
       tile.set(d ? valueOf(d) : '–');
     }
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (gone) return;
       tile = ANSWER['spirit/element/monitor/value/script.js'].create(container, { icon: '🔁', label: 'Event loop delay', mode: o.mode });
       paint();
-      off = store().job.data.watch('spirit', paint);
+      off = jobs().watch('spirit', paint);
     });
     return {
       destroy: function () {

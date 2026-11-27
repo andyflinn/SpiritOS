@@ -59,10 +59,11 @@ test.run('the contact row runs on a window of its own, with the data set and the
   let contactData = false;
   window.spirit.requireScript = function (p) {
     required.push(p);
-    if (p === 'spirit/contact/script.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'client', 'script.js')); } return Promise.resolve(BRANCHES.contact); }
+    if (p === 'spirit/contact/script.js') { if (!contactData) { contactData = true; BRANCHES.contact.client = PAGE_LOAD.runAsPage(path.join(JS, '..', '..', 'spirit', 'contact', 'client', 'script.js')); } return Promise.resolve(BRANCHES.contact); }
     if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
     // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the contact client (spirit/contact/client/script.js) files into
-    // what spirit/client/script.js hands back, the store this window ran below; the row reads it at spirit.dataStore.
+    // what spirit/client/script.js hands back, the store this window ran below; the row reads the contact branch's client (goal/G49.23,
+    // box v22 Part 1), what that client put out, on the branch its require answers.
     if (p === 'spirit/client/script.js') return Promise.resolve(window.spirit.client);
     // A type is the real one, by its full path (goal/G49.13).
     if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p));
@@ -75,8 +76,6 @@ test.run('the contact row runs on a window of its own, with the data set and the
     return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
   load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
-  // THE DATA SET IS spirit.dataStore (goal/G49.23): the real one, as spirit.js keeps it once the page has started.
-  window.spirit.dataStore = window.spirit.client;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };

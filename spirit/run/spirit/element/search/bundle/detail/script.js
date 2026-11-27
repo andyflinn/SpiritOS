@@ -36,14 +36,15 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var parts = Promise.all(['spirit/element/search/api/script.js', 'spirit/element/search/branch/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
   }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton/script.js') : null, keepAnswer('spirit/bundle/script.js'), keepAnswer('spirit/branch/script.js'),
-    // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: bundles and branches are its own.
     Promise.resolve(window.spirit.readyPromise)]));
-  function STORE() { return window.spirit.dataStore || {}; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): bundles and branches are the reads of their branches,
+  // as spirit.requireScript handed them back, at their clients.
+  function readsOf(p) { var b = ANSWER[p]; return (b && b.client) || null; }
 
   function mount(box, o) {
     box.innerHTML = '';
-    var BUNDLES = (STORE().bundle || {}).data;
-    var BRANCHES = (STORE().branch || {}).data;
+    var BUNDLES = readsOf('spirit/bundle/script.js');
+    var BRANCHES = readsOf('spirit/branch/script.js');
     // ITS DELETION HEARD, FROM THIS SCREEN OR ANY OTHER: the mounter closes it.
     var offBundle = BUNDLES && typeof o.gone === 'function' ? BUNDLES.watch(function (key, v) {
       if (String(key) === String(o.bundle) && !v) o.gone();
@@ -73,7 +74,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     function say(text) { said.textContent = String(text || ''); }
     // WHAT IT ADDS, IT FOLLOWS IN spirit.required.spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
     // changes shit it listens to fucking update via the spirit object"): the rows the branch branch's cache keeps
-    // (spirit.required.spirit.data.branch.data). The branch asked for, once there, is said added.
+    // (spirit.branch.client). The branch asked for, once there, is said added.
     var waiting = null;
     var off = BRANCHES ? BRANCHES.watch(function (id, v) {
       if (!waiting || !v) return;

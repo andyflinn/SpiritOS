@@ -29,10 +29,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.requireScript) keepAnswer('spirit/element/rowForm/script.js');
-  // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), there once the page has started: the node
-  // family's cache, whose card this field shows, is its node.data.
   var store = root.spirit.requireScript ? Promise.resolve(Promise.resolve(window.spirit.readyPromise)) : Promise.resolve();
-  function card() { return window.spirit.dataStore.node.data.card; }
+  // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the card is the node branch's reads, on the branch spirit.requireScript
+  // handed back (an old-shape branch's, its data).
+  function card() { return ANSWER['spirit/node/api.js'].data.card; }
 
   function label() { return ANSWER['spirit/type/string/label/script.js'] || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
@@ -79,7 +79,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       }, function (e) { say((e && e.message) || 'could not save', true); });
     }
     // WHAT IT CHANGES, IT LISTENS FOR (goal/G41.27, G41.28): the node's card as the node family's cache keeps it
-    // (spirit.required.spirit.data.node.data). The field shows the name the card holds; a save keeps there what the node stored.
+    // (spirit.node.data). The field shows the name the card holds; a save keeps there what the node stored.
     var stop = null;
     function show(card) {
       if (gone || !card) return;

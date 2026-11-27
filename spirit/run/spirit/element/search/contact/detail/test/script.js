@@ -33,12 +33,14 @@ const settle = async function () {
 // A BRANCH OF THE NEW SHAPE (goal/G49.22) by its interface's path, spirit/contact/script.js: the branch spirit.contact, named
 // by its path in dots, its calls spirit.contact.<verb>.
 const NEW_SHAPE = { 'spirit/contact/script.js': 'spirit.contact' };
-function branchAt(families, p) {
+// goal/G49.23, box v22 Part 1: the branch carries its client, its reads, as the loader's branch does: the world's w.client, read at
+// each use, so a test plants its rows there.
+function branchAt(families, p, w) {
   const at = String(p).replace(/^\/+/, '');
   const m = NEW_SHAPE[at] ? [at, NEW_SHAPE[at]] : /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(at);
   if (!m) return null;
   const b = families[m[1]];
-  return new Proxy({}, { get: function (t, k) { return k === 'then' ? undefined : b[k]; } });
+  return new Proxy({}, { get: function (t, k) { return k === 'then' ? undefined : k === 'client' ? (w && w.client) || undefined : b[k]; } });
 }
 function makeDom() {
   const VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };
@@ -201,11 +203,8 @@ function personWorld(person, relayRows) {
     // answer would be taken for the part itself (fieldInput's attach, the face form's offers); an answer still on its way leaves
     // it out, as a part the page has not loaded yet, and refuses nothing the detail asks without a catch.
     requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
-      const b = branchAt(families, p); return b ? Promise.resolve(b) : new Promise(function () {}); },
+      const b = branchAt(families, p, w); return b ? Promise.resolve(b) : new Promise(function () {}); },
     readyPromise: Promise.resolve({}),
-    // THE DATA SET IS spirit.dataStore (goal/G49.23): the one object a test plants its rows in; the element reads it there and
-    // asks no client script.
-    dataStore: {},
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
   };
   // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
@@ -290,16 +289,17 @@ function relayWorld(rows, relayStatus) {
     eventStream: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
     // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
-    // "every api.js requires it's companion data.js"); here that data stands in as spirit.dataStore.contact.data, whose rows
-    // the page watches. A data.js asked for directly is only recorded.
+    // "every api.js requires it's companion data.js"); here that data stands in as the contact branch's client (goal/G49.23), whose
+    // rows the page watches and whose hear hands it the relay events. A data.js asked for directly is only recorded.
     requireScript: function (p) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
-      if (at === 'spirit/contact/script.js' && !win.spirit.dataStore.contact) (win.spirit.dataStore.contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
+      if (at === 'spirit/contact/script.js' && !w.client) w.client = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; },
+        hear: function (fn) { const h = { onRelayEvent: fn }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } };
       // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
       if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
       if (at === 'spirit/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
-      const b = branchAt(families, at);
+      const b = branchAt(families, at, w);
       return b ? Promise.resolve(b) : new Promise(function () {});
     },
     readyPromise: Promise.resolve({}),
@@ -318,9 +318,6 @@ function relayWorld(rows, relayStatus) {
     },
     // goal/G49.23: what stood under spirit.required stands on the spirit object itself, at its path.
     ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P },
-    // THE DATA SET IS spirit.dataStore (goal/G49.23): the one object a test plants its rows in; the element reads it there and
-    // asks no client script.
-    dataStore: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
   };
   // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object
   // or a function... or fail/throw"): the armingButton, handed when the element asks for it.
@@ -890,7 +887,7 @@ test.run('A relay\'s detail sends its title to the layer it is drawn in', 0.2, f
 // ONE DETAIL FOR EVERY KIND OF CONTACT (goal/G43.32; Andy: "the contact list already knows the difference between contact
 // types. so should the detail panel."): not told, the contact family's cache says what the row is.
 // it knows the contact's type, from the contact family's cache when not told
-const held = function (wx, relay) { wx.win.spirit.dataStore.contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
+const held = function (wx, relay) { wx.client = Object.assign({}, wx.client, { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } }); };
 test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s details and does not ask for a person\'s row', 0.2, async function () {
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);

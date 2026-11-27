@@ -82,6 +82,8 @@ function world(answer) {
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
   win.window = win;
+  // goal/G49.23, box v22 Part 1: the node branch carries its data.js's reads as data, as the loader's branch does, read at each use.
+  Object.defineProperty(w.nodeApi, 'data', { get: function () { return ((win.spirit || {}).node || {}).data; } });
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
   const REAL = [SUBJECT, 'spirit/type/string/label/script.js', 'spirit/client/script.js'];
