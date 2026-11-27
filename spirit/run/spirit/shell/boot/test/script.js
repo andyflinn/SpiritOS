@@ -165,3 +165,10 @@ test.run('boot.js keeps no stream loop of its own: it reads no stream body and f
   if (c == null) return false;
   return !/\.getReader\s*\(/.test(c) && !/fetch\s*\(\s*['"`]\/face\/stream/.test(c) ? true : false;
 }, test.limit.quick);
+// spirit.shell HOLDS ONLY THE SHELL FOLDER'S SCRIPTS (goal/G49.23, box v21; Andy: "that sounds like spirit/fuckingGarbage/ to
+// me...."): the boot hangs no factRow and no joinLink on it; they are spirit/fuckingGarbage/'s.
+test.run('the boot puts nothing on spirit.shell: no factRow, no joinLink', 0.2, function () {
+  const c = code('spirit/shell/boot/script.js');
+  if (c == null) return false;
+  return !/spirit\.shell\s*=(?!=)|spirit\.shell\s*\|\|/.test(c) || false;
+}, test.limit.quick);

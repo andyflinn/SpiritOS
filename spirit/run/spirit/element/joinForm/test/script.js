@@ -138,3 +138,9 @@ test.run('pressed with no email, it says why on a line below the bubble, not in 
   // a press, and the line below the bubble
   return (!!m.said && m.saidBelow) ? true : false;
 }, test.limit.quick);
+// ITS JOIN LINK FROM spirit/fuckingGarbage/joinLink/script.js (goal/G49.23, box v21: "joinLink to
+// spirit/fuckingGarbage/joinLink/script.js, the join form requiring it by that path"), never off spirit.shell.
+test.run('the join form requires spirit/fuckingGarbage/joinLink/script.js and reads no spirit.shell', 0.2, function () {
+  const c = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'joinForm', 'script.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  return (/requireScript\(\s*['"]spirit\/fuckingGarbage\/joinLink\/script\.js['"]/.test(c) && !/\bshell\s*\.\s*joinLink|spirit\.shell\b/.test(c)) || false;
+}, test.limit.quick);

@@ -2310,6 +2310,12 @@ function oneFile(P) {
     return;
   }
   const ownCode = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  // ITS ROWS FROM ITS BRANCH (goal/G49.23, box v21; Andy: "no spirit.dataStore"): an element reads a branch's rows from the
+  // branch spirit.requireScript hands back, at its client; it reads no spirit.dataStore and asks for no client script.
+  // <address>: it reads its rows from the branch it requires
+  test.run('it reads no spirit.dataStore and asks for no client script: its rows come from the branch it requires', 0.4, function () {
+    return (!/\.dataStore\b/.test(ownCode) && !/requireScript\(\s*['"][^'"]*\/client\/script\.js['"]/.test(ownCode)) || false;
+  }, test.limit.quick);
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.required.spirit.data."): no app or element hands a search a matched(row) of its own; the
   // search element itself matches the whole row.

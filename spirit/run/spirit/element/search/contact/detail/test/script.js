@@ -1409,3 +1409,9 @@ test.run('A person\'s label in the contact list is not bold and italic', 0.2, fu
   if (!S.listed) return false;
   return (!!S.personLook && !(S.personLook.weight >= 700 && S.personLook.style === 'italic')) || false;
 }, test.limit.quick);
+// ITS FACT ROWS FROM spirit/fuckingGarbage/factRow/script.js (goal/G49.23, box v21: "factRow to
+// spirit/fuckingGarbage/factRow/script.js, the contact detail requiring it by that path"), never off spirit.shell.
+test.run('the contact detail requires spirit/fuckingGarbage/factRow/script.js and reads no spirit.shell.factRow', 0.2, function () {
+  const c = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  return (/requireScript\(\s*['"]spirit\/fuckingGarbage\/factRow\/script\.js['"]/.test(c) && !/spirit\.shell\.factRow/.test(c)) || false;
+}, test.limit.quick);

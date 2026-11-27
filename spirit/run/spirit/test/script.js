@@ -288,9 +288,9 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'dataStore', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
-  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts', 'dataStore'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
+  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
 // BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): a bound branch's subscribe takes
 // {branch, run?, since?}.
@@ -907,13 +907,33 @@ test.run('on a page, once spirit.js has started, spirit.required.spirit.data is 
   try { await cq.spirit.startPage(); } catch (e) { /* the cache is the question here */ }
   return isCache(cq.spirit.required.spirit.data) || false;
 }, test.limit.quick);
-// spirit.dataStore (goal/G49.23; Andy: "wsl, no review, you INFORM cw", "spirit.dataStore is fine with me"):
-// the spirit object loads its own client and offers the store as a member, so an element reads it and asks for no client script.
-test.run('in node, spirit.dataStore is the store, the one spirit/client/script.js gives', 0.2, function () {
-  return (isCache(s.dataStore) && s.dataStore === s.requireScript('spirit/client/script.js')) || false;
+// ON THE SPIRIT OBJECT ITSELF (goal/G49.23, box v21, Part 1: "spirit.requireScript() places it's return objects in the spirit
+// object, and no longer on spirit.required.spirit"): a script required stands at its path on the instance.
+test.run('in node, a required script stands on the spirit object at its path, and not under spirit.required.spirit', 0.2, async function () {
+  const got = await s.requireScript('spirit/listLimiter/script.js');
+  const under = s.required && s.required.spirit && s.required.spirit.listLimiter;
+  return (!!got && s.listLimiter === got && !under) || false;
 }, test.limit.quick);
-test.run('on a page, once spirit.js has started, spirit.dataStore is the store', 0.2, function () {
-  return (!!T.cq && isCache(T.cq.spirit.dataStore) && T.cq.spirit.dataStore === T.cq.spirit.required.spirit.data) || false;
+test.run('on a page, the store it loads at start stands on the spirit object at its path, and not under spirit.required.spirit', 0.2, function () {
+  const sp = T.cq && T.cq.spirit;
+  const under = sp && sp.required && sp.required.spirit && sp.required.spirit.client;
+  return (!!sp && isCache(sp.client) && !under) || false;
+}, test.limit.quick);
+// EACH BRANCH'S ROWS AND READS AT <branch path>.client (goal/G49.23, box v21: "they stand at <branch path>.client, where the
+// loader puts the branch's client/script.js by its path (spirit/fs/client/script.js at spirit.fs.client)"; "the client puts
+// out its reads as it runs (fs: file, files, ready, watch ...)").
+test.run('in node, the fs branch the require hands back has its reads at its client: file, files, ready and watch', 0.2, async function () {
+  const fsb = await s.requireScript('spirit/fs/script.js');
+  const c = fsb && fsb.client;
+  return (!!c && c === s.fs.client && ['file', 'files', 'ready', 'watch'].every(function (k) { return typeof c[k] === 'function'; })) || false;
+}, test.limit.quick);
+// NO spirit.dataStore (goal/G49.23, box v21; Andy: "no spirit.dataStore"): each branch's rows stand on the branch, at
+// <branch path>.client; the spirit object keeps no store of them, in node or on a page.
+test.run('in node, the spirit object has no dataStore', 0.2, function () {
+  return !('dataStore' in s) || false;
+}, test.limit.quick);
+test.run('on a page, once spirit.js has started, the spirit object has no dataStore', 0.2, function () {
+  return (!!T.cq && !('dataStore' in T.cq.spirit)) || false;
 }, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
 // loads with a files element (rule/26); spirit.js loads the cache and no data script.

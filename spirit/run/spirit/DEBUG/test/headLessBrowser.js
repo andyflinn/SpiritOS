@@ -129,3 +129,9 @@ test.run('a file that places no element fails, and says where it looked', 0.2, a
   const r = none.report || {};
   return (r.state === 'failed' && /spirit\.required\.spirit\.element\.zzThing/.test(r.error)) || false;
 }, test.limit.quick);
+// ITS STAND-IN FOR OLD APPS STAYS INSIDE ITS PAGE (goal/G49.23, box v21: "activateApp, the debug page's stand-in for old
+// apps, made inside that page, no longer on spirit.shell").
+test.run('the debug page puts no activateApp on spirit.shell', 0.2, function () {
+  const c = require('fs').readFileSync(path.join(RUN, 'spirit', 'DEBUG', 'headLessBrowser.js'), 'utf8');
+  return !/spirit\.shell[^;\n]*activateApp/.test(c) || false;
+}, test.limit.quick);
