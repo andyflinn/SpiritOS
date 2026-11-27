@@ -258,21 +258,22 @@ test.run('an object argument is read as JSON: debug debug={"on":...} sets the no
   const after = await call('node.debug', { debug: {} });
   return (!!answered(p) && after.body.debug === want) || false;
 }, test.limit.slow);
-test.run('a number argument is read as a number: at spirit.auth, bundle op=get id=<the id bundle op=add answered>', 0.4, async function () {
+// The bundle table is a branch of its own since goal/G49.21, spirit.bundle, its verbs add and get with no op.
+test.run('a number argument is read as a number: at spirit.bundle, get id=<the id add answered>', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
-  await go('path auth');
-  if (at() !== 'auth') return false;
-  const made = answered(await go('bundle op=add label=zzConsole'));
+  await go('path bundle');
+  if (at() !== 'bundle') return false;
+  const made = answered(await go('add label=zzConsole'));
   if (!made || typeof made.id !== 'number') return false;
-  const got = answered(await go('bundle op=get id=' + made.id));
+  const got = answered(await go('get id=' + made.id));
   return (!!got && got.label === 'zzConsole' && got.id === made.id) || false;
 }, test.limit.slow);
-test.run('a verb the node refuses shows the refusal as a JSON error, and the path stays: bundle op=get id=987654', 0.4, async function () {
-  if (!up() || at() !== 'auth') return false;
-  const p = await go('bundle op=get id=987654');
+test.run('a verb the node refuses shows the refusal as a JSON error, and the path stays: get id=987654 at spirit.bundle', 0.4, async function () {
+  if (!up() || at() !== 'bundle') return false;
+  const p = await go('get id=987654');
   const o = json(p.out);
-  return (refused(p, 'auth') && o.ok === false) || false;
+  return (refused(p, 'bundle') && o.ok === false) || false;
 }, test.limit.slow);
 test.run('a yes/no argument is read as true or false: at spirit.contact, search keep=true answers', 0.4, async function () {
   if (!up()) return false;
