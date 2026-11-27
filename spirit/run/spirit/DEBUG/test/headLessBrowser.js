@@ -56,25 +56,27 @@ test.run('make answers null for an address that is not .html', 0.2, async functi
   return got === null || false;
 }, test.limit.quick);
 
-// Andy: "the response will be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js">"
-test.run('the page has a script tag loading /spirit.js and one inline script, and nothing more', 0.2, function () {
+// Andy: "the response will be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit/script.js">"
+// (the loader is spirit/script.js, the sheet spirit/shell/shell.css: goal/G49.23, their places in the tree)
+test.run('the page has a script tag loading /spirit/script.js and one inline script, and nothing more', 0.2, function () {
   if (!page) return false;
   const tags = page.body.match(/<script[^>]*>/g) || [];
-  return JSON.stringify(tags) === JSON.stringify(['<script src="/spirit.js">', '<script>']) || false;
+  return JSON.stringify(tags) === JSON.stringify(['<script src="/spirit/script.js">', '<script>']) || false;
 }, test.limit.quick);
 test.run('the page has no comments', 0.2, function () {
   if (!page) return false;
   const inline = (/<script>\n([\s\S]*?)\n<\/script>/.exec(page.body) || [])[1] || '';
   return (!/<!--/.test(page.body) && !/(^|[^:"\\])\/\/|\/\*/.test(inline)) || false;
 }, test.limit.quick);
-test.run('the page links /shell.css, its box is mount-box, and its title is the module\'s name', 0.2, function () {
+test.run('the page links /spirit/shell/shell.css, its box is mount-box, and its title is the module\'s name', 0.2, function () {
   if (!page) return false;
   const b = page.body;
-  return (/<link rel="stylesheet" href="\/shell.css"/.test(b) && /<div id="mount-box" class="fill"><\/div>/.test(b) && /<title>zzThing<\/title>/.test(b)) || false;
+  return (/<link rel="stylesheet" href="\/spirit\/shell\/shell\.css"/.test(b) && /<div id="mount-box" class="fill"><\/div>/.test(b) && /<title>zzThing<\/title>/.test(b)) || false;
 }, test.limit.quick);
-test.run('/spirit.js comes before the inline script', 0.2, function () {
+test.run('/spirit/script.js comes before the inline script', 0.2, function () {
   if (!page) return false;
-  return page.body.indexOf('src="/spirit.js"') < page.body.indexOf('<script>\n') || false;
+  const at = page.body.indexOf('src="/spirit/script.js"');
+  return (at >= 0 && at < page.body.indexOf('<script>\n')) || false;
 }, test.limit.quick);
 
 // an element (goal/G43.32): what spirit.requireScript hands back, .create(box), no options (goal/G49.23)

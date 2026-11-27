@@ -71,8 +71,9 @@ test.after(async function () {
 test.run('spirit/element/contacts/ is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'spirit', 'element', 'contacts')) || false;
 }, test.limit.quick);
-test.run('spirit/element/search/contact/ holds list.js and row.js', 0.2, function () {
-  return ['list.js', 'row.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', f)); }) || false;
+// Each in its own folder's script.js since the flag-day moves (goal/G49.12).
+test.run('spirit/element/search/contact/ holds list/script.js and row/script.js', 0.2, function () {
+  return ['list/script.js', 'row/script.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', f)); }) || false;
 }, test.limit.quick);
 test.run('no code names spirit/element/contacts/', 0.2, function () {
   const oldElement = codeNaming(/spirit\/element\/contacts\//);

@@ -190,7 +190,8 @@ const startDesk = async function (name, values, sessions) {
   const c = appClient.createAppClient({ rootDir: root });
   c.register(ID, p);
   W.pullKids.push(spawn(process.execPath, [server, JSON.stringify(values), '--pipe', p, '--state', st], {
-    stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: name + '-job' }) }));
+    // Its job id is the app's id, as the node starts it (goal/G49.19); spirit.publish refuses any other (goal/G49.23 Part 2).
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: ID }) }));
   let on = false;
   for (let i = 0; i < 60 && !on; i++) { await sleep(150); try { const r = await c.ask('api'); on = !!(r.body && r.body[ID] && r.body[ID].ok !== false); } catch (e) { /* not yet */ } }
   if (!on) return null;
@@ -220,7 +221,8 @@ test.run('a desk server starts for this suite', 0.2, async function () {
   W.SERVER = runCopy(path.join(scratch, 'run'), node.server.address().port);
   W.kid = spawn(process.execPath, [W.SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job' }),
+    // Its job id is the app's id, as the node starts it (goal/G49.19); spirit.publish refuses any other (goal/G49.23 Part 2).
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: ID }),
   });
   let up = false;
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await W.client.ask('api'); up = !!(r.body && r.body[ID] && r.body[ID].ok !== false); } catch (e) { /* not yet */ } }

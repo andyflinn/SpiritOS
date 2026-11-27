@@ -252,9 +252,10 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     if (!R.j) return false;
     return same(R.j.mount, { 'element.js': true }) || false;
   }, test.limit.quick);
-  test.run('info.json says that in the shell it mounts and has a tile, and is no shell itself', 0.2, function () {
+  // Every manifest's shell.true went with every shell choice (goal/G49.4, 4044a0765: one hard-coded shell).
+  test.run('info.json says that in the shell it mounts and has a tile', 0.2, function () {
     if (!R.j) return false;
-    return same(R.j.shell, { true: false, mount: true, tile: true }) || false;
+    return same(R.j.shell, { mount: true, tile: true }) || false;
   }, test.limit.quick);
   test.run('info.json says the node mounts no server for it', 0.2, function () {
     if (!R.j) return false;

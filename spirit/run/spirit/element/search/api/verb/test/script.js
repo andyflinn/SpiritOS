@@ -35,7 +35,14 @@ const TREE = { fs: { search: {}, loadFile: {}, DEBUG: {} }, jobs: { list: {} } }
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let SRC, w, win, E, made, box, verbs, l, mine, m, N;
 const seen = [];
-const rows = function () { return (l && typeof l.opts.rows === 'function' ? l.opts.rows() : []).map(function (r) { return r.key; }); };
+// goal/G49.23: the rows a list shows are its branch's handle's rows (opts.data) that every filter passes; it is handed no rows
+// of its own (the old own: false rows went with goal/G48.4's party, which makes it a view of another party's verbs).
+const PARTY = 'PEER+VERB/SELECTOR==';
+const rows = function () {
+  const data = l && l.opts.data;
+  const all = data && typeof data.rows === 'function' ? data.rows() : [];
+  return all.filter(function (r) { return (l.opts.filters || []).every(function (f) { return f.test(r) > 0; }); }).map(function (r) { return r.name; }).sort();
+};
 
 test.run('spirit/element/search/api/verb/script.js exists', 0.2, function () {
   return fs.existsSync(FILE) || false;
@@ -98,7 +105,7 @@ test.run('it loads probabilitySearch itself', 0.2, function () {
 test.run('create appends the control to its container and answers it', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   box = node('div');
-  verbs = made.create(box, { own: false });
+  verbs = made.create(box, { party: PARTY });
   return box.kids.length === 1 && box.kids[0] === verbs ? true : false;
 }, test.limit.quick);
 test.run('it draws one probabilitySearch dropdown', 0.2, async function () {
@@ -115,14 +122,16 @@ test.run('its first option, at the top, reads All Verbs', 0.2, function () {
   return l.opts.all === 'All Verbs' ? true : false;
 }, test.limit.quick);
 
-// another party's tree (own: false), listed from that tree: introSpector's deferral (the box: "the only exception is
-// introspector, deferred for network-scope design reasons.")
+// another party's tree (party: its key), its verbs the branch under that party's node (goal/G48.4; Andy: "fix the
+// introSpector, too", which ended the box's deferred exception)
 test.run('with no server it is hidden and lists nothing', 0.2, function () {
   if (!l) return false;
   return verbs.hidden === true && rows().length === 0 ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, lists that server\'s verbs and never DEBUG', 0.2, function () {
   if (!l) return false;
+  // what the family list does when that party answers its tree: keep it under the party's node
+  win.spirit.client.keepTree(TREE, win.spirit.fuckingGarbage.apiTreeIndex, PARTY);
   verbs.show(TREE, 'fs');
   return verbs.hidden === false && short(rows()) === short(['loadFile', 'search']) ? true : false;
 }, test.limit.quick);

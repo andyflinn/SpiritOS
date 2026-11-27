@@ -148,8 +148,10 @@ test.run("it is a pane unless told otherwise; given face dropdown, a dropdown, i
 
 // an empty list holds its first grant (goal/G41.16), its cache manager's (goal/G41.28)
 // Found by cw live: a list with no rows drawn never heard its first grant. Since goal/G41.28 a table's rows are its
-// family's cache manager's from the page's start: here the real data set and the auth family's manager, a list made
-// for the node's grants with no row drawn, and its first grant taken by spirit.client.
+// family's cache manager's from the page's start: here the real data set and the grant branch's client (goal/G49.21: the
+// auth branch's grant table is spirit.grant, its client spirit/grant/client/script.js), a list made for the node's grants with
+// no row drawn, and its first grant taken by spirit.client on the job spirit.grant. goal/G49.23: the table's branch is a handle
+// on the client's rows, as grantsPanel.nodeGrants hands it.
 test.run('a list made with no row drawn is a view of the branch its first grant lands in', 0.2, async function () {
   if (noList()) return false;
   // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
@@ -157,18 +159,23 @@ test.run('a list made with no row drawn is a view of the branch its first grant 
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   global.window.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   DATA.homeNode('nOdE+key/one==');
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'auth/data.js' });
-  const A = ((global.window.spirit.client || {}).auth || {}).data;
-  const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
-    revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return A.grants.watch(fn); } };
+  // The grant client files into what spirit/client/script.js hands back, the store run above.
+  const was = global.window.spirit.requireScript;
+  global.window.spirit.requireScript = function (q) { return q === 'spirit/client/script.js' ? Promise.resolve(DATA) : was(q); };
+  const C = PAGE_LOAD.runAsPage('spirit/grant/client/script.js');
+  await settle();
+  global.window.spirit.requireScript = was;
+  if (!C || typeof C.handle !== 'function') return false;
+  const GRANTS = { get branch() { return C.handle('rows'); }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
+    revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return C.watch(fn); } };
   const n = lists.length;
   E.search.grant.list.create({}, { grants: GRANTS });
   await settle();
-  DATA.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K7', path: 'job.list', label: 'First' } } });
+  DATA.takeJob({ id: 'spirit.grant', data: { row: { key: 'K7', path: 'job.list', label: 'First' } } });
   await settle();
   const fresh = lists[n];
-  const kept = A.grants.row(A.grantKey('K7', 'job.list'));
-  return !!fresh && fresh.o.data === A.grants.branch && kept && kept.label === 'First' ? true : false;
+  const kept = C.row(C.grantKey('K7', 'job.list'));
+  return !!fresh && !!fresh.o.data && fresh.o.data.path === C.branch && kept && kept.label === 'First' ? true : false;
 }, test.limit.quick);
 
 // refresh and destroy are the search element's

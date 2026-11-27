@@ -19,6 +19,10 @@
   }
   var S = window.spirit = window.spirit || {};
   // Each tile by its full path, written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
+  // THE SIX IN THEIR ORDER, by the names the loader places them at beside this script (goal/G49.23: the list of names went with
+  // goal/G49.13's written-out paths, which left create mapping an undefined TILES; the box: memory, CPU, uptime, event loop
+  // delay, connections, jobs running).
+  var TILES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'running'];
   var parts = Promise.all(['spirit/element/monitor/job/memory/script.js', 'spirit/element/monitor/job/cpu/script.js', 'spirit/element/monitor/job/uptime/script.js', 'spirit/element/monitor/job/delay/script.js', 'spirit/element/monitor/job/connections/script.js', 'spirit/element/monitor/job/running/script.js'].map(function (p) { return S.requireScript(p); }));
 
   function create(container) {

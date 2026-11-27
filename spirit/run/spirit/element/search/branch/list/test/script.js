@@ -4,8 +4,9 @@
 // The tests of spirit/element/search/branch/list/script.js, and of no other module (spec: ./script.md; goal/G41.14). The
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the list requires it. Then the
 // search element is a recorder in its place, so this tests the list and not the search under it; the row element and
-// the family selector are stand-ins that keep what they were handed. The node's auth family is the spirit
-// object's, each search recorded.
+// the family selector are stand-ins that keep what they were handed. The node's branch branch is the spirit object's
+// (goal/G49.21: the auth branch's branch table is spirit.branch, spirit/branch/script.js), each search recorded; its client,
+// spirit/branch/client/script.js, is the real one, on the page's real data set.
 
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +36,7 @@ function node(tag) {
 function within(root, x) { if (root === x) return true; return (root.kids || []).some(function (k) { return within(k, x); }); }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let asked, required, loaded, lists, families, E, host, made, l, o, fam, sel;
+let asked, required, loaded, lists, families, E, host, made, l, o, fam, sel, branchClient;
 const listed = function () { return E && E.search && E.search.branch && E.search.branch.list && typeof E.search.branch.list.create === 'function'; };
 
 test.run('the list runs on a bare window, with the page\'s data set real', 0.2, async function () {
@@ -44,15 +45,16 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   required = [];
   lists = [];
   families = [];
-  const auth = { branch: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: '3', label: JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: '' }) }], more: false }); } };
+  // goal/G49.21: one verb per operation, spirit.branch.search, no op argument.
+  const branchBranch = { search: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: '3', label: JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: '' }) }], more: false }); } };
   const STANDS = {
     'spirit/element/search/script.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }); },
-    // The real row element requires the auth family's api.js as it runs (goal/G41.28, G47.1); its stand-in does the same.
+    // The real row element requires the branch branch's script.js as it runs (goal/G41.28, G47.1, G49.21); its stand-in does the same.
     // goal/G49.23: written at its place as the stand-ins beside it.
-    'spirit/element/search/branch/row/script.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); ((E.search = E.search || {}).branch = E.search.branch || {}).row = { create: function (row) { return { kind: 'branch', row: row }; } }; },
+    'spirit/element/search/branch/row/script.js': function (E) { global.window.spirit.requireScript('spirit/branch/script.js'); ((E.search = E.search || {}).branch = E.search.branch || {}).row = { create: function (row) { return { kind: 'branch', row: row }; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api/script.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
@@ -68,9 +70,11 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // The auth family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
-  // itself to the data set. It answers the auth branch by its api.js path (goal/G49.6: never by a name).
+  // The branch branch's script.js brings its client, as the real one does (goal/G47.1; goal/G49.21: <branch>/script.js and
+  // <branch>/client/script.js): the real client run once as the page runs it, filing into the data set, and put on the branch as
+  // its client (goal/G49.23, box v22 Part 1). What that client asks as it runs is the branch's, not the list's, so it is not recorded.
   let ran = false;
+  let recording = true;
   // EACH STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
   // "spirit.requireScript must allways return either an object or a function... or fail/throw"): what the stand-in made for its
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
@@ -79,7 +83,13 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
     const v = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); // goal/G49.23: on the spirit object itself
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
+  branchClient = function () { return branchBranch.client; };
+  global.window.spirit.requireScript = function (p) {
+    if (recording) required.push(String(p));
+    if (p === 'spirit/branch/script.js' && !ran) { ran = true; recording = false; try { branchBranch.client = PAGE_LOAD.runAsPage('spirit/branch/client/script.js'); } finally { recording = true; } }
+    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); }
+    return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : p === 'spirit/client/script.js' ? DATA : standIn(p));
+  };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = global.window.spirit.element || {};
@@ -94,20 +104,21 @@ test.run('it requires the search element, its row element and the branch selecto
   if (!required) return false;
   return ['spirit/element/search/script.js', 'spirit/element/search/branch/row/script.js', 'spirit/element/search/api/script.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the auth branch\'s interface, spirit/auth/api.js', 0.2, function () {
+test.run('it requires the branch branch\'s interface, spirit/branch/script.js', 0.2, function () {
   if (!loaded) return false;
-  return loaded.indexOf('spirit/auth/api.js') !== -1 || false;
+  return loaded.indexOf('spirit/branch/script.js') !== -1 || false;
 }, test.limit.quick);
-test.run('as it loads, it requires no data script, as only an api.js requires its data.js', 0.2, function () {
+test.run('as it loads, it requires no data script and no branch client, as only a branch\'s script.js requires its client', 0.2, function () {
   if (!loaded) return false;
-  return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  // goal/G49.21, G49.23: a branch's client is <branch>/client/script.js (the old data.js); the store, spirit/client/script.js, is none.
+  return !loaded.some(function (p) { return /data\.js$/.test(p) || /^spirit\/.+\/client\/script\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.search.branch.list.create', 0.2, function () {
   if (!E) return false;
   return listed() ? true : false;
 }, test.limit.quick);
 
-// one bundle's branches, searched at auth.branch
+// one bundle's branches, searched at spirit.branch.search
 test.run('it draws one probabilitySearch inside the host it is given', 0.2, async function () {
   if (!listed()) return false;
   host = node('host');
@@ -122,17 +133,17 @@ test.run('it fills as soon as it is drawn', 0.2, function () {
   return l.refreshes >= 1 ? true : false;
 }, test.limit.quick);
 // goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
-// goal/G41.28: the branch the auth family's data.js keeps.
-test.run('it is a view of the auth branch\'s branches as kept in the spirit object\'s cache', 0.2, function () {
+// goal/G41.28: the branch the branch branch's client keeps; goal/G49.23: the search is handed a handle on it, not its path.
+test.run('it is a view of the branch branch\'s rows as its client keeps them in the spirit object\'s cache', 0.2, function () {
   if (!l) return false;
-  const B = ((global.window.spirit.client || {}).auth || {}).data && global.window.spirit.client.auth.data.branches;
-  return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
+  const C = branchClient ? branchClient() : null;
+  return !!C && typeof C.branch === 'string' && C.branch !== '' && !!o.data && o.data.path === C.branch && typeof o.data.rows === 'function' ? true : false;
 }, test.limit.quick);
 let got;
-test.run('its search asks auth.branch to search the bundle for the trimmed text through the spirit object', 0.2, async function () {
+test.run('its search asks spirit.branch.search for the bundle\'s branches with the trimmed text, through the spirit object', 0.2, async function () {
   if (!l) return false;
   got = await o.search(o.args(' cha ', {}));
-  return o.api === 'spirit/auth/api.js' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7 ? true : false;
+  return o.api === 'spirit/branch/script.js' && o.verb === 'search' && asked.length === 1 && asked[0].text === 'cha' && asked[0].bundle === 7 ? true : false;
 }, test.limit.quick);
 test.run('the search answers as a reply carrying its items and whether there are more', 0.2, function () {
   if (!l) return false;

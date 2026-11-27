@@ -61,7 +61,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // A view of the node's bundles, the rows the bundle branch's manager keeps (spirit.bundle.client's handle).
       data: BUNDLES().handle('rows'),
       api: 'spirit/bundle/script.js',
-      verb: 'bundle',
+      // goal/G49.23: the bundle branch's verb, search (goal/G49.21: one verb per operation; 'bundle' was the old auth verb).
+      verb: 'search',
       face: o.face,
       placeholder: o.placeholder || 'choose a bundle…',
       all: o.all,

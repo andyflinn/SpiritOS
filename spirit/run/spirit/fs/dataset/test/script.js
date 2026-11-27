@@ -32,7 +32,26 @@ test.after(async function () {
 // A caller in a child process of the scratch node: it requires spirit/fs/dataset/script.js and nothing else, and prints, every half second,
 // the rows asked about (null while there is none) and whether the tree is whole.
 // goal/G49.23: the store hands no family out by name; the fs family is named by its branch's path, spirit.fs.
-const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', 'spirit/node', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node/script.js', 'spirit/state'];
+// AN OLD-SHAPE FOLDER, FOUND IN THE TREE (goal/G49.23: spirit/node, the old example, is gone, box v22 Part 2): the first folder
+// under spirit/ that holds api.js and data.js, and neither script.js nor its own <name>.json; none found, its check is red.
+function oldShapeFolder() {
+  const walk = function (rel) {
+    let names = [];
+    try { names = fs.readdirSync(path.join(RUN, rel), { withFileTypes: true }); } catch (e) { return null; }
+    const has = function (n) { return names.some(function (d) { return d.name === n; }); };
+    const base = rel.slice(rel.lastIndexOf('/') + 1);
+    if (has('api.js') && has('data.js') && !has('script.js') && !has(base + '.json')) return rel;
+    for (const d of names) {
+      if (!d.isDirectory() || d.name === 'test' || d.name === 'state' || d.name === 'node_modules' || d.name[0] === '.') continue;
+      const got = walk(rel + '/' + d.name);
+      if (got) return got;
+    }
+    return null;
+  };
+  return walk('spirit');
+}
+const OLD_SHAPE = oldShapeFolder();
+const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', OLD_SHAPE || 'spirit/zznoOldShape', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node/script.js', 'spirit/state'];
 function caller() {
   const script = [
     "require('./spirit/script.js');",
@@ -85,13 +104,14 @@ test.run('spirit/app/desk, holding desk.json and desk.js, is a row with app true
   return (!!r && r.app === true) || false;
 }, test.limit.quick);
 // THE OLD SHAPE AND THE NEW SIDE BY SIDE (goal/G49.15; Andy: "does not the interim cache handle both old and new"): spirit/fs
-// is a branch of the new shape since step 3, spirit/node still of the old.
+// is a branch of the new shape since step 3; a folder of the old shape is found in the tree (oldShapeFolder, above).
 test.run('spirit/fs, holding script.js and client/script.js and no manifest, is a row with branch true, api false and app false', 0.4, function () {
   const r = row('spirit/fs');
   return (!!r && r.branch === true && r.api === false && r.app === false) || false;
 }, test.limit.quick);
-test.run('spirit/node, holding api.js and data.js and no manifest, is a row with api true, branch false and app false', 0.4, function () {
-  const r = row('spirit/node');
+test.run('a folder holding api.js and data.js, no script.js and no manifest, is a row with api true, branch false and app false', 0.4, function () {
+  if (!OLD_SHAPE) return false;
+  const r = row(OLD_SHAPE);
   return (!!r && r.api === true && r.branch === false && r.app === false) || false;
 }, test.limit.quick);
 // Q1 (Andy: "yes. testicle already checks validity of an app.json"): a folder is app:true by its <name>.json alone; job has

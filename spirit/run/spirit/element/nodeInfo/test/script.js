@@ -520,11 +520,12 @@ function formsPart() {
 
   const CARD = { ok: true, name: 'Andy', description: 'a node', key: 'NODEKEY+INFO==' };
   // A seat on A (claimed, its relay known), one on O (owned), and B merely listed (no seat).
+  // goal/G49.23: the relay's mark that faceForm offers a face on is faceable (goal/G47.4, 😏), no longer mine, which nothing reads.
   function rows(starred) {
     return [
-      { url: 'https://a.example', label: 'A', relay: true, claimed: true, mine: starred === 'A', roll: { relayKey: 'RELAYKEY+A==' } },
-      { url: 'https://o.example', label: 'O', relay: true, owned: true, mine: false, roll: { relayKey: 'RELAYKEY+O==' } },
-      { url: 'https://b.example', label: 'B', relay: true, claimed: false, mine: false, roll: { relayKey: 'RELAYKEY+B==' } },
+      { url: 'https://a.example', label: 'A', relay: true, claimed: true, faceable: starred === 'A', roll: { relayKey: 'RELAYKEY+A==' } },
+      { url: 'https://o.example', label: 'O', relay: true, owned: true, faceable: false, roll: { relayKey: 'RELAYKEY+O==' } },
+      { url: 'https://b.example', label: 'B', relay: true, claimed: false, faceable: false, roll: { relayKey: 'RELAYKEY+B==' } },
     ];
   }
 

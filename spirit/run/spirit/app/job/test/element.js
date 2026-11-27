@@ -96,9 +96,10 @@ test.run('destroy empties its container', 0.2, async function () {
   if (!W.made) return false;
   return await W.chrome.evaluate('(function () { window.alone.destroy(); var c = document.getElementById("alone"); var n = c.children.length; c.remove(); return n === 0; }())') ? true : false;
 }, test.limit.quick);
+// The scripts it loaded that are a cache, old shape (data.js) or new (client/script.js; goal/G49.19 moved the jobs cache there).
 test.run('the page finds the jobs cache at spirit/job/client/script.js, never spirit/app/job/data.js', 0.2, async function () {
   if (!W.page) return false;
-  const asked = JSON.parse(await W.chrome.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (n) { return /\\/data\\.js/.test(n); }))'));
+  const asked = JSON.parse(await W.chrome.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (n) { return /\\/data\\.js|\\/client\\/script\\.js/.test(n); }))'));
   return W.made && asked.some(function (n) { return (/spirit\/job\/client\/script\.js/).test(n); }) && !asked.some(function (n) { return (/spirit\/app\/job\/data\.js/).test(n); }) ? true : false;
 }, test.limit.quick);
 

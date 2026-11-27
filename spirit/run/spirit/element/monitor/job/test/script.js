@@ -39,7 +39,8 @@ test.run('job.js is there, and the old spirit monitor is gone', 0.4, function ()
 }, test.limit.quick);
 test.run('it requires each of the six job tiles, and reads no stats itself', 0.4, function () {
   const code = readCode();
-  return code && NAMES.every(function (n) { return code.indexOf("'" + n + "'") !== -1; }) && code.indexOf("'spirit/element/monitor/job/' + n + '/script.js'") !== -1 && !/\.stats\b|job\.data\.job\(/.test(code) ? true : false;
+  // goal/G49.13: each tile's path is written out in full inside the require, no path built from a name.
+  return code && NAMES.every(function (n) { return code.indexOf("'spirit/element/monitor/job/" + n + "/script.js'") !== -1; }) && !/\.stats\b|job\.data\.job\(/.test(code) ? true : false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up with a Chrome page on its face', 0.2, async function () {
@@ -70,6 +71,6 @@ test.run('once the stream\'s reading is in, each tile holds its icon and a value
 }, test.limit.slow);
 test.run('destroyed, it leaves its container empty, and a later change of the spirit job draws nothing', 0.2, async function () {
   if (!W.made) return false;
-  const html = await js('(function () { window.__made.destroy(); var D = window.spirit.client; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');
+  const html = await js('(function () { window.__made.destroy(); var D = window.spirit.client; var at = D.homeNode() + "/spirit.job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');
   return html === '' ? true : false;
 }, test.limit.quick);

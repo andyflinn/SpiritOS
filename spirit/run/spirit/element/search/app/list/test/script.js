@@ -19,13 +19,32 @@ const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spi
 
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'app', 'list', 'script.js');
 
-// THE TREE'S APPS: which may be a shell (shell.true), which show a tile (shell.mount), which only run (node.run alone). Each
-// keyed by its id, its folder's path in dots, spirit.app.desk (goal/G49.19).
-const APPS = path.join(RUN, 'spirit', 'app');
-const TREE = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
-  const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8'));
+// THE TREE'S APPS, BY THE SYSTEM'S OWN RULE (goal/G49.23; Andy: "the system has clear rules for old and new format branches and
+// apps"): every folder of the run root that spirit/fs/filter/app/script.js takes for an app, old format or new, wherever it
+// stands (the fs cache flags the same folders, and app.search answers them). Each keyed by its folder's path in dots,
+// spirit.app.desk (goal/G49.19); which show a tile (shell.mount), which only run (node.run alone), from its manifest, its
+// <name>.json or, new style, its manifest.json. Which may be a shell is no longer asked: goal/G49.4 took shell.true and the
+// list's shells option out.
+const APP = LOADER.requireScript('spirit/fs/filter/app/script.js');
+const has = function (q) { return fs.existsSync(path.join(RUN, q)); };
+const readOf = function (q) { try { return fs.readFileSync(path.join(RUN, q), 'utf8'); } catch (e) { return null; } };
+const DIRS = [];
+(function walk(rel) {
+  let names = [];
+  try { names = fs.readdirSync(path.join(RUN, rel), { withFileTypes: true }); } catch (e) { return; }
+  names.forEach(function (d) {
+    if (!d.isDirectory() || d.name === '.git') return;
+    const r = rel + '/' + d.name;
+    if (APP.app(r, has, readOf)) DIRS.push(r);
+    walk(r);
+  });
+}('spirit'));
+const TREE = DIRS.map(function (dir) {
+  const base = dir.slice(dir.lastIndexOf('/') + 1);
+  let j = {};
+  try { j = JSON.parse(readOf(dir + '/' + base + '.json') || readOf(dir + '/manifest.json') || '{}'); } catch (e) { j = {}; }
   const sh = j.shell || {}, nd = j.node || {};
-  return { key: 'spirit.app.' + n, shell: sh.true === true, tile: sh.mount === true, run: nd.run === true && nd.mount !== true && sh.mount !== true };
+  return { key: dir.split('/').join('.'), tile: sh.mount === true, run: nd.run === true && nd.mount !== true && sh.mount !== true };
 });
 const keysOf = function (f) { return TREE.filter(f).map(function (a) { return a.key; }).sort(); };
 
@@ -61,7 +80,8 @@ test.run('it loads through spirit.requireScript and is spirit.element.search.app
 // create(host, opts) -> { list, refresh(), destroy() }
 test.run('create, given a host and options, answers an object holding list, refresh and destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.api.searchApp; spirit.app.api.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; return true; }())');
+  // goal/G49.23: the app branch is spirit.app itself, what spirit.requireScript('spirit/app/script.js') hands back, its function searchApp on it (no spirit.app.api).
+  await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; return true; }())');
   made = await make('pane', '{ face: "pane", pick: function (row, key) { window.picks.push({ row: row, key: key }); } }');
   return made === true || false;
 }, test.limit.slow);
@@ -118,15 +138,6 @@ test.run('as a dropdown each row shows the icon and the label only', 0.2, async 
   const f = await fieldsOf('drop');
   return JSON.stringify(f) === JSON.stringify(['icon', 'label']) || false;
 }, test.limit.quick);
-// goal/G43.18, box v29: "Both dropdowns list only the apps whose <name>.json says shell:true:true"
-test.run('with shells: true it lists only the apps that may be a shell', 0.2, async function () {
-  if (loaded !== true) return false;
-  await make('shells', '{ face: "dropdown", shells: true }');
-  await openDropdown('shells');
-  const want = keysOf(function (a) { return a.shell; });
-  const ok = await until(function () { return shown('shells').then(function (k) { return JSON.stringify(k) === JSON.stringify(want); }); }, 10000);
-  return (!!ok && want.length > 0) || false;
-}, test.limit.slow);
 // goal/G43.18: "this filter is hidden by default"; Q4: the caller makes it visible, by servers: true
 test.run('the server filter is hidden by default, and shown by servers: true', 0.2, async function () {
   if (loaded !== true) return false;

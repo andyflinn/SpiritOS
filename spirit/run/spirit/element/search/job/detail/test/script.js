@@ -102,7 +102,8 @@ test.run('it shows its events box', 0.2, function () {
 const touched = 'zzTouched/zz-touched-' + Date.now() + '.txt';
 test.run('a file is saved through fs.save', 0.2, async function () {
   if (!call) return false;
-  const saved = await call('fs.save', { path: touched, content: 'a change for spirit.fs to report\n' });
+  // goal/G49.23: the fs branch's verbs are named by its path, spirit.fs.<verb> (goal/G49.19).
+  const saved = await call('spirit.fs.save', { path: touched, content: 'a change for spirit.fs to report\n' });
   return saved.status >= 200 && saved.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('a file change on the node shows as a new event line, no reload', 0.2, async function () {

@@ -7,7 +7,7 @@
 // streamListener. The one spirit object is a stand-in, so nothing reaches a real node: the families answer by posting to
 // that pipe, and a delivery can be held back, or refused, until the test says otherwise. A restart is a second process:
 // this file run with --child <mode>, printing one RESULT line.
-// The one test file of appServer.js: the agentsFile part (AGENTS.md through spirit.fs.api.loadFile), the mount part (the
+// The one test file of appServer.js: the agentsFile part (AGENTS.md through spirit.fs.loadFile), the mount part (the
 // node starts a server from spirit/app/<name>/) and the stateCache part (its cache in spirit/state/<name>/cache/), once
 // appServer-agentsFile.js, appServer-mount.js and appServer-stateCache.js, are sections of it, run after its own checks
 // and never in a --child process.
@@ -566,7 +566,7 @@ function putBackTheRealSpirit() {
 // THE AGENTSFILE PART, once appServer-agentsFile.js.
 function agentsFilePart() {
   // Once spirit/run/spirit/test/appServer-agentsFile.js.
-  // THE AGENT'S AGENTS.md THROUGH spirit.fs.api.loadFile AT ITS PATH (goal/G43.27, requirement 8; spec: ./script.md),
+  // THE AGENT'S AGENTS.md THROUGH spirit.fs.loadFile AT ITS PATH (goal/G43.27, requirement 8; spec: ./script.md),
   // not through the family's FS: appServer.js's AGENTS paragraph. Andy: "easily changed, no?". appServer.js read as it is.
 
   const fs = require('fs');
@@ -576,7 +576,7 @@ function agentsFilePart() {
   // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
   function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
 
-  // appServer-agentsFile: the agent's AGENTS.md through spirit.fs.api.loadFile at its path (goal/G43.27), 8.
+  // appServer-agentsFile: the agent's AGENTS.md through spirit.fs.loadFile at its path (goal/G43.27), 8.
   let block = '';
   test.run('appServer.js\'s AGENTS paragraph is read', 0.2, function () {
     putBackTheRealSpirit();
@@ -584,7 +584,8 @@ function agentsFilePart() {
     block = (as.match(/AGENTS: AN APP'S RULES FOR AGENTS[\s\S]*?\n\n/) || [''])[0];
     return block.length > 100 || false;
   }, test.limit.quick);
-  test.run('it says AGENTS.md is read with spirit.fs.api.loadFile at its path', 0.2, function () {
+  // spirit/fs/script.js stands at spirit.fs since goal/G49.23 (box v21 Part 1, no spirit.required), its loadFile at spirit.fs.loadFile.
+  test.run('it says AGENTS.md is read with spirit.fs.loadFile at its path', 0.2, function () {
     return (/spirit\.fs\.loadFile/.test(block) && !/family's FS|FS\.loadFile \{path: "AGENTS\.md"\}/.test(block)) || false;
   }, test.limit.quick);
 }

@@ -68,7 +68,8 @@
       // A view of the node's branches, the rows the branch branch's manager keeps (spirit.branch.client's handle).
       data: BRANCHES().handle('rows'),
       api: 'spirit/branch/script.js',
-      verb: 'branch',
+      // goal/G49.23: the branch branch's verb, search (goal/G49.21: one verb per operation; 'branch' was the old auth verb).
+      verb: 'search',
       face: o.face,
       placeholder: o.placeholder || 'choose a branch…',
       all: o.all,

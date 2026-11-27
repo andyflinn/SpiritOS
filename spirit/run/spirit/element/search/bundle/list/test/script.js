@@ -4,7 +4,9 @@
 // The tests of spirit/element/search/bundle/list/script.js, and of no other module (spec: ./script.md; goal/G41.14). The
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the list requires it. Then the
 // search element is a recorder in its place, so this tests the list and not the search under it, and the row element a
-// stand-in that keeps what it was handed. The node's auth family is the spirit object's, each search recorded.
+// stand-in that keeps what it was handed. The node's bundle branch is the spirit object's (goal/G49.21: the auth branch's
+// bundle table is spirit.bundle, spirit/bundle/script.js), each search recorded; its client, spirit/bundle/client/script.js,
+// is the real one, on the page's real data set.
 
 const fs = require('fs');
 const path = require('path');
@@ -22,7 +24,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 // An element that counts on what it did not load throws inside a promise: the reporter fails the test it ran in.
-let asked, required, loaded, lists, rows, DATA, V, E, made, l, o, got, p, fo, LIST;
+let asked, required, loaded, lists, rows, DATA, V, E, made, l, o, got, p, fo, LIST, bundleClient;
 let answer = { items: [{ key: '7', label: JSON.stringify({ id: 7, label: 'Reader' }) }], more: true };
 const picked = [];
 const listed = function () { return !!(E && E.search && E.search.bundle && E.search.bundle.list && typeof E.search.bundle.list.create === 'function'); };
@@ -33,15 +35,16 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   required = [];
   lists = [];
   rows = [];
-  const auth = { bundle: function (a) { asked.push(a); return answer ? Promise.resolve(answer) : Promise.resolve(null); } };
+  // goal/G49.21: one verb per operation, spirit.bundle.search, no op argument.
+  const bundleBranch = { search: function (a) { asked.push(a); return answer ? Promise.resolve(answer) : Promise.resolve(null); } };
   const STANDS = {
     'spirit/element/search/script.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }); },
-    // The real row element requires the auth branch's interface as it runs (goal/G41.28); its stand-in does the same.
+    // The real row element requires the bundle branch's interface as it runs (goal/G41.28, G49.21); its stand-in does the same.
     // goal/G49.23: written at its place as the stand-ins above.
-    'spirit/element/search/bundle/row/script.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); ((E.search = E.search || {}).bundle = E.search.bundle || {}).row = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
+    'spirit/element/search/bundle/row/script.js': function (E) { global.window.spirit.requireScript('spirit/bundle/script.js'); ((E.search = E.search || {}).bundle = E.search.bundle || {}).row = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
@@ -53,12 +56,15 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
-  // The direct writes below are the auth family's own view of the home node, as its manager files them.
-  V = DATA.viewAt(null, 'auth');
+  // The direct writes below are the bundle branch's own view of the home node, its rows at rows/<id>, as its client files them
+  // (goal/G49.23: the family named by its branch's path, spirit.bundle).
+  V = DATA.viewAt(null, 'spirit.bundle');
   global.document = { createElement: function () { return {}; } };
-  // The auth branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself to
-  // the data set. It answers the auth branch by that path (goal/G49.6: never by a name).
-  let authData = false;
+  // The bundle branch's script.js brings its client, as the real one does (goal/G47.1; goal/G49.21): the real client run once as
+  // the page runs it, filing into the data set, and put on the branch as its client (goal/G49.23, box v22 Part 1). What that
+  // client asks as it runs is the branch's, not the list's, so it is not recorded.
+  let ran = false;
+  let recording = true;
   // EACH STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
   // "spirit.requireScript must allways return either an object or a function... or fail/throw"): what the stand-in made for its
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
@@ -67,7 +73,13 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
     const v = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); // goal/G49.23: on the spirit object itself
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
+  bundleClient = function () { return bundleBranch.client; };
+  global.window.spirit.requireScript = function (p) {
+    if (recording) required.push(String(p));
+    if (p === 'spirit/bundle/script.js' && !ran) { ran = true; recording = false; try { bundleBranch.client = PAGE_LOAD.runAsPage('spirit/bundle/client/script.js'); } finally { recording = true; } }
+    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); }
+    return Promise.resolve(p === 'spirit/bundle/script.js' ? bundleBranch : p === 'spirit/client/script.js' ? DATA : standIn(p));
+  };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   // What the list asked as it loaded; the runner's own asks after this test are not the list's.
@@ -77,9 +89,10 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element, its row element and spirit/auth/api.js through spirit.requireScript, and no data script', 0.2, function () {
+test.run('it requires the search element, its row element and spirit/bundle/script.js through spirit.requireScript, and no data script or branch client', 0.2, function () {
   if (!loaded) return false;
-  return ['spirit/element/search/script.js', 'spirit/element/search/bundle/row/script.js', 'spirit/auth/api.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
+  // goal/G49.21, G49.23: a branch's client is <branch>/client/script.js (the old data.js); the store, spirit/client/script.js, is none.
+  return ['spirit/element/search/script.js', 'spirit/element/search/bundle/row/script.js', 'spirit/bundle/script.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p) || /^spirit\/.+\/client\/script\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.element.search.bundle.list.create', 0.2, function () {
   if (!E) return false;
@@ -110,17 +123,17 @@ test.run('it fills as soon as it is drawn, with one refresh at create', 0.2, fun
   return l.refreshes === 1 ? true : false;
 }, test.limit.quick);
 // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
-// view of the node's bundles (goal/G41.28: the branch the auth family's cache manager keeps), so a bundle added anywhere
-// on the page shows in every bundle list (probabilitySearch's data).
-test.run('it is a view of the auth bundles at spirit.client.auth.data.bundles.branch, which the node\'s stream keeps current', 0.2, function () {
+// view of the node's bundles (goal/G41.28: the branch the bundle branch's client keeps), so a bundle added anywhere on the
+// page shows in every bundle list (probabilitySearch's data); goal/G49.23: the search is handed a handle on it, not its path.
+test.run('it is a view of the bundle branch\'s rows as its client keeps them, which the node\'s stream keeps current', 0.2, function () {
   if (!l) return false;
-  const B = ((global.window.spirit.client || {}).auth || {}).data && global.window.spirit.client.auth.data.bundles;
-  return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
+  const C = bundleClient ? bundleClient() : null;
+  return !!C && typeof C.branch === 'string' && C.branch !== '' && !!o.data && o.data.path === C.branch && typeof o.data.rows === 'function' ? true : false;
 }, test.limit.quick);
-test.run('its search asks auth.bundle to search the trimmed text, through the spirit object', 0.2, async function () {
+test.run('its search asks spirit.bundle.search for the trimmed text, through the spirit object', 0.2, async function () {
   if (!l) return false;
   got = await o.search(o.args('  rea ', {}));
-  return o.api === 'spirit/auth/api.js' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea' ? true : false;
+  return o.api === 'spirit/bundle/script.js' && o.verb === 'search' && asked.length === 1 && asked[0].text === 'rea' ? true : false;
 }, test.limit.quick);
 test.run('its search answers as a reply, with items and more', 0.2, function () {
   if (!l) return false;
@@ -142,7 +155,7 @@ test.run('made for no app server, its search names no owner: every bundle', 0.2,
   if (!l) return false;
   answer = { items: [], more: false };
   await o.search(o.args('', {}));
-  return asked.length > 0 && asked[asked.length - 1].op === 'search' && !('owner' in asked[asked.length - 1]) ? true : false;
+  return asked.length > 0 && typeof asked[asked.length - 1].text === 'string' && !('owner' in asked[asked.length - 1]) ? true : false;
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
 // cached in spirit.required.spirit.data."): the list hands its search no matched() of its own.
@@ -186,7 +199,7 @@ test.run('no row edits its label: an editable asked for is handed to no row', 0.
 // Andy, box: "if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY
 // bundles", and "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
 // Appserver".
-test.run('made for an app server, its search asks auth.bundle to search the trimmed text with that server\'s branch as the owner', 0.2, async function () {
+test.run('made for an app server, its search asks spirit.bundle.search for the trimmed text with that server\'s branch as the owner', 0.2, async function () {
   if (!listed()) return false;
   E.search.bundle.list.create({}, { face: 'dropdown', family: 'agent' });
   await settle();
@@ -194,13 +207,14 @@ test.run('made for an app server, its search asks auth.bundle to search the trim
   const nA = asked.length;
   if (fo && typeof fo.search === 'function' && typeof fo.args === 'function') await fo.search(fo.args(' too ', {}), fo.verb);
   const fa = asked[nA];
-  return !!fa && asked.length === nA + 1 && fa.op === 'search' && fa.text === 'too' && fa.owner === 'agent' ? true : false;
+  return !!fa && asked.length === nA + 1 && fa.text === 'too' && fa.owner === 'agent' ? true : false;
 }, test.limit.quick);
 // WHAT IT OFFERS: the list is a view of the node's bundles, which holds every bundle the page has, so what it shows is that
 // branch filtered and ranked by the real list's own heart, probabilitySearch.order, the state it is made with.
 const offered = function (opts) {
   if (!opts || !LIST || typeof LIST.order !== 'function') return null;
-  const rows = DATA.rowsOf(opts.data) || [];
+  // goal/G49.23: the list's data is a handle on its branch, its rows its own.
+  const rows = (opts.data && typeof opts.data.rows === 'function' ? opts.data.rows() : []) || [];
   const entries = rows.map(function (r, i) { return { key: String(r.key != null ? r.key : r.id), row: r, at: i }; });
   return LIST.order(entries, { words: '', values: {}, filters: opts.filters || [], columns: opts.columns || [], matched: opts.matched, score: opts.score })
     .map(function (e) { return String(e.row && e.row.id); }).filter(function (k) { return ['21', '22', '23'].indexOf(k) !== -1; }).sort();
@@ -216,9 +230,9 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
     REAL.forEach(function (rel) { win.spirit.requireScript(rel); });
     return (win.spirit.element || {}).search;
   }());
-  V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
-  V.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });
-  V.set('bundles/23', { id: 23, label: 'Desk hand', owner: 'desk' });
+  V.set('rows/21', { id: 21, label: 'Agent tools', owner: 'agent' });
+  V.set('rows/22', { id: 22, label: 'Node files', owner: 'node' });
+  V.set('rows/23', { id: 23, label: 'Desk hand', owner: 'desk' });
   return JSON.stringify(offered(fo)) === '["21"]' ? true : false;
 }, test.limit.quick);
 test.run('made for no app server, it offers every bundle, whoever owns it', 0.2, function () {

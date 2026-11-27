@@ -31,7 +31,8 @@ const FILE = path.join(RUN, 'spirit', 'app', 'manager', 'script.js');
 const FOLDER = path.join(RUN, 'spirit', 'app');
 function noNode() { return !(W.node && W.node.up); }
 function scratchApp(...p) { return path.join(W.node.root, 'spirit', 'run', 'spirit', 'app', ...p); }
-const stateFile = function (k) { return path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', k, 'node.json'); };
+// An app's state folder is spirit.statePath of its folder (goal/G49.17): spirit/state/app/agent for spirit/app/agent.
+const stateFile = function (k) { return path.join(W.node.root, 'spirit', 'run', ...SPIRIT.statePath(SPIRIT.slashedPath(idOf(k))).split('/'), 'node.json'); };
 const activeIn = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')).active; } catch (e) { return undefined; } };
 const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')); } catch (e) { return {}; } };
 // AN APP IS KNOWN BY ITS ID (goal/G49.19): its folder's path in dots, spirit.app.agent for spirit/app/agent; every key app.search
@@ -56,7 +57,9 @@ test.run('search, active, icon and label are the branch\'s verbs, and app.shell 
 }, test.limit.quick);
 test.run('search takes one optional search string, q, and no filters', 0.2, function () {
   const verbs = W.verbs;
-  return (!!verbs && !!verbs.search && Object.keys(verbs.search).join() === 'q' && verbs.search.q === 'text?') || false;
+  // Each argument names its type script by its path, optional with a ? (goal/G49.13): q a string type's, optional.
+  const q = !!verbs && !!verbs.search ? String(verbs.search.q) : '';
+  return (Object.keys(verbs.search || {}).join() === 'q' && /^spirit\/type\/string\/[\w/]+\/script\.js\?$/.test(q)) || false;
 }, test.limit.quick);
 
 // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
@@ -96,7 +99,8 @@ const inTree = function (name) { const b = (W.tree && W.tree.body) || {}; return
 test.run('the node\'s api names jobs, so this question can answer', 0.2, async function () {
   if (noNode()) return false;
   W.tree = await ask(W.node.base, 'api', {});
-  return inTree('job') || false;
+  // The job branch by its path since goal/G49.19, spirit.job.
+  return inTree('spirit.job') || false;
 }, test.limit.quick);
 test.run('the node\'s api names the app branch beside the others', 0.2, function () {
   if (!W.tree) return false;
@@ -141,9 +145,27 @@ test.run('a filter is refused at the door: there are none', 0.2, async function 
 // is: /<name>/<name>.json"), and it comes from the disk, not from a list naming server.
 // The plugins are exactly the folders of spirit/app/ holding their own <name>.json, read from the disk here too, as apps move
 // in one by one (goal/G43.13, G43.14); appSelector and test are not taken for apps.
-test.run('the plugins are the folders with their own json: appSelector and test are not taken for apps', 0.2, function () {
+// WHAT IS AN APP IS THE SYSTEM'S RULE (goal/G49.20, box v31; Andy: "STOP THIS FUCKING LIST SHIT"): every folder of the scratch
+// tree that spirit/fs/filter/app/script.js takes for an app, old format or new, wherever it stands (goal/G49.19: "every folder
+// the fs cache flags app, anywhere"), vendored folders and the state left out as the fs cache leaves them. None found is red.
+function appsOnDisc(run) {
+  const filter = SPIRIT.requireScript('spirit/fs/filter/app/script.js');
+  const vendored = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
+  const has = function (p) { return fs.existsSync(path.join(run, p)); };
+  const read = function (p) { try { return fs.readFileSync(path.join(run, p), 'utf8'); } catch (e) { return null; } };
+  const out = [];
+  (function walk(rel) {
+    if (vendored.holds(rel) || rel === 'spirit/state') return;
+    if (filter.app(rel, has, read)) out.push(SPIRIT.dottedPath(rel));
+    fs.readdirSync(path.join(run, rel), { withFileTypes: true }).forEach(function (d) { if (d.isDirectory()) walk(rel + '/' + d.name); });
+  }('spirit'));
+  return out.sort();
+}
+test.run('the plugins are the folders the app rule takes: appSelector and test are not taken for apps', 0.2, function () {
   if (noNode()) return false;
-  const onDisc = fs.readdirSync(scratchApp(), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && fs.existsSync(scratchApp(d.name, d.name + '.json')); }).map(function (d) { return idOf(d.name); }).sort().join();
+  const found = appsOnDisc(path.join(W.node.root, 'spirit', 'run'));
+  if (!found.length) return false;
+  const onDisc = found.join();
   const keys = (W.items || []).map(function (i) { return i.key; }).sort().join();
   return (keys === onDisc && keys.split(',').indexOf(idOf('appSelector')) === -1 && keys.split(',').indexOf(idOf('test')) === -1) || false;
 }, test.limit.quick);

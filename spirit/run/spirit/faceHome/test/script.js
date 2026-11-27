@@ -475,22 +475,24 @@ function page(relay, name, p, body, sid) {
 const MAIL = 'bert@example.org';
 
 // A real join: the node asks, the relay mails, the node confirms with the mail's code. True when joined.
+// THE CONTACT BRANCH'S VERBS (goal/G49.22, box v16, the contact branch in the new shape): a relay is added by its url, then joined
+// and faced by its row's public key, the relay's own key.
 async function join(N, R) {
-  const added = await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
+  const added = await home(N.base, 'spirit.contact.add', { url: R.base, label: 'scratch' });
   if (added.status !== 200) return false;
-  const asked = await home(N.base, 'relay.join', { url: R.base, email: MAIL });
+  const asked = await home(N.base, 'spirit.contact.join', { key: R.relayKey, email: MAIL });
   if (asked.status >= 300) return false;
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!code) return false;
-  const done = await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
+  const done = await home(N.base, 'spirit.contact.join', { key: R.relayKey, email: MAIL, code: code });
   if (done.status >= 300) return false;
   return true;
 }
-// relay.face at home; the first ask may still be waiting for the relay's card. True when the face is set.
+// spirit.contact.face at home; the first ask may still be waiting for the relay's card. True when the face is set.
 async function setFace(N, R, name) {
   for (let i = 0; i < 10; i++) {
-    const f = await home(N.base, 'relay.face', { url: R.base, name: name });
+    const f = await home(N.base, 'spirit.contact.face', { key: R.relayKey, name: name });
     if (f.status === 200) return true;
     await sleep(2000);
   }
@@ -527,11 +529,12 @@ const NOBODY = 'MCowBQYDK2VwAyEA' + 'zzStarNobodyzzStarNobodyzzStarNobodyzzStarN
 const OWNER = { call: 'owner.command', args: { to: NOBODY, command: 'zzNothing' } };
 const SAVED = 'spirit/app/zzStar/saved.txt';
 const JOB = { call: 'spirit.job.create', args: { command: process.execPath, args: JSON.stringify(['spirit/app/zzStar/zzStar.js', 'fromTheFace']) } };
-const SAVE = { call: 'fs.save', args: { path: SAVED, content: 'from the face' } };
+const SAVE = { call: 'spirit.fs.save', args: { path: SAVED, content: 'from the face' } };
 const face = function (req) { return page(S.R, 'harbour', '/face/call', req, S.L.sid); };
 // 😏 as the row says it (goal/G47.4, box v33: "😏 is the row field faceable").
 const starOf = async function (key) { const a = await home(S.N.base, 'spirit.contact.get', { key: key }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
-const faceName = async function (base) { const g = await home(S.N.base, 'relay.get', { key: base }); const r = g.body && g.body.relay; return r && r.face && typeof r.face === 'object' ? String(r.face.name || '') : String((r && r.face) || ''); };
+// The relay's row by its key, spirit.contact.get (goal/G49.22): its relay part beside the person.
+const faceName = async function (key) { const g = await home(S.N.base, 'spirit.contact.get', { key: key }); const r = g.body && g.body.relay; return r && r.face && typeof r.face === 'object' ? String(r.face.name || '') : String((r && r.face) || ''); };
 const loggedIn = function () { return !!(S.L && S.L.sid); };
 // The face on the first relay asked q, with no star or after it came off: refused.
 function faceRefused(q) {
@@ -605,7 +608,7 @@ test.run('owner.command from the face reaches the door', 0.2, async function () 
   const o1 = await face(OWNER);
   return (o1.status !== 0 && !/not-from-the-face|no-face-here/.test(o1.text)) || false;
 }, test.limit.quick);
-test.run('fs.save from the face writes the file', 0.2, async function () {
+test.run('spirit.fs.save from the face writes the file', 0.2, async function () {
   if (!loggedIn()) return false;
   const s1 = await face(SAVE);
   return (s1.status >= 200 && s1.status < 300 && fs.existsSync(S.savedAt)) || false;
@@ -633,7 +636,7 @@ test.run('spirit.contact.faceable from the face is refused even here, and the st
 test.run('the node holds a face on the relay', 0.2, async function () {
   if (!S.me || !S.R) return false;
   fs.rmSync(S.savedAt, { force: true }); fs.rmSync(S.mark, { force: true });
-  S.before = await faceName(S.R.base);
+  S.before = await faceName(S.R.relayKey);
   return !!S.before || false;
 }, test.limit.quick);
 test.run('spirit.contact.faceable at home takes the star away', 0.2, async function () {
@@ -643,7 +646,7 @@ test.run('spirit.contact.faceable at home takes the star away', 0.2, async funct
 }, test.limit.quick);
 test.run('the node holds no face on that relay any more', 0.8, async function () {
   if (!S.before) return false;
-  return (await until(function () { return faceName(S.R.base).then(function (n) { return n === ''; }); }, 8000)) || false;
+  return (await until(function () { return faceName(S.R.relayKey).then(function (n) { return n === ''; }); }, 8000)) || false;
 }, test.limit.quick);
 test.run('with the star off, spirit.card through it is refused', 0.8, faceRefused({ call: 'spirit.card', args: {} }), test.limit.quick);
 test.run('the star put back opens nothing, because the face is gone, not hidden', 0.8, async function () {
@@ -668,7 +671,8 @@ const runOne = async function () {
   const d = await home(S.N.base, 'spirit.job.delete', { id: id });
   return d.status < 300 ? { id: id } : {};
 };
-const bundle = function (label) { return home(S.N.base, 'auth.bundle', { op: 'add', label: label, text: 'zz' }); };
+// A bundle added by the bundle branch's own verb (goal/G49.21, box v24: the bundle table "a new branch").
+const bundle = function (label) { return home(S.N.base, 'spirit.bundle.add', { label: label }); };
 const sface = function (req) { return page(S.S, 'stream', '/face/call', req, S.LS.sid); };
 
 test.run('a relay for the stream is joined and a face is set on it', 0.2, async function () {
@@ -753,9 +757,9 @@ test.run('taking its own star off from it is refused, and the star stays', 0.8, 
   return (starRefused(ownOff) && (await starOf(S.S.relayKey))) || false;
 }, test.limit.quick);
 // Last, since it takes the page's address away: the face you call through, renamed through it, on a star.
-test.run('when starred, relay.face on the relay it is called through is not refused by the face\'s rule', 0.2, async function () {
+test.run('when starred, spirit.contact.face on the relay it is called through is not refused by the face\'s rule', 0.2, async function () {
   if (!streamUp()) return false;
-  const renamed = await sface({ call: 'relay.face', args: { url: S.S.base, name: 'renamed' } });
+  const renamed = await sface({ call: 'spirit.contact.face', args: { key: S.S.relayKey, name: 'renamed' } });
   return (!/not-from-the-face/.test(renamed.text) && renamed.status < 400) || false;
 }, test.limit.quick);
 test.run('the face has its new name on the relay', 0.2, async function () {
@@ -772,13 +776,13 @@ test.run('the star is taken off at home while the stream is open', 0.2, async fu
 // A job's id is its route, the same for every run (goal/G43.20): only what the stream says from here on is judged.
 test.run('on the real stream, the node holds no face on that relay any more', 0.8, async function () {
   if (!streamUp()) return false;
-  const gone = await until(function () { return faceName(S.S.base).then(function (n) { return n === ''; }); }, 8000);
+  const gone = await until(function () { return faceName(S.S.relayKey).then(function (n) { return n === ''; }); }, 8000);
   try { S.q.destroy(); } catch (e) { /* gone */ }
   return gone || false;
 }, test.limit.quick);
 
 // A RELAY THAT SAYS THIS NODE OWNS IT: a relay's claim changes nothing: it says this node owns it, and no star is pressed.
-// The face is set first, as a member, then the owner mark goes in: relay.face on a relay that already owns this node
+// The face is set first, as a member, then the owner mark goes in: spirit.contact.face on a relay that already owns this node
 // answers no text today, so the node cannot read it (a fault of its own, reported, not this rule's).
 test.run('a relay whose owner mark is this node\'s key is joined and a face is set on it', 0.2, async function () {
   if (!S.me) return false;
@@ -793,7 +797,7 @@ test.run('a relay whose owner mark is this node\'s key is joined and a face is s
 test.run('the relay has sent this node its owner\'s report', 0.2, async function () {
   if (!S.O || S.ok2 !== true) return false;
   let report = null;
-  await until(function () { return home(S.N.base, 'relay.get', { key: S.O.base }).then(function (a) { report = a.body && a.body.report; return !!(report && Object.keys(report).length); }); }, 20000);
+  await until(function () { return home(S.N.base, 'spirit.contact.get', { key: S.O.relayKey }).then(function (a) { report = a.body && a.body.report; return !!(report && Object.keys(report).length); }); }, 20000);
   S.report = !!(report && Object.keys(report).length);
   return S.report || false;
 }, test.limit.slow);
@@ -871,14 +875,14 @@ function appsPage(relay, p, body) {
 }
 // A real join, a real face, a real login; answers the session, or none.
 async function faceOf(N, R) {
-  await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
-  await home(N.base, 'relay.join', { url: R.base, email: MAIL });
+  await home(N.base, 'spirit.contact.add', { url: R.base, label: 'scratch' });
+  await home(N.base, 'spirit.contact.join', { key: R.relayKey, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!code) return {};
-  await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
+  await home(N.base, 'spirit.contact.join', { key: R.relayKey, email: MAIL, code: code });
   let f = null;
-  for (let i = 0; i < 10; i++) { f = await home(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+  for (let i = 0; i < 10; i++) { f = await home(N.base, 'spirit.contact.face', { key: R.relayKey, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
   await until(function () { return appsPage(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
@@ -927,7 +931,8 @@ test.run('a real node has a real face, logged in', 0.2, async function () {
     const r = await fetch(A.N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.active', args: { key: key, active: true } }) }).then(function (x) { return x.status; }, function () { return 0; });
     return r === 200;
   };
-  if (!(await on('text')) || !(await on('media'))) return false;
+  // An app is known by its id, its folder's path in dots (goal/G49.19): spirit.app.text, spirit.app.media.
+  if (!(await on(SPIRIT.dottedPath('spirit/app/text'))) || !(await on(SPIRIT.dottedPath('spirit/app/media')))) return false;
   A.F = await faceOf(A.N, A.R);
   return !!A.F.sid || false;
 }, test.limit.long);

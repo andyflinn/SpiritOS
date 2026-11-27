@@ -303,21 +303,25 @@ test.run('spirit/contact, a word by its word.js that the page holds as spirit.co
   const contact = await row('spirit/contact');
   return contact.contact === 'lightblue' ? true : false;
 }, test.limit.slow);
-test.run('a file inside carries the colours on its path elements too, and the file api.js, a word with no spirit.app.api, is light purple', 0.2, async function () {
+// goal/G49.23: the app branch's interface is spirit/app/script.js (goal/G49.20), no longer api.js; script is one of word.js's words.
+test.run('a file inside carries the colours on its path elements too, and the file script.js, a word with no spirit.app.script, is light purple', 0.2, async function () {
   if (!row) return false;
   const inside = await row('spirit/app/script.js', 'file');
-  return inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['api.js'] === 'lightpurple' ? true : false;
+  return inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['script.js'] === 'lightpurple' ? true : false;
 }, test.limit.slow);
 // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).
-test.run('spirit/client is not reserved and has no colour', 0.2, async function () {
+// goal/G49.23: client is one of word.js's words now (Andy's 29893dfab), and the store stands at spirit.client, so spirit/client
+// is light blue; spirit/hub, which no word names, is the plain folder. spirit/hub.js is spirit/hub/script.js, whose name is a
+// word, so the plain file is one whose name no word names, spirit/iconSet.json.
+test.run('spirit/hub is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;
-  const plain = await row('spirit/client');
-  return plain.client === 'none' ? true : false;
+  const plain = await row('spirit/hub');
+  return plain.hub === 'none' ? true : false;
 }, test.limit.slow);
-test.run('spirit/hub/script.js is not reserved and has no colour', 0.2, async function () {
+test.run('spirit/iconSet.json is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;
-  const hub = await row('spirit/hub/script.js', 'file');
-  return hub['hub.js'] === 'none' ? true : false;
+  const plainFile = await row('spirit/iconSet.json', 'file');
+  return plainFile['iconSet.json'] === 'none' ? true : false;
 }, test.limit.slow);
 test.run('outside spirit/ no word holds, so shell/app has no colour', 0.2, async function () {
   if (!row) return false;

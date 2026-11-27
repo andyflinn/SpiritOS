@@ -87,7 +87,9 @@ test.run('a test row is kept with scriptName and suiteName, the last part of eac
   const key = 'spirit/seal/script.js|spirit/seal/test/script.js|it seals|1';
   job({ testicle: { table: 'testicle', row: { key: key, id: 1, script: 'spirit/seal/script.js', suite: 'spirit/seal/test/script.js', test: 'it seals', current: true, verified: true, severity: 0.2 } } });
   const r = at('testicle', key);
-  return (!!r && r.scriptName === 'seal.js' && r.suiteName === 'seal.js' && r.test === 'it seals') || false;
+  // Since the flag-day moves (goal/G49.12) both files are named script.js, the last part of spirit/seal/script.js and of
+  // spirit/seal/test/script.js.
+  return (!!r && r.scriptName === 'script.js' && r.suiteName === 'script.js' && r.test === 'it seals') || false;
 }, test.limit.quick);
 test.run('a row published again is merged: the fields it did not carry stay', 0.2, function () {
   if (!W.T) return false;

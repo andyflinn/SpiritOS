@@ -1123,7 +1123,8 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
       setTimeout(function () {
         // Each answer is what its file exposes (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object
         // or a function... or fail/throw"): the three files run as the page's loader runs them, fieldInput a stand-in, any other {}.
-        if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) resolve(PAGE_LOAD.runAsPage(path.join(RUN, rel)));
+        // goal/G49.23: the list limiter is spirit/listLimiter/script.js (goal/G49.5's move), no longer spirit/listLimiter.js.
+        if (/^spirit\/(search\/(string|object)\.js|listLimiter\/script\.js)$/.test(rel)) resolve(PAGE_LOAD.runAsPage(path.join(RUN, rel)));
         // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the one the page holds at each read, as above.
         else if (rel === 'spirit/client/script.js') resolve(new Proxy({}, { get: function (t, k) { const D = window.spirit.client; return D ? D[k] : undefined; } }));
         else resolve(rel === 'spirit/element/fieldInput/script.js' ? { attach: function () {} } : {});

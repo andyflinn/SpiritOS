@@ -50,14 +50,16 @@ function world(join) {
   w.publish = function (id, j) { w.fns.slice().forEach(function (fn) { fn(id, j); }); };
   win.spirit = {
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
-    readyPromise: Promise.resolve({
-      fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
-      relay: { status: function () { return Promise.resolve({ body: { rows: [] } }); } },
-    }),
+    readyPromise: Promise.resolve({}),
     // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here. The job
-    // branch is the one stand-in: its client's reads are the jobs above (goal/G49.23, box v22 Part 1: the element reads them from
-    // the branch spirit.requireScript hands back).
-    requireScript: function (p) { return Promise.resolve(p === 'spirit/job/script.js' ? { client: jobs } : {}); },
+    // branch is a stand-in: its client's reads are the jobs above (goal/G49.23, box v22 Part 1: the element reads them from
+    // the branch spirit.requireScript hands back). So is the fs branch, which hands join.json's steps (goal/G49.23: the element
+    // loads them through spirit/fs/script.js's loadFile, no longer through the ready promise's fs).
+    requireScript: function (p) {
+      if (p === 'spirit/job/script.js') return Promise.resolve({ client: jobs });
+      if (p === 'spirit/fs/script.js') return Promise.resolve({ loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } });
+      return Promise.resolve({});
+    },
   };
   // joinSteps, the real one, and the subject: run in this window by their paths, through the page stand-in (goal/G49.6).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps/script.js', SUBJECT] });

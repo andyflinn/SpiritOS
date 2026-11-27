@@ -423,7 +423,8 @@ test.run('its mount loads changeAppIcon.js and changeAppLabel.js', 0.2, function
 }, test.limit.quick);
 test.run('the server tool makes the icon, then the label, for the agent, above serverDEBUG', 0.2, function () {
   if (!SD.rb) return false;
-  return JSON.stringify(SD.made) === JSON.stringify(['changeAppIcon:agent', 'changeAppLabel:agent', 'serverDEBUG']) ? true : false;
+  // The key is the app's id, spirit.app.agent (goal/G49.19, 870cc9d0a), as serverDEBUG's above.
+  return JSON.stringify(SD.made) === JSON.stringify(['changeAppIcon:spirit.app.agent', 'changeAppLabel:spirit.app.agent', 'serverDEBUG']) ? true : false;
 }, test.limit.quick);
 
 // ── it bootstraps its own components ──

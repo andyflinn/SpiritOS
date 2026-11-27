@@ -25,23 +25,45 @@ window.asked = [];
 var api = {
   escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
   setScreenTitle: function () {}, closeDialog: function () {}, onPublished: function () { return function () {}; }, armUntilElsewhere: function () {},
-  verb: function (n, a) {
-    window.asked.push({ name: n, args: a });
+  // The page's way to the node takes the branch by its api.js path, then the verb (goal/G49.6: no branch by its name), so
+  // a desk read is ('spirit/app/desk/api.js', 'item.get', args); each call is kept by its verb on the desk branch.
+  verb: function (branch, n, a) {
+    window.asked.push({ name: branch === 'spirit/app/desk/api.js' ? n : branch + ' ' + n, args: a });
+    if (branch !== 'spirit/app/desk/api.js') return Promise.resolve({ status: 200, body: { ok: false, code: 'no-such-branch' } });
     var b = { ok: true };
-    if (n === 'desk.item.get') b = { item: JSON.stringify(facts), version: 1, change: 1 };
-    if (n === 'desk.item.chat') b = { chat: lines };
-    if (n === 'desk.item.checks') b = { checks: checks };
-    if (n === 'desk.item.box') b = { box: Array(250).join('a box line\n') + 'the needle line\n' + Array(50).join('a box line\n'), version: 37 };
-    if (n === 'desk.item.files') b = { files: files };
+    if (n === 'item.get') b = { item: JSON.stringify(facts), version: 1, change: 1 };
+    if (n === 'item.chat') b = { chat: lines };
+    if (n === 'item.checks') b = { checks: checks };
+    if (n === 'item.box') b = { box: Array(250).join('a box line\n') + 'the needle line\n' + Array(50).join('a box line\n'), version: 37 };
+    if (n === 'item.files') b = { files: files };
     return Promise.resolve({ status: 200, body: b });
   },
 };
+
+// THE PAGE HOLDS CodeMirror AS face.html DOES (goal/G49.15, box v16: "the vendored codeMirror will be loaded by face.html with a
+// script tag"; the element loads none of it): face.html's own codeMirror tags, read from it as it stands, put on this page in
+// its order, each script after the one before it.
+function faceCodeMirror() {
+  return fetch('/spirit/shell/face.html').then(function (r) { return r.text(); }).then(function (html) {
+    var tags = new DOMParser().parseFromString(html, 'text/html').querySelectorAll('script[src*="/codeMirror/"], link[rel="stylesheet"][href*="/codeMirror/"]');
+    return Array.prototype.reduce.call(tags, function (p, t) {
+      return p.then(function () {
+        return new Promise(function (resolve) {
+          var n = document.createElement(t.tagName === 'SCRIPT' ? 'script' : 'link');
+          if (t.tagName === 'SCRIPT') n.src = t.getAttribute('src'); else { n.rel = 'stylesheet'; n.href = t.getAttribute('href'); }
+          n.onload = n.onerror = function () { resolve(); };
+          document.head.appendChild(n);
+        });
+      });
+    }, Promise.resolve());
+  });
+}
 
 // Opened, and what shows at open.
 window.opened = function () {
   var out = {};
   // The element (goal/G43.27, requirement 23), as the Desk page makes it in a layer: handed the page's way to the node.
-  return spirit.requireScript('spirit/app/desk/element/deskDetails/deskDetails.js').then(function (E) {
+  return faceCodeMirror().then(function () { return spirit.requireScript('spirit/app/desk/element/deskDetails/deskDetails.js'); }).then(function (E) {
     // The element as spirit.requireScript handed it back (goal/G49.23: no spirit.required).
     E.create(document.getElementById('app-content'), { id: facts.id, via: api });
   }).then(function () { return wait(1500); }).then(function () {
@@ -95,12 +117,12 @@ window.boxTake = function () {
   cm.focus();
   cm.getInputField().dispatchEvent(new Event('focus'));
   return wait(300).then(function () {
-    var took = window.asked.filter(function (a) { return a.name === 'desk.box.take'; }).length;
+    var took = window.asked.filter(function (a) { return a.name === 'box.take'; }).length;
     cm.setValue('his new text');
     cm.getInputField().blur();
     cm.getInputField().dispatchEvent(new Event('blur'));
     return wait(300).then(function () {
-      var wrote = window.asked.filter(function (a) { return a.name === 'desk.box.write'; })[0];
+      var wrote = window.asked.filter(function (a) { return a.name === 'box.write'; })[0];
       return JSON.stringify({ took: took, wrote: wrote ? wrote.args : null });
     });
   });
@@ -125,7 +147,7 @@ window.plunger = function () {
   input.dispatchEvent(new Event('input', { bubbles: true }));
   button.click();
   return wait(500).then(function () {
-    var add = window.asked.filter(function (a) { return a.name === 'desk.item.add'; })[0];
+    var add = window.asked.filter(function (a) { return a.name === 'item.add'; })[0];
     out.add = add ? add.args : null;
     return JSON.stringify(out);
   });

@@ -424,8 +424,10 @@ test.run('the script of an app with both api.js and data.js, never switched on, 
 // running", and "cw, box that only jobs in the app folder with node:run:true can be started with jobs.create". A real node on
 // a scratch copy of the tracked files; throwaway apps are planted in that copy, nothing kept in the repo. Never a live node.
 const ROUTE = /^spirit(\.[A-Za-z][A-Za-z0-9]*)*$/;
-// The node's own jobs, once each (Q1, Q2 and the box): the node's events, its files, its apps, its contacts, its auth.
-const OWN = ['spirit', 'spirit.app', 'spirit.auth', 'spirit.contact', 'spirit.fs'];
+// The node's own jobs, once each (Q1, Q2 and the box): the node's events, its files, its apps, its contacts, and its auth
+// tables, each a branch of its own since goal/G49.21 (box v24: the grant, bundle and branch tables each "a new branch", their
+// news on spirit.grant, spirit.bundle and spirit.branch; spirit.auth is gone).
+const OWN = ['spirit', 'spirit.app', 'spirit.branch', 'spirit.bundle', 'spirit.contact', 'spirit.fs', 'spirit.grant'];
 // A throwaway app of spirit/app/<name>/: its script waits ms and ends; run true makes it a run app (node run true).
 function plantApp(run, name, ms, nodeRun) {
   const dir = path.join(run, 'spirit', 'app', name);
@@ -473,8 +475,8 @@ test.run('the planted app server\'s job id is its route, spirit.app.zzserve', 0.
   return (RT.ids || []).indexOf('spirit.app.zzserve') !== -1 ? true : false;
 }, test.limit.quick);
 
-// one job per family (Q1, Q2): the node's own jobs are spirit, spirit.fs, spirit.app, spirit.contact, spirit.auth
-test.run('the node\'s own jobs are exactly spirit, spirit.app, spirit.auth, spirit.contact and spirit.fs', 0.2, async function () {
+// one job per family (Q1, Q2): the node's own jobs, OWN above
+test.run('the node\'s own jobs are exactly spirit, spirit.app, spirit.branch, spirit.bundle, spirit.contact, spirit.fs and spirit.grant', 0.2, async function () {
   RT.own = [];
   for (const id of RT.ids || []) {
     const g = await rask('spirit.job.get', { key: id });
@@ -1143,7 +1145,7 @@ function mountPart() {
   }, test.limit.quick);
   test.run('its folder is spirit/app/probe/, read through spirit.fs by that path', 0.2, async function () {
     if (noNode()) return false;
-    const note = (await call(N.base, 'fs.load', { path: 'spirit/app/' + NAME + '/note.txt' })).body || {};
+    const note = (await call(N.base, 'spirit.fs.load', { path: 'spirit/app/' + NAME + '/note.txt' })).body || {};
     return note.text === NOTE || false;
   }, test.limit.quick);
 

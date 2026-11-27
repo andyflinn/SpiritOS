@@ -191,10 +191,10 @@ function selfSubTree() {
   fs.writeFileSync(path.join(dir, SELFSUB + '.js'), "'use strict';\nrequire('../../script.js');\nspirit.requireScript('spirit/app/" + SELFSUB + "/server/server.js');\n");
   fs.writeFileSync(path.join(dir, 'server', 'server.js'), [
     "'use strict';",
-    "require('../../../spirit.js');",
+    "require('../../../script.js');", // the loader is spirit/script.js (goal/G49.23; spirit.js is gone)
     "const fs = require('fs');",
     "const path = require('path');",
-    "const SEEN = path.join(__dirname, '..', '..', '..', 'state', '" + SELFSUB + "', 'seen.json');",
+    "const SEEN = path.join(__dirname, '..', '..', '..', 'state', 'app', '" + SELFSUB + "', 'seen.json');",
     "spirit.requireScript('spirit/server/app/script.js').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {",
     "  publisher: { family: '" + SELFSUB + "', waitMs: 5000, bootstrap: function (key) {",
     "    if (spirit.nodeFacts && key && key === spirit.nodeFacts.key) { try { fs.appendFileSync(SEEN, 'self\\n'); } catch (e) { /* judged by its absence */ } }",
@@ -203,7 +203,8 @@ function selfSubTree() {
     "});",
   ].join('\n') + '\n');
   fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { ping: {} } };\n');
-  const state = path.join(run, 'spirit', 'state', SELFSUB);
+  // Its state folder by spirit.statePath (goal/G49.17): spirit/state/app/<name>/, where active switches its server on.
+  const state = path.join(run, ...LOADER.statePath('spirit/app/' + SELFSUB).split('/'));
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: run, seen: path.join(state, 'seen.json') };
@@ -218,7 +219,7 @@ test.run('a page\'s connect to the node\'s event stream reaches each app server 
   const port = await LABH.freePort();
   N.child = LABH.startNodeOn(N.s.run, port);
   N.base = 'http://127.0.0.1:' + port;
-  const up = await LABH.until(function () { return nodePost(SELFSUB + '.ping', {}).then(function (s) { return s === 200; }); }, 60000);
+  const up = await LABH.until(function () { return nodePost(LOADER.dottedPath('spirit/app/' + SELFSUB) + '.ping', {}).then(function (s) { return s === 200; }); }, 60000);
   if (!up) return false;
   const before = selfSubs();
   const page = await new Promise(function (resolve) {

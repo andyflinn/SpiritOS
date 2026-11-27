@@ -68,8 +68,9 @@ test.run('the reply is a CodeMirror view', 0.2, async function () {
 }, test.limit.quick);
 test.run('self\'s tree is this node\'s, with spirit.job.search in it', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
+  // goal/G49.23: a branch of the tree is named by its path in dots, spirit.job, no longer by its word.
   tree = JSON.parse(await chrome.evaluate('(function () { var s = ' + SEL + '; return JSON.stringify((s && (s.tree || (s.families && s.families.tree))) || null); }())') || 'null');
-  return (!!tree && !!tree.job && !!tree.job.search) ? true : false;
+  return (!!tree && !!tree['spirit.job'] && !!tree['spirit.job'].search) ? true : false;
 }, test.limit.quick);
 test.run('once a branch is chosen, the form says choose a verb', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
@@ -77,13 +78,13 @@ test.run('once a branch is chosen, the form says choose a verb', 0.2, async func
       return chrome.evaluate('(function () { var s = ' + SEL + '; s.families.value = ' + JSON.stringify(family) + '; s.families.dispatchEvent(new Event("change", { bubbles: true })); ' + (verb ? 's.verbs.value = ' + JSON.stringify(verb) + '; s.verbs.dispatchEvent(new Event("change", { bubbles: true })); ' : '') + 'return s.value; }())');
     };
   // a family chosen, then a verb: its form, one field per key of its request, and call
-  await pick('job');
+  await pick('spirit.job');
   return (await until(function () { return text().then(function (t) { return /choose a verb/.test(t); }); }, 5000)) ? true : false;
 }, test.limit.quick);
 test.run('once spirit.job.search is chosen, the form shows a call button', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  await pick('job', 'search');
-  keys = Object.keys(tree.job.search.request || {});
+  await pick('spirit.job', 'search');
+  keys = Object.keys(tree['spirit.job'].search.request || {});
   return (await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim() === "call"; })'); }, 5000)) ? true : false;
 }, test.limit.quick);
 test.run('the form shows a field for spirit.job.search\'s key q', 0.2, async function () {

@@ -891,14 +891,20 @@ const held = function (wx, relay) { wx.client = Object.assign({}, wx.client, { c
 test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s details and does not ask for a person\'s row', 0.2, async function () {
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);
+  // goal/G49.23: the detail reads the contact branch's client from what its require handed back, which lands a turn after the
+  // file runs, as on a page, where whoever mounts it waits for its require first.
+  await settle();
   const boxR = wr.document.createElement('div'); wr.document.body.appendChild(boxR);
   wr.detail.create(boxR, { key: 'RK', layer: wr.layer });
   await settle();
-  return (/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'spirit.contact.get'; })) || false;
+  // goal/G49.23: since goal/G49.11 (box v9) a relay's details are read through spirit.contact.get too, so an ask of that verb
+  // no longer tells a person's row from a relay's; the person's row is what the person's panel (cd-body) asks for and draws.
+  return (/nd-/.test(boxR.innerHTML) && !/id="cd-body"/.test(boxR.innerHTML)) || false;
 }, test.limit.quick);
 test.run('Holding a person\'s row in the cache, the detail draws a person\'s details by asking the node for the person\'s row', 0.2, async function () {
   const wp = relayWorld(OWNED, OWNED_SAID);
   held(wp, false);
+  await settle();
   const boxP = wp.document.createElement('div'); wp.document.body.appendChild(boxP);
   wp.detail.create(boxP, { key: 'KP', layer: wp.layer });
   await settle();

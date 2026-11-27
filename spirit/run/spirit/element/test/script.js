@@ -9,7 +9,7 @@
 // Since goal/G43.32 the app app's main element (it was spirit/app/appSelector.js). A real Chrome on a
 // scratch node's face page; neither Andy's node nor an agent's is touched.
 // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>,
-// spirit.app.api, the store at spirit.client).
+// spirit.app, the app branch with its functions searchApp, iconApp, activeApp and labelApp on it, the store at spirit.client).
 
 const fs = require('fs');
 const path = require('path');
@@ -213,7 +213,7 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('a search seated over it does not lose active', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.api.searchApp({ q: "" }).then(function (got) { spirit.client.seatRows(spirit.app.client.branch, got.items); return true; })');
+    await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.client.seatRows(spirit.app.client.branch, got.items); return true; })');
     return (await chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())') === true) ? true : false;
   }, test.limit.quick);
 
@@ -277,7 +277,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('a changed icon reaches the bar, by the stream', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.api.iconApp({ key: "spirit.app.hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.app.iconApp({ key: "spirit.app.hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
     newIcon = await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🧪') !== -1; }); }, 5000);
     return (newIcon) ? true : false;
   }, test.limit.slow);
@@ -292,7 +292,7 @@ test.after(stopAll);
   // "row 1: rowForm: [✏️] "Label" [label input box] [Change]"
   test.run('the second form shows the pencil, the word Label, the box holding the label and a Change button', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.api.iconApp({ key: "spirit.app.hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.app.iconApp({ key: "spirit.app.hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
     await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🦻') !== -1; }); }, 5000);
     r1 = l[2] || none;
     return (r1.icon.indexOf('✏') !== -1 && r1.words.indexOf('Label') !== -1 && r1.input === monitorLabel && r1.button === 'Change') ? true : false;
@@ -411,13 +411,13 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('an app made active appears as a tile without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.api.activeApp({ key: "spirit.app.starter", active: true })');
+    await chrome.evaluate('spirit.app.activeApp({ key: "spirit.app.starter", active: true })');
     const arrives = await until(function () { return chrome.evaluate('!!' + tileOf(serverLabel)); }, 5000);
     return (arrives) ? true : false;
   }, test.limit.slow);
   test.run('an app made inactive leaves', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.api.activeApp({ key: "spirit.app.starter", active: false })');
+    await chrome.evaluate('spirit.app.activeApp({ key: "spirit.app.starter", active: false })');
     const leaves = await until(function () { return chrome.evaluate('!' + tileOf(serverLabel)); }, 5000);
     return (leaves) ? true : false;
   }, test.limit.slow);
@@ -488,7 +488,7 @@ test.after(stopAll);
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
     keys = Object.keys(PLANT);
-    await chrome.evaluate('(function () { var a = spirit.app && spirit.app.api && spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: "spirit.app." + k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
+    await chrome.evaluate('(function () { var a = spirit.app && spirit.app.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: "spirit.app." + k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
     await until(function () { return rows().then(function (r) { return keys.every(function (k) { return r[k] && r[k].active; }); }); }, 10000);
     // A row the node would not make active through the verb is made active on its disc, as a user's earlier press left it.
     r = await rows();
@@ -785,8 +785,8 @@ test.after(stopAll);
     LIVE.push({ c: c4 });
     if (c4.error) return false;
     await c4.send('Page.navigate', { url: N4.base + '/' });
-    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.app && spirit.app.api && spirit.app.api.activeApp)'); }, 20000);
-    await c4.evaluate('spirit.app.api.activeApp({ key: "spirit.app.chat", active: true }); spirit.app.api.activeApp({ key: "spirit.app.testicle", active: true }); spirit.app.api.activeApp({ key: "spirit.app.starter", active: true }); true');
+    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.app && spirit.app.activeApp)'); }, 20000);
+    await c4.evaluate('spirit.app.activeApp({ key: "spirit.app.chat", active: true }); spirit.app.activeApp({ key: "spirit.app.testicle", active: true }); spirit.app.activeApp({ key: "spirit.app.starter", active: true }); true');
     const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body['spirit.app.chat'] && r.body['spirit.app.testicle']); }); }, 60000);
     await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
@@ -821,9 +821,11 @@ test.after(stopAll);
     if (!label) return false;
     return (await fieldText()).indexOf(label) !== -1 || false;
   }, test.limit.slow);
-  test.run('chat\'s published remote row reaches the page\'s spirit.client[\'spirit.app.chat\'].remote, naming the same current', 0.2, async function () {
+  // goal/G49.23, box v22 Part 1 (cw's 66e1d112a, b313ce7eb): the store hands out no family by name; the published remote row
+  // stands on the app's branch as its require hands it back, on its reads (its client, or its data for an old-shape api.js).
+  test.run('chat\'s published remote row reaches the remote of the chat branch\'s reads, naming the same current', 0.2, async function () {
     if (W4.bar !== 'dropdown' || !W4.real || !W4.real.current) return false;
-    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.client || {})["spirit.app.chat"]; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
+    return (await until(function () { return c4.evaluate('spirit.requireScript("spirit/app/chat/api.js").then(function (f) { var t = f && (f.client || f.data); return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }, function () { return false; })'); }, 15000)) ? true : false;
   }, test.limit.slow);
   test.run('a remote row landing in spirit.client[\'spirit.app.chat\'].remote is what the field then names', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;

@@ -3,8 +3,8 @@
 // THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as spirit/element/search/bundle/list/script.js is the bundle list: the
 // probabilitySearch the selector, ../script.js, draws (goal/G43.32: it was search/app.js). Its test: ../test/script.js, through the selector.
 //
-//   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers (the server filter shown),
-//     opts.shells (only the apps that may be a shell, goal/G43.18)
+//   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers (the server filter shown);
+//     no shells option (goal/G49.4 took it out with shell.true; goal/G49.23: this line still named it)
 //
 // A VIEW OF THE app FAMILY'S CACHE (spirit.app.client): app.search seats its rows there, and the node's stream keeps them
 // current through the family's manager and the row element.

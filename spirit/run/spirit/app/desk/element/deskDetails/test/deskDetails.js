@@ -193,6 +193,8 @@ function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + k
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
 const vm = require('vm');
 
+// The desk branch, by its api.js path, as the element asks it.
+const DESK_API = 'spirit/app/desk/api.js';
 function ddWorld(facts, checks, o) {
   const document = makeDom();
   const made = [];
@@ -203,12 +205,15 @@ function ddWorld(facts, checks, o) {
   const titles = [];
   const api = { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
     setScreenTitle: function (t) { titles.push(String(t)); }, closeDialog: function (x) { closed.push(x); }, onPublished: function () {}, armUntilElsewhere: function () {},
-    verb: function (name, args) {
-      asked.push({ name: name, args: args });
-      if (name === 'desk.item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 1 } });
-      if (name === 'desk.item.checks') return Promise.resolve({ status: 200, body: { checks: checks || [] } });
-      if (name === 'desk.item.box') return Promise.resolve({ status: 200, body: { box: 'the box', version: 1 } });
-      if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [] } });
+    // The page's way to the node takes the branch by its api.js path, then the verb (goal/G49.6, fe45aea52: no branch by its
+    // name): via.verb('spirit/app/desk/api.js', 'press', args). Each call is recorded with its branch.
+    verb: function (branch, name, args) {
+      asked.push({ branch: branch, name: name, args: args });
+      if (branch !== DESK_API) return Promise.resolve({ status: 200, body: { ok: false, code: 'no-such-branch' } });
+      if (name === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 1 } });
+      if (name === 'item.checks') return Promise.resolve({ status: 200, body: { checks: checks || [] } });
+      if (name === 'item.box') return Promise.resolve({ status: 200, body: { box: 'the box', version: 1 } });
+      if (name === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [] } });
       return Promise.resolve({ status: 200, body: { ok: true } });
     } };
   const win = { document: document, setTimeout: setTimeout, clearTimeout: clearTimeout, setInterval: function () { return 0; }, clearInterval: function () {},
@@ -224,6 +229,9 @@ function ddWorld(facts, checks, o) {
     'spirit/element/search/script.js': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } },
     // fieldInput, tested in its own folder: a stand-in that holds a field to nothing.
     'spirit/element/fieldInput/script.js': { attach: function (el) { return el; } },
+    // The label rule the rename field is held to, the real one (goal/G49.23: an empty stand-in has no isValid, so every
+    // title was refused as "not a label" and no rename was sent).
+    'spirit/type/string/label/script.js': SPIRIT.requireScript('spirit/type/string/label/script.js'),
   };
   win.spirit = { escapeHtml: api.escapeHtml,
     stands: STANDS,
@@ -249,7 +257,7 @@ function ddWorld(facts, checks, o) {
     dialog.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
     await settle();
   };
-  w.writes = function () { return asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set)$/.test(a.name); }); };
+  w.writes = function () { return asked.filter(function (a) { return a.branch === DESK_API && /^(press|item\.delete|check\.set)$/.test(a.name); }); };
   return w;
 }
 async function settle() { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); }
@@ -291,7 +299,7 @@ async function twoPressArmed(g, find, want) {
   return { good: good };
 }
 // goal/G41.11: any write of the dialog's, its red Q's clear (chat.add "Q1: clear") among them.
-const anyWrite = function (g) { return g.asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set|chat\.add|item\.rename)$/.test(a.name); }); };
+const anyWrite = function (g) { return g.asked.filter(function (a) { return a.branch === DESK_API && /^(press|item\.delete|check\.set|chat\.add|item\.rename)$/.test(a.name); }); };
 async function twoPressAny(g, find, want) {
   const before = anyWrite(g).length;
   const b = find();
@@ -309,21 +317,22 @@ async function twoPressAny(g, find, want) {
 
 const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'delete', 'close'] };
 const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'] };
-const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
+const press = function (what) { return { branch: DESK_API, name: 'press', args: { id: 'goal/G9', what: what } }; };
 // A dialog opened on a subject; a press of a button in it.
 async function opened(subject, checks, o) { const g = ddWorld(subject, checks || [], o); await g.open(); return g; }
 async function goalPress(id, armedSays, want) { const w = await opened(GOAL); return pressed(await twoPress(w, byId(w, id), armedSays, want)); }
 
 // ── THE PANELS NAME THEIR ICONS AS GLYPHS ───────────────────────────────────────────────────────────────────────────
-// goal/G47.4, box v36: "The rules list on each goal and item goes": no rules panel among them.
-test.run('the details list two panels: the box and the red Qs', 0.2, function () {
+// goal/G47.4, box v36: "The rules list on each goal and item goes": no rules panel among them. goal/G49 (98498a730; Andy:
+// "put the plunger back with one rowForm"): the 🪠 panel makes them three.
+test.run('the details list three panels: the box, the red Qs and the plunger', 0.2, function () {
   S.raw = fs.readFileSync(FILE, 'utf8');
   S.code = S.raw.replace(/\/\/[^\n]*/g, '');
   S.plain = S.code;
   const at = /var DD_PANELS = (\[[\s\S]*?\n\]);/.exec(S.code);
   try { S.panels = at ? (new Function('return ' + at[1]))() : null; } catch (e) { S.panels = null; }
   const keys = Array.isArray(S.panels) ? S.panels.map(function (p) { return p.key; }) : null;
-  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs'])) || false;
+  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs', 'blocks'])) || false;
 }, test.limit.quick);
 test.run('every panel names its icon as the glyph itself', 0.2, function () {
   const keyed = (S.panels || []).filter(function (p) { return !p.icon || KEY.test(p.icon); });
@@ -374,7 +383,7 @@ test.run('Go all is an arming button that says "Go all: sure?" on the first pres
   return goalPress('dd-go-all', 'Go all: sure?', press('go-all'));
 }, test.limit.quick);
 test.run('Delete is an arming button that says "Delete: sure?" on the first press and sends desk.item.delete on the second', 0.2, function () {
-  return goalPress('dd-delete', 'Delete: sure?', { name: 'desk.item.delete', args: { id: 'goal/G9' } });
+  return goalPress('dd-delete', 'Delete: sure?', { name: 'item.delete', args: { id: 'goal/G9' } });
 }, test.limit.quick);
 test.run('Abandon is an arming button that says "Sure? Abandon the goal" on the first press and sends desk.press abandon on the second', 0.2, function () {
   return goalPress('dd-abandon', 'Sure? Abandon the goal', press('abandon'));
@@ -388,17 +397,17 @@ test.run('Close on a goal with an item open asks "are you sure? 1 open" on the f
 // goal/G41.9: an item's early Close.
 test.run('Close on an open item is an arming button that says "Close: sure?" on the first press and sends desk.press close on the second', 0.2, async function () {
   const w = await opened(ITEM);
-  return pressed(await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }));
+  return pressed(await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'press', args: { id: 'goal/G9.1', what: 'close' } }));
 }, test.limit.quick);
 // goal/G43.30, the box: "every Delete and every Close press in Desk (its rows, the item detail, the rule dialog) is an
 // armingButton". It ends the one press of a done item's Close (desk/G3.8) and of a goal's with nothing open (goal/G6.6).
 test.run('Close on a done item is an arming button, armed on the first press with nothing sent, that sends desk.press close on the second', 0.2, async function () {
   const w = await opened(Object.assign({}, ITEM, { status: 'done' }));
-  return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }));
+  return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'press', args: { id: 'goal/G9.1', what: 'close' } }));
 }, test.limit.quick);
 test.run('Close on a goal with nothing open only arms on the first press, and closes on the second', 0.2, async function () {
   const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'] });
-  return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }));
+  return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'press', args: { id: 'goal/G8', what: 'close' } }));
 }, test.limit.quick);
 
 // ── goal/G41.11: THE LAST ONE-PRESS BUTTONS, AND THE RENAME ───────────────────────────────────────────────────────────
@@ -408,16 +417,16 @@ test.run('Close on a goal with nothing open only arms on the first press, and cl
 const QS = [{ number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' }];
 test.run('a red Q\'s remove is an arming button, armed on the first press, that sends desk.chat.add on the second', 0.2, async function () {
   const w = await opened(ITEM, QS); w.document.click(panelIcon(w, 'qs')); await settle();
-  return pressed(await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'desk.chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }));
+  return pressed(await twoPressAny(w, function () { return w.document.querySelector('[data-qclear="Q1"]'); }, { name: 'chat.add', args: { id: 'goal/G9.1', text: 'Q1: clear' } }));
 }, test.limit.quick);
 // goal/G41.11: the details panel's Start and End design ask are-you-sure.
 test.run('End design is an arming button, armed on the first press, that sends desk.press on the second', 0.2, async function () {
   const w = await opened({ id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'] });
-  return pressed(await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }));
+  return pressed(await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'press', args: { id: 'goal/G9.2', what: 'end-design' } }));
 }, test.limit.quick);
 test.run('Start design is an arming button, armed on the first press, that sends desk.press on the second', 0.2, async function () {
   const w = await opened({ id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'] });
-  return pressed(await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }));
+  return pressed(await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'press', args: { id: 'goal/G9.3', what: 'start-design' } }));
 }, test.limit.quick);
 
 // goal/G41.11: the rename field opens holding the current title. What it holds is what he edits: Save sends the title as
@@ -436,7 +445,7 @@ async function renameSends(subject) {
   const field = g.document.getElementById('dd-name');
   const save = g.document.getElementById('dd-name-save');
   if (field && save) { field.value = subject.title + ' renamed'; g.document.click(save); await settle(); }
-  const renamed = g.asked.filter(function (a) { return a.name === 'desk.item.rename'; }).pop();
+  const renamed = g.asked.filter(function (a) { return a.branch === DESK_API && a.name === 'item.rename'; }).pop();
   return (!!renamed && renamed.args.title === subject.title + ' renamed') || false;
 }
 test.run('on an item, Rename opens its field holding the item\'s title, An item', 0.2, function () { return renameOpens(ITEM); }, test.limit.quick);
@@ -460,7 +469,7 @@ const ruleWorld = function () {
   r.win.spirit.stands['spirit/element/search/script.js'] = make;
   return r;
 };
-// RULES GO OUT OF DESK (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel
+// RULES GO OUT OF DESK_API (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel
 // has no rules icon, so no rule list can be opened, even for an item that still names rules.
 test.run('the details panel has no rules icon', 0.2, async function () {
   const rw = ruleWorld(); await rw.open();
@@ -575,7 +584,7 @@ test.run('it opens with the two lines, the newest at the bottom', 0.2, async fun
   S.heard = null;
   cw.api.onPublished = function (fn, from) { if (from === 'desk' || !S.heard) S.heard = fn; return function () {}; };
   const verbBefore = cw.api.verb;
-  cw.api.verb = function (name, args) { if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [L1, L2] } }); return verbBefore(name, args); };
+  cw.api.verb = function (branch, name, args) { if (branch === DESK_API && name === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [L1, L2] } }); return verbBefore(branch, name, args); };
   await cw.open();
   S.cw = cw;
   const before = S.before = shownNow();
@@ -721,6 +730,10 @@ async function detailOffers(title, id, what) {
   if (!S.readyPromise) return false;
   await H.until(function () { return openRow(title); }, H.WAIT);
   S.there = await H.until(function () { return S.page2.evaluate('!!' + btn(id)); }, H.WAIT);
+  // THE DETAIL DRAWN, NOT DRAWING (goal/G49.23): a detail filled from the cache draws its button row, then draws it again as
+  // its reads land, within some 20 ms, so a press the moment the button first shows met a button about to be replaced. The
+  // press waits until the same button stands on two looks a quarter second apart.
+  if (S.there) await H.until(function () { return S.page2.evaluate('(function () { var b = ' + btn(id) + '; var same = !!b && b === window.__zzStill; window.__zzStill = b; return same; })()'); }, H.WAIT);
   return S.there || false;
 }
 // That button pressed once, if it is there: whether it then stands armed.

@@ -26,16 +26,20 @@ window.picker = function (answers) {
     if (args && args.op === 'search') return { items: [], more: false };
     return { ok: false, error: 'no-such-row' };
   }
+  // The branch handed back carries its rows as the real one does (goal/G49.23, box v22 Part 1: an old-shape branch's at
+  // .data, its companion data.js's reads; no client): what the real data.js put out, set below once it loaded.
+  var reads = null;
   var family = new Proxy({}, { get: function (o, table) {
     if (table === 'then' || typeof table !== 'string') return undefined;
+    if (table === 'data') return reads;
+    if (table === 'client') return undefined;
     return function (args) { var a = answer(table, args); return a && a.ok === false ? Promise.reject(Object.assign(new Error(a.error), { body: a })) : Promise.resolve(a); };
   } });
-  var AGENT = spirit.branchPath('agent');
   var realRequire = spirit.requireScript;
   // The scratch node runs no agent server, so the stand-in answers for the agent family's api.js, asked by its path
-  // (spirit/app/agent/api.js) or by spirit.branchPath('agent'), and loads the family's real data.js with it, as the real
-  // api.js does (goal/G47.1). Every other family is asked as the page asks it.
-  spirit.requireScript = function (p) { return p === AGENT || p === 'spirit/app/agent/api.js' ? realRequire.call(spirit, 'spirit/app/agent/data.js').then(function () { return family; }) : realRequire.apply(spirit, arguments); };
+  // (spirit/app/agent/api.js; goal/G49.6: no spirit.branchPath, a branch is asked by its path alone), and loads the
+  // family's real data.js with it, as the real api.js does (goal/G47.1). Every other family is asked as the page asks it.
+  spirit.requireScript = function (p) { return p === 'spirit/app/agent/api.js' ? realRequire.call(spirit, 'spirit/app/agent/data.js').then(function (d) { reads = d || null; return family; }) : realRequire.apply(spirit, arguments); };
   // No api is handed (goal/G43.24): the dropdown asks agent.<table> through the spirit object, the stand-in family above.
   var detail = { open: function () {}, look: function (t) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t }; } };
   var pane = document.getElementById('pane');

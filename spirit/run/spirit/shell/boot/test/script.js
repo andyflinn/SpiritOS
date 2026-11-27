@@ -56,9 +56,13 @@ test.run('spirit.js loads spirit/shell/boot/script.js on a face page', 0.2, func
   return (/var FACE = \['spirit\/shell\/boot\/script\.js'\]/).test(loader) && !(/face\/shell\.js/).test(loader) ? true : false;
 }, test.limit.quick);
 // Box v29: "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link".
-test.run('face.html links /shell/favicon.svg and no sheet', 0.2, function () {
+// The shell's sheets are the shell's parts; the vendored codeMirror's are no part of the shell, and face.html loads it by its own
+// tags (goal/G49.15, box v16: "the vendored codeMirror will be loaded by face.html with a script tag").
+test.run('face.html links /shell/favicon.svg and no sheet of the shell', 0.2, function () {
   const page = read('spirit/shell/face.html') || '';
-  return (/\/shell\/favicon\.svg/).test(page) && !(/rel="stylesheet"/).test(page) && !(/\/face\/(face\.css|favicon\.svg)/).test(page) ? true : false;
+  const sheets = page.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || [];
+  const shells = sheets.filter(function (l) { return !/href="\/spirit\/element\/codeMirror\//.test(l); });
+  return (/\/shell\/favicon\.svg/).test(page) && !shells.length && !(/\/face\/(face\.css|favicon\.svg)/).test(page) ? true : false;
 }, test.limit.quick);
 test.run('boot names no old face/ path, and no login app', 0.2, function () {
   const boot = code('spirit/shell/boot/script.js');
@@ -81,7 +85,12 @@ test.run('it reads no component but its own: spirit\'s libraries, the sheets and
       p === 'spirit/element/script.js' ||
       // A FAMILY'S INTERFACE, which brings its data with it (goal/G47.1; Andy's rule: "every api.js requires it's companion
       // data.js, and is the only script to require that data.js"): boot reads the jobs it streams from the job family's.
-      /^spirit\/[\w-]+\/api\.js$/.test(p);
+      /^spirit\/[\w-]+\/api\.js$/.test(p) ||
+      // A BRANCH OF THE NEW SHAPE, its interface its script.js (goal/G49.19, box v13, the job branch; goal/G49.22, box v16, the
+      // contact branch): boot reads the jobs and the relays from them.
+      /^spirit\/[\w-]+\/script\.js$/.test(p) ||
+      // THE SHELL'S SEAL, one of its own parts (spirit/shell/seal/), as the require hands it back (goal/G49.23, box v9).
+      p === 'spirit/shell/seal/script.js';
   };
   const extra = paths.filter(function (p) { return !allowed(p); }).filter(function (p, i, all) { return all.indexOf(p) === i; });
   return !extra.length || false;

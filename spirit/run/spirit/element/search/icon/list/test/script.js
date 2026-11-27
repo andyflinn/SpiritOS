@@ -45,15 +45,17 @@ function facePost(relay, p, body) {
   });
 }
 // A real join, a real face, a real login; answers the session, or none.
+// goal/G49.23: the relay verbs are the contact branch's (goal/G49.11, box v9), named by its path, spirit.contact.<verb>
+// (goal/G49.22), a relay asked by its key.
 async function faceOf(N, R) {
-  await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
-  await home(N.base, 'relay.join', { url: R.base, email: MAIL });
+  await home(N.base, 'spirit.contact.add', { url: R.base, label: 'scratch' });
+  await home(N.base, 'spirit.contact.join', { key: R.relayKey, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!code) return {};
-  await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
+  await home(N.base, 'spirit.contact.join', { key: R.relayKey, email: MAIL, code: code });
   let f = null;
-  for (let i = 0; i < 10; i++) { f = await home(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+  for (let i = 0; i < 10; i++) { f = await home(N.base, 'spirit.contact.face', { key: R.relayKey, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
   await until(function () { return facePost(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
@@ -271,7 +273,7 @@ test.run('a face with no star reads no set file', 0.8, async function () {
 // The star put on at home: a face page opened after it has the set (a starless page has no link to hear a star by).
 test.run('the star is put on at home', 0.2, async function () {
   if (!FACE) return false;
-  const star = await home(N.base, 'contact.faceable', { key: R.relayKey, faceable: true });
+  const star = await home(N.base, 'spirit.contact.faceable', { key: R.relayKey, faceable: true });
   return star.status === 200 ? true : false;
 }, test.limit.slow);
 test.run('a fresh starred face has the set too', 0.2, async function () {
