@@ -99,10 +99,12 @@ function pathCommand(s, arg) {
 // optional one in brackets.
 // A BRANCH'S INTERFACE, IN EITHER SHAPE (goal/G49.22: fs, job, app, grant, bundle, branch and contact are of the new shape): its
 // script.js where it is a branch of the new shape, else its old api.js. The console asked api.js alone, and reached none of them.
-function apiFiles(p) { const dir = spirit.slashedPath('spirit.' + p); return [dir + '/script.js', dir + '/api.js']; }
+// A PATH'S FOLDER: spirit/<its folders>, the root's spirit itself (goal/G49.23, box v22 Part 2: the spirit branch is the root's).
+function dirOf(p) { return p ? spirit.slashedPath('spirit.' + p) : 'spirit'; }
+// At the root the spirit branch, spirit/script.js, which spirit.requireScript hands back bound with its seven verbs.
+function apiFiles(p) { const dir = dirOf(p); return p ? [dir + '/script.js', dir + '/api.js'] : [dir + '/script.js']; }
 // THE BRANCH'S INTERFACE AT A PATH, or null: its verbs, and the functions it may name for them (spirit.js, def.functions).
 function apiAt(p) {
-  if (!p) return Promise.resolve(null);
   const files = apiFiles(p);
   // Each load is waited on and its failure caught: with no node it rejects, and is then no branch here (wsl, on goal/G49.19).
   const one = function (i) {
@@ -152,7 +154,7 @@ function apiCommand(s, verb, line) {
     if (!verbs) return refused(s, 'no-branch', 'no branch here: ' + shown(s.path) + ' has no api.js');
     if (!verb) { logged(s, line); return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path }; }
     if (!Object.prototype.hasOwnProperty.call(verbs, verb)) return refused(s, 'no-such-verb', 'no such verb at ' + shown(s.path) + ': ' + verb);
-    const file = spirit.slashedPath('spirit.' + s.path) + '/' + verb + '.json';
+    const file = dirOf(s.path) + '/' + verb + '.json';
     return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
       const j = JSON.parse(String((r && r.text) || ''));
       const out = Object.assign({}, j, { usage: usageOf(verb, verbs[verb]) });
@@ -222,7 +224,7 @@ function verbCommand(s, verbs, words, line) {
   return apiAt(s.path).then(function (at) {
     const named = at && at.functions && typeof at.functions[verb] === 'string' ? at.functions[verb] : verb;
     // The interface apiAt found, by the path the loader marked it with (goal/G49.20: _spiritPath).
-    const file = (at && at._spiritPath) || apiFiles(s.path)[1];
+    const file = (at && at._spiritPath) || apiFiles(s.path)[apiFiles(s.path).length - 1];
     return Promise.resolve(spirit.requireScript(file)).then(function (branch) { return branch[named](args); });
   }).then(function (answer) {
     logged(s, line);
