@@ -44,10 +44,46 @@ function pathOf(route, opts) {
   const run = (opts && opts.run) || RUN;
   return path.join.apply(path, [os.tmpdir(), 'spirit', nodeName(run)].concat(partsOf(route)));
 }
+// IT LEAVES NO GARBAGE (goal/G49.23, Q8; Andy: "make sure spirit/tempFolder/ leaves NO garbage", "yes." to: "Shall tempFolder
+// mark each spot it hands out with the asking process and remove the spots of processes that are gone"): a process killed by
+// its time limit or a crash never cleans its own spot, so each spot it hands out is written down with the asking process in
+// the node's owners list, <temp>/spirit/<node>/.owners/, beside the spots and never inside one (no process id in a temp path,
+// Andy's), and every hand-out removes the spots whose process is gone. A live process's spots, its own among them, stay.
+function ownersOf(opts) {
+  const run = (opts && opts.run) || RUN;
+  return path.join(os.tmpdir(), 'spirit', nodeName(run), '.owners');
+}
+function alive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  if (pid === process.pid) return true;
+  try { process.kill(pid, 0); return true; } catch (e) { return !!e && e.code === 'EPERM'; }
+}
+function sweep(opts) {
+  const owners = ownersOf(opts);
+  let names = [];
+  try { names = fs.readdirSync(owners); } catch (e) { return; }
+  names.forEach(function (n) {
+    const file = path.join(owners, n);
+    let row = null;
+    try { row = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { row = null; }
+    if (row && alive(row.pid)) return;
+    if (row && typeof row.dir === 'string' && row.dir.indexOf(path.dirname(owners) + path.sep) === 0) {
+      try { fs.rmSync(row.dir, { recursive: true, force: true }); } catch (e) { /* the system temp folder keeps it */ }
+    }
+    try { fs.rmSync(file, { force: true }); } catch (e) { /* gone already */ }
+  });
+}
 function tempFolder(route, opts) {
   const dir = pathOf(route, opts);
+  sweep(opts);
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
+  const owners = ownersOf(opts);
+  try {
+    fs.mkdirSync(owners, { recursive: true });
+    const name = crypto.createHash('sha256').update(dir).digest('hex').slice(0, 32) + '.json';
+    fs.writeFileSync(path.join(owners, name), JSON.stringify({ pid: process.pid, dir: dir }));
+  } catch (e) { /* unmarked: its own process still removes it */ }
   return dir;
 }
 tempFolder.path = pathOf;
