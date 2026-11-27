@@ -68,14 +68,15 @@ function world(rows) {
   // goal/G43.32: appInstaller.js places itself at its path as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT);
-  w.E = ((win.spirit.required || {}).spirit || {}).element || {};
+  // goal/G49.23: placed on the spirit object itself, spirit.element.appInstaller.
+  w.E = win.spirit.element || {};
   w.put = function (key, row) { w.rows[key] = row; (w.watchers[key] || []).slice().forEach(function (fn) { fn(row); }); };
   return w;
 }
 
 // What the tests make, shared by the tests after them.
 let w0, PATH, w, h, inst, e1, wi, hi, ws, hs, hx;
-test.run('it registers spirit.required.spirit.element.appInstaller.create', 0.2, function () {
+test.run('it registers spirit.element.appInstaller.create', 0.2, function () {
   // it is a standard shell element
   w0 = world({});
   return (w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function') ? true : false;
@@ -92,7 +93,7 @@ test.run('it requires the app branch\'s interface, spirit/app/script.js, and no 
 test.run('with its app\'s row inactive, the button says Activate and is off', 0.2, function () {
   return (h.button && h.button.text === 'Activate' && !onOf(h)) ? true : false;
 }, test.limit.quick);
-test.run('a press asks the node through spirit.required.spirit.app.api.activeApp to make the app with its key active', 0.2, async function () {
+test.run('a press asks the node through spirit.app.activeApp to make the app with its key active', 0.2, async function () {
   e1 = h.button.click();
   await settle();
   return (w.asked.length === 1 && w.asked[0].key === 'zz' && w.asked[0].active === true) ? true : false;

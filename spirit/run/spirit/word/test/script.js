@@ -253,11 +253,16 @@ test.run('the new spirit/fs/word.json holds that word and nothing else', 0.2, fu
   return JSON.stringify(wordsIn('fs')) === '{"fresh":true}' || false;
 }, test.limit.quick);
 // Q5, "Should add work from a page too, the way check does?", Andy: "no." word.js's page half, run on a bare window.
-test.run('on a page spirit.required.spirit.word.script has check and no add', 0.2, function () {
-  const bare = { window: { spirit: {} } };
-  require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word', 'script.js'), 'utf8'), bare);
-  const onPage = bare.window.spirit.required.spirit.word.script || {};
-  return (typeof onPage.check === 'function' && onPage.add === undefined) || false;
+// goal/G49.23: what it hands out on a page is what spirit.requireScript hands back there (no spirit.required), run as the
+// page's loader runs it, on a bare window.
+test.run('on a page what spirit.requireScript hands back of spirit/word/script.js has check and no add', 0.2, async function () {
+  const win = { Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String };
+  win.window = win;
+  win.spirit = {};
+  H.pageSpirit(win.spirit, null, { window: win, real: ['spirit/word/script.js'] });
+  let onPage = null;
+  try { onPage = await win.spirit.requireScript('spirit/word/script.js'); } catch (e) { onPage = null; }
+  return (!!onPage && typeof onPage.check === 'function' && onPage.add === undefined) || false;
 }, test.limit.quick);
 // Whether add takes a word in capitals is the box's "addedWoRD": what lands in the file is a to z either way.
 test.run('add of a word in capitals answers a boolean', 0.2, function () {
@@ -356,10 +361,11 @@ test.run('a browser opens the page of a scratch node, for the asks below', 0.2, 
 // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
 // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:
 // "wsl, add a test to test/word.js to make sure this won't happend again." The page holds the node's file list
-// (spirit.required.spirit.data.fs), so word.js asks only for a word.json the list holds, and each of those once until the stream
+// (spirit.client.fs), so word.js asks only for a word.json the list holds, and each of those once until the stream
 // says it changed. One word.json is planted on the scratch node (spirit/app/word.json, the word zzword); then many
 // checks along many paths, every call the page sends recorded as it leaves.
-// on a page: no word.json asked that the file list does not hold, each one held asked once
+// on a page: no word.json asked that the file list does not hold, each one held asked once; word.js as spirit.requireScript
+// hands it back (goal/G49.23: no spirit.required).
 let onPage = null;
 test.run('the planted spirit/app/word.json is read, and its word is found at spirit.app and below', 0.2, async function () {
   if (!W.page || W.page.error) return false;
@@ -372,9 +378,9 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
     ' window.sentWord = []; var keep = function (b) { try { var s = String(b || ""); if (/word\\.json/.test(s)) window.sentWord.push(s); } catch (e) {} };' +
     ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { keep(b); return x.apply(this, arguments); };' +
-    ' return spirit.requireScript("spirit/word/script.js"); }).then(function () {' +
+    ' return spirit.requireScript("spirit/word/script.js"); }).then(function (word) {' +
     ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.data.zz", "spirit.app.desk.element.zz"];' +
-    ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.required.spirit.word.script.check(p, "zzword")); asks.push(spirit.required.spirit.word.script.check(p, "other")); });' +
+    ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(word.check(p, "zzword")); asks.push(word.check(p, "other")); });' +
     ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +
     '.then(function (answers) { return JSON.stringify({ sent: window.sentWord, appSees: answers[0], under: answers[2] }); }, function () { return JSON.stringify({ threw: true }); })');
   let got = null;

@@ -22,7 +22,8 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 function placedAnswer(p, w) {
   const keys = String(p).replace(/\.js$/, '').split('/');
   if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-  const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, ((w || global.window).spirit || {}).required);
+  // goal/G49.23: on the spirit object itself, its first key spirit the object.
+  const at = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, (w || global.window).spirit);
   if (at && (typeof at === 'object' || typeof at === 'function')) return Promise.resolve(at);
   const no = Promise.reject(new Error('no stand-in for ' + p));
   no.catch(function () {});
@@ -58,9 +59,9 @@ test.run('as it runs it requires its own list first', 0.2, function () {
   if (!W.ran) return false;
   return W.required[0] === LIST ? true : false;
 }, test.limit.quick);
-test.run('it places its create on spirit.required, by its path', 0.2, function () {
+test.run('it places its create on the spirit object, by its path, spirit.element.search.file', 0.2, function () {
   if (!W.ran) return false;
-  const S = (((((global.window.spirit.required || {}).spirit || {}).element || {}).search || {}).file);
+  const S = (((global.window.spirit.element || {}).search || {}).file);
   W.S = S;
   return !!S && typeof S.create === 'function' ? true : false;
 }, test.limit.quick);

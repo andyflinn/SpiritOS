@@ -93,12 +93,13 @@ const neverRan = function (k) { return RC[k] ? (!RC[k].ran ? true : false) : fal
 const PLANTED = {
   'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
   'zzserve/zzserve.js': ["'use strict';", "require('../../script.js');", "spirit.requireScript('spirit/server/app/script.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
+  // goal/G49.23: a page reads the store at its place, spirit.client (no spirit.required).
   'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/zzserve/data.js'); else window.spirit.requireScript('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzserve', function () { return {}; }); }());", ''].join('\n'),
+  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : window.spirit.client; if (!D) return; D.makeFamily('spirit.app.zzserve', function () { return {}; }); }());", ''].join('\n'),
   'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
   'zzshot/zzshot.js': ["'use strict';", "require('../../script.js');", ''].join('\n'),
   'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/zzshot/data.js'); else window.spirit.requireScript('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzshot', function () { return {}; }); }());", ''].join('\n'),
+  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : window.spirit.client; if (!D) return; D.makeFamily('spirit.app.zzshot', function () { return {}; }); }());", ''].join('\n'),
 };
 function plantApps(run) {
   Object.keys(PLANTED).forEach(function (rel) { const p = path.join(run, 'spirit', 'app', rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, PLANTED[rel]); });
@@ -853,7 +854,7 @@ function mountPart() {
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
     fs.writeFileSync(path.join(dir, 'data.js'), [
       '(function family() {',
-      "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data/script.js');",
+      "  var D = typeof window !== 'undefined' ? window.spirit.client : require('../../data/script.js');",
       "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(family); return; }",
       "  D.makeFamily('" + appId(name) + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
@@ -1243,10 +1244,11 @@ function mountPart() {
     const same = await onPage("spirit.requireScript('spirit/app/" + NAME + '/' + NAME + ".js').then(function () { return window.__appOnPage; })");
     return (!!same && same.v === NAME) || false;
   }, test.limit.quick);
-  // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.required.spirit.data.<family>, and
+  // The store at its place since goal/G49.23, spirit.client (no spirit.required).
+  // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.client.<family>, and
   // what the planted data.js marked.
   const inNode = function (family) {
-    const r = spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.required.spirit.data && global.spirit.required.spirit.data[" + JSON.stringify(appId(family)) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+    const r = spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.client && global.spirit.client[" + JSON.stringify(appId(family)) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
     return parsed(String(r.stdout || '').trim()) || {};
   };
   test.run('in a process, requiring a tree app\'s api.js loads its data.js', 0.2, function () {

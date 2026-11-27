@@ -42,7 +42,7 @@ test.run('fieldInput runs on a window of its own', 0.2, async function () {
     document: { createElement: function () { made += 1; return {}; } } };
   win.window = win;
   win.globalThis = win;
-  win.spirit = { required: {}, requireScript: function () { return Promise.resolve(); } };
+  win.spirit = { requireScript: function () { return Promise.resolve(); } };
   vm.createContext(win);
   // The subject and the type rules it asks for, run in this world by their paths through the page stand-in (goal/G49.6);
   // every path it asks is kept.
@@ -51,7 +51,8 @@ test.run('fieldInput runs on a window of its own', 0.2, async function () {
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { required.push(p); return pageRequire(p); };
   win.spirit.requireScript(SUBJECT);
-  F = ((win.spirit.required.spirit || {}).element || {}).fieldInput;
+  // goal/G49.23: placed on the spirit object itself, spirit.element.fieldInput.
+  F = (win.spirit.element || {}).fieldInput;
   // A TYPE ARRIVES AS ITS REQUIRE'S ANSWER (goal/G49.9, box v5: "the loader places that module.exports at the script's own place
   // and answers spirit.requireScript with it"; Andy: "spirit.requireScript must allways return either an object or a function... or
   // fail/throw"): fieldInput keeps each type from that answer once it comes, a moment after its first ask, as on a page; the

@@ -233,11 +233,11 @@ function ddWorld(facts, checks, o) {
       if (q === 'spirit/element/workBench/script.js' && !STANDS[q]) STANDS[q] = workBenchStub(document, benches);
       return Promise.resolve(Object.prototype.hasOwnProperty.call(STANDS, q) ? STANDS[q] : {});
     },
-    required: { spirit: { app: {}, element: {} } },
   };
   // THE ROWS THE PAGE HOLDS (goal/G48.8: a goal's Close counts its open items "from the page's own rows"), when a case
-  // hands some: the desk family's kept data, as spirit/app/desk/data.js gives it a page.
-  if (o && o.kept) win.spirit.required.spirit.data = { desk: { data: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } } };
+  // hands some: the desk branch's kept data, as spirit/app/desk/data.js gives it a page, on the branch its api.js hands back
+  // (goal/G49.23, box v22 Part 1: an old-shape branch carries its data.js's reads as data; no spirit.required).
+  if (o && o.kept) STANDS['spirit/app/desk/api.js'] = Object.defineProperty({}, 'data', { enumerable: false, value: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } });
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit); what it does not know it hands to the requireScript above.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
@@ -748,7 +748,7 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   const design = S.design = await call(DESK_ID + '.item.add', { goal: g.id, title: 'A design item to delete' });
   await call(DESK_ID + '.press', { id: design.id, what: 'start-design' });
   const before = S.beforePress = { done: await state(done.id), design: await state(design.id) };
-  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()");
+  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function (E) { E.create(d, {}); return true; }); })()");
   S.readyPromise = true;
   return (before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1) || false;
 }, test.limit.long);

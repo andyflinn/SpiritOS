@@ -64,7 +64,7 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   // Its own answer, what the loader places at its place.
   const own = PAGE_LOAD.runAsPage(FILE, null, SRC);
   await settle();
-  const E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  const E = global.window.spirit.element || {};
   made = E.search && E.search.contact === own ? own : null;
   atLoad = required.slice();
   return true;
@@ -75,7 +75,7 @@ test.run('it makes no list of its own, neither a probabilitySearch nor anything 
   const own = /shellCreateListSearch|listSearch\.js/.test(code) || /\.element\.search\.create\(/.test(code);
   return !own ? true : false;
 }, test.limit.quick);
-test.run('it places itself at spirit.required.spirit.element.search.contact, with a create', 0.2, function () {
+test.run('it places itself at spirit.element.search.contact, with a create', 0.2, function () {
   if (!lists) return false;
   return made && typeof made.create === 'function' ? true : false;
 }, test.limit.quick);

@@ -84,12 +84,13 @@ let loadError, T, mounted, tab, c1, tc, ids, iTabs, iContent, c1b, m0, firstMoun
   boxTwo, rowNow, m1, threw, gone, cd, tcd, c4, tc4, contentTag, cls, boxU, RUN_DIR, sheet, face, rule, hexOf, light,
   greens, fw, c5, buttons, rules, weight, tabRules, off, appButton, squared, appRadius, c6, made6, tab6, tc6, rowOf,
   row, mounts, press, content;
-test.run('it loads on window.spirit.required.spirit.element.tabContainer with create', 0.2, function () {
+// goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
+test.run('it loads on window.spirit.element.tabContainer with create', 0.2, function () {
   global.window = { spirit: { element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   loadError = null;
   try { PAGE_LOAD.runAsPage(FILE); } catch (e) { loadError = e; }
-  T = window.spirit.required.spirit.element.tabContainer;
+  T = window.spirit.element.tabContainer;
   return (!loadError && T && typeof T.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('it draws the row of tabs, then the content area', 0.2, function () {

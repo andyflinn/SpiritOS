@@ -42,12 +42,12 @@ function world() {
     shellCreateListSearch: function (host, opts) { w.old = true; return { redraw: function () {}, refresh: function () {} }; },
   });
   const win = {
-    // goal/G43.32: an element stands at spirit.required.<its path>, its parts there too.
-    spirit: { required: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
+    // goal/G49.23: an element stands on the spirit object at its path (spirit.element.<...>), its parts there too.
+    spirit: { element: E, escapeHtml: function (s) { return String(s); },
       // What readyPromise answers is the spirit instance itself (goal/G49.6), whose apiTree reads the node's tree.
       readyPromise: Promise.resolve({ apiTree: function () { return Promise.resolve(TREE); } }),
       // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
-      // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.required.spirit.data.node.data).
+      // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.client.node.data).
       requireScript: function (p) {
         w.required.push(String(p));
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
@@ -70,16 +70,16 @@ function world() {
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   win.spirit.requireScript('spirit/client/script.js');
-  pageData = win.spirit.required.spirit.data;
+  pageData = win.spirit.client;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');
   PAGE_LOAD.runAsPage(SERVER_FILE, win, SERVER_SRC);
-  w.E = win.spirit.required.spirit.element;
+  w.E = win.spirit.element;
   return w;
 }
-// What a list offers, as the search element would draw it: the rows of its spirit.required.spirit.data branch (goal/G41.28), or for
+// What a list offers, as the search element would draw it: the rows of its spirit.client branch (goal/G41.28), or for
 // another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
 let pageData = null;
 const names = function (l) {
@@ -102,7 +102,7 @@ test.run('it loads probabilitySearch itself', 0.2, function () {
 }, test.limit.quick);
 
 // the server half: a probabilitySearch dropdown of the node's families
-test.run('it places itself at spirit.required.spirit.element.search.api.list, with a create, and createAppServerSelector no more', 0.2, function () {
+test.run('it places itself at spirit.element.search.api.list, with a create, and createAppServerSelector no more', 0.2, function () {
   if (!w) return false;
   made = w.E.search.api.list;
   return made && typeof made.create === 'function' && !('createAppServerSelector' in w.E) ? true : false;

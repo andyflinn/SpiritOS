@@ -37,8 +37,10 @@ const DIR = path.join(__dirname, '..');
 // Its list and editor are the agent app's elements, in spirit/app/agent/element/table/job/ since goal/G43.32 (rule 5).
 const EL = path.join(__dirname, '..', '..', '..', 'element', 'table', 'job');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
-// base64url (spirit.required.spirit.data.nodeId).
+// base64url (the store's nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
+// The page's store as the loader hands it back (goal/G49.23: no spirit.required; it stands at spirit.client).
+let STORE = null;
 function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || true, why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
@@ -170,7 +172,7 @@ test.run('a search answers the id, the icon and the label of a row, nothing else
 // ── the page: elementTable.js and elementRow.js ──
 const detail = { open: function () {}, look: function (t2) { return { icon: '📋', name: 'Job', title: 'Jobs', table: t2 }; } };
 const box = { innerHTML: '' };
-test.run('the two element files place spirit.required.spirit.app.agent.element.table.job.elementTable and elementRow', 0.2, function () {
+test.run('the two element files place spirit.app.agent.element.table.job.elementTable and elementRow', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [] };
   const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
@@ -185,6 +187,8 @@ test.run('the two element files place spirit.required.spirit.app.agent.element.t
   const ran = {};
   global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
+    // The store, run below as the page's loader runs it, handed as the answer (goal/G49.23): a data.js keeps it so.
+    if (p === 'spirit/client/script.js') return Promise.resolve(STORE);
     const data = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(String(p)) || [])[1];
     if (data && !ran[data] && fs.existsSync(path.join(RUN, data, 'data.js'))) { ran[data] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, data, 'data.js'), 'utf8'), { filename: path.join(RUN, data, 'data.js') }); }
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
@@ -198,13 +202,13 @@ test.run('the two element files place spirit.required.spirit.app.agent.element.t
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A family's
   // data.js comes with its api.js, the stand-in above running it from disk.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
+  STORE = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'client', 'script.js'));
   global.window.spirit.nodeFacts = { key: HOME_KEY };
-  global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
+  STORE.homeNode(HOME_KEY);
   // What the page files require is what is asked from here on.
   made.from = made.required.length;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });
-  const T = global.window.spirit.required.spirit.app.agent.element.table.job || {};
+  const T = global.window.spirit.app.agent.element.table.job || {};
   X.E = { jobTable: T.elementTable, jobRow: T.elementRow };
   return X.E.jobTable && typeof X.E.jobTable.create === 'function' && X.E.jobRow && typeof X.E.jobRow.create === 'function' ? true : false;
 }, test.limit.quick);
@@ -256,7 +260,7 @@ test.run('the job editor\'s fields in order: label, loop flag, job code, bundle 
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
-// node that served them, and is read through spirit.required.spirit.data['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+// node that served them, and is read through the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
@@ -264,14 +268,14 @@ test.run('its page files require no data script', 0.2, function () {
 }, test.limit.quick);
 test.run('the job page requires the agent interface, and the job branch it reads is the home node\'s <node>/spirit.app.agent/job', 0.2, function () {
   if (!X.made || X.made.required.slice(X.made.from).indexOf('spirit/app/agent/api.js') === -1) return false;
-  const DATA = global.window.spirit.required.spirit.data;
-  const AD = X.AD = ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
+  const DATA = STORE;
+  const AD = X.AD = ((STORE || {})['spirit.app.agent'] || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/spirit.app.agent/job';
   return !!AD && typeof AD.branch === 'function' && AD.branch('job') === X.BRANCH ? true : false;
 }, test.limit.quick);
 test.run('a job row on the stream lands at <node>/spirit.app.agent/job/<id>, and the branch\'s watcher hears it', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.required.spirit.data, AD = X.AD, BRANCH = X.BRANCH;
+  const DATA = STORE, AD = X.AD, BRANCH = X.BRANCH;
   const heard = [];
   const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
   DATA.takeJob(job({ table: 'job', row: { id: 'KT', label: 'First', extra: 1 } }));
@@ -280,19 +284,19 @@ test.run('a job row on the stream lands at <node>/spirit.app.agent/job/<id>, and
 }, test.limit.quick);
 test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.required.spirit.data, AD = X.AD;
+  const DATA = STORE, AD = X.AD;
   DATA.takeJob(job({ table: 'job', row: { id: 'KT', label: 'Renamed' } }));
   return AD.row('job', 'KT') && AD.row('job', 'KT').label === 'Renamed' && AD.row('job', 'KT').extra === 1 ? true : false;
 }, test.limit.quick);
 test.run('a row removed, by its id, is gone', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.required.spirit.data, AD = X.AD;
+  const DATA = STORE, AD = X.AD;
   DATA.takeJob(job({ table: 'job', id: 'KT', removed: true }));
   return !AD.row('job', 'KT') && !('KT' in DATA.branchAt(X.BRANCH)) ? true : false;
 }, test.limit.quick);
 test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.required.spirit.data;
+  const DATA = STORE;
   const before = JSON.stringify(DATA.branchAt(X.BRANCH));
   DATA.takeJob(job({ table: 'model', row: { id: 'KO', label: 'another table' } }));
   DATA.takeJob(job({ table: 'job', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));

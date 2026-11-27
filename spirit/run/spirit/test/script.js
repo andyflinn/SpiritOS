@@ -135,24 +135,25 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     const fams = await Promise.all([s.requireScript('spirit/demo/api.js'), s.requireScript('spirit/demo/api.js')]);
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
-    out.bound = fams[0] === fams[1] && fams[0] === s.required.spirit.demo.api && typeof s.required.spirit.demo.api.hello === 'function';
+    out.bound = fams[0] === fams[1] && fams[0] === s.demo.api && typeof s.demo.api.hello === 'function';
     // ONE PLACE FOR A BRANCH (goal/G49.6; Andy, of G40.6 beside G43.32/G49.5: "AND WHICH FUCKING RULING DO YOU THINK
     // APPLIES??????", the later: "spirit.requireScript() places the loaded script at the exact same path"): its verbs stand at
-    // spirit.required.spirit.<branch-path>.api, the require answers that, and nothing of it stands on spirit.<branch>.
-    const placed = s.required && s.required.spirit && s.required.spirit.demo && s.required.spirit.demo.api;
-    out.onePlace = !!placed && typeof placed.hello === 'function' && fams[0] === placed && !Object.prototype.hasOwnProperty.call(s, 'demo');
-    out.hi = (await s.required.spirit.demo.api.hi('dave')).said;
-    out.dotted = typeof s.required.spirit.demo.api.lineWrite === 'function' && s.required.spirit.demo.api.lineWrite === s.required.spirit.demo.api['line.write'] && (await s.required.spirit.demo.api.lineWrite({ text: 't' })).wrote;
+    // spirit.<branch-path>.api (goal/G49.23: on the spirit object itself, no spirit.required), the require answers that, and
+    // nothing of it stands on spirit.<branch> itself: spirit.demo is its folder's place, holding no verb of it.
+    const placed = s.demo && s.demo.api;
+    out.onePlace = !!placed && typeof placed.hello === 'function' && fams[0] === placed && s.demo !== placed && typeof s.demo.hello === 'undefined';
+    out.hi = (await s.demo.api.hi('dave')).said;
+    out.dotted = typeof s.demo.api.lineWrite === 'function' && s.demo.api.lineWrite === s.demo.api['line.write'] && (await s.demo.api.lineWrite({ text: 't' })).wrote;
     // No FS set on a family (goal/G43.20): its files are spirit.fs's, by the path its id names.
-    out.fs = !('FS' in s.required.spirit.demo.api);
-    out.noArg = await code(s.required.spirit.demo.api.hello({ nme: 'x' }));
-    out.noVerb = typeof s.required.spirit.demo.api.nothing === 'undefined';
+    out.fs = !('FS' in s.demo.api);
+    out.noArg = await code(s.demo.api.hello({ nme: 'x' }));
+    out.noVerb = typeof s.demo.api.nothing === 'undefined';
     out.noFamily = await code(s.requireScript('spirit/gone/api.js'));
-    try { await s.required.spirit.demo.api.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
-    try { await s.required.spirit.demo.api.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
+    try { await s.demo.api.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
+    try { await s.demo.api.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.apiTree()).sort();
-    out.viaRequire = (await s.requireScript('spirit/demo/api.js')) === s.required.spirit.demo.api;
-    out.outcome = [await s.callOutcome(s.required.spirit.demo.api.hello({ name: 'eve' })), await s.callOutcome(s.required.spirit.demo.api.hello({ nme: 1 })), await s.callOutcome(s.required.spirit.demo.api.hello({ name: 'held' })), await s.callOutcome(Promise.reject(new Error()))]
+    out.viaRequire = (await s.requireScript('spirit/demo/api.js')) === s.demo.api;
+    out.outcome = [await s.callOutcome(s.demo.api.hello({ name: 'eve' })), await s.callOutcome(s.demo.api.hello({ nme: 1 })), await s.callOutcome(s.demo.api.hello({ name: 'held' })), await s.callOutcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by event.publish with its own id, the one path.
     out.publish = s.eventStream.publish({ x: 1 });
@@ -178,7 +179,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
       return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${POISON.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
     };
     const both = await Promise.all([s.requireScript('spirit/demo/api.js', 'peerKey1', { waitMs: 777 }), s.requireScript('spirit/demo/api.js', 'peerKey1', { waitMs: 777 })]);
-    out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.required.spirit.demo.api !== both[0]];
+    out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.demo.api !== both[0]];
     out.peerRan = globalThis.peerCodeRan === true;
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
     // THE STREAM'S AUTO-VERBS ON EVERY FAMILY (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
@@ -286,7 +287,7 @@ test.run('the source sets the global before its first require', 0.2, function ()
 test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs', 0.2, function () {
   return !/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')) || false;
 }, test.limit.quick);
-// data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
+// data: the cache, spirit.client since goal/G49.23 (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
 const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
@@ -456,9 +457,13 @@ test.run('spirit.requireScript of the demo interface binds it once for two calle
 }, test.limit.quick);
 // THE TRUNK HOLDS spirit.js's HELPERS, EACH camelCase WITH AN UPPERCASE LETTER (goal/G49.6; Andy: "Make spirit functions
 // camelCase, you KNOW that the scheme asks for that!", "helpers are camelCase with at least one UPPERCASE letter!!!!"):
-// beside required, the one tree, no all-lowercase name stands on the instance.
-function trunkWords(keys) { return (keys || []).filter(function (k) { return k !== 'required' && !/[A-Z]/.test(k); }); }
-test.run('in node, every name on the spirit instance but required has an uppercase letter', 0.2, function () {
+// beside required, the one tree, no all-lowercase name stands on the instance. Since goal/G49.23 there is no spirit.required:
+// the tree's places stand on the instance itself, each a folder or a script of spirit/ (spirit.fs, spirit.client, spirit.demo),
+// and those alone are names without an uppercase letter.
+// The demo branch is this test's own, planted (scratchRoot) and served to its pages (answer), so not in the checkout's tree.
+function isPlace(k) { return k === 'demo' || fs.existsSync(path.join(RUN, 'spirit', k)) || fs.existsSync(path.join(RUN, 'spirit', k + '.js')); }
+function trunkWords(keys) { return (keys || []).filter(function (k) { return !isPlace(k) && !/[A-Z]/.test(k); }); }
+test.run('in node, every name on the spirit instance but its places has an uppercase letter', 0.2, function () {
   const o = O(); if (!o || !o.keys) return false;
   return o.keys.length > 0 && trunkWords(o.keys).length === 0;
 }, test.limit.quick);
@@ -473,7 +478,7 @@ test.run('in node, the nine helpers stand under their accepted names', 0.2, func
   return NODE_HELPERS.every(function (k) { return o.keys.indexOf(k) >= 0; });
 }, test.limit.quick);
 // goal/G49.6: G43.32's decided 8 (verbs bound on spirit.<branch> as well) is reversed; the later ruling applies, one place.
-test.run('in node, a branch\'s verbs stand at spirit.required.spirit.demo.api, the require answers it, and spirit.demo is not there', 0.2, function () {
+test.run('in node, a branch\'s verbs stand at spirit.demo.api, the require answers it, and spirit.demo itself holds none of them', 0.2, function () {
   const o = O(); if (!o) return false;
   return o.onePlace === true;
 }, test.limit.quick);
@@ -493,7 +498,7 @@ test.run('spirit.apiTree() answers its node\'s api as it stands', 0.2, function 
   const o = O(); if (!o) return false;
   return JSON.stringify(o.tree) === JSON.stringify(['demo', 'gone']) || false;
 }, test.limit.quick);
-test.run('spirit.requireScript of spirit/demo/api.js answers the member at spirit.required.spirit.demo.api', 0.2, function () {
+test.run('spirit.requireScript of spirit/demo/api.js answers the member at spirit.demo.api', 0.2, function () {
   const o = O(); if (!o) return false;
   return !!o.viaRequire || false;
 }, test.limit.quick);
@@ -598,13 +603,13 @@ test.run('startPage() asks no api but node, readyPromise answers the instance it
 // THE API IS ALWAYS AT THE SAME PLACE (goal/G49.6; Andy: "the fucking api should ALWAYS be at the same place........"; his
 // WSL face at 5b3ecc63: "Cannot read properties of undefined (reading 'preferences')"): an app's branch reached first through
 // what readyPromise answers, before the page knows its app list, then required at spirit/app/zapp/api.js, has its verbs at
-// spirit.required.spirit.app.zapp.api, and nothing of it stands at a guessed spirit.required.spirit.zapp.
+// spirit.app.zapp.api (goal/G49.23: on the spirit object itself), and nothing of it stands at a guessed spirit.zapp.
 test.run('on a page, an app branch called first through readyPromise has its verbs at its api.js path once required', 0.2, async function () {
   const fq = page();
   const view = await fq.spirit.startPage();
   try { await view.zapp.hello({ name: 'early' }); } catch (e) { /* the early call is not the question */ }
   try { await fq.spirit.requireScript('spirit/app/zapp/api.js'); } catch (e) { return false; }
-  const r = fq.spirit.required.spirit;
+  const r = fq.spirit;
   const placed = r.app && r.app.zapp && r.app.zapp.api;
   return (!!placed && typeof placed.hello === 'function' && !(r.zapp && r.zapp.api)) || false;
 }, test.limit.quick);
@@ -629,15 +634,15 @@ test.run('on a page with no link, calls go to the page\'s own origin, /spirit, a
   const toDoor = wq.fetched.filter(function (f) { return f.url === '/spirit'; });
   return (pc.said === 'hello hal' && toDoor.length > 0 && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') || false;
 }, test.limit.quick);
-// goal/G49.6, the same one place on a page: once called, the branch's verbs stand at spirit.required.spirit.demo.api,
-// and window.spirit holds no demo of its own.
-test.run('on a page, a branch called has its verbs at spirit.required.spirit.demo.api, and window.spirit holds no demo', 0.2, async function () {
+// goal/G49.6, the same one place on a page: once called, the branch's verbs stand at spirit.demo.api (goal/G49.23: on the
+// spirit object itself), and window.spirit.demo, its folder's place, holds none of them.
+test.run('on a page, a branch called has its verbs at spirit.demo.api, and window.spirit.demo itself holds none of them', 0.2, async function () {
   if (!T.ps) return false;
   const wq = T.wq;
-  const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.demo && wq.spirit.required.spirit.demo.api;
-  return (!!placed && typeof placed.hello === 'function' && !Object.prototype.hasOwnProperty.call(wq.spirit, 'demo')) || false;
+  const placed = wq.spirit.demo && wq.spirit.demo.api;
+  return (!!placed && typeof placed.hello === 'function' && wq.spirit.demo !== placed && typeof wq.spirit.demo.hello === 'undefined') || false;
 }, test.limit.quick);
-test.run('on a page, started and a branch called, every name on window.spirit but required has an uppercase letter', 0.2, async function () {
+test.run('on a page, started and a branch called, every name on window.spirit but its places has an uppercase letter', 0.2, async function () {
   if (!T.ps) return false;
   const keys = Object.keys(T.wq.spirit);
   return keys.length > 0 && trunkWords(keys).length === 0;
@@ -653,7 +658,7 @@ test.run('on a page with window.spirit.transport set, every call goes through th
   const linked = [];
   wq.spirit.transport = { ask: function (v) { linked.push(v); return { status: 200, body: { said: 'via link' } }; }, file: function (p) { linked.push('file ' + p); return { status: 200, bytes: new Uint8Array(fs.readFileSync(path.join(RUN, p))) }; } };
   const before = T.linkBefore = wq.fetched.length;
-  const viaLink = await wq.spirit.required.spirit.demo.api.hello({ name: 'x' });
+  const viaLink = await wq.spirit.demo.api.hello({ name: 'x' });
   return (viaLink.said === 'via link' && linked[0] === 'demo.hello' && wq.fetched.length === before) || false;
 }, test.limit.quick);
 // A face's events come down its link: spirit.eventStream.subscribe hands the handlers to the link's events, fetching nothing.
@@ -783,8 +788,8 @@ test.run('in node, a component that is not there refuses', 0.2, async function (
 // THE SAME PLACE ON BOTH SIDES (goal/G49.4; Andy: "have i NOT fucking specified, that on both, browser and node,
 // spirit.requireScript() places the loaded script at the exact same motherfucking location/path in the spirit object", "FUCKING
 // FIX THAT!!"; G43.32: "helpers with no create are no fucking elements. they live in require."): on a page a required helper
-// stands at spirit.required.<its path>, the real object as in node, and the require answers it.
-test.run('on a page, spirit/type/string/label/script.js required stands at spirit.required.spirit.type.string.label, the real one, and the require answers it', 0.2, async function () {
+// stands at its path on the spirit object (goal/G49.23), the real object as in node, and the require answers it.
+test.run('on a page, spirit/type/string/label/script.js required stands at spirit.type.string.label, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const onPage = await wq.spirit.requireScript(PAGE_COMPONENT);
@@ -803,12 +808,13 @@ test.run('on a page, the object the loader hands out carries _spiritPath, its ru
   const got = await T.wq.spirit.requireScript(PAGE_COMPONENT);
   return (!!got && got._spiritPath === PAGE_COMPONENT) || false;
 }, test.limit.quick);
-test.run('on a page, spirit/client/script.js required stands at spirit.required.spirit.data, the real one, and the require answers it', 0.2, async function () {
+test.run('on a page, spirit/client/script.js required stands at spirit.client, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   let onPage = null;
   try { onPage = await wq.spirit.requireScript('spirit/client/script.js'); } catch (e) { onPage = null; }
-  const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.data;
+  // goal/G49.23: the store at its path, spirit.client (no spirit.required).
+  const placed = wq.spirit.client;
   return (!!placed && typeof placed.makeFamily === 'function' && typeof placed.viewAt === 'function' && onPage === placed) || false;
 }, test.limit.quick);
 test.run('on a page, a stylesheet required is put on the page as a style', 0.2, async function () {
@@ -824,14 +830,14 @@ test.run('on a page, a component that is not there refuses not-found', 0.2, asyn
 test.run('on a page, an interface answers its member on window.spirit', 0.2, async function () {
   if (!T.wq) return false;
   const pf = await T.wq.spirit.requireScript('spirit/demo/api.js');
-  return pf === T.wq.spirit.required.spirit.demo.api || false;
+  return pf === T.wq.spirit.demo.api || false;
 }, test.limit.quick);
 test.run('on a page, a require with a key answers the peer\'s branch through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const pp = await wq.spirit.requireScript('spirit/demo/api.js', 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
-  return (wq.fetched.some(function (f) { return f.url === '/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.required.spirit.demo.api) || false;
+  return (wq.fetched.some(function (f) { return f.url === '/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo.api) || false;
 }, test.limit.quick);
 
 // ── 7a. spirit.requireScript DE-DUPES, AS NODE'S require DOES (goal/G41.3) ──
@@ -860,9 +866,10 @@ test.run('on a face, requiring spirit/shell/boot/script.js after the boot loaded
 // following point: spirit.required.<path.of.fucking.script>. - no name collisions - easily checkable if script is
 // already loaded.", and "box that spirit.requireScript() on the node is just a path-translating wrapper": on the node it
 // answers the module at once, as require does; an interface is still bound by asking a node.
-// 7c. spirit.required.<path>, and on the node spirit.requireScript answers the module at once
-// A folder's script.js stands at its folder's own name (goal/G49.9, box v5), so its last key is dropped.
-function placeOf(sp, p) { const keys = String(p).replace(/\.js$/, '').split('/'); if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop(); return keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, sp && sp.required); }
+// 7c. spirit.<path>, and on the node spirit.requireScript answers the module at once
+// A folder's script.js stands at its folder's own name (goal/G49.9, box v5), so its last key is dropped; since goal/G49.23
+// on the spirit object itself, its first key spirit the object (no spirit.required).
+function placeOf(sp, p) { const keys = String(p).replace(/\.js$/, '').split('/'); if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop(); return keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, sp); }
 const real = require(path.join(RUN, COMPONENT));
 test.run('on the node, spirit.requireScript of spirit/relayUrl/script.js answers its module.exports at once, not a promise', 0.2, function () {
   const atOnce = s.requireScript(COMPONENT);
@@ -871,41 +878,42 @@ test.run('on the node, spirit.requireScript of spirit/relayUrl/script.js answers
 test.run('on the node, spirit/relayUrl/script.js asked again answers the same module at once', 0.2, function () {
   return s.requireScript(COMPONENT) === real || false;
 }, test.limit.quick);
-test.run('on the node, spirit/relayUrl/script.js stands at spirit.required.spirit.relayUrl', 0.2, function () {
+test.run('on the node, spirit/relayUrl/script.js stands at spirit.relayUrl', 0.2, function () {
   return placeOf(s, COMPONENT) === real || false;
 }, test.limit.quick);
 // A FOLDER'S SCRIPT.JS AND THE FOLDER ARE ONE PLACE (goal/G49.9, box v5: "a folder's script.js stands at its folder's own
 // name ... and what the folder holds stands under it"): since goal/G49.20 the app manager is spirit/app/manager/script.js, so
-// it stands at its own folder's name, spirit.required.spirit.app.manager.
-test.run('on the node, spirit/app/manager/script.js stands at spirit.required.spirit.app.manager', 0.2, function () {
+// it stands at its own folder's name, spirit.app.manager (goal/G49.23: on the spirit object itself).
+test.run('on the node, spirit/app/manager/script.js stands at spirit.app.manager', 0.2, function () {
   const manager = s.requireScript('spirit/app/manager/script.js');
-  return (!!manager && !!s.required.spirit.app && s.required.spirit.app.manager === manager) || false;
+  return (!!manager && !!s.app && s.app.manager === manager) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
   const iface = s.requireScript('spirit/demo/api.js');
   if (iface && typeof iface.then === 'function') { iface.then(null, function () {}); return true; }
   return false;
 }, test.limit.quick);
-test.run('on a page, once spirit/type/string/label/script.js is required it stands at spirit.required.spirit.type.string.label', 0.2, async function () {
+test.run('on a page, once spirit/type/string/label/script.js is required it stands at spirit.type.string.label', 0.2, async function () {
   const rq = T.rq = page();
   await rq.spirit.requireScript(PAGE_COMPONENT);
   return !!placeOf(rq.spirit, PAGE_COMPONENT) || false;
 }, test.limit.quick);
-test.run('on a page, a script never required has no place in spirit.required', 0.2, function () {
+test.run('on a page, a script never required has no place on the spirit object', 0.2, function () {
   if (!T.rq) return false;
   const rq = T.rq;
-  return (!!rq.spirit.required && typeof rq.spirit.required === 'object' && !placeOf(rq.spirit, 'spirit/noSuchComponent.js')) || false;
+  // goal/G49.23: the places stand on the spirit object itself; the one required stands, the one never required does not.
+  return (!!placeOf(rq.spirit, PAGE_COMPONENT) && !placeOf(rq.spirit, 'spirit/noSuchComponent.js')) || false;
 }, test.limit.quick);
 
 // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
 // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
-// cache is spirit/client/script.js (spirit.required.spirit.data); spirit.js loads it when its client part starts, page and process alike.
+// cache is spirit/client/script.js (spirit.client since goal/G49.23); spirit.js loads it when its client part starts, page and process alike.
 // 7b. spirit.js loads the cache itself, on a page and in a process
 function isCache(d) { return !!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'; }
-test.run('on a page, once spirit.js has started, spirit.required.spirit.data is the cache, with nothing else loading it', 0.2, async function () {
+test.run('on a page, once spirit.js has started, spirit.client is the cache, with nothing else loading it', 0.2, async function () {
   const cq = T.cq = page();
   try { await cq.spirit.startPage(); } catch (e) { /* the cache is the question here */ }
-  return isCache(cq.spirit.required.spirit.data) || false;
+  return isCache(cq.spirit.client) || false;
 }, test.limit.quick);
 // ON THE SPIRIT OBJECT ITSELF (goal/G49.23, box v21, Part 1: "spirit.requireScript() places it's return objects in the spirit
 // object, and no longer on spirit.required.spirit"): a script required stands at its path on the instance.
@@ -948,8 +956,8 @@ test.run('on a page spirit.js loads the cache and no element, and so no files ro
   const preloaded = T.cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });
   return !preloaded.length || false;
 }, test.limit.quick);
-test.run('in a process, requiring spirit.js gives spirit.required.spirit.data, the cache', 0.2, function () {
-  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.required.spirit.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit', 'script.js')], { encoding: 'utf8', timeout: 20000 });
+test.run('in a process, requiring spirit.js gives spirit.client, the cache', 0.2, function () {
+  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.client; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit', 'script.js')], { encoding: 'utf8', timeout: 20000 });
   return inProcess.stdout === 'true' || false;
 }, test.limit.quick);
 
@@ -1052,7 +1060,7 @@ test.run('the branch the page has not used yet is bound on the page once it is r
   if (!L.fresh) return false;
   const fresh = L.fresh;
   L.before = calls().length;
-  const reach = "Promise.resolve(window.spirit.requireScript('spirit/" + fresh + "/api.js')).then(function () { return !!window.spirit.required.spirit[" + JSON.stringify(fresh) + "].api; }, function () { return false; })";
+  const reach = "Promise.resolve(window.spirit.requireScript('spirit/" + fresh + "/api.js')).then(function () { return !!(window.spirit[" + JSON.stringify(fresh) + "] && window.spirit[" + JSON.stringify(fresh) + "].api); }, function () { return false; })";
   const first = await L.page.evaluate(reach);
   const second = await L.page.evaluate(reach);
   await H.sleep(1000);
@@ -1090,7 +1098,7 @@ test.run('on a real page, the Desk element opens on the page that loaded before 
   if (L.up !== '200') return false;
   const mark = L.page.heard.length;
   const drawn = await L.page.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
-    " return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {});" +
+    " return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function (el) { el.create(d, {});" +
     " return new Promise(function (r) { setTimeout(function () { r(JSON.stringify({ text: d.innerText, nodes: d.querySelectorAll('*').length })); }, 8000); }); }," +
     " function () { return JSON.stringify({ refused: true }); }); })()");
   let got = {};
@@ -1144,8 +1152,8 @@ test.run('after its node restarts on the same port, the page\'s stream comes bac
 }, test.limit.slow);
 
 // The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, script-sibling-general.js
-// (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.required for one spirit/element/
-// does not define) and script-sibling-browser.js (every element module loads on a page, its factory at spirit.required.<its path>).
+// (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
+// does not define) and script-sibling-browser.js (every element module loads on a page, its factory at its path on the spirit object, goal/G49.23).
 // Andy, goal/G47.1: "1, 2 and 3 Belong in spirit/test/script.js", "the rest belong in motherfucking script-sibling-general/browser/node respectively".
 const { execSync } = require('child_process');
 const REPO = path.resolve(RUN, '../..');
@@ -1514,12 +1522,12 @@ const LD_PLANT = {
 const LD_ASK = "(async function () {\n" +
   "  var S = globalThis.spirit; var out = {};\n" +
   "  var obj = await Promise.resolve(S.requireScript('spirit/zzLoader/obj/script.js'));\n" +
-  "  out.objA = obj && obj.a; out.objAt = S.required.spirit.zzLoader.obj === obj;\n" +
+  "  out.objA = obj && obj.a; out.objAt = S.zzLoader.obj === obj;\n" +
   "  var other = await Promise.resolve(S.requireScript('spirit/zzLoader/obj/other.js'));\n" +
-  "  out.otherB = other && other.b; out.otherUnder = !!(S.required.spirit.zzLoader.obj && S.required.spirit.zzLoader.obj.other === other);\n" +
-  "  out.objStill = S.required.spirit.zzLoader.obj === obj;\n" +
+  "  out.otherB = other && other.b; out.otherUnder = !!(S.zzLoader.obj && S.zzLoader.obj.other === other);\n" +
+  "  out.objStill = S.zzLoader.obj === obj;\n" +
   "  try { var fn = await Promise.resolve(S.requireScript('spirit/zzLoader/fn/script.js')); out.fnRefused = false; out.fnGot = typeof fn; } catch (e) { out.fnRefused = true; }\n" +
-  "  out.fnPlaced = !!(S.required.spirit.zzLoader && typeof S.required.spirit.zzLoader.fn === 'function');\n" +
+  "  out.fnPlaced = !!(S.zzLoader && typeof S.zzLoader.fn === 'function');\n" +
   "  try { var str = await Promise.resolve(S.requireScript('spirit/zzLoader/str/script.js')); out.strRefused = false; out.strGot = typeof str; } catch (e) { out.strRefused = true; }\n" +
   "  return JSON.stringify(out);\n" +
   "})()";
@@ -1577,7 +1585,7 @@ test.run('in node, a stand-in put into the module cache for a script is what req
   if (!LD.node || !LD.node.run) return false;
   const ask = "const path = require('path'); require('./spirit/script.js'); const file = path.join(process.cwd(), 'spirit/zzLoader/stand/script.js'); " +
     "const stand = { stand: true }; require.cache[file] = { id: file, filename: file, loaded: true, exports: stand }; " +
-    "Promise.resolve(globalThis.spirit.requireScript('spirit/zzLoader/stand/script.js')).then(function (a) { process.stdout.write(JSON.stringify({ answer: a === stand, at: globalThis.spirit.required.spirit.zzLoader.stand === stand })); }, function () { process.stdout.write('{}'); });";
+    "Promise.resolve(globalThis.spirit.requireScript('spirit/zzLoader/stand/script.js')).then(function (a) { process.stdout.write(JSON.stringify({ answer: a === stand, at: globalThis.spirit.zzLoader.stand === stand })); }, function () { process.stdout.write('{}'); });";
   const r = spawnSync(process.execPath, ['-e', ask], { cwd: LD.node.run, encoding: 'utf8', timeout: 20000 });
   let o = null;
   try { o = JSON.parse(r.stdout || 'null'); } catch (e) { o = null; }

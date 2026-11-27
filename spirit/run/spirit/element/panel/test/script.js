@@ -153,7 +153,8 @@ test.run('the face shell has its spirit', 0.2, async function () {
 const T = function (expr) { return c.evaluate('window.__t.' + expr); };
 const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
 const selector = function (face) {
-  return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+  // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
+  return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
 test.run('the tiles show Files', 0.2, async function () {
   if (!N || !N.up) return false;
@@ -360,7 +361,7 @@ test.run('after the shell boots again none of the Agent is loaded', 0.2, async f
   await waitFor('tiles().indexOf("spirit.app.file") !== -1', 10000);
   await sleep(2000);
   loaded = await c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }).filter(function (n) { return /\\/spirit\\/app\\/agent\\//.test(n); })');
-  return (Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app && window.spirit.required.spirit.app.agent)'))) ? true : false;
+  return (Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent)'))) ? true : false;
 }, test.limit.slow);
 const zzKey = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
 test.run('a person is in the book', 0.2, async function () {

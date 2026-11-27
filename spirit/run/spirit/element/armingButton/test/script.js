@@ -65,11 +65,11 @@ let win, E, ran, box, b, threw, ran2, one, two, ran4, drawn, same, other, SRC, r
 test.run('spirit/element/armingButton/script.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('it adds armingButton.create(container, options) to window.spirit.required', 0.2, async function () {
+test.run('it adds armingButton.create(container, options) to window.spirit.element', 0.2, async function () {
   win = world();
   await settle();
-  // goal/G43.32: it stands at its path.
-  E = ((win.spirit.required.spirit || {}).element || {}).armingButton;
+  // goal/G43.32: it stands at its path; goal/G49.23: on the spirit object itself, spirit.element.armingButton.
+  E = (win.spirit.element || {}).armingButton;
   return (!!E && typeof E.create === 'function' && E.create.length === 2) ? true : false;
 }, test.limit.quick);
 test.run('create answers a button of type button', 0.2, function () {

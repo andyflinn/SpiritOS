@@ -36,10 +36,11 @@ fs.mkdirSync(path.join(FAKE_RUN, 'spirit', 'state'), { recursive: true });
 fs.writeFileSync(path.join(FAKE_RUN, 'spirit', 'state', 'identity.json'), JSON.stringify({ publicKey: KEY }));
 const NODE = crypto.createHash('sha256').update(KEY).digest('hex').slice(0, 16);
 
-test.run('it loads through spirit.requireScript and stands at spirit.required.spirit.tempFolder', 0.4, function () {
+// Its place since goal/G49.23: on the spirit object itself, spirit.tempFolder (no spirit.required).
+test.run('it loads through spirit.requireScript and stands at spirit.tempFolder', 0.4, function () {
   if (!fs.existsSync(FILE)) return false;
   T = spirit.requireScript('spirit/tempFolder/script.js').tempFolder;
-  return typeof T === 'function' && spirit.required.spirit && spirit.required.spirit.tempFolder.tempFolder === T || false;
+  return typeof T === 'function' && !!spirit.tempFolder && spirit.tempFolder.tempFolder === T || false;
 }, test.limit.quick);
 // The box: "the system temp folder, then spirit, then the node, then the route".
 test.run('a job\'s folder is the system temp folder, then spirit, then the node, then the route', 0.4, function () {

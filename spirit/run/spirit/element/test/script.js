@@ -8,6 +8,8 @@
 // moved from spirit/element/script.js by goal/G49.4).
 // Since goal/G43.32 the app app's main element (it was spirit/app/appSelector.js). A real Chrome on a
 // scratch node's face page; neither Andy's node nor an agent's is touched.
+// goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>,
+// spirit.app.api, the store at spirit.client).
 
 const fs = require('fs');
 const path = require('path');
@@ -81,7 +83,7 @@ test.after(stopAll);
     if (!W1.up) return false;
     made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () {' +
       ' var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); window.changes = 0;' +
-      ' window.sel = spirit.required.spirit.element.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function () { return false; })');
+      ' window.sel = spirit.element.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function () { return false; })');
     return (made === 'made') ? true : false;
   }, test.limit.quick);
   text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
@@ -116,7 +118,7 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('a press shows that app\'s detail', 0.2, async function () {
     if (!W1.up) return false;
-    const detail = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!(spirit.required.spirit.element.search.app.detail) && !!h && String(h.textContent).indexOf(' + JSON.stringify(identity.label) + ') !== -1; }())'); }, 3000);
+    const detail = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!(spirit.element.search.app.detail) && !!h && String(h.textContent).indexOf(' + JSON.stringify(identity.label) + ') !== -1; }())'); }, 3000);
     return (detail) ? true : false;
   }, test.limit.slow);
 
@@ -167,7 +169,7 @@ test.after(stopAll);
   }, test.limit.quick);
   const monitorLabel = 'Hearing';
   const serverLabel = 'Changed On Disk';
-  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.required.spirit.element.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
+  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.element.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
   const inFaces = function () { return chrome.evaluate('String((document.getElementById("faces") || {}).innerText || "")'); };
   const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#faces tr, #faces .list-row"); for (var i = 0; i < all.length; i++) if (String(all[i].textContent).indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; return null; }())'; };
   const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
@@ -200,7 +202,7 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('the stream brings active to the row without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
-    rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())'); }, 5000);
+    rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())'); }, 5000);
     return (rowActive) ? true : false;
   }, test.limit.slow);
   test.run('the button follows and says Deactivate', 0.2, async function () {
@@ -210,8 +212,8 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('a search seated over it does not lose active', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.required.spirit.app.api.searchApp({ q: "" }).then(function (got) { spirit.required.spirit.data.seatRows(spirit.required.spirit.data.app.data.branch, got.items); return true; })');
-    return (await chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())') === true) ? true : false;
+    await chrome.evaluate('spirit.app.api.searchApp({ q: "" }).then(function (got) { spirit.client.seatRows(spirit.client.app.data.branch, got.items); return true; })');
+    return (await chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())') === true) ? true : false;
   }, test.limit.quick);
 
   // Andy: "the detail panel needs to open on top of the whole container", and the form he drew for it.
@@ -274,7 +276,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('a changed icon reaches the bar, by the stream', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.required.spirit.app.api.iconApp({ key: "spirit.app.hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.app.api.iconApp({ key: "spirit.app.hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
     newIcon = await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🧪') !== -1; }); }, 5000);
     return (newIcon) ? true : false;
   }, test.limit.slow);
@@ -289,7 +291,7 @@ test.after(stopAll);
   // "row 1: rowForm: [✏️] "Label" [label input box] [Change]"
   test.run('the second form shows the pencil, the word Label, the box holding the label and a Change button', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.required.spirit.app.api.iconApp({ key: "spirit.app.hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.app.api.iconApp({ key: "spirit.app.hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
     await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🦻') !== -1; }); }, 5000);
     r1 = l[2] || none;
     return (r1.icon.indexOf('✏') !== -1 && r1.words.indexOf('Label') !== -1 && r1.input === monitorLabel && r1.button === 'Change') ? true : false;
@@ -339,7 +341,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('the stream brings the new label to the row', 0.2, async function () {
     if (!W1.up) return false;
-    inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows()["spirit.app.hearing"]; return !!r && r.label === "Renamed"; }())'); }, 5000);
+    inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.label === "Renamed"; }())'); }, 5000);
     return (inRow) ? true : false;
   }, test.limit.slow);
   test.run('the title bar and the rows of the panel say the new label', 0.2, async function () {
@@ -352,7 +354,7 @@ test.after(stopAll);
     await chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     await until(function () { return Promise.resolve(stateOf().label === monitorLabel); }, 5000);
-    await until(function () { return chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows()["spirit.app.hearing"]; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
+    await until(function () { return chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
     return (!/Uptime|waiting/i.test(await chrome.evaluate('String((' + panel + ' || {}).innerText || "")'))) ? true : false;
   }, test.limit.slow);
   test.run('its x brings the list back', 0.2, async function () {
@@ -408,13 +410,13 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('an app made active appears as a tile without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.required.spirit.app.api.activeApp({ key: "spirit.app.starter", active: true })');
+    await chrome.evaluate('spirit.app.api.activeApp({ key: "spirit.app.starter", active: true })');
     const arrives = await until(function () { return chrome.evaluate('!!' + tileOf(serverLabel)); }, 5000);
     return (arrives) ? true : false;
   }, test.limit.slow);
   test.run('an app made inactive leaves', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.required.spirit.app.api.activeApp({ key: "spirit.app.starter", active: false })');
+    await chrome.evaluate('spirit.app.api.activeApp({ key: "spirit.app.starter", active: false })');
     const leaves = await until(function () { return chrome.evaluate('!' + tileOf(serverLabel)); }, 5000);
     return (leaves) ? true : false;
   }, test.limit.slow);
@@ -481,11 +483,11 @@ test.after(stopAll);
 
   // EVERY APP ACTIVE, planted and the tree's: what keeps a tile away below can only be shell.mount. Each app's row and key is its
   // id, spirit.app.<name>, its switch in spirit.statePath of its folder (goal/G49.17, goal/G49.19).
-  const rows = function () { return chrome.evaluate('(function () { var r = (spirit.required.spirit.data.app && spirit.required.spirit.data.app.data) ? spirit.required.spirit.data.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r["spirit.app." + k] ? { active: r["spirit.app." + k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
+  const rows = function () { return chrome.evaluate('(function () { var r = (spirit.client.app && spirit.client.app.data) ? spirit.client.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r["spirit.app." + k] ? { active: r["spirit.app." + k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
     keys = Object.keys(PLANT);
-    await chrome.evaluate('(function () { var a = spirit.required.spirit.app && spirit.required.spirit.app.api && spirit.required.spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: "spirit.app." + k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
+    await chrome.evaluate('(function () { var a = spirit.app && spirit.app.api && spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: "spirit.app." + k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
     await until(function () { return rows().then(function (r) { return keys.every(function (k) { return r[k] && r[k].active; }); }); }, 10000);
     // A row the node would not make active through the verb is made active on its disc, as a user's earlier press left it.
     r = await rows();
@@ -532,7 +534,7 @@ test.after(stopAll);
     return (!!r['zzrunonly']) ? true : false;
   }, test.limit.quick);
 
-  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
+  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.element.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
   // The labels drawn as tiles: every visible leaf under the tiles whose text is a label of the test's.
   // LABELS is set by the world above it, so drawn() reads it when it runs.
   const drawn = function () { return chrome.evaluate('(function () { var c = document.getElementById("faces"); if (!c) return "[]"; var want = ' + JSON.stringify(LABELS) + '; var out = []; var all = c.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var e = all[i]; if (!e.getClientRects().length) continue; var t = String(e.innerText || e.textContent || "").trim(); if (!e.children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return JSON.stringify(out.sort()); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return []; } }); };
@@ -782,8 +784,8 @@ test.after(stopAll);
     LIVE.push({ c: c4 });
     if (c4.error) return false;
     await c4.send('Page.navigate', { url: N4.base + '/' });
-    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.required.spirit.app && spirit.required.spirit.app.api && spirit.required.spirit.app.api.activeApp)'); }, 20000);
-    await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "spirit.app.chat", active: true }); spirit.required.spirit.app.api.activeApp({ key: "spirit.app.testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "spirit.app.starter", active: true }); true');
+    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.app && spirit.app.api && spirit.app.api.activeApp)'); }, 20000);
+    await c4.evaluate('spirit.app.api.activeApp({ key: "spirit.app.chat", active: true }); spirit.app.api.activeApp({ key: "spirit.app.testicle", active: true }); spirit.app.api.activeApp({ key: "spirit.app.starter", active: true }); true');
     const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body['spirit.app.chat'] && r.body['spirit.app.testicle']); }); }, 60000);
     await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
@@ -807,7 +809,7 @@ test.after(stopAll);
   // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
   // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/client/script.js"):
   // before any pick the field names the server remote answers as current; chat's published remote row reaches the page's
-  // spirit.required.spirit.data.chat.remote; and the field follows what lands there.
+  // spirit.client.chat.remote; and the field follows what lands there.
   const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(CHAT) + ') !== -1; })[0]'; };
   const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
   test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
@@ -818,18 +820,18 @@ test.after(stopAll);
     if (!label) return false;
     return (await fieldText()).indexOf(label) !== -1 || false;
   }, test.limit.slow);
-  test.run('chat\'s published remote row reaches the page\'s spirit.required.spirit.data[\'spirit.app.chat\'].remote, naming the same current', 0.2, async function () {
+  test.run('chat\'s published remote row reaches the page\'s spirit.client[\'spirit.app.chat\'].remote, naming the same current', 0.2, async function () {
     if (W4.bar !== 'dropdown' || !W4.real || !W4.real.current) return false;
-    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.required.spirit.data || {})["spirit.app.chat"]; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
+    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.client || {})["spirit.app.chat"]; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
   }, test.limit.slow);
-  test.run('a remote row landing in spirit.required.spirit.data[\'spirit.app.chat\'].remote is what the field then names', 0.2, async function () {
+  test.run('a remote row landing in spirit.client[\'spirit.app.chat\'].remote is what the field then names', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     const fake = { current: 'K-ZZELSEWHERE', items: [{ key: 'K-ZZELSEWHERE', label: 'zz Elsewhere' }], more: false };
-    await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
+    await c4.evaluate('(function () { window.spirit.client.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
     await sleep(1000);
     const shown = await fieldText();
     // The node's own row back, for what follows.
-    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
+    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.client.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
     return shown.indexOf('zz Elsewhere') !== -1 || false;
   }, test.limit.slow);
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {

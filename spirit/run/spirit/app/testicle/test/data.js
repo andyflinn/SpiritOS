@@ -5,7 +5,7 @@
 // "every production script has its own test" (goal/G47.1, box v72).
 // What a client knows of testicle's server (goal/G41.28, goal/G47.1): its three tables, script, suite and testicle, each
 // a branch under the node that served it, the rows the server publishes merged in, every suite made once from its rows,
-// and the monitor's one row. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
+// and the monitor's one row. It runs as a page runs it: in a window of its own beside the real store, spirit.client
 // (spirit/client/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module
 // spirit.app.testicle. In node it is loaded by its api.js, spirit/app/testicle/api.js, the one script that requires it.
 // One test.run per test (goal/G47.2).
@@ -16,6 +16,8 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9; goal/G49.23: it answers what the script put out).
+const PAGE_LOAD = S.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(__dirname, '..', 'data.js');
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
@@ -27,23 +29,25 @@ const W = {};
 let n = 0;
 // A row as the stream hands it: a job of module spirit.app.testicle whose app is testicle's publish (testicle.js).
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.testicle', data: {}, app: app }, from || HOME_KEY); };
-// The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.testicle'], its rows under <node>/spirit.app.testicle/.
+// The family is the app's id (goal/G49.19): the store's ['spirit.app.testicle'], its rows under <node>/spirit.app.testicle/.
 const FAMILY = 'spirit.app.testicle';
 const at = function (table, key, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/' + FAMILY + '/' + table + '/' + key); };
 const suiteRow = function (script, suite, more) { return Object.assign({ key: script + '|' + suite, script: script, suite: suite, test: false, status: 'green', deleted: false, outcome: 'green', changed: 1 }, more || {}); };
 
-test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data[\'spirit.app.testicle\'].data', 0.2, function () {
+test.run('in a window, beside the real store, it stands at the store\'s [\'spirit.app.testicle\'].data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
   win.spirit = { isBrowser: function () { return true; } };
   try {
     vm.createContext(win);
-    vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
-    win.spirit.required.spirit.data.homeNode(HOME_KEY);
-    vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+    // THE STORE AS THE PAGE'S LOADER HANDS IT BACK (goal/G49.23: no spirit.required), and handed as spirit.requireScript's
+    // answer, at once, to the data.js that asks for it.
+    W.D = PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+    PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': W.D });
+    W.D.homeNode(HOME_KEY);
+    PAGE_LOAD.runAsPage(FILE, win);
   } catch (e) { return false; }
-  W.D = win.spirit.required.spirit.data;
   W.T = ((W.D || {})[FAMILY] || {}).data;
   return !!W.T || false;
 }, test.limit.quick);
@@ -205,10 +209,13 @@ test.run('a row from another node is kept under that node', 0.2, function () {
 }, test.limit.quick);
 
 // ── in node, loaded by its api.js, the one script that requires it (goal/G47.1) ──
-test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at spirit.required.spirit.data[\'spirit.app.testicle\'].data', 0.2, async function () {
+test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at the store\'s [\'spirit.app.testicle\'].data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { require(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js')); } catch (e) { return false; }
-  const T = s.required.spirit.data && s.required.spirit.data[FAMILY] && s.required.spirit.data[FAMILY].data;
+  // The store as spirit.requireScript hands it back (goal/G49.23: no spirit.required).
+  let D = null;
+  try { D = await Promise.resolve(s.requireScript('spirit/client/script.js')); } catch (e) { return false; }
+  const T = D && D[FAMILY] && D[FAMILY].data;
   return (!!T && typeof T.keep === 'function' && !!T.monitor) || false;
 }, test.limit.quick);

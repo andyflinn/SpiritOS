@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the backup (goal/G41.28): the backup server's status, kept as status.get answered it, under the
 // node that served it; its one branch named by this file alone. It runs as a page runs it: in a window of its own beside
-// the real spirit.required.spirit.data (spirit/client/script.js), which it writes into. In node it comes with its branch's interface,
+// the real store, spirit.client (spirit/client/script.js), which it writes into. In node it comes with its branch's interface,
 // spirit/app/backup/api.js, the one script that requires it. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -22,23 +22,26 @@ const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 // The node's public key, base64 with a + and a / in it, as a node's key is.
 const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 
-// A window of its own, the real spirit.required.spirit.data in it, then this file.
+// A window of its own, the real store in it, then this file.
 function world() {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
-  win.spirit.required.spirit.data.homeNode(HOME_KEY);
+  // THE STORE AS THE PAGE'S LOADER HANDS IT BACK (goal/G49.23: no spirit.required), and handed as spirit.requireScript's
+  // answer, at once, to the data.js that asks for it.
+  const D = PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': D });
+  D.homeNode(HOME_KEY);
   PAGE_LOAD.runAsPage(FILE, win);
-  // The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.backup'], its branch at <node>/spirit.app.backup/.
-  return { win: win, D: win.spirit.required.spirit.data, B: ((win.spirit.required.spirit.data || {})['spirit.app.backup'] || {}).data };
+  // The family is the app's id (goal/G49.19): the store's ['spirit.app.backup'], its branch at <node>/spirit.app.backup/.
+  return { win: win, D: D, B: ((D || {})['spirit.app.backup'] || {}).data };
 }
 const STATUS = { lastCheck: '2026-11-13T09:00:00.000Z', lastCopy: '2026-11-13T08:00:00.000Z', lastError: '' };
 
 const W = {};
 
-test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data[\'spirit.app.backup\'].data', 0.2, function () {
+test.run('in a window, beside the real store, it stands at the store\'s [\'spirit.app.backup\'].data', 0.2, function () {
   try { Object.assign(W, world()); } catch (e) { return false; }
   return !!W.B || false;
 }, test.limit.quick);
@@ -102,10 +105,13 @@ test.run('it translates nothing: a job of the backup on the stream writes nothin
 }, test.limit.quick);
 
 // ── in node, brought by its branch's interface, the one script that requires it ──
-test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at spirit.required.spirit.data[\'spirit.app.backup\'].data', 0.2, async function () {
+test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at the store\'s [\'spirit.app.backup\'].data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/backup/api.js')); } catch (e) { return false; }
-  const B = s.required.spirit.data && s.required.spirit.data['spirit.app.backup'] && s.required.spirit.data['spirit.app.backup'].data;
+  // The store as spirit.requireScript hands it back (goal/G49.23: no spirit.required).
+  let D = null;
+  try { D = await Promise.resolve(s.requireScript('spirit/client/script.js')); } catch (e) { return false; }
+  const B = D && D['spirit.app.backup'] && D['spirit.app.backup'].data;
   return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || false;
 }, test.limit.quick);

@@ -44,18 +44,18 @@ test.run('the contacts list runs on a window of its own, with its row element an
     peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
       // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
       post: function (b) {
-        const sent = window.spirit.required.spirit.peer.packet.decode(b.text);
+        const sent = window.spirit.peer.packet.decode(b.text);
         asked.push({ verb: 'peer.post', key: b.to, body: sent.body, app: sent.app, legacy: sent.legacy });
         return Promise.resolve(b.to === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } });
       } },
   });
   // The packet envelope, the real one (spirit/peer/packet/script.js), as the list requires it.
-  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); (window.spirit.required.spirit.peer = window.spirit.required.spirit.peer || {}); window.spirit.required.spirit.peer.packet = LOADER.requireScript('spirit/peer/packet/script.js');
+  (window.spirit.peer = window.spirit.peer || {}); window.spirit.peer.packet = LOADER.requireScript('spirit/peer/packet/script.js');
   Object.assign(window.spirit, {
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
     peerPost: function (peer, app, body, how) {
-      const PK = window.spirit.required.spirit.peer.packet;
+      const PK = window.spirit.peer.packet;
       const m = PK.encode(app, body);
       return Promise.resolve(window.spirit.readyPromise).then(function (f) { return f.peer.post({ to: String(peer), text: m.text }); }).then(function (s) {
         const text = s && typeof s.text === 'string' ? s.text : '';
@@ -66,8 +66,8 @@ test.run('the contacts list runs on a window of its own, with its row element an
       });
     },
   });
-  // goal/G43.32: what the list draws with stands where an element now finds it, spirit.required.spirit.element.
-  (((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {})).element = nestSearch({
+  // goal/G43.32: what the list draws with stands where an element now finds it, spirit.element.
+  window.spirit.element = nestSearch({
     'search': { create: function (host, opts) {
       made = { host: host, opts: opts, refreshes: 0, destroyed: false };
       return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
@@ -104,25 +104,25 @@ test.run('the contacts list runs on a window of its own, with its row element an
     // stands at its place, a stand-in above or a real file loaded, and a path with nothing there is refused.
     const keys = String(p).replace(/\.js$/, '').split('/');
     if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-    const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);
+    const at = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit); // goal/G49.23: on the spirit object itself
     return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
-  // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
+  // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.client takes it itself).
   window.spirit.eventStream = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
   load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
   // THE DATA SET IS spirit.dataStore (goal/G49.23): the real one, as spirit.js keeps it once the page has started.
-  window.spirit.dataStore = window.spirit.required.spirit.data;
+  window.spirit.dataStore = window.spirit.client;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };
-  window.spirit.required.spirit.data.homeNode(NODE_KEY);
+  window.spirit.client.homeNode(NODE_KEY);
   load(path.join(JS, 'row', 'script.js'));
   load(path.join(JS, 'search', 'contact', 'row', 'script.js'));
   dataSubscribed = subscribers.length;
   load(path.join(JS, 'search', 'contact', 'list', 'script.js'));
   // What the list and its parts required as they loaded, before the suite's own report to testicle requires anything.
   atLoad = required.slice();
-  L = window.spirit.required.spirit.element.search.contact.list;
+  L = window.spirit.element.search.contact.list;
   F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
   return true;
 }, test.limit.quick);
@@ -372,7 +372,7 @@ test.run('loaded and created, the list subscribes to no stream of its own', 0.2,
 }, test.limit.quick);
 test.run('a row the node\'s shadow job hands is in the branch the list handed its search', 0.2, async function () {
   if (!o) return false;
-  window.spirit.required.spirit.data.takeJob({ id: 'spirit.contact', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
+  window.spirit.client.takeJob({ id: 'spirit.contact', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
   await tick();
   const kept = CD && CD.contact('K1');
   return kept && kept.blocked === true && o.data === CD.branch ? true : false;

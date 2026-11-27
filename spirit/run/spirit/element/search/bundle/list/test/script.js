@@ -47,8 +47,8 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
@@ -64,15 +64,15 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
   const standIn = function (p) {
     const keys = String(p).replace(/\.js$/, '').split('/'); if (keys[keys.length - 1] === 'script') keys.pop();
-    const v = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required);
+    const v = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); // goal/G49.23: on the spirit object itself
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   // What the list asked as it loaded; the runner's own asks after this test are not the list's.
   loaded = required.slice();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   return true;
 }, test.limit.quick);
 
@@ -81,7 +81,7 @@ test.run('it requires the search element, its row element and spirit/auth/api.js
   if (!loaded) return false;
   return ['spirit/element/search/script.js', 'spirit/element/search/bundle/row/script.js', 'spirit/auth/api.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.bundle.list.create', 0.2, function () {
+test.run('it registers spirit.element.search.bundle.list.create', 0.2, function () {
   if (!E) return false;
   return listed() ? true : false;
 }, test.limit.quick);
@@ -112,9 +112,9 @@ test.run('it fills as soon as it is drawn, with one refresh at create', 0.2, fun
 // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
 // view of the node's bundles (goal/G41.28: the branch the auth family's cache manager keeps), so a bundle added anywhere
 // on the page shows in every bundle list (probabilitySearch's data).
-test.run('it is a view of the auth bundles at spirit.required.spirit.data.auth.data.bundles.branch, which the node\'s stream keeps current', 0.2, function () {
+test.run('it is a view of the auth bundles at spirit.client.auth.data.bundles.branch, which the node\'s stream keeps current', 0.2, function () {
   if (!l) return false;
-  const B = ((global.window.spirit.required.spirit.data || {}).auth || {}).data && global.window.spirit.required.spirit.data.auth.data.bundles;
+  const B = ((global.window.spirit.client || {}).auth || {}).data && global.window.spirit.client.auth.data.bundles;
   return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
 }, test.limit.quick);
 test.run('its search asks auth.bundle to search the trimmed text, through the spirit object', 0.2, async function () {
@@ -214,7 +214,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
     win.window = win;
     LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
     REAL.forEach(function (rel) { win.spirit.requireScript(rel); });
-    return ((win.spirit.required.spirit || {}).element || {}).search;
+    return (win.spirit.element || {}).search;
   }());
   V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
   V.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });

@@ -20,7 +20,7 @@ const ask = function (verb, args) {
     .then(function (r) { return r.json(); }, function () { return null; });
 };
 const HANDS = '(function () { window.zz = {' +
-  ' mount: function () { var b = document.createElement("div"); b.id = "zzP"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); window.m_zzP = window.spirit.required.spirit.app.testicle.element.settingsPanel.create(b); return true; },' +
+  ' mount: function () { var b = document.createElement("div"); b.id = "zzP"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); window.m_zzP = window.spirit.app.testicle.element.settingsPanel.create(b); return true; },' +
   ' text: function () { var b = document.getElementById("zzP"); return b ? String(b.innerText || "").trim() : null; },' +
   ' press: function () { var b = document.querySelector("#zzP .testicle-config-form button, #zzP .testicle-config-form input"); if (!b) return false; b.click(); return true; },' +
   '}; return true; }())';
@@ -42,7 +42,7 @@ test.run('a page loads the element by itself, and the panel is mounted', 0.2, as
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
   await W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + REL.replace(/\.js$/, '') + '/headLessBrowser.html' });
-  W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app && window.spirit.required.spirit.app.testicle && window.spirit.required.spirit.app.testicle.element.settingsPanel)').then(function (v) { return v === true; }); }, H.WAIT);
+  W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.app && window.spirit.app.testicle && window.spirit.app.testicle.element.settingsPanel)').then(function (v) { return v === true; }); }, H.WAIT);
   if (W.ok) { await ev(HANDS); await ev('window.zz.mount()'); }
   return !!W.ok || false;
 }, test.limit.slow);

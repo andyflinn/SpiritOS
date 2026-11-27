@@ -4,7 +4,7 @@
 // The tests of spirit/client/script.js, and of no other module (spec: ./script.md). The faceless layer runs in node:
 // required, it answers its api and ranks with the spirit's own probability files.
 // The one test file of data.js: the caches part (one cache code in the browser and in node) and the families part
-// (every family at spirit.required.spirit.data.<name>, goal/G43.7), once data-caches.js and data-families.js, are sections of it, run
+// (every family at spirit.client.<name>, goal/G43.7; its place since goal/G49.23), once data-caches.js and data-families.js, are sections of it, run
 // after its own checks.
 // One test.run per test (goal/G47.2): the tests run one at a time in the order written, so what a test writes is what the
 // next one reads; the writes of each step sit in the body of the test that judges them.
@@ -176,11 +176,11 @@ test.run('every job taken is handed to the translators with the api, with data o
 
 // EVERY SERVER'S remote ROW, FILED HERE (goal/G47.5; Andy: "all, agreed. spirit/client/script.js", on where the data of appServer's
 // auto-verbs belongs: not a server's own data.js, "would have to be duplicated for all servers"): a server publishes
-// { remote: { current, items, more } } as a job of its module, spirit.app.<name>, and it lands under spirit.required.spirit.data['spirit.app.<name>'].remote,
+// { remote: { current, items, more } } as a job of its module, spirit.app.<name>, and it lands under spirit.client['spirit.app.<name>'].remote,
 // a later row replacing it; filed under the module's id whole, where the panel listens (goal/G49.19). No server's data.js is loaded for it.
 const REMOTE1 = { current: 'K-ZZ1', items: [{ key: 'K-ZZ1', label: 'zz one' }, { key: 'K-ZZ2', label: 'zz two' }], more: false };
 const REMOTE2 = { current: 'K-ZZ2', items: [{ key: 'K-ZZ1', label: 'zz one' }, { key: 'K-ZZ2', label: 'zz two' }], more: false };
-test.run('a server\'s published remote row lands under spirit.required.spirit.data[\'spirit.app.<name>\'].remote', 0.2, function () {
+test.run('a server\'s published remote row lands under spirit.client[\'spirit.app.<name>\'].remote', 0.2, function () {
   D.takeJob({ id: 'zzremote-job', type: 'app', module: 'spirit.app.zzremote', app: { remote: REMOTE1 } });
   const f = D['spirit.app.zzremote'];
   return !!f && JSON.stringify(f.remote) === JSON.stringify(REMOTE1) || false;
@@ -307,18 +307,16 @@ function pageCopy() {
   win.window = win;
   // THE PAGE'S LOADER, STOOD IN FOR (goal/G49.8, point 1): spirit.requireScript runs a file of the tree in this page once and
   // answers what it placed, as the page's own loader does; nothing is loaded that the page does not ask for itself.
-  const ctx = vm.createContext(win);
-  const loaded = {};
-  win.spirit.requireScript = function (rel) {
-    const r = String(rel).replace(/^\//, '');
-    if (!loaded[r]) { loaded[r] = true; try { vm.runInContext(require('fs').readFileSync(path.join(__dirname, '..', '..', r), 'utf8'), ctx, { filename: r }); } catch (e) { return Promise.reject(e); } }
-    const at = r.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, win.spirit.required || {});
-    return Promise.resolve(at);
-  };
-  vm.runInContext(require('fs').readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8'), ctx, { filename: 'data.js' });
+  // goal/G49.23: the helper's stand-in (spirit/test/headLessChrome.js pageSpirit), each file in a module box as the page's
+  // loader runs it, placed at its path on the spirit object (no spirit.required); the store is what it hands back.
+  vm.createContext(win);
+  require(path.join(path.resolve(__dirname, '..', '..', '..'), 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js')
+    .pageSpirit(win.spirit, null, { window: win, real: function () { return true; } });
+  let store = null;
+  win.spirit.requireScript('spirit/client/script.js').then(function (d) { store = d; });
   // P is the page's view of the family, as its manager addresses it; P.whole the page's data set itself.
-  const view = win.spirit.required.spirit.data.viewAt(NODE, FAMILY);
-  view.whole = win.spirit.required.spirit.data;
+  const view = store.viewAt(NODE, FAMILY);
+  view.whole = store;
   return { P: view, stream: h };
 }
 // A translator writing each job it is handed to job/<id>, and recording what it got.
@@ -529,9 +527,9 @@ test.run('on a page, a branch\'s probability decides what goes: past 4 MB its lo
 // judged on each branch folder by ../../test/script-sibling-general.js (branchRules) (goal/G43.32, Q6, Q7). Here what judges no branch:
 //   2. one code: the browser and appServer load the same data set file, and appServer a family's cache from its own data.js;
 //   3. the same rows make the same cache: the desk's data.js and the data set, run in node as appServer
-//      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.required.spirit.data.desk.cache;
+//      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.client.desk.cache;
 //   4. the one difference is the disk: appServer writes the cache to disk, and no other module does;
-//   7. nothing keeps node rows but spirit.required.spirit.data, and no file names another way.
+//   7. nothing keeps node rows but the store, spirit.client, and no file names another way.
 const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
@@ -575,7 +573,7 @@ test.run('appServer takes a branch\'s cache from the branch\'s own data.js', 0.2
     : false;
 }, test.limit.quick);
 
-// ── 3. THE SAME ROWS, THE SAME CACHE: the same rows make the same spirit.required.spirit.data in node and in a page ──
+// ── 3. THE SAME ROWS, THE SAME CACHE: the same rows make the same store (spirit.client) in node and in a page ──
 const DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 const DESK = path.join(RUN, managerOf('desk'));
 // The desk's family is its id (goal/G49.19).
@@ -594,7 +592,7 @@ const SERVER = Buffer.from('KEY-CACHES\xfb\xef\xbf\xfe', 'latin1').toString('bas
 const SERVER_ID = Buffer.from(SERVER, 'base64').toString('base64url');
 // In node, as appServer runs them: the data set required, then the family's data.js, on the process's global.
 // goal/G43.32: the data set and the family's data.js are spirit.requireScript()d, as appServer and the family's file load them,
-// so both hold the one instance at spirit.required.spirit.data.
+// so both hold the one instance, the store at spirit.client (goal/G49.23).
 function inNode() {
   let out = null;
   try {
@@ -607,25 +605,29 @@ function inNode() {
   } catch (e) { out = { threw: true }; }
   return out;
 }
-// In a page's window, as a page runs them: both files run as scripts, with no module and no require.
+// In a page's window, as a page runs them: both files in a module box as the page's loader runs them, with no require
+// (goal/G49.23: spirit/test/headLessChrome.js pageSpirit; the store is what spirit.requireScript hands back, no spirit.required).
 function inPage() {
   const win = { console: { log: function () {}, error: function () {}, warn: function () {} }, setTimeout: setTimeout, clearTimeout: clearTimeout, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math, Date: Date, Error: Error, Promise: Promise };
   win.window = win; win.spirit = {};
   vm.createContext(win);
   try {
-    vm.runInContext(fs.readFileSync(DATA, 'utf8'), win, { filename: 'spirit/client/script.js' });
-    vm.runInContext(fs.readFileSync(DESK, 'utf8'), win, { filename: 'data.js' });
-    if (!win.spirit.required.spirit.data[DESK_FAMILY]) return { threw: true };
-    win.spirit.required.spirit.data.homeNode(SERVER);
-    ROWS.forEach(function (row) { win.spirit.required.spirit.data[DESK_FAMILY].data.published(JSON.parse(JSON.stringify(row))); });
-    return JSON.parse(JSON.stringify(win.spirit.required.spirit.data[DESK_FAMILY].cache));
+    const rel = function (f) { return path.relative(RUN, f).split(path.sep).join('/'); };
+    S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [rel(DATA), rel(DESK)] });
+    let store = null;
+    win.spirit.requireScript(rel(DATA)).then(function (d) { store = d; });
+    win.spirit.requireScript(rel(DESK));
+    if (!store || !store[DESK_FAMILY]) return { threw: true };
+    store.homeNode(SERVER);
+    ROWS.forEach(function (row) { store[DESK_FAMILY].data.published(JSON.parse(JSON.stringify(row))); });
+    return JSON.parse(JSON.stringify(store[DESK_FAMILY].cache));
   } catch (e) { return { threw: true }; }
 }
-test.run('in node, as appServer runs it, the rows land in spirit.required.spirit.data[\'spirit.app.desk\'].cache', 0.2, function () {
+test.run('in node, as appServer runs it, the rows land in spirit.client[\'spirit.app.desk\'].cache', 0.2, function () {
   C.node = inNode();
   return !C.node.threw && Object.keys(C.node).length > 0 ? true : false;
 }, test.limit.quick);
-test.run('in a page, as a page runs it, the rows land in spirit.required.spirit.data[\'spirit.app.desk\'].cache', 0.2, function () {
+test.run('in a page, as a page runs it, the rows land in spirit.client[\'spirit.app.desk\'].cache', 0.2, function () {
   C.page = inPage();
   return !C.page.threw && Object.keys(C.page).length > 0 ? true : false;
 }, test.limit.quick);
@@ -634,7 +636,7 @@ test.run('the cache\'s top level is the serving node alone, its key in base64url
   return !node.threw && JSON.stringify(Object.keys(node)) === JSON.stringify([SERVER_ID]) && node[SERVER_ID] && typeof node[SERVER_ID] === 'object' ? true
     : false;
 }, test.limit.quick);
-test.run('the same rows make the same spirit.required.spirit.data[\'spirit.app.desk\'].cache in node and in a page', 0.2, function () {
+test.run('the same rows make the same spirit.client[\'spirit.app.desk\'].cache in node and in a page', 0.2, function () {
   const node = C.node || { threw: true };
   const page = C.page || { threw: true };
   return !node.threw && !page.threw && JSON.stringify(node) === JSON.stringify(page) ? true : false;
@@ -651,9 +653,9 @@ test.run('no other module writes a cache file of its own', 0.2, function () {
   return !writers.length ? true : false;
 }, test.limit.quick);
 
-// ── 7. NO OTHER WAY: nothing keeps node rows but spirit.required.spirit.data, and no file names another way ──
+// ── 7. NO OTHER WAY: nothing keeps node rows but the store, spirit.client, and no file names another way ──
 // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
-// item. no exceptions." A client that takes the node's stream itself keeps rows outside spirit.required.spirit.data: only spirit/client/script.js
+// item. no exceptions." A client that takes the node's stream itself keeps rows outside the store: only spirit/client/script.js
 // takes it, for every client. boot.js is the face's own transport, before spirit (Andy: "boot.js MUST be an exception").
 // The node's own side (spirit/, kernel, events) serves the stream and is no client. The client list below names shell/
 // and shell/boot.js; goal/G43.18 moved boot.js and seal.js to spirit/shell/, which the list does not reach, so boot.js
@@ -707,7 +709,7 @@ const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/script.js' : NODE_FAMILIES.indexOf(n) !== -1 ? (newShape(path.join(RUN, 'spirit', n)) ? 'spirit/' + n + '/script.js' : 'spirit/' + n + '/api.js') : S.slashedPath(n) + '/api.js'; });
 const F = {};
 
-// data-families: spirit.required.spirit.data: every family at spirit.required.spirit.data.<name>, through spirit/client/script.js (goal/G43.7)
+// data-families: the store, spirit.client since goal/G49.23: every family at spirit.client.<name>, through spirit/client/script.js (goal/G43.7)
 // the box: "we rename it spirit/client/script.js"
 test.run('the file spirit/client/script.js exists', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'client', 'script.js')) ? true : false;
@@ -719,7 +721,7 @@ test.run('the file spirit/client/script.js exists', 0.2, function () {
 
 // ── ON A PAGE ───────────────────────────────────────────────────────────────────
 const ask = async function (js) { try { return JSON.parse(await F.page.evaluate(js)); } catch (e) { return { threw: true }; } };
-test.run('a scratch node\'s page in Chrome answers what spirit.required.spirit.data holds', 0.2, async function () {
+test.run('a scratch node\'s page in Chrome answers what spirit.client holds', 0.2, async function () {
   const chrome = H.findChrome();
   F.node = await H.scratchNode();
   F.page = chrome && F.node.up ? await H.chromePage(chrome) : null;
@@ -730,7 +732,7 @@ test.run('a scratch node\'s page in Chrome answers what spirit.required.spirit.d
   await H.sleep(2500);
   const got = await ask('(function () { var S = window.spirit; var names = ' + JSON.stringify(FAMILIES) + '; var paths = ' + JSON.stringify(API_PATHS) + ';' +
     ' return Promise.all(paths.map(function (p) { return Promise.resolve(S.requireScript(p)).then(null, function () { return null; }); })).then(function () {' +
-    ' var D = S.required.spirit.data || {}; var out = { first: Object.keys(S), keys: {}, families: {} };' +
+    ' var D = S.client || {}; var out = { first: Object.keys(S), keys: {}, families: {} };' +
     ' Object.keys(D).forEach(function (k) { out.keys[k] = typeof D[k]; });' +
     ' names.forEach(function (n) { var f = D[n]; out.families[n] = { data: f && typeof f.data, cache: f && typeof f.cache }; });' +
     ' return JSON.stringify(out); }); })()');
@@ -753,11 +755,11 @@ test.run('the first level of spirit holds no name ending in Data', 0.2, function
 }, test.limit.quick);
 
 // the box: "this object has only helper functions and object <name> for every application"
-test.run('spirit.required.spirit.data has its helper functions', 0.2, function () {
+test.run('spirit.client has its helper functions', 0.2, function () {
   if (!F.got) return false;
   return Object.keys(F.got.keys).some(function (k) { return F.got.keys[k] === 'function'; }) ? true : false;
 }, test.limit.quick);
-test.run('spirit.required.spirit.data holds nothing but its helper functions and the branches', 0.2, function () {
+test.run('spirit.client holds nothing but its helper functions and the branches', 0.2, function () {
   if (!F.got) return false;
   const stray = Object.keys(F.got.keys).filter(function (k) { return F.got.keys[k] !== 'function' && FAMILIES.indexOf(k) === -1; });
   return !stray.length ? true : false;
@@ -775,8 +777,8 @@ test.run('every helper has a capital, so none is a word', 0.2, function () {
 // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."
 test.run('the app rows stand under this page\'s node', 0.2, async function () {
   if (!F.got) return false;
-  await H.until(function () { return F.page.evaluate('(function () { var a = (window.spirit.required.spirit.data || {}).app; var c = a && a.cache && a.cache[window.spirit.required.spirit.data.homeNode()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
-  F.cached = await ask('(function () { var D = window.spirit.required.spirit.data || {}; var a = D.app || {}; var c = a.cache || {}; var home = typeof D.homeNode === "function" ? D.homeNode() : ""; var r = { home: !!home, apps: Object.keys((c[home] || {}).apps || {}).length };' +
+  await H.until(function () { return F.page.evaluate('(function () { var a = (window.spirit.client || {}).app; var c = a && a.cache && a.cache[window.spirit.client.homeNode()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
+  F.cached = await ask('(function () { var D = window.spirit.client || {}; var a = D.app || {}; var c = a.cache || {}; var home = typeof D.homeNode === "function" ? D.homeNode() : ""; var r = { home: !!home, apps: Object.keys((c[home] || {}).apps || {}).length };' +
     ' try { D.viewAt("othernode", "app").set("apps/onlythere", { key: "onlythere" }); } catch (e) { r.threw = true; }' +
     ' r.there = !!(((c.othernode || {}).apps || {}).onlythere); r.notHome = !((c[home] || {}).apps || {}).onlythere;' +
     ' return JSON.stringify(r); })()');
@@ -791,14 +793,14 @@ test.run('a row of another node does not stand under this page\'s node', 0.2, fu
   return cached.notHome === true ? true : false;
 }, test.limit.quick);
 
-// the reads moved with it: spirit.required.spirit.data.<name>.data answers what spirit.<name>Data did
-test.run('spirit.required.spirit.data.app.data reads the app rows', 0.2, async function () {
+// the reads moved with it: spirit.client.<name>.data answers what spirit.<name>Data did (the store's place since goal/G49.23)
+test.run('spirit.client.app.data reads the app rows', 0.2, async function () {
   if (!F.got) return false;
-  F.reads = await ask('(function () { var D = window.spirit.required.spirit.data || {}; var a = (D.app || {}).data || {}; var f = (D.fs || {}).data || {}; return JSON.stringify({ rows: typeof a.rows, watch: typeof a.watch, count: typeof a.rows === "function" ? Object.keys(a.rows()).length : 0, fsWatch: typeof f.watch }); })()');
+  F.reads = await ask('(function () { var D = window.spirit.client || {}; var a = (D.app || {}).data || {}; var f = (D.fs || {}).data || {}; return JSON.stringify({ rows: typeof a.rows, watch: typeof a.watch, count: typeof a.rows === "function" ? Object.keys(a.rows()).length : 0, fsWatch: typeof f.watch }); })()');
   const reads = F.reads;
   return reads.rows === 'function' && reads.watch === 'function' && reads.count > 0 ? true : false;
 }, test.limit.quick);
-test.run('the files branch\'s data on spirit.required.spirit.data has a watch, which word.js follows', 0.2, function () {
+test.run('the files branch\'s data on spirit.client has a watch, which word.js follows', 0.2, function () {
   const reads = F.reads || {};
   return reads.fsWatch === 'function' ? true : false;
 }, test.limit.quick);

@@ -4,7 +4,7 @@
 // The tests of spirit/app/chat/data.js, and of no other module (spec: ./data.md; goal/G43.31). The box: "The branch name
 // is the folder's: chat (Q1, Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is motherfucking <name> in
 // spirit/app/<name>...."). chatClerver goes everywhere: the cache is spirit.data.chat". Written from reading data.js. The
-// translator runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/client/script.js), which it writes into;
+// translator runs as it does: in a window of its own beside the real store, spirit.client (spirit/client/script.js), which it writes into;
 // the server's lines are handed in as the node's stream hands them, jobs of module spirit.app.chat.
 // One test.run per test (goal/G47.2).
 
@@ -22,7 +22,7 @@ const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 // A peer's public key, base64 with a + and a / in it, as a node's key is.
 const PEER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const OTHER = 'Zz+y/XwV9876543210zyxwvutsrqponmlkjihgfedcb=';
-// This page's home node: the jobs its stream hands come from it, and spirit.required.spirit.data keeps them as its own.
+// This page's home node: the jobs its stream hands come from it, and the store keeps them as its own.
 const HOME = 'Hh+o/MeN0de0123456789abcdefghijklmnopqrstu=';
 
 function world() {
@@ -30,11 +30,13 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  // THE STORE AS THE PAGE'S LOADER HANDS IT BACK (goal/G49.23: no spirit.required), and handed as spirit.requireScript's
+  // answer, at once, to the data.js that asks for it.
+  const D = PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': D });
   // The page's one data set, its node known, as spirit.startPage leaves it before any app runs.
-  win.spirit.required.spirit.data.homeNode(HOME);
+  D.homeNode(HOME);
   PAGE_LOAD.runAsPage(FILE, win);
-  const D = win.spirit.required.spirit.data;
   let n = 0;
   return { D: D, C: ((D || {})['spirit.app.chat'] || {}).data,
     // A line the server published, as the stream hands it: a job of module spirit.app.chat whose app holds the line.
@@ -45,13 +47,13 @@ const line = function (peer, sent, seq, at, text) { return { peer: peer, sent: s
 // What the tests make, for the tests after them.
 const X = { w: null, told: [], off: null };
 
-// ── the branch is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.chat'] ──
-test.run('it makes the spirit.app.chat branch in spirit.required.spirit.data, its reads on its data', 0.2, function () {
+// ── the branch is the app's id (goal/G49.19): the store's ['spirit.app.chat'] ──
+test.run('it makes the spirit.app.chat branch in the store, its reads on its data', 0.2, function () {
   X.w = world();
   const w = X.w;
   return !!w.C && typeof w.C.lines === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it makes no chatClerver branch in spirit.required.spirit.data', 0.2, function () {
+test.run('it makes no chatClerver branch in the store', 0.2, function () {
   if (!X.w) return false;
   return !(X.w.D && X.w.D.chatClerver) ? true : false;
 }, test.limit.quick);

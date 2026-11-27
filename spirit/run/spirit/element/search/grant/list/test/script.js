@@ -48,7 +48,7 @@ test.run('the grant list runs on a bare window', 0.2, async function () {
   global.window.spirit.requireScript = function (p) { required.push(String(p)); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   return true;
 }, test.limit.quick);
 
@@ -62,7 +62,7 @@ test.run('it names no table and no branch of its own: no auth verb, no agent gra
   const names = /auth\.|agent\.grant|job_id|'grants'|"grants"/.test(SRC);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.grant.list.create', 0.2, function () {
+test.run('it registers spirit.element.search.grant.list.create', 0.2, function () {
   if (!E) return false;
   return !noList() ? true : false;
 }, test.limit.quick);
@@ -77,7 +77,7 @@ test.run('made with no grants table, it is refused, and draws nothing', 0.2, fun
 test.run('it draws one probabilitySearch into its host, and fills it as soon as it is drawn', 0.2, async function () {
   if (noList()) return false;
   searched = [];
-  // Its branch a whole spirit.required.spirit.data path, node/family/branch (goal/G41.28), the node's key in base64url.
+  // Its branch a whole spirit.client path, node/family/branch (goal/G41.28), the node's key in base64url.
   AGENT = { branch: 'nOdE-key_one/agent/grant', key: 'job_id', label: 'job',
     search: function (text) { searched.push(text); return Promise.resolve({ items: [{ key: 'J1\nfs.search', label: JSON.stringify({ job_id: 'J1', path: 'fs.search', job: 'Night' }) }], more: false }); },
     revoke: function () { return Promise.resolve({}); }, watch: function () { return function () {}; } };
@@ -149,16 +149,16 @@ test.run("it is a pane unless told otherwise; given face dropdown, a dropdown, i
 // an empty list holds its first grant (goal/G41.16), its cache manager's (goal/G41.28)
 // Found by cw live: a list with no rows drawn never heard its first grant. Since goal/G41.28 a table's rows are its
 // family's cache manager's from the page's start: here the real data set and the auth family's manager, a list made
-// for the node's grants with no row drawn, and its first grant taken by spirit.required.spirit.data.
+// for the node's grants with no row drawn, and its first grant taken by spirit.client.
 test.run('a list made with no row drawn is a view of the branch its first grant lands in', 0.2, async function () {
   if (noList()) return false;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  const DATA = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  const DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   global.window.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   DATA.homeNode('nOdE+key/one==');
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'auth/data.js' });
-  const A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
+  const A = ((global.window.spirit.client || {}).auth || {}).data;
   const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
     revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return A.grants.watch(fn); } };
   const n = lists.length;

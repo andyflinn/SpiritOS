@@ -49,11 +49,11 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
   // Its own answer, what the loader places at its place.
   const answer = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  const SE = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  const SE = global.window.spirit.element || {};
   D = SE.search && SE.search.api && SE.search.api.detail === answer ? answer : null;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.required.spirit.element.search.api.detail, with a create', 0.2, function () {
+test.run('it places itself at spirit.element.search.api.detail, with a create', 0.2, function () {
   return D && typeof D.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the api tree reader itself', 0.2, function () {

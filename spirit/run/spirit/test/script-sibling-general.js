@@ -99,7 +99,9 @@ TARGETS.forEach(function (b) {
 
 // On the node, in a process of its own: each api.js required as every script is (spirit.requireScript), and what that placed
 // and bound. Decided 8 (the box): "A branch's api.js is placed at spirit.required.spirit.<branch-path>.api and also binds
-// the branch." node -e: the arguments start at argv[1].
+// the branch." Its place since goal/G49.23 is on the spirit object itself, spirit.<branch-path>.api (no spirit.required); a
+// branch at the top, spirit/fs/api.js, has its folder's place spirit.fs, which is its path, no second branch of that name.
+// node -e: the arguments start at argv[1].
 const PLACED = `
 const s = require(process.argv[1] + '/spirit/script.js');
 const out = {};
@@ -107,14 +109,15 @@ const out = {};
   for (const f of JSON.parse(process.argv[2])) {
     try {
       const fam = await s.requireScript(f);
-      let at = s.required; f.replace(/\\.js$/, '').split('/').forEach(function (k) { at = at && at[k]; });
+      let at = s; f.replace(/\\.js$/, '').split('/').slice(1).forEach(function (k) { at = at && at[k]; });
       const decl = (at && at.verbs) || {};
       const names = (at && at.functions) || {};
       const name = f.split('/').slice(-2, -1)[0];
+      const atTop = f.split('/').length === 3;
       out[f] = { placed: !!at && typeof at === 'object', verbs: Object.keys(decl).length,
         unbound: Object.keys(decl).filter(function (v) { return !(fam && typeof fam[names[v] || v] === 'function'); }),
         // One place (goal/G49.6): the require answers the api.js object at its path, and spirit holds no branch of that name.
-        same: at === fam && !Object.prototype.hasOwnProperty.call(s, name) };
+        same: at === fam && (atTop ? s[name] && s[name].api === fam : !Object.prototype.hasOwnProperty.call(s, name)) };
     } catch (e) { out[f] = { threw: true }; }
   }
   console.log(JSON.stringify(out));
@@ -256,7 +259,7 @@ if (withData.length) {
   });
   const owning = withData.filter(function (b) { return b.owned.length > 0; });
   // Its branches, the strings it gives its names to (var ITEMS = 'desk'), are named by it alone: no other file hands a
-  // path of them to a spirit.required.spirit.data reader or writer (D.get('desk/' + id), a watch on such a path).
+  // path of them to a reader or writer (D.get('desk/' + id), a watch on such a path).
   // <branch>: its branch <name>
   if (owning.length) test.run('the branch is named by its data.js alone; every other file asks it', 0.4, function () {
     const managers = tracked.filter(function (f) { return /\/data\.js$/.test(f) && f !== 'spirit/client/script.js' && !/\/test\//.test(f); });
@@ -283,7 +286,8 @@ if (withData.length) {
       return !disk;
     });
   }, test.limit.quick);
-  // One contract: required, it stands at spirit.required.spirit.data.<name> through spirit.required.spirit.data.makeFamily, the name it hands
+  // One contract: required, it stands at spirit.client.<name> through spirit.client.makeFamily (the store at its place since
+  // goal/G49.23), the name it hands
   // makeFamily, never guessed from its folder.
   // EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31; Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
   // motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names").
@@ -307,7 +311,7 @@ if (withData.length) {
     });
   }, test.limit.quick);
   function familyOf(b) { try { return b.made ? require(DATA)[b.made] : null; } catch (e) { return null; } }
-  test.run('in node it stands at spirit.required.spirit.data under its branch, its data and its cache, for clients to ask', 0.4, function () {
+  test.run('in node it stands at spirit.client under its branch, its data and its cache, for clients to ask', 0.4, function () {
     return overAll(withData, function (b) {
       const f = familyOf(b);
       return (!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object') ? true : false;
@@ -444,7 +448,7 @@ if (served.length) {
   // required on the node
   // Required on the node, in a process of the scratch node's run root, so its spirit.js knows that node (its
   // environment.json): the test stands without a node of the checkout's own.
-  test.run('its api.js, required on the node, stands at its path in spirit.required with its verbs, and spirit holds no branch of it', 0.4, async function () {
+  test.run('its api.js, required on the node, stands at its path on the spirit object with its verbs, and spirit holds no other branch of it', 0.4, async function () {
     if (!up()) return false;
     await treeOf();
     const sRun = path.join(N.node.root, 'spirit', 'run');
@@ -548,7 +552,7 @@ if (served.length) {
   // as api.js"; a -general test opens no browser).
   const found = served.filter(function (b) { return b.data; });
   if (found.length) {
-    // The node serves each one, at its path, as a script that calls spirit.required.spirit.data.makeFamily.
+    // The node serves each one, at its path, as a script that calls the store's makeFamily (spirit.client).
     test.run('the shell downloads its data.js', 0.4, async function () {
       if (!up()) return false;
       let ok = true;
@@ -1282,7 +1286,8 @@ function exportsCreate(f) {
   const never = function () { return new Promise(function () {}); };
   const w = { console: { log: function () {}, error: function () {}, warn: function () {} }, setTimeout: function () { return 0; }, clearTimeout: function () {}, setInterval: function () { return 0; }, clearInterval: function () {} };
   w.window = w;
-  w.spirit = { required: {}, requireScript: never, readyPromise: never() };
+  // goal/G49.23: no spirit.required on the bare world's spirit; what the file sets is its module.exports.
+  w.spirit = { requireScript: never, readyPromise: never() };
   vm.createContext(w);
   // The helper by its path, here: the parts run where the file's own const H does not reach (goal/G49.23: it threw 'H is not
   // defined', so no script was ever taken for an element and every element check judged none).
@@ -1302,8 +1307,8 @@ const OWN_PROOF = {
   // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
   // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
   // Join app is joinList mounted, so its page takes the same proof.
-  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
-  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.dataStore, redraws the steps' },
+  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.dataStore, redraws the steps' },
 };
 // THE LONGEST FIELD THE TYPES ALLOW (goal/G49.13: the type files replaced fieldRules): the largest MAX_BYTES a type file under
 // spirit/type/ holds; a field that keeps more than this holds no rule at all.
@@ -1325,7 +1330,7 @@ const MOST_BYTES = (function () {
 // (spirit/client/script.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.eventStream.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.eventStream.subscribe and spirit.client.watchPath (a family view's, spirit.client.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -1397,12 +1402,12 @@ const WATCH = String.raw`(function () {
       return function () { s.live = false; return typeof off === 'function' ? off.apply(this, arguments) : undefined; };
     };
   }
-  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its spirit.required.spirit.data branch, and whether it ranks rows of its own.
+  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its spirit.client branch, and whether it ranks rows of its own.
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    // The search element stands at its path since goal/G43.32, spirit.required.spirit.element.search: every step of the path
-    // is followed as it is made, and the element wrapped when it is placed or read.
+    // The search element stands at its path, spirit.element.search since goal/G49.23 (no spirit.required), searches handed
+    // spirit.element: every step of the path is followed as it is made, and the element wrapped when it is placed or read.
     function along(o, keys, done) {
       if (!o || typeof o !== 'object') return;
       var k = keys[0];
@@ -1413,12 +1418,12 @@ const WATCH = String.raw`(function () {
       if (at) took(at);
     }
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
-  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.required.spirit.data path the module watches, and whether its
+  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each path of the store (spirit.client, goal/G49.23) the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
   // a branch, or '<node>/<family>/<branch>/<row>', a row; a watch of the home node holds '~' for the node, the page's
   // own node (data.home()) once it knows it.
   W.probe = function () {
-    var D = window.spirit && window.spirit.required.spirit.data;
+    var D = window.spirit && window.spirit.client;
     var box = window.spiritMount && window.spiritMount.box;
     var paths = []; W.subs.forEach(function (x) { if (x.mine && x.live && x.kind === 'data.watch' && x.path && paths.indexOf(x.path) === -1) paths.push(x.path); });
     if (!D || !box || typeof D.setPath !== 'function') return Promise.resolve([]);
@@ -1454,9 +1459,9 @@ const WATCH = String.raw`(function () {
       });
     }, Promise.resolve([]));
   };
-  // What each search draws that its spirit.required.spirit.data branch does not hold: the keys of its rows on screen, against the branch.
+  // What each search draws that its branch in the store, spirit.client, does not hold: the keys of its rows on screen, against the branch.
   W.drawnOutside = function () {
-    var D = window.spirit && window.spirit.required.spirit.data;
+    var D = window.spirit && window.spirit.client;
     return W.searches.map(function (x, i) {
       var host = (window.spiritSearchHosts || [])[i];
       if (!host || !host.isConnected || !x.data || !D || typeof D.rowsOf !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
@@ -1468,7 +1473,7 @@ const WATCH = String.raw`(function () {
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
   };
-    along(els, ['spirit', 'element', 'search'], wrap);
+    along(els, ['search'], wrap);
   }
   function hook(o) {
     if (!o || typeof o !== 'object' || o.__watched) return;
@@ -1480,9 +1485,9 @@ const WATCH = String.raw`(function () {
       var cur = o[k[0]];
       function wrap(v) {
         if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }
-        // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
-        // as one on spirit.required.spirit.data, under the whole path it watches.
-        // spirit.required.spirit.data names it viewAt (spirit/client/script.js); a watch through the view is the module's own watch.
+        // A family's view (goal/G41.28), the store's viewAt(node, family): a manager watches through it, so its watch is kept
+        // as one on the store, under the whole path it watches.
+        // The store names it viewAt (spirit/client/script.js); a watch through the view is the module's own watch.
         var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
         if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
           var at = v[VIEW];
@@ -1706,7 +1711,7 @@ function productScripts() {
 // product tree that references the moved element files, must be changed to correct those references. both file-location
 // AND the home in spirit.required (singular)": "uncluding tests". And the other way round, found live (Andy: "contact detail
 // don't load in contacts"): nothing reaches through spirit.required for an element spirit/element/ does not define. Since
-// goal/G43.32 every element stands at spirit.required.<its path>, so that is a path to a script or folder of the tree.
+// goal/G43.32 every element stands at its path, since goal/G49.23 spirit.element.<its path>, so that is a path to a script or folder of the tree.
 const OLD_ELEMENT_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
 // spirit.elements, and ui.elements, the old shell's hand-out of it to an app (api.ui.elements.<name>).
 const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
@@ -1815,9 +1820,10 @@ function linesMatching(rel, re) {
   unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(i + 1); });
   return hits;
 }
-// Where the code (comments and the insides of strings left out) reaches through spirit.required for what the tree does not hold: spirit.required.<keys>
-// stands for a script <keys>.js or a folder <keys>/ of the run tree, its members after it. No element is named here: the
-// tree answers. spirit.required.<path> is another tree, not judged by this rule.
+// Where the code (comments and the insides of strings left out) reaches through spirit.element for what the tree does not hold:
+// spirit.element.<keys>, its place on the spirit object since goal/G49.23 (no spirit.required), stands for a script
+// spirit/element/<keys>.js or a folder spirit/element/<keys>/ of the run tree, its members after it. No element is named
+// here: the tree answers. x.spirit.element (a member of another object) is not judged by this rule.
 function strayElementReaches(rel) {
   if (!/\.(js|html)$/.test(rel)) return [];
   let src = '';
@@ -1828,10 +1834,12 @@ function strayElementReaches(rel) {
     let m = null;
     while ((m = re.exec(line))) {
       const keys = m[1].split('.').map(function (k) { return k.trim(); }).filter(Boolean);
-      let found = false;
+      // A folder's script.js stands at its folder's own name (goal/G49.9), spirit/element/script.js at spirit.element itself:
+      // a single key after it is a member of that script.
+      let found = keys.length === 1 && fs.existsSync(path.join(RUN, 'spirit', 'element', 'script.js'));
       for (let n = keys.length; n > 0 && !found; n--) {
-        const at = path.join.apply(path, [RUN].concat(keys.slice(0, n)));
-        found = fs.existsSync(at + '.js') || (n === keys.length && fs.existsSync(at) && fs.statSync(at).isDirectory());
+        const at = path.join.apply(path, [RUN, 'spirit', 'element'].concat(keys.slice(0, n)));
+        found = fs.existsSync(at + '.js') || fs.existsSync(path.join(at, 'script.js')) || (n === keys.length && fs.existsSync(at) && fs.statSync(at).isDirectory());
       }
       if (!found) stray.push(i + 1);
     }
@@ -1843,9 +1851,9 @@ function strayElementReaches(rel) {
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
 // spirit.required.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
-// spirit.requireScript()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
+// spirit.requireScript()d alone on the node and on a page; where it loads, it stands at its path on the spirit object (goal/G49.23), and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
-// judged. An element script (isElementScript above) has a factory with a create at spirit.required.<its path> once
+// judged. An element script (isElementScript above) has a factory with a create at its path once
 // required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
@@ -1902,7 +1910,7 @@ function nodeGlobalsIn(run, rel, full) {
   return { err: r.err, leaks: leaks };
 }
 // THE LOADER PLACES ELEMENTS (goal/G43.32; goal/G49.9: a script sets module.exports and the loader places it): no element
-// script puts itself on spirit.required or spirit.elements by hand.
+// script puts itself on spirit.element or spirit.elements by hand (goal/G49.23: no spirit.required).
 function placedByHand() {
   return productScripts().filter(function (f) {
     if (f === 'spirit/script.js') return false;
@@ -1925,17 +1933,17 @@ function every() {
   }, test.limit.quick);
 
   // elements are placed by the loader alone
-  test.run('no product script puts an element on spirit.required or spirit.elements by hand', 0.4, function () {
+  test.run('no product script puts an element on spirit.element or spirit.elements by hand', 0.4, function () {
     const hand = placedByHand();
     return !hand.length || false;
   }, test.limit.quick);
   // Decided 6: an app's element is placed like every element, "the shell, the app selector, the file opener and the desk
   // find it there"; so nothing reads an element at the old place, spirit.elements.<name>, any more.
-  test.run('no product script reads or writes the old spirit.elements: every element is found at spirit.required.<its path>', 0.4, function () {
+  test.run('no product script reads or writes the old spirit.elements: every element is found at its path on the spirit object', 0.4, function () {
     const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
     return !old.length || false;
   }, test.limit.quick);
-  // the element move: no file names an element's old homes, none reaches through spirit.required for what the tree lacks
+  // the element move: no file names an element's old homes, none reaches through spirit.element for what the tree lacks
   test.run('the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
     E.elementFiles = elementRuleFiles();
     return E.elementFiles.length > 100 || false;
@@ -2002,7 +2010,7 @@ function every() {
     const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !fs.existsSync(path.join(at, d.name + '.js')) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
     return (top.length > 0 && !odd.length) || false;
   }, test.limit.quick);
-  test.run('no code reaches through spirit.required for an element the tree does not hold', 0.4, function () {
+  test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
     const all = E.elementFiles || [];
     const stray = [].concat.apply([], all.map(strayElementReaches));
     return (all.length > 100 && !stray.length) || false;
@@ -2164,7 +2172,7 @@ function oneFile(P) {
   test.run('it names neither spirit/run/process nor run://process, in code or comment', 0.4, function () {
     return !namesProcess(rel) || false;
   }, test.limit.quick);
-  // the element move (elementRuleFiles above): its old homes, and spirit.required only for what the tree holds
+  // the element move (elementRuleFiles above): its old homes, and spirit.element only for what the tree holds
   if (SELF.indexOf(path.basename(rel)) === -1) {
     test.run('it names no shell/js', 0.4, function () {
       const hits = linesMatching(rel, OLD_ELEMENT_PATH);
@@ -2199,7 +2207,7 @@ function oneFile(P) {
         return dataRequiresOf(rel).every(function (d) { return d === ownData; });
       }, test.limit.quick);
     }
-    if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.required only for elements the tree holds', 0.4, function () {
+    if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
       const stray = strayElementReaches(rel);
       return !stray.length || false;
     }, test.limit.quick);
@@ -2328,20 +2336,20 @@ function oneFile(P) {
   // WHAT IT CHANGES, IT LISTENS FOR, IN ITS CODE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when
   // it changes shit it listens to fucking update via the spirit object"): judged without a page, since a bare mount
   // seldom has a row to change. A module whose code sends a write (an op that changes a row, or a verb that sets) watches
-  // spirit.required.spirit.data: a .watch( of its own, or a search made on a spirit.required.spirit.data branch (its data: option), the branch named as
+  // the store (spirit.client, goal/G49.23): a .watch( of its own, or a search made on a branch of the store (its data: option), the branch named as
   // text or by the one that keeps it (data: K.branch, the cache manager's own name for it).
   {
     const own = ownCode;
     // A write in code: an op that changes a row ({ op: 'set' }), a verb named as a string that changes one
-    // ('node.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.required.spirit.relay.api.join(...)).
+    // ('node.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.relay.api.join(...)).
     const WRITE = /\bop\s*:\s*['"](add|set|delete|remove|grant|revoke|ask|claim|press)['"]|['"][a-z]\w*(?:\.[a-z]\w*)*\.(?:set[A-Z]\w*|set|add|delete|remove|grant|revoke|join|face|write|press|claim)['"]|\bspirit\.\w+\.(?:set[A-Z]\w*|join|face|grant|revoke)\s*\(|\.relay\.(?:join|face)\s*\(|\.(?:saveFile|grant|revoke)\s*\(\s*\w/;
     const writes = WRITE.exec(own);
-    // <address>: what its code changes, it watches in spirit.required.spirit.data
+    // <address>: what its code changes, it watches in the store
     if (!writes) {}
     else {
       // OR THROUGH A CHILD IT MOUNTS ON A BRANCH (goal/G47.1; wsl, of the model table: "the list it mounts (the shared agent
       // table, data: the model branch) is what shows the result, so it does listen, through its child"; cw: "A child it mounts
-      // on a branch counts as its listening"): an element it requires whose own code makes a search on a spirit.required.spirit.data branch,
+      // on a branch counts as its listening"): an element it requires whose own code makes a search on a branch of the store,
       // handed the branch's name (table: or branch:, a word). No watch of its own is added to pass.
       const ON_BRANCH = /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/;
       const child = function () {
@@ -2355,7 +2363,7 @@ function oneFile(P) {
           return /spirit\/element\/search\/script\.js/.test(c) && /\bdata\s*:\s*[\w$'"]/.test(c);
         });
       };
-      test.run('it sends writes and watches spirit.required.spirit.data', 0.4, function () {
+      test.run('it sends writes and watches the store', 0.4, function () {
         return (/\.watch\s*\(/.test(own) || ON_BRANCH.test(own) || child()) || false;
       }, test.limit.quick);
     }

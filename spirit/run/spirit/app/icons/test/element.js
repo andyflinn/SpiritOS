@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/icons/test/element.js
 // The tests of spirit/app/icons/element.js, and of no other module (spec: ./browserIcons.md; goal/G43.19, box v16):
-// the Icons face, spirit.required.spirit.app.icons.element.create(container), mounted in a box of a real Chrome on a scratch node's face page
+// the Icons face, spirit.app.icons.element.create(container), mounted in a box of a real Chrome on a scratch node's face page
 // with Icons switched on. The box: "the page asks icons through its api branch; only ./server/server.js writes the table, the
 // page writes no file of its own"; 10: "data.js on every open page follows that one job". Andy, its add row (G41.27):
 // "[➕] [an icon:paste] [keywords, comma separated][Add]"; of a duplicate (G40.5): "if add icon cannot add because the icon
@@ -38,7 +38,7 @@ test.after(function () {
 const mount = async function (page) {
   await page.send('Page.navigate', { url: W.node.base + '/' });
   await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
-  return page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/app/icons/element.js"); }).then(function () { var c =document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.required.spirit.app.icons.element.create(c); window.__posts = []; var f = window.fetch; window.fetch = function (u, o) { if (/\\/api\\//.test(String(u)) && o && o.body) window.__posts.push(String(o.body).slice(0, 200)); return f.apply(this, arguments); }; return "made"; }, function () { return false; })');
+  return page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/app/icons/element.js"); }).then(function (E) { var c =document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = E.create(c); window.__posts = []; var f = window.fetch; window.fetch = function (u, o) { if (/\\/api\\//.test(String(u)) && o && o.body) window.__posts.push(String(o.body).slice(0, 200)); return f.apply(this, arguments); }; return "made"; }, function () { return false; })');
 };
 const field = function (which) { return '(function () { return Array.prototype.filter.call(document.querySelectorAll("#box input"), function (i) { var p = String(i.placeholder || ""); return i.getClientRects().length && (' + (which === 'glyph' ? '/icon/i.test(p) && !/keyword/i.test(p)' : '/keywords, comma separated/i.test(p)') + '); })[0] || null; }())'; };
 const button = function (word) { return '(function () { return Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length && String(b.textContent).trim() === ' + JSON.stringify(word) + '; })[0] || null; }())'; };
@@ -77,7 +77,7 @@ test.run('the system set is read, and four glyphs it does not hold are found', 0
   W.fresh = fresh;
   return W.ready || false;
 }, test.limit.quick);
-test.run('the icons element loads through requireScript and mounts with spirit.required.spirit.app.icons.element.create, given a container', 0.2, async function () {
+test.run('the icons element loads through requireScript and mounts with spirit.app.icons.element.create, given a container', 0.2, async function () {
   if (!W.ready) return false;
   const made = await mount(W.chrome);
   W.mounted = made === 'made';

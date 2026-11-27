@@ -163,7 +163,7 @@ test.run('it loads alone through spirit.requireScript and mounts with create(con
   if (!c || c.error || !c.evaluate) return false;
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/app/testicle/element/search/testicle/list.js"); }).then(function () {' +
-    ' var E = ((((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).list); if (!E || typeof E.create !== "function") return null;' +
+    ' var E = (((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).list); if (!E || typeof E.create !== "function") return null;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__picked = []; window.__made = E.create(b, { pick: function (row, key) { window.__picked.push(key); } }); return window.__made && typeof window.__made.destroy === "function" ? "made" : null; }, function () { return null; })');
   return made === 'made' || false;
@@ -343,7 +343,7 @@ test.run('150 more passing tests of beta are set on the node', 0.2, async functi
 test.run('with green alone and words typed, it asks the search with no from, so no answer comes in parts', 0.2, async function () {
   if (!mounted()) return false;
   // Every ask the list makes of testicle.testicle.search, recorded on the page's own interface.
-  const hooked = await c.evaluate('(function () { var T = window.spirit.required.spirit.app.testicle.api; var f = T && T["testicle.search"]; if (typeof f !== "function") return false; window.__asks = []; T["testicle.search"] = function (a) { window.__asks.push(a); return f.apply(this, arguments); }; return true; }())');
+  const hooked = await c.evaluate('(function () { var T = window.spirit.app.testicle.api; var f = T && T["testicle.search"]; if (typeof f !== "function") return false; window.__asks = []; T["testicle.search"] = function (a) { window.__asks.push(a); return f.apply(this, arguments); }; return true; }())');
   if (!hooked) return false;
   await T('press("red")');
   await sleep(1500);

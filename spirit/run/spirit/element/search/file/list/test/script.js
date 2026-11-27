@@ -52,15 +52,15 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
     } }; },
     'spirit/element/search/file/row/script.js': function () { return { create: function (row) { return { kind: 'file', row: row }; } }; },
     // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
-    'spirit/client/script.js': function () { return global.window.spirit.required.spirit.data; },
+    'spirit/client/script.js': function () { return global.window.spirit.client; },
     'spirit/element/fstat/script.js': function () { return { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   const made = {};
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  D = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  D = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
@@ -71,8 +71,8 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/script.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'client', 'script.js'), 'utf8'), { filename: 'spirit/fs/client/script.js' }); } if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
-  F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;
+  E = global.window.spirit.element || {};
+  F = ((global.window.spirit.client || {}).fs || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.requireScript).
   loaded = required.slice();
@@ -94,7 +94,7 @@ test.run('it requires the fs branch\'s interface, spirit/fs/script.js, which put
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/script.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.file.list.create', 0.2, function () {
+test.run('it registers spirit.element.search.file.list.create', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;
   return E.search.file && E.search.file.list && typeof E.search.file.list.create === 'function' ? true : false;
 }, test.limit.quick);
@@ -111,7 +111,7 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
   if (l) o = l.o;
   return !!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('it is a view of the fs branch\'s file tree in spirit.required.spirit.data.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
+test.run('it is a view of the fs branch\'s file tree in spirit.client.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
   if (!l) return false;
   return typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
 }, test.limit.quick);

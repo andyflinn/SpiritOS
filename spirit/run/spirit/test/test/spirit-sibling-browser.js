@@ -166,7 +166,8 @@ test.run('a change written into a row of true or false fields alone redraws the 
     '(function () {',
     '  var S = window.spirit;',
     '  function create(container) {',
-    '    var D = S.required.spirit.data;',
+    // goal/G49.23: an element reads the store as spirit.dataStore (no spirit.required).
+    '    var D = S.dataStore;',
     '    var V = (typeof D.viewAt === \'function\' ? D.viewAt : D.at)(null, \'zzflag\');',
     '    var el = document.createElement(\'div\'); container.appendChild(el);',
     '    try { V.set(\'zz/flag\', { on: false }); } catch (e) { /* kept */ }',

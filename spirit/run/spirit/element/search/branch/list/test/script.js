@@ -62,8 +62,8 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  const DATA = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  const DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
@@ -76,13 +76,13 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
   const standIn = function (p) {
     const keys = String(p).replace(/\.js$/, '').split('/'); if (keys[keys.length - 1] === 'script') keys.pop();
-    const v = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required);
+    const v = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); // goal/G49.23: on the spirit object itself
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.requireScript).
   loaded = required.slice();
@@ -102,7 +102,7 @@ test.run('as it loads, it requires no data script, as only an api.js requires it
   if (!loaded) return false;
   return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.branch.list.create', 0.2, function () {
+test.run('it registers spirit.element.search.branch.list.create', 0.2, function () {
   if (!E) return false;
   return listed() ? true : false;
 }, test.limit.quick);
@@ -125,7 +125,7 @@ test.run('it fills as soon as it is drawn', 0.2, function () {
 // goal/G41.28: the branch the auth family's data.js keeps.
 test.run('it is a view of the auth branch\'s branches as kept in the spirit object\'s cache', 0.2, function () {
   if (!l) return false;
-  const B = ((global.window.spirit.required.spirit.data || {}).auth || {}).data && global.window.spirit.required.spirit.data.auth.data.branches;
+  const B = ((global.window.spirit.client || {}).auth || {}).data && global.window.spirit.client.auth.data.branches;
   return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
 }, test.limit.quick);
 let got;

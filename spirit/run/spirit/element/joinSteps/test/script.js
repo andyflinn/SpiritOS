@@ -25,13 +25,14 @@ const STEPS = MANIFEST.concat(FACE);
 const facts = function (o) { return Object.assign({ seated: false, relayUrl: '', contact: false, face: '', faceUrl: '', opened: false }, o || {}); };
 const nameOf = function (s) { return s ? s.name : null; };
 
-test.run('it runs on a window of its own and places itself at spirit.required.spirit.element.joinSteps', 0.2, function () {
+test.run('it runs on a window of its own and places itself at spirit.element.joinSteps', 0.2, function () {
   const win = { Array: Array, JSON: JSON, String: String };
   win.window = win;
-  win.spirit = { required: {} };
+  win.spirit = {};
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT);
-  J = ((win.spirit.required.spirit || {}).element || {}).joinSteps;
+  // goal/G49.23: placed on the spirit object itself.
+  J = (win.spirit.element || {}).joinSteps;
   return (!!J && ['fromJob', 'done', 'current', 'linkRelay'].every(function (k) { return typeof J[k] === 'function'; })) || false;
 }, test.limit.quick);
 

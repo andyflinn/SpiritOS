@@ -79,11 +79,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var WORD_COLOUR = { holds: '#87cefa', red: '#d8b4fe' };
   function wordColours(p) {
     var parts = String(p || '').split('/');
-    if (parts[0] !== 'spirit' || !(ANSWER['spirit/word/script.js'] || {}).script) return Promise.resolve({});
+    if (parts[0] !== 'spirit' || !(ANSWER['spirit/word/script.js'] || {}).check) return Promise.resolve({});
     var out = { spirit: WORD_COLOUR.holds };
     return Promise.all(parts.slice(1).map(function (part, i) {
       var stem = part.split('.')[0];
-      return ANSWER['spirit/word/script.js'].script.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
+      return ANSWER['spirit/word/script.js'].check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
         if (!word) return;
         var at = window.spirit;
         parts.slice(1, i + 1).forEach(function (up) { at = at ? at[up.split('.')[0]] : undefined; });
@@ -172,11 +172,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var paintWords = function () { wordColours(p).then(function (words) { if (live) el.apply({ words: words }); }); };
     var offWords = null;
     var listen = function () {
-      if (!live || !(ANSWER['spirit/word/script.js'] || {}).script) return;
-      offWords = ANSWER['spirit/word/script.js'].script.changed(paintWords);
+      if (!live || !(ANSWER['spirit/word/script.js'] || {}).check) return;
+      offWords = ANSWER['spirit/word/script.js'].changed(paintWords);
       paintWords();
     };
-    if ((ANSWER['spirit/word/script.js'] || {}).script) listen();
+    if ((ANSWER['spirit/word/script.js'] || {}).check) listen();
     else if (window.spirit.requireScript) Promise.resolve(window.spirit.requireScript('spirit/word/script.js')).then(listen, function () { /* no colours */ });
     var destroy = el.destroy;
     el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };

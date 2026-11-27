@@ -47,11 +47,11 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // goal/G49.22: the contact branch's calls are spirit.contact.<verb>.
   const BRANCHES = { contact: { block: verb('spirit.contact.block'), unblock: verb('spirit.contact.unblock'),
     forget: verb('spirit.contact.forget'), label: verb('spirit.contact.label'), get: verb('spirit.contact.get') }, peer: { acquire: verb('peer.acquire') } };
-  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.normalizeString = LOADER.normalizeString;
+  window.spirit.normalizeString = LOADER.normalizeString;
   // The label type is the real one (goal/G49.13: the type files replaced fieldRules), loaded from its path below.
   // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
-  // goal/G43.32: what the row opens stands where an element now finds it, spirit.required.spirit.element.
-  (((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {})).element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
+  // goal/G43.32: what the row opens stands where an element now finds it, spirit.element.
+  window.spirit.element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
   // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   // The contact branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself
@@ -63,7 +63,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
     if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
     // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the contact client (spirit/contact/client/script.js) files into
     // what spirit/client/script.js hands back, the store this window ran below; the row reads it at spirit.dataStore.
-    if (p === 'spirit/client/script.js') return Promise.resolve(window.spirit.required.spirit.data);
+    if (p === 'spirit/client/script.js') return Promise.resolve(window.spirit.client);
     // A type is the real one, by its full path (goal/G49.13).
     if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p));
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
@@ -71,24 +71,24 @@ test.run('the contact row runs on a window of its own, with the data set and the
     // stands at its place, a stand-in above or a real file loaded, and a path with nothing there is refused.
     const keys = String(p).replace(/\.js$/, '').split('/');
     if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-    const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);
+    const at = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit); // goal/G49.23: on the spirit object itself
     return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
   load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
   // THE DATA SET IS spirit.dataStore (goal/G49.23): the real one, as spirit.js keeps it once the page has started.
-  window.spirit.dataStore = window.spirit.required.spirit.data;
+  window.spirit.dataStore = window.spirit.client;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };
-  window.spirit.required.spirit.data.homeNode(NODE_KEY);
+  window.spirit.client.homeNode(NODE_KEY);
   load(path.join(JS, 'row', 'script.js'));
   load(path.join(JS, 'search', 'contact', 'row', 'script.js'));
   // goal/G49.23: the contact client files into the data set once requireScript('spirit/client/script.js') has handed it back,
   // a promise; the answers are let settle before the contact branch's data is read.
   for (let i = 0; i < 5; i += 1) await new Promise(function (r) { setImmediate(r); });
-  C = window.spirit.required.spirit.element.search.contact.row;
-  D = window.spirit.required.spirit.data;
-  CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
+  C = window.spirit.element.search.contact.row;
+  D = window.spirit.client;
+  CD = ((window.spirit.client || {}).contact || {}).data;
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.
   loaded = required.slice();
   // The direct writes below are the contact family's own view of the home node, as its manager files them.
@@ -122,7 +122,7 @@ test.run('a row carrying publicKey instead of key is keyed by it', 0.2, function
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   return byPublic.key === 'K9' ? true : false;
 }, test.limit.quick);
-test.run('the row requires spirit/contact/script.js, which puts the contact branch\'s data in spirit.required.spirit.data on the page', 0.2, function () {
+test.run('the row requires spirit/contact/script.js, which puts the contact branch\'s data in spirit.client on the page', 0.2, function () {
   return required.indexOf('spirit/contact/script.js') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
 }, test.limit.quick);
 
@@ -251,9 +251,9 @@ test.run('a destroyed row leaves the dispatch; the others stay', 0.2, function (
 // the label's editor checks the rule before it asks
 test.run('a name the rule refuses is refused here, and not asked', 0.2, async function () {
   if (!C) return false;
-  labelField = (function () { let f = null; const p = window.spirit.required.spirit.element.row.create;
-    window.spirit.required.spirit.element.row.create = function (parts) { f = parts.fields.filter(function (x) { return x.name === 'label'; })[0]; return p(parts); };
-    C.create({ key: 'K13', keep: true }); window.spirit.required.spirit.element.row.create = p; return f; }());
+  labelField = (function () { let f = null; const p = window.spirit.element.row.create;
+    window.spirit.element.row.create = function (parts) { f = parts.fields.filter(function (x) { return x.name === 'label'; })[0]; return p(parts); };
+    C.create({ key: 'K13', keep: true }); window.spirit.element.row.create = p; return f; }());
   const n = asked.length;
   const bad = await labelField.edit({ key: 'K13' }, '   ');
   let said = ''; try { LOADER.requireScript('spirit/type/string/label/script.js').isValid(''); } catch (e) { said = e.message; }

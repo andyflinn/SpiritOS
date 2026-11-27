@@ -36,14 +36,15 @@ let P = null;
 const tagOf = function (html) { return (/<progress[^>]*>/.exec(html) || [''])[0]; };
 const wordsOf = function (html) { return ((/<span class="job-manifest-note">([^<]*)<\/span>/.exec(html)) || [null, null])[1]; };
 
-test.run('it runs on a window of its own and places itself at spirit.required.spirit.element.progressBar', 0.2, async function () {
+// goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
+test.run('it runs on a window of its own and places itself at spirit.element.progressBar', 0.2, async function () {
   const win = { Math: Math, Number: Number, String: String, Promise: Promise };
   win.window = win;
   win.spirit = { element: {} };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT);
   await settle();
-  P = (((win.spirit.required.spirit || {}).element || {}).progressBar || {}).progressBar;
+  P = ((win.spirit.element || {}).progressBar || {}).progressBar;
   return typeof P === 'function' || false;
 }, test.limit.quick);
 

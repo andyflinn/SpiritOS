@@ -28,16 +28,16 @@ test.run('a scratch node comes up with a Chrome on its face page', 0.2, async fu
   await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('rowFormToggle loads through spirit.requireScript and is spirit.required.spirit.element.search.app.rowFormToggle', 0.2, async function () {
+test.run('rowFormToggle loads through spirit.requireScript and is spirit.element.search.app.rowFormToggle', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/rowFormToggle/script.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.rowFormToggle && spirit.required.spirit.element.search.app.rowFormToggle.create); }, function () { return false; })');
+  loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/rowFormToggle/script.js"); }).then(function () { return !!(spirit.element.search.app.rowFormToggle && spirit.element.search.app.rowFormToggle.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 let made, off, on;
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("t"); var btn = b.querySelector("button"); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), button: btn ? String(btn.textContent || "").trim() : null, forms: b.querySelectorAll(".shell-row-form").length }; }())'); };
 test.run('create, handed a host with on, words and press, answers a toggle with root, set and destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "t"; document.body.appendChild(b); window.__pressed = 0; window.__t = spirit.required.spirit.element.search.app.rowFormToggle.create(b, { on: false, words: "Allow zz as shell", press: function () { window.__pressed += 1; } }); return !!window.__t && !!window.__t.root && typeof window.__t.set === "function" && typeof window.__t.destroy === "function"; }())');
+  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "t"; document.body.appendChild(b); window.__pressed = 0; window.__t = spirit.element.search.app.rowFormToggle.create(b, { on: false, words: "Allow zz as shell", press: function () { window.__pressed += 1; } }); return !!window.__t && !!window.__t.root && typeof window.__t.set === "function" && typeof window.__t.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 
@@ -85,7 +85,7 @@ test.run('a press on the redrawn button calls press again', 0.2, async function 
 let waited = null;
 test.run('a press whose answer has not come leaves its button busy: disabled, with its turning mark', 0.2, async function () {
   if (made !== true) return false;
-  waited = JSON.parse(await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "tw"; document.body.appendChild(b); window.__tw = spirit.required.spirit.element.search.app.rowFormToggle.create(b, { on: false, words: "zz waits", press: function () { return new Promise(function (r) { window.__letGo = r; }); } }); var btn = b.querySelector("button"); btn.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: btn.disabled, mark: !!btn.querySelector(".shell-busy") }); }); }())'));
+  waited = JSON.parse(await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "tw"; document.body.appendChild(b); window.__tw = spirit.element.search.app.rowFormToggle.create(b, { on: false, words: "zz waits", press: function () { return new Promise(function (r) { window.__letGo = r; }); } }); var btn = b.querySelector("button"); btn.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: btn.disabled, mark: !!btn.querySelector(".shell-busy") }); }); }())'));
   return waited.disabled === true && waited.mark === true ? true : false;
 }, test.limit.quick);
 test.run('once that answer comes, the button is plain again', 0.2, async function () {

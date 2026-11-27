@@ -172,7 +172,6 @@ function world() {
     'spirit/element/search/api/script.js': function () { return E.search.api; }, 'spirit/element/search/grant/script.js': function () { return E.search.grant; },
     'spirit/element/busyButton/script.js': function () { return E.busyButton; }, 'spirit/element/rowForm/script.js': function () { return E.rowForm; },
     'spirit/element/armingButton/script.js': function () { return E.armingButton; } };
-  const page = {};
   // goal/G49.21: a branch of the new shape, spirit/<x>/script.js, has its client at spirit/<x>/client/script.js.
   const companionOf = function (p) {
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
@@ -183,8 +182,8 @@ function world() {
   };
   const appApi = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
-    // The page knows its node: spirit.required.spirit.data files nothing before it does (goal/G41.28, Q10).
-    spirit: { required: page, nodeFacts: { key: 'KEY+GRANTS/PANEL==' },
+    // The page knows its node: spirit.client files nothing before it does (goal/G41.28, Q10).
+    spirit: { nodeFacts: { key: 'KEY+GRANTS/PANEL==' },
       requireScript: function (p) {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return appApi(k) === p; })[0];
@@ -194,7 +193,7 @@ function world() {
         if (p === 'spirit/grant/script.js') { companionOf(p); return Promise.resolve(grantTable); }
         if (p === 'spirit/branch/script.js') { companionOf(p); return Promise.resolve(branchTable); }
         // A branch's api.js: its real companion data.js run once on this window over the real data set, as the real api.js
-        // requires it (goal/G47.1), so the server jobs the test hands spirit.required.spirit.data reach the panel as the page's would, and
+        // requires it (goal/G47.1), so the server jobs the test hands spirit.client reach the panel as the page's would, and
         // the grant table's grants reach nodeGrants.
         companionOf(p);
         return Promise.resolve(FILES[p] ? FILES[p]() : {});
@@ -221,9 +220,9 @@ function world() {
   vm.createContext(win);
   win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');
   win.spirit.requireScript('spirit/client/script.js');
-  win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
+  win.spirit.client.homeNode(win.spirit.nodeFacts.key);
   if (SRC) pageRequire(SUBJECT);
-  w.win = win; w.page = page;
+  w.win = win;
   return w;
 }
 
@@ -242,9 +241,9 @@ test.run('the grants panel runs on a bare window', 0.2, async function () {
   code = SRC.replace(/\/\/.*$/gm, '');
   w = world();
   await settle();
-  // goal/G43.32: the elements stand at their paths, spirit.required.spirit.element.
-  E = ((w.page.spirit || {}).element || {});
-  // Since goal/G43.32 the panel stands in the grant search: spirit.required.spirit.element.search.grant.grantsPanel.
+  // goal/G43.32, G49.23: the elements stand at their paths on the spirit object itself, spirit.element.
+  E = (w.win.spirit.element || {});
+  // Since goal/G43.32 the panel stands in the grant search: spirit.element.search.grant.grantsPanel.
   GP = ((E.search || {}).grant || {}).grantsPanel;
   return true;
 }, test.limit.quick);
@@ -293,7 +292,7 @@ test.run('it requires the grant branch\'s interface, spirit/grant/script.js, and
   if (!w) return false;
   return w.required.indexOf('spirit/grant/script.js') !== -1 && w.required.indexOf('spirit/branch/script.js') !== -1 && w.required.indexOf('spirit/job/script.js') === -1 ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.grant.grantsPanel.create', 0.2, function () {
+test.run('it registers spirit.element.search.grant.grantsPanel.create', 0.2, function () {
   if (!w) return false;
   return GP && typeof GP.create === 'function' ? true : false;
 }, test.limit.quick);
@@ -460,7 +459,7 @@ test.run('it reads no api tree', 0.2, function () {
 }, test.limit.quick);
 test.run('a server job changing reads nothing', 0.2, async function () {
   if (!gl) return false;
-  D = w.win.spirit.required.spirit.data;
+  D = w.win.spirit.client;
   const asked0 = w.treeAsked;
   const calls0 = w.calls.length;
   D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'running', module: 'spirit.app.gone', data: {} });
@@ -621,7 +620,7 @@ test.run('it acts on what is chosen in it, not on what the list\'s filters choos
 // Grant: the bundle's branches, through the grants table it was handed
 test.run('with no bundle or no ID chosen, Grant asks nothing', 0.2, async function () {
   if (!box) return false;
-  D = w.win.spirit.required.spirit.data;
+  D = w.win.spirit.client;
   grantBtn = rf ? rf.button : null;
   press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
   at0 = w.calls.length;
@@ -767,10 +766,10 @@ test.run('the request settles once every grant is answered, so the button is pla
 // grantsPanel.nodeGrants: the node's own grants table, one a caller picks by name (goal/G43.24)
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel." Since goal/G49.21: spirit.grant.search, add and delete over the grant branch's client.
-test.run('grantsPanel.nodeGrants\'s branch is spirit.required.spirit.data.grant.data.branch, keyed by key, labelled by label', 0.2, function () {
+test.run('grantsPanel.nodeGrants\'s branch is spirit.client.grant.data.branch, keyed by key, labelled by label', 0.2, function () {
   if (!GP) return false;
   g = GP.nodeGrants;
-  A = ((w.win.spirit.required.spirit.data || {}).grant || {}).data;
+  A = ((w.win.spirit.client || {}).grant || {}).data;
   return !!g && !!A && g.branch === A.branch && g.key === 'key' && g.label === 'label' ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel.nodeGrants has search, grant, revoke and watch, and no stream of its own', 0.2, function () {
@@ -823,9 +822,9 @@ test.run('the revoke of nodeGrants asks spirit.grant.delete with the key and the
 // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's job spirit.grant hands (goal/G49.21) comes
 // back through watch.
 let heard, off;
-test.run('the watch of nodeGrants hears a grant in spirit.required.spirit.data.grant as <key>\\n<path> with its row, once revoked none', 0.2, function () {
+test.run('the watch of nodeGrants hears a grant in spirit.client.grant as <key>\\n<path> with its row, once revoked none', 0.2, function () {
   if (!g || !A) return false;
-  D = w.win.spirit.required.spirit.data;
+  D = w.win.spirit.client;
   heard = [];
   off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
   D.takeJob({ id: 'spirit.grant', data: { row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
@@ -861,7 +860,7 @@ test.run('Grants\' data source has moved into grantsPanel, which asks spirit.gra
 test.run('Grants\' data source has moved into grantsPanel, which asks spirit.grant.delete', 0.2, function () {
   return /'spirit\/grant\/script\.js',\s*'delete'/.test(panel) ? true : false;
 }, test.limit.quick);
-test.run('grantsPanel holds the grant cache it reads, spirit.required.spirit.data.grant', 0.2, function () {
+test.run('grantsPanel holds the grant cache it reads, spirit.client.grant', 0.2, function () {
   const holds = /\bdata\.grant\b|require(?:Script)?\s*\(\s*['"]spirit\/grant\/script\.js['"]/.test(panel);
   return holds ? true : false;
 }, test.limit.quick);

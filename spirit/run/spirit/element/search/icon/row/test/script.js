@@ -44,11 +44,11 @@ test.run('the icon row element runs on a bare window', 0.2, async function () {
   };
   const answer = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   R = E.search && E.search.icon && E.search.icon.row === answer ? answer : null;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.required.spirit.element.search.icon.row, with a create', 0.2, function () {
+test.run('it places itself at spirit.element.search.icon.row, with a create', 0.2, function () {
   if (!required) return false;
   return (R && typeof R.create === 'function') || false;
 }, test.limit.quick);

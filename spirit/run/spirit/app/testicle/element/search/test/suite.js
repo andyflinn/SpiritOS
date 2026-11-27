@@ -86,7 +86,7 @@ const view = function (id) {
     ' keys: Array.prototype.map.call(b.querySelectorAll("tr[data-key]"), function (r) { return r.getAttribute("data-key"); }) }; }())');
 };
 const mount = function (id, opts) {
-  return c.evaluate('(function () { var E = (((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite); if (!E || typeof E.create !== "function") return false;' +
+  return c.evaluate('(function () { var E = ((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; b.style.cssText = "width:1200px;height:400px;display:flex;"; document.body.appendChild(b); window.__picked = window.__picked || [];' +
     ' var o = ' + JSON.stringify(opts) + '; o.pick = function (row, key) { window.__picked.push(key); };' +
     ' window[' + JSON.stringify(id) + '] = E.create(b, o); return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : false; }())');
@@ -145,7 +145,7 @@ test.run('create appends its own root to the container and answers it', 0.2, asy
 // "A THIN ELEMENT OVER ITS OWN LIST, ./suite/list.js, WHICH IT LOADS ITSELF (rule/26)"
 test.run('it loads its own list, spirit/app/testicle/element/search/suite/list.js', 0.2, async function () {
   if (notMounted()) return false;
-  const ok = await until(function () { return c.evaluate('!!(((((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).list || {}).create)'); }, 10000);
+  const ok = await until(function () { return c.evaluate('!!((((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).list || {}).create)'); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
 test.run('its list in its root shows the suites of the script it is given, and of no other', 0.2, async function () {

@@ -52,8 +52,8 @@ function world(o) {
     grantsPanel: { nodeGrants: NODE_GRANTS, create: function (host, cfg) { const p = { host: host, cfg: cfg || {}, args: arguments.length }; w.panels.push(p); return p; } },
   };
   const FILES = { 'spirit/element/tabContainer/script.js': 'tabContainer', 'spirit/element/bundleEditor/script.js': 'bundleEditor', 'spirit/element/search/grant/grantsPanel/script.js': 'grantsPanel' };
-  // goal/G43.32: the parts stand where grants.js reads them, at spirit.required.spirit.element.<name>; a page's spirit
-  // (spirit/test/headLessChrome.js pageSpirit), so grants.js places itself at spirit.required.spirit.app.grants.element as it runs.
+  // goal/G43.32: the parts are requireScript's answers below; a page's spirit (spirit/test/headLessChrome.js pageSpirit), so
+  // grants.js is placed at spirit.app.grants.element as it runs (goal/G49.23: on the spirit object itself, no spirit.required).
   const page = {};
   const win = {
     document: { createElement: function (t) { return node('<' + t + '>'); } },
@@ -62,7 +62,7 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  win.spirit = { required: { spirit: { element: page, app: {} } },
+  win.spirit = { element: page, app: {},
     requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error());
@@ -74,7 +74,7 @@ function world(o) {
     } };
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
-  w.win = win; w.els = { grants: (win.spirit.required.spirit.app.grants || {}).element }; w.NODE_GRANTS = NODE_GRANTS;
+  w.win = win; w.els = { grants: (win.spirit.app.grants || {}).element }; w.NODE_GRANTS = NODE_GRANTS;
   return w;
 }
 
@@ -99,7 +99,7 @@ test.run('spirit/app/grants/element.js is there', 0.2, function () {
 }, test.limit.quick);
 
 // mounted the new shell's way (goal/G43.24, requirement 7)
-test.run('it sets spirit.required.spirit.app.grants.element to an object with create', 0.2, function () {
+test.run('it sets spirit.app.grants.element to an object with create', 0.2, function () {
   if (!SRC) return false;
   U.w = world();
   U.G = U.w.els.grants;
@@ -335,7 +335,7 @@ test.run('the face page has its spirit', 0.2, async function () {
 // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
 test.run('the shell app is drawn', 0.2, async function () {
   if (!B.page) return false;
-  const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.create(b); return "made"; }, function () { return false; }); }())');
+  const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function (E) { window.__shell = E.create(b); return "made"; }, function () { return false; }); }())');
   B.shell = made === 'made';
   return B.shell || false;
 }, test.limit.quick);
@@ -517,7 +517,7 @@ test.run('the node refuses the delete of a server\'s bundle at the door, with a 
 test.run('a bundle editor with no tabContainer configured lists the bundles with no Edit or Delete either', 0.2, async function () {
   if (!B.page) return false;
   B.mark = B.chrome.heard.length;
-  await B.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/bundleEditor/script.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); window.spirit.required.spirit.element.bundleEditor.create(h, {}); return true; })');
+  await B.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/bundleEditor/script.js")).then(function (BE) { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); BE.create(h, {}); return true; })');
   await waitFor(function () { return B.chrome.evaluate('(function () { ' + LEAF + ' return !!leaf("zzOne", "#zzAgentLike"); }())'); }, 5000);
   const noBtn = await B.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzAgentLike button")).filter(function (b) { return /^(Edit|Delete)$/.test(b.textContent.trim()); }).length');
   return noBtn === 0 || false;
@@ -705,7 +705,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   // the box, 7: "its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } }"
   test.run('its element\'s create draws into the container it is given and answers destroy', 0.2, async function () {
     if (!R.page) return false;
-    const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.requireScript("spirit/app/' + NAME + '/element.js"); } catch (e) { return false; } return Promise.resolve(p).then(function () { var E = spirit.required.spirit.app[' + JSON.stringify(NAME) + '] && spirit.required.spirit.app[' + JSON.stringify(NAME) + '].element; if (!E || typeof E.create !== "function") return false; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : false; }); }, function () { b.remove(); return false; }); }())');
+    const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.requireScript("spirit/app/' + NAME + '/element.js"); } catch (e) { return false; } return Promise.resolve(p).then(function (E) { if (!E || typeof E.create !== "function") return false; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : false; }); }, function () { b.remove(); return false; }); }())');
     return made === 'ok' || false;
   }, test.limit.slow);
 
@@ -713,7 +713,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
   test.run('the shell draws its tiles, Files among them', 0.2, async function () {
     if (!R.page) return false;
-    const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.create(b); return "made"; }, function () { return false; }); }())');
+    const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function (E) { window.__shell = E.create(b); return "made"; }, function () { return false; }); }())');
     return shell === 'made' && await wwaitFor('tiles().indexOf("' + FILE_KEY + '") !== -1', 10000) ? true : false;
   }, test.limit.quick);
   test.run('Grants has its tile, with nothing pressed', 0.2, async function () {

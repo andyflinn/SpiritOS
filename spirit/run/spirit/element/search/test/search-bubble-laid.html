@@ -14,7 +14,7 @@
 // the bubble part of ./script.js at /DEBUG/spirit/element/search/test/search-bubble-laid.html.
 window.laid = function () {
   return Promise.resolve().then(function () { return spirit.requireScript('spirit/element/search/script.js'); }).catch(function () { return null; }).then(function () {
-    var P = (((spirit.required || {}).spirit || {}).element || {}).search;
+    var P = (spirit.element || {}).search; // goal/G49.23: on the spirit object itself
     var out = { made: !!P && typeof P.create === 'function' };
     if (!out.made) return JSON.stringify(out);
     function rect(el) { if (!el) return null; var r = el.getBoundingClientRect(); return { left: Math.round(r.left * 10) / 10, w: Math.round(r.width * 10) / 10 }; }

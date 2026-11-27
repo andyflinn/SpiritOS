@@ -551,12 +551,12 @@ async function chromePage(chrome) {
 }
 
 // A FAKE PAGE'S SPIRIT, AS AN ELEMENT FINDS IT (goal/G43.32): a test that runs an element script in a world of its own
-// (vm) hands that world's spirit object here. It gets spirit.required and a spirit.requireScript that answers what is already
+// (vm) hands that world's spirit object here. It gets a spirit.requireScript that answers what is already
 // loaded at once, as spirit.requireScript does a second time: any path the test hands in loaded. Answers the spirit object.
 // A SCRIPT OF THE TREE BY ITS PATH, RUN IN THAT WORLD (goal/G49.6; Andy: "make every single test use spirit.requireScript() to
 // load product files"): o.window, the world's own object (made a vm context if it is not one yet), and o.real, the run-root
 // paths the test has loaded as they are, its subject and any part it does not stand in for. spirit.requireScript(one of them)
-// runs that file once in the world, by its path, at once, and answers what it placed at spirit.required.<its path>, the
+// runs that file once in the world, by its path, at once, and answers what it placed at its path on the spirit object, the
 // script's error when it throws; at once as the loaded ones answer (a then that calls back before it returns), so a test
 // that builds its world without waiting reads what was placed on the next line. Any other path goes to the test's own
 // requireScript, as before.
@@ -569,20 +569,21 @@ function pageSpirit(s, loaded, o) {
   if (Array.isArray(opts.real)) opts.real.forEach(function (p) { listed[String(p).replace(/^\/+/, '')] = true; });
   const isReal = function (at) { return typeof opts.real === 'function' ? !!opts.real(at) : !!listed[at]; };
   const ran = Object.create(null);
-  // A path's keys as spirit.js places it: a folder's script.js at its folder's own name (goal/G49.9).
+  // A path's keys as spirit.js places it: a folder's script.js at its folder's own name (goal/G49.9), on the spirit object
+  // itself, its first key spirit the object (goal/G49.23, box v22: "no spirit.required"): spirit/fs/script.js at spirit.fs.
   const keysOf = function (at) {
     const keys = String(at).replace(/^\/+/, '').replace(/\.js$/, '').split('/').filter(Boolean);
     if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-    return keys;
+    return keys.slice(1);
   };
   const placedAt = function (at) {
-    return keysOf(at).reduce(function (x, k) { return x == null ? undefined : x[k]; }, sp.required);
+    return keysOf(at).reduce(function (x, k) { return x == null ? undefined : x[k]; }, sp);
   };
   // What a script exposed, placed at its place, the folder's other scripts kept on it.
   const placeOn = function (spirit, at, value) {
-    spirit.required = spirit.required || {};
     const keys = keysOf(at);
-    let o = spirit.required;
+    if (!keys.length) return;
+    let o = spirit;
     for (let i = 0; i < keys.length - 1; i += 1) { if (o[keys[i]] == null) o[keys[i]] = {}; o = o[keys[i]]; }
     const last = keys[keys.length - 1];
     const was = o[last];
@@ -612,7 +613,6 @@ function pageSpirit(s, loaded, o) {
       return Promise.resolve(typeof f === 'function' ? f(v) : v);
     } };
   };
-  sp.required = sp.required || {};
   const have = Object.assign({}, loaded || {});
   const own = sp.requireScript;
   sp.requireScript = function (p) {
@@ -625,13 +625,13 @@ function pageSpirit(s, loaded, o) {
   // the test hands in for spirit/client/script.js, or the real one when the test loads it as it is, as spirit.js keeps it.
   const STORE = 'spirit/client/script.js';
   if (sp.dataStore === undefined && Object.prototype.hasOwnProperty.call(have, STORE)) sp.dataStore = have[STORE];
-  else if (sp.dataStore === undefined && opts.window && isReal(STORE)) { runReal(STORE); sp.dataStore = placedAt(STORE) || (sp.required.spirit && sp.required.spirit.data); }
+  else if (sp.dataStore === undefined && opts.window && isReal(STORE)) { runReal(STORE); sp.dataStore = placedAt(STORE); }
   return sp;
 }
 
 // A PAGE SCRIPT RUN BY A NODE TEST AS THE PAGE'S LOADER RUNS IT (goal/G49.9, box v5): the file (a run path, or absolute
 // under the run root) in a module box, in the context given (a vm context) or this one, and what it set as module.exports
-// placed at its place in that context's window.spirit.required (a folder's script.js at its folder's name). src, when
+// placed at its place on that context's window.spirit itself (a folder's script.js at its folder's name). src, when
 // given, is the file's text as the test holds it. Answers what it exposed.
 function runAsPage(file, context, src) {
   const vm = require('vm');
@@ -647,10 +647,12 @@ function runAsPage(file, context, src) {
   const win = context ? context : (global.window || global);
   if (set && box.exports && (typeof box.exports === 'object' || typeof box.exports === 'function')) {
     win.spirit = win.spirit || {};
-    win.spirit.required = win.spirit.required || {};
+    // ON THE SPIRIT OBJECT ITSELF (goal/G49.23, box v22): its first key spirit the object.
     const keys = rel.replace(/\.js$/, '').split('/').filter(Boolean);
     if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-    let o = win.spirit.required;
+    keys.shift();
+    if (!keys.length) return box.exports;
+    let o = win.spirit;
     for (let i = 0; i < keys.length - 1; i += 1) { if (o[keys[i]] == null) o[keys[i]] = {}; o = o[keys[i]]; }
     const last = keys[keys.length - 1];
     const was = o[last];

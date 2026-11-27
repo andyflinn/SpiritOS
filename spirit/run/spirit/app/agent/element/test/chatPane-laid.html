@@ -18,10 +18,9 @@ window.laid = function () {
   // THE PAGE STARTS ITS SPIRIT, as the face's boot does (spirit.js start): spirit.readyPromise answers only once start() has, and
   // the agent tables' element waits on it.
   spirit.startPage();
-  return Promise.resolve().then(function () { return Promise.all([spirit.requireScript('spirit/app/agent/element/chatPane.js'), spirit.requireScript('spirit/app/agent/element/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
-    // Where the elements stand (goal/G43.32): spirit.required.<their path>.
-    var AG = ((((spirit.required || {}).spirit || {}).app || {}).agent || {}).element || {};
-    var E = AG.chatPane;
+  return Promise.resolve().then(function () { return Promise.all([spirit.requireScript('spirit/app/agent/element/chatPane.js'), spirit.requireScript('spirit/app/agent/element/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function (got) {
+    // The chat pane and the tables' element as spirit.requireScript handed them back (goal/G49.23: no spirit.required).
+    var E = (got || [])[0];
     var out = { made: !!E && typeof E.create === 'function' };
     if (!out.made) return JSON.stringify(out);
     // A centre pane as the workBench gives one: a box of a stated size.
@@ -53,7 +52,7 @@ window.laid = function () {
     }
     var words = deepest(centre, /Chat with/);
     out.titleSize = words ? getComputedStyle(words).fontSize : '';
-    var D = (AG.table || {}).tableElement;
+    var D = (got || [])[1];
     if (D && typeof D.titleRow === 'function') {
       var other = document.createElement('div');
       other.innerHTML = D.titleRow({ icon: '🧠', name: 'Model', title: 'Models' }, ['Models']);

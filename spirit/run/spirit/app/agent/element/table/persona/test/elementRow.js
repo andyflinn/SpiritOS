@@ -22,7 +22,8 @@ const ROW = 'spirit/app/agent/element/table/row.js';
 function load(file) { return PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
+// A place on the spirit object itself, spirit.<its path> (goal/G49.23: no spirit.required; its first key spirit the object).
+const at = function (place) { return String(place).split('.').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); };
 
 // ── the world: a window of its own, the row element a stand-in ──
 // W.made: each row element made, { container, o, destroyed }. W.held: while set, the row element's file has not loaded yet.
@@ -59,7 +60,7 @@ test.run('before it runs, the page has no persona row element', 0.2, function ()
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.persona.elementRow') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.required.spirit.app.agent.element.table.persona.elementRow, with create', 0.2, async function () {
+test.run('it places spirit.app.agent.element.table.persona.elementRow, with create', 0.2, async function () {
   if (!W.up) return false;
   // What this file requires is what is asked from here on; the runner's own asks come before it.
   W.from = W.required.length;

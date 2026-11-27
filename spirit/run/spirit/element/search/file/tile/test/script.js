@@ -41,7 +41,7 @@ test.run('it loads through spirit.requireScript', 0.2, async function () {
 }, test.limit.quick);
 test.run('its create answers one node for the file it is handed, keyed by its path', 0.2, async function () {
   if (loaded !== 'loaded') return false;
-  made = JSON.parse(await chrome.evaluate('(function () { window.__pressed = []; var n = spirit.required.spirit.element.search.file.tile.create(' + R + ', { icon: "📄", press: function (row, key) { window.__pressed.push(key); } }); var c = document.createElement("div"); c.id = "under-test"; c.appendChild(n); document.body.appendChild(c); return JSON.stringify({ isNode: n.nodeType === 1, key: n.getAttribute("data-key"), label: (n.querySelector(".label") || {}).textContent, html: n.innerHTML, bar: !!n.querySelector(".tile-bar"), iconFirst: !!(n.firstElementChild && n.firstElementChild.classList.contains("icon")) }); }())'));
+  made = JSON.parse(await chrome.evaluate('(function () { window.__pressed = []; var n = spirit.element.search.file.tile.create(' + R + ', { icon: "📄", press: function (row, key) { window.__pressed.push(key); } }); var c = document.createElement("div"); c.id = "under-test"; c.appendChild(n); document.body.appendChild(c); return JSON.stringify({ isNode: n.nodeType === 1, key: n.getAttribute("data-key"), label: (n.querySelector(".label") || {}).textContent, html: n.innerHTML, bar: !!n.querySelector(".tile-bar"), iconFirst: !!(n.firstElementChild && n.firstElementChild.classList.contains("icon")) }); }())'));
   return (made.isNode === true && made.key === ROW.key) ? true : false;
 }, test.limit.quick);
 test.run('the tile shows the icon it is handed above the file\'s name, a bar for the relevance between them', 0.2, function () {

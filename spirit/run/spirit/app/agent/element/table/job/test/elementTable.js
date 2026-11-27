@@ -24,7 +24,8 @@ const ROW = 'spirit/app/agent/element/table/job/elementRow.js';
 function load(file) { PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
+// A place on the spirit object itself, spirit.<its path> (goal/G49.23: no spirit.required; its first key spirit the object).
+const at = function (place) { return String(place).split('.').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); };
 
 // ── the world: a window of its own, the shared element and the row editor stand-ins ──
 // W.tables: each shared table made, { container, o, refreshed, destroyed }. W.rows: each row editor made. W.held: while
@@ -64,7 +65,7 @@ test.run('before it runs, the page has no job table element', 0.2, function () {
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.job.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places the job table\'s elementTable on spirit.required by its path, with create', 0.2, async function () {
+test.run('it places the job table\'s elementTable on the spirit object by its path, with create', 0.2, async function () {
   if (!W.up) return false;
   // Its row editor's file run first, as the page's loader runs it, so it stands at its own place by the loader's placing
   // (goal/G49.9), never written there by this test; then this file, whose place sits beside it.

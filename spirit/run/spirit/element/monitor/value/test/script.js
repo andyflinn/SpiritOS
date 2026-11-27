@@ -23,7 +23,8 @@ test.after(function () {
 });
 const js = function (s) { return W.chrome.evaluate(s); };
 // Mounted into a container of its own, #v-<name>; what it shows, read from the page.
-const mount = function (name, opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.id = "v-' + name + '"; window["v_' + name + '"] = window.spirit.required.spirit.element.monitor.value.create(d, ' + JSON.stringify(opts) + '); return true; })()'); };
+// goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
+const mount = function (name, opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.id = "v-' + name + '"; window["v_' + name + '"] = window.spirit.element.monitor.value.create(d, ' + JSON.stringify(opts) + '); return true; })()'); };
 const read = async function (name) {
   try { return JSON.parse(await js('(function () { var c = document.getElementById("v-' + name + '"), t = c && c.querySelector("[data-tile]"); if (!t) return JSON.stringify({ html: c ? c.innerHTML : "" }); var v = t.querySelector(".value"), l = t.querySelector(".label"); return JSON.stringify({ tile: t.className === "stat-tile", value: v ? v.textContent : "", label: l ? l.textContent : "", icon: !!t.querySelector(".shell-icon"), html: t.innerHTML, mode: t.getAttribute("data-mode") }); })()')); } catch (e) { return {}; }
 };
@@ -37,9 +38,9 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
-test.run('it loads through spirit.requireScript, at spirit.required.spirit.element.monitor.value, with a create', 0.2, async function () {
+test.run('it loads through spirit.requireScript, at spirit.element.monitor.value, with a create', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/monitor/value/script.js"); }).then(function () { var m = window.spirit.required.spirit.element.monitor; return !!(m && m.value && typeof m.value.create === "function"); }, function () { return false; })');
+  W.loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/monitor/value/script.js"); }).then(function () { var m = window.spirit.element.monitor; return !!(m && m.value && typeof m.value.create === "function"); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 // The box: "a value, mounted with an icon, a label, a value and a mode ... The mode defaults to tile".

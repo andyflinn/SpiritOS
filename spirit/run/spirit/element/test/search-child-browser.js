@@ -7,8 +7,8 @@
 // below. Given scripts, the searches they are of; given none, or search.js itself, every search.
 //
 // HOW: a scratch node (the tracked files) and a headless Chrome on its face page, one fresh page per search. The selector is
-// mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.required.spirit.element.search.create,
-// as spirit/test/script-sibling-browser.js's WATCH does) to learn the spirit.required.spirit.data branch it is a view of, and more rows than
+// mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.element.search.create,
+// as spirit/test/script-sibling-browser.js's WATCH does) to learn the spirit.client branch it is a view of, and more rows than
 // fit are planted in that branch, each a copy of a row the branch holds (or the plain fields alone), its text a long value
 // with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel/script.js), as
 // the apps open one. EACH CHECK ONCE PER SEARCH (goal/G47.6), reported for that search's script: a search a check has nothing
@@ -113,14 +113,16 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
   return Promise.resolve(S.readyPromise).then(function () {
     return Promise.all([S.requireScript('spirit/element/search/script.js'), S.requireScript('spirit/element/panel/script.js')]);
   }).then(function () {
-    // The probabilitySearch watched: the spirit.required.spirit.data branch each one is made with.
+    // The probabilitySearch watched: the spirit.client branch each one is made with.
+    // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>,
+    // spirit.app.api, the store at spirit.client).
     var made = R.made = [];
-    var f = S.required.spirit.element.search; var real = f.create;
+    var f = S.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
     return S.requireScript('spirit/element/search/' + name + '/script.js').then(function () { return VIA_LIST[name] ? S.requireScript('spirit/element/search/' + name + '/list/script.js') : null; })
       // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list/script.js: "opts.grants the grants table, required"):
       // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).
-      .then(function () { return name === 'grant' ? S.requireScript('spirit/element/search/grant/grantsPanel/script.js').then(function () { OPTIONS.grant = { grants: S.required.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
+      .then(function () { return name === 'grant' ? S.requireScript('spirit/element/search/grant/grantsPanel/script.js').then(function () { OPTIONS.grant = { grants: S.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
   }).then(function () {
     var box = document.createElement('div');
     box.id = 'zz-host';
@@ -132,9 +134,9 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var under = document.createElement('div'); under.className = 'fill'; under.id = 'zz-under'; under.style.cssText = 'display:flex;flex-direction:column;min-height:0';
     pane.appendChild(under);
     R.stack = null;
-    var stack = S.required.spirit.element.panel.create(pane, under);
+    var stack = S.element.panel.create(pane, under);
     window.zzStack = stack;
-    var sel = S.required.spirit.element.search[name];
+    var sel = S.element.search[name];
     if (!sel || typeof sel.create !== 'function') { R.fail = true; return R; }
     // THE LIST IN PANE FACE (cw, checking these reds: "api: its selector is two dropdowns side by side by your ruling
     // (G29.7) and takes no face: pane, so it never draws a list. the test should judge api's list in pane face
@@ -160,17 +162,17 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
       var before = L.getBoundingClientRect();
       R.listBefore = { h: before.height, w: before.width };
       var keysBefore = L.querySelectorAll('[data-key]').length;
-      if (!R.data || !S.required.spirit.data || typeof S.required.spirit.data.setPath !== 'function') { R.noData = true; return R; }
+      if (!R.data || !S.client || typeof S.client.setPath !== 'function') { R.noData = true; return R; }
       // A ROW OF ITS OWN SHAPE FIRST: a list whose rows read fields of their own (branch: family and verb) draws no row
       // made of label, name, title and text alone; so the server's first answer is waited for, up to 8 s, and copied.
-      function heldRow() { return (S.required.spirit.data.rowsOf(R.data) || []).filter(function (r) { return r && typeof r === 'object' && !/^zz-plant-/.test(String(r.key)); })[0] || null; }
+      function heldRow() { return (S.client.rowsOf(R.data) || []).filter(function (r) { return r && typeof r === 'object' && !/^zz-plant-/.test(String(r.key)); })[0] || null; }
       var t0 = Date.now();
       function shaped() { var t = heldRow(); if (t || Date.now() - t0 > 8000) return Promise.resolve(t); return wait(250).then(shaped); }
       return shaped().then(function (template) {
       template = template || SHAPES[name] || null;
       R.template = !!template;
       R.planted = [];
-      for (var i = 0; i < ROWS; i++) { var k = 'zz-plant-' + i; R.planted.push(k); try { S.required.spirit.data.setPath(R.data + '/' + k, plant(template, i)); } catch (e) { R.plantError = true; } }
+      for (var i = 0; i < ROWS; i++) { var k = 'zz-plant-' + i; R.planted.push(k); try { S.client.setPath(R.data + '/' + k, plant(template, i)); } catch (e) { R.plantError = true; } }
       return wait(1500).then(function () {
         var after = L.getBoundingClientRect();
         var p = pane.getBoundingClientRect();
@@ -179,7 +181,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
         R.drawn = Array.prototype.filter.call(L.querySelectorAll('[data-key]'), function (el) { return /^zz-plant-/.test(el.getAttribute('data-key')); }).length;
         R.keysBefore = keysBefore;
         R.textHits = Array.prototype.filter.call(L.querySelectorAll('*'), function (el) { return !el.children.length && String(el.textContent || '').indexOf('zzLongValue') !== -1; }).length;
-        R.held = (S.required.spirit.data.rowsOf(R.data) || []).filter(function (x) { return /^zz-plant-/.test(String(x.key)); }).length;
+        R.held = (S.client.rowsOf(R.data) || []).filter(function (x) { return /^zz-plant-/.test(String(x.key)); }).length;
         R.scrolls = { sh: L.scrollHeight, ch: L.clientHeight, y: getComputedStyle(L).overflowY };
         // 3: the title and buttons: every button and input of the list's host outside the list.
         var fixed = Array.prototype.filter.call(list.querySelectorAll('button, input'), function (el) { return !L.contains(el) && el.getClientRects().length; });
@@ -202,10 +204,10 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     // 5, 6, 8: the detail, by the search's detail, in a panel layer as the apps open one.
     return S.requireScript('spirit/element/search/' + name + '/detail/script.js').then(function () { return true; }, function () { return false; });
   }).then(function (has) {
-    var D = has && S.required.spirit.element.search[name] && S.required.spirit.element.search[name].detail;
+    var D = has && S.element.search[name] && S.element.search[name].detail;
     if (!D || typeof D.create !== 'function') { R.noDetail = true; return R; }
     if (!R.data || !R.planted) { R.noDetailRow = true; return R; }
-    var rowOf = function (k) { var r = S.required.spirit.data.getPath(R.data + '/' + k); return Object.assign({ key: k }, r || {}); };
+    var rowOf = function (k) { var r = S.client.getPath(R.data + '/' + k); return Object.assign({ key: k }, r || {}); };
     // WHAT THE LIST WAS HANDED, THE DETAIL IS TOO (the grant detail, handed no grants table, draws its not-configured note and
     // nothing of a grant): OPTIONS first, the row's own fields over them.
     var optsOf = function (row) { var o = Object.assign({}, OPTIONS[name] || {}, row); try { if (typeof row.label === 'string' && /^\s*\{/.test(row.label)) Object.assign(o, JSON.parse(row.label)); } catch (e) { /* kept */ } o.row = row; o.panel = true; return o; };
@@ -255,7 +257,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var paneBox = document.createElement('div');
     paneBox.style.cssText = 'position:fixed;left:0;top:0;width:' + PANE_W + 'px;height:' + PANE_H + 'px;display:flex;flex-direction:column;overflow:hidden';
     document.body.appendChild(paneBox);
-    var selP = S.required.spirit.element.search[name];
+    var selP = S.element.search[name];
     try { selP.create(paneBox, Object.assign({}, OPTIONS[name] || {}, { face: 'pane' })); } catch (e) { R.paneError = true; }
     return wait(1000).then(function () {
       R.selectorPane = Array.prototype.some.call(paneBox.querySelectorAll('[id$="list"]'), function (x) { return !x.closest('[id$="-selectors"]') && x.getClientRects().length > 0; });
@@ -266,7 +268,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var corner = document.createElement('div');
     corner.style.cssText = 'position:fixed;right:4px;bottom:4px';
     document.body.appendChild(corner);
-    var sel = S.required.spirit.element.search[name];
+    var sel = S.element.search[name];
     try { sel.create(corner, Object.assign({}, OPTIONS[name] || {}, { face: 'dropdown' })); } catch (e) { R.dropError = true; return R; }
     return wait(1000).then(function () {
       var field = corner.querySelector('button[id$="field"]');

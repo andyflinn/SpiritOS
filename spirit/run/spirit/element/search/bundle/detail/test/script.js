@@ -80,7 +80,6 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}),
     element: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
-  // goal/G43.32: spirit.required is a plain place, no getter: the branch editor, now strict, sets spirit.required itself.
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // goal/G49.21: the bundles and the branches are each their own branch's data, the store's bundle and branch.
   const DATA_HERE = {};
@@ -96,8 +95,9 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
     // A folder's script.js at its folder's own name, as the loader places it (goal/G49.9, box v5).
     const keys = p.replace(/\.js$/, '').split('/');
     if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-    let o = global.window.spirit.required;
-    keys.slice(0, -1).forEach(function (k) { o = o[k] = o[k] || {}; });
+    // goal/G49.23: on the spirit object itself, its first key spirit the object.
+    let o = global.window.spirit;
+    keys.slice(1, -1).forEach(function (k) { o = o[k] = o[k] || {}; });
     o[keys[keys.length - 1]] = Object.assign(v, o[keys[keys.length - 1]] || {});
   };
   global.window.spirit.requireScript = function (p) {
@@ -108,7 +108,7 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   return true;
 }, test.limit.quick);
 
@@ -117,7 +117,7 @@ test.run('it requires the branch selector and the branch selector through spirit
   if (!required) return false;
   return ['spirit/element/search/api/script.js', 'spirit/element/search/branch/script.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.bundle.detail.create, and no page of its own', 0.2, function () {
+test.run('it registers spirit.element.search.bundle.detail.create, and no page of its own', 0.2, function () {
   if (!E) return false;
   return hasD() && D().open === undefined ? true : false;
 }, test.limit.quick);

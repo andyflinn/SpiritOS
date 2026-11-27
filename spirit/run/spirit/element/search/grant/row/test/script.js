@@ -6,8 +6,8 @@
 // it. The shared row element and the page's data set are real; the arming button is a stand-in that records what it was
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
 // tried, so nothing of either is the row's own: the node's grants as the Grants app configures them since
-// goal/G41.28 (spirit/element/search/grant/grantsPanel/script.js, which spirit/app/grants/element.js mounts: the branch the grant branch's client keeps, spirit.required.spirit.data.grant.data.branch,
-// and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.required.spirit.data path
+// goal/G41.28 (spirit/element/search/grant/grantsPanel/script.js, which spirit/app/grants/element.js mounts: the branch the grant branch's client keeps, spirit.client.grant.data.branch,
+// and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.client path
 // (node/family/branch) and its watch that branch's. The grant branch's client is loaded as a
 // page's spirit.requireScript('spirit/grant/script.js') brings it (goal/G49.21; once the auth family's data.js), as the Grants app asks it, the page's node known as spirit.startPage makes it
 // known (spirit.nodeFacts.key, then data.homeNode).
@@ -46,11 +46,11 @@ function grantsTable(o) {
   return t;
 }
 // As spirit/element/search/grant/grantsPanel/script.js, in the Grants app, configures the node's grants (goal/G41.28): the grant branch's client's branch and its watch (goal/G49.21).
-const NODE = grantsTable({ get branch() { return ((global.window.spirit.required.spirit.data || {}).grant || {}).data ? global.window.spirit.required.spirit.data.grant.data.branch : ''; }, key: 'key', label: 'label',
-  watch: function (fn) { return global.window.spirit.required.spirit.data.grant.data.watch(fn); } });
-// A second table, its branch a whole spirit.required.spirit.data path of the home node, its watch that branch's.
-const AGENT = grantsTable({ get branch() { return global.window.spirit.required.spirit.data.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
-  watch: function (fn) { const v = global.window.spirit.required.spirit.data.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
+const NODE = grantsTable({ get branch() { return ((global.window.spirit.client || {}).grant || {}).data ? global.window.spirit.client.grant.data.branch : ''; }, key: 'key', label: 'label',
+  watch: function (fn) { return global.window.spirit.client.grant.data.watch(fn); } });
+// A second table, its branch a whole spirit.client path of the home node, its watch that branch's.
+const AGENT = grantsTable({ get branch() { return global.window.spirit.client.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
+  watch: function (fn) { const v = global.window.spirit.client.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let SRC, required, loaded, armed, DATA, A, V, E;
@@ -72,8 +72,8 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
@@ -81,7 +81,7 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   // The grant branch's client, run from its path as its branch brings it (goal/G49.21): the Grants app requires
   // spirit/grant/script.js as it loads (spirit/element/search/grant/grantsPanel/script.js), and that script requires its client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' });
-  A = ((global.window.spirit.required.spirit.data || {}).grant || {}).data;
+  A = ((global.window.spirit.client || {}).grant || {}).data;
   // The direct writes below are the grant client's own view of the home node, as it files them.
   V = DATA.viewAt(null, 'grant');
   const made = {};
@@ -90,7 +90,7 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   await settle();
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.
   loaded = required.slice();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   return true;
 }, test.limit.quick);
 
@@ -111,7 +111,7 @@ test.run('the grant row names no table: no auth verb, no agent grant, and no str
   const names = /auth\.|spirit\.grant\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('the grant row registers spirit.required.spirit.element.search.grant.row.create', 0.2, function () {
+test.run('the grant row registers spirit.element.search.grant.row.create', 0.2, function () {
   if (!A) return false;
   return E.search.grant.row && typeof E.search.grant.row.create === 'function' ? true : false;
 }, test.limit.quick);

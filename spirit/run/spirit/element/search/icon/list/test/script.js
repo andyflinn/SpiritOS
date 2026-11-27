@@ -73,11 +73,11 @@ const MAKE = '(function () {' +
   ' return window.spirit.readyPromise.then(function () { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
   '  return Promise.resolve(window.spirit.requireScript("spirit/fs/script.js")).then(function (f) {' +
   '  var read = f.loadFile; f.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
-  '  return window.spirit.requireScript("spirit/element/search/icon/list/script.js"); }).then(function () { var F = window.spirit.required.spirit.data.fs.data;' +
+  '  return window.spirit.requireScript("spirit/element/search/icon/list/script.js"); }).then(function () { var F = window.spirit.client.fs.data;' +
   '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { window.__watches.push(typeof p === "function" ? "the tree" : String(p)); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
-  '   window.__list = window.spirit.required.spirit.element.search.icon.list.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
-const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p) || p === "the tree"; }), SET: window.spirit.required.spirit.element.search.icon.list.SET })';
+  '   window.__list = window.spirit.element.search.icon.list.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
+const SEEN = 'JSON.stringify({ asks: (window.__asks || []).filter(function (p) { return /iconSet\\.json$/.test(p); }), watches: (window.__watches || []).filter(function (p) { return /iconSet\\.json$/.test(p) || p === "the tree"; }), SET: window.spirit.element.search.icon.list.SET })';
 // What the newest list answers to a word, typed as the owner types it: the glyphs it draws.
 const FINDS = function (word) {
   return '(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(word) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()';
@@ -176,7 +176,7 @@ test.run('its file is spirit/iconSet.json', 0.2, async function () {
   atHome = await seen();
   return atHome.SET === SET ? true : false;
 }, test.limit.slow);
-test.run('it reads that file and no other, through spirit.required.spirit.fs.api.loadFile', 0.2, function () {
+test.run('it reads that file and no other, through spirit.fs.api.loadFile', 0.2, function () {
   if (!atHome) return false;
   return JSON.stringify(atHome.asks) === JSON.stringify([SET]) ? true : false;
 }, test.limit.quick);

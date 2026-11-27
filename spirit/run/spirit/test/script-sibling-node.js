@@ -8,7 +8,8 @@
 // The checks that load a script on the node: generalRules' "required alone on the node" (goal/G43.32, the box, testing
 // point 3; Andy: "a general test for any scriptFile.js is to spirit.require() it.", Q5: "I'm NOT demanding that all scripts
 // load in all environments, I'm demanding that they're placed in the spirit object according to these rules IF they are
-// required."). On the node a script answers at once and stands at spirit.required.<its path>; a branch's api.js binds its
+// required."). On the node a script answers at once and stands at its path on the spirit object, spirit.<its path minus spirit>
+// (goal/G49.23: no spirit.required); a branch's api.js binds its
 // branch and is judged by its place alone. Each script in a process of its own, in a copy of the tree, so a server script
 // never starts on the live checkout.
 //
@@ -37,7 +38,9 @@ function runRel(a) {
 }
 
 const test = require('./testReport.js');
-function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
+// A path's place on the spirit object itself (goal/G49.23, no spirit.required): its first key spirit the object, a folder's
+// script.js at its folder's own name (goal/G49.9), spirit/fs/script.js at spirit.fs.
+function placeKeys(rel) { const k = rel.replace(/\.js$/, '').split('/'); if (k.length > 1 && k[k.length - 1] === 'script') k.pop(); return k.slice(1); }
 function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/script.js' && fs.existsSync(path.join(RUN, f)); });
@@ -49,7 +52,7 @@ function requireOnNode(run, rel) {
     const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
       '(async function () { let at = null, err = false, promise = false; try { at = s.requireScript(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = !!String(e && e.message || e); }' +
-      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
+      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let out = '';
@@ -89,7 +92,7 @@ test.run('a copy of the tree with a node of its own is made to require the scrip
 }, test.limit.slow);
 
 if (!GIVEN.length) {
-  // every product script, placed in spirit.required where it is required
+  // every product script, placed on the spirit object where it is required
   test.run('more than a hundred product scripts are found, each to be required alone on the node and on a page', 0.2, function () {
     E.req = productScripts();
     return E.req.length > 100 || false;
@@ -106,13 +109,13 @@ if (!GIVEN.length) {
     }
     return E.nodeLoaded.length > 0 || false;
   }, test.limit.long);
-  test.run('on the node, every script that loads answers at once and stands at spirit.required.<path>', 0.4, function () {
+  test.run('on the node, every script that loads answers at once and stands at spirit.<path minus spirit>', 0.4, function () {
     if (!E.nodeLoaded) return false;
     return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || false;
   }, test.limit.quick);
 } else GIVEN.forEach(function (rel) {
   // Each script given judged in this one run, its result reported for that script (opts.script), so a failure says which.
-  test.run('on the node, the script loads, answers at once and stands at spirit.required.<path>', 0.4, async function () {
+  test.run('on the node, the script loads, answers at once and stands at spirit.<path minus spirit>', 0.4, async function () {
     if (!E.run) return false;
     if (!fs.existsSync(path.join(RUN, rel))) return false;
     const r = await requireOnNode(E.run, rel);

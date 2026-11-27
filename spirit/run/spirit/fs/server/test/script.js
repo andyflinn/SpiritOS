@@ -220,7 +220,7 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
     "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "const job = W.start(dir, jobs);",
-    // goal/G49.2: the tree is spirit.required.spirit.data.fs, through spirit/fs/dataset/script.js, which this process's watcher fills; read once it is whole.
+    // goal/G49.2: the tree is spirit.client.fs, through spirit/fs/dataset/script.js, which this process's watcher fills; read once it is whole.
     "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
     "const rowsOf = function () { const all = F.files(); return Object.keys(all).map(function (p) { return Object.assign({ path: p }, all[p]); }); };",
     "const end = Date.now() + 40000;",
@@ -280,7 +280,7 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
       "const W = require(path.join(run, 'spirit', 'fs', 'server', 'script.js'));",
       "const job = W.start(run, jobs);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
-      // goal/G49.2: the row is spirit.required.spirit.data.fs's, through spirit/fs/dataset/script.js, which this process's watcher fills.
+      // goal/G49.2: the row is spirit.client.fs's, through spirit/fs/dataset/script.js, which this process's watcher fills.
       "const F = require(path.join(run, 'spirit', 'fs', 'dataset', 'script.js'));",
       "const core = function () { const c = F.file('spirit/app/zzKept/zzKept.js'); return c ? c.core === true : null; };",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const now = core(); if (now === want || Date.now() > end) return r(now); setTimeout(tick, 100); })(); }); };",

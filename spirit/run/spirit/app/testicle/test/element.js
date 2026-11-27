@@ -247,22 +247,22 @@ test.run('the node\'s face page opens in Chrome and has its spirit', 0.2, async 
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
 }, test.limit.long);
 
-// its place: spirit.required.spirit.app.testicle.element, with a create
+// its place: spirit.app.testicle.element, with a create
 test.run('it loads through spirit.requireScript and mounts with create(container), answering { destroy }', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/app/testicle/element.js"); }).then(function () {' +
-    ' var E = ((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element; if (!E || typeof E.create !== "function") return null;' +
+    ' var E = (((window.spirit || {}).app || {}).testicle || {}).element; if (!E || typeof E.create !== "function") return null;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : null; }, function () { return null; })');
   return made === 'made' || false;
 }, test.limit.slow);
 
 // Box v134: each part loads its own and stands as an element of its own, so any app can mount it.
-test.run('once the face is mounted, each part stands at spirit.required.spirit.app.testicle.element.<name> with a create', 0.4, async function () {
+test.run('once the face is mounted, each part stands at spirit.app.testicle.element.<name> with a create', 0.4, async function () {
   if (!face()) return false;
-  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(PART_NAMES) + '; var at = (((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { return !(at[k] && typeof at[k].create === "function"); }); }())');
+  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(PART_NAMES) + '; var at = ((((window.spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { return !(at[k] && typeof at[k].create === "function"); }); }())');
   return (Array.isArray(got) && !got.length) || false;
 }, test.limit.slow);
 
@@ -300,7 +300,7 @@ test.run('at the start the centre holds one tab, the testicle search, and it is 
 test.run('its tab shows the testicle search, spirit/app/testicle/element/search/testicle.js, which the face loads', 0.2, async function () {
   if (!face()) return false;
   const loaded = /['"]spirit\/app\/testicle\/element\/search\/testicle\.js['"]/.test(code(FACE));
-  const there = await c.evaluate('!!(((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle)');
+  const there = await c.evaluate('!!((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle)');
   return (loaded && there && !!(await waitFor('shown() !== null && inCenter("input[id$=text]") > 0', 10000))) || false;
 }, test.limit.slow);
 
@@ -533,12 +533,12 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
 // goal/G47.1, the cycle "the test table streamed, and the page showing the current tests", the box: "The testicle server
 // streams every update, to every table: on a flip, the replaced row turning current false is published too, beside the new
 // current row", "The UI then sorts out the current tests from the old ones: the page keeps test rows by their full key,
-// script|suite|test|flipped". What the page keeps is read from its own spirit.required.spirit.data, the test table's branch that
+// script|suite|test|flipped". What the page keeps is read from its own store, spirit.client, the test table's branch that
 // spirit/app/testicle/data.js names; nothing is asked of the node for it.
 const ETA_TEST = 'eta answers its question';
 const pageTests = function () {
-  return c.evaluate('(function () { var R = window.spirit.required.spirit.data["spirit.app.testicle"] && window.spirit.required.spirit.data["spirit.app.testicle"].data; if (!R) return null; ' +
-    'var b = window.spirit.required.spirit.data.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
+  return c.evaluate('(function () { var R = window.spirit.client["spirit.app.testicle"] && window.spirit.client["spirit.app.testicle"].data; if (!R) return null; ' +
+    'var b = window.spirit.client.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
 };
 const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
 let flipSet = null, kept = null;

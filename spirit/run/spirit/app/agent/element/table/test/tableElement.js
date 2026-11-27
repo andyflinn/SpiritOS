@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/agent/element/table/test/tableElement.js
 // The tests of spirit/app/agent/element/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
-// The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/client/script.js). The boxes,
+// The browser file runs in node on a window of its own, over the real store, spirit.client (spirit/client/script.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 // One test.run per test (goal/G47.2): each test does its step and judges it; what the steps make is kept below for the
@@ -20,9 +20,10 @@ const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'tableElement.js');
 const AGENT = 'spirit/app/agent/api.js';
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
-// base64url (spirit.required.spirit.data.nodeId).
+// base64url (the store's nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
-function load(file) { PAGE_LOAD.runAsPage(file); }
+// It answers what the file put out, as the page's loader hands it back (goal/G49.23).
+function load(file) { return PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 
@@ -69,6 +70,9 @@ function world() {
   // Not a thenable: Promise.resolve hands the interface itself on.
   w.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
+    // ITS ROWS ON THE BRANCH, AS THE LOADER HANDS AN OLD-SHAPE BRANCH BACK (goal/G49.23, box v22 Part 1: an api.js answer
+    // carries what its data.js put out, as data): the real data.js's, once it has run.
+    if (table === 'data') return w.agentRows;
     return function (args) {
       w.calls.push({ table: table, args: args });
       const a = w.answer ? w.answer(table, args) : { id: 'KNEW' };
@@ -88,17 +92,17 @@ let BRANCH = null;
 const E = {};
 
 // ── its file ──
-test.run('the shared element runs on a window of its own, over the real spirit.required.spirit.data', 0.2, async function () {
+test.run('the shared element runs on a window of its own, over the real store, spirit.client', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'spirit', 'client', 'script.js'));
-  D = global.window.spirit.required.spirit.data;
+  // THE STORE AS THE LOADER HANDS IT BACK (goal/G49.23: no spirit.required), and handed as requireScript's answer below.
+  D = load(path.join(RUN, 'spirit', 'client', 'script.js'));
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.nodeFacts.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
   // with it, the real file run once from disk, as the real api.js does. That data.js (spirit/app/agent/data.js) keeps the tables'
-  // branches, <node>/spirit.app.agent/<table>, and answers them through spirit.required.spirit.data['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+  // branches, <node>/spirit.app.agent/<table>, and answers them through the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   const ran = {};
@@ -135,15 +139,18 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     w.required.push(String(p));
     // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once (branch data,
     // read at its place until goal/G49.10).
-    if (p === AGENT && !ran[p]) { ran[p] = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
+    if (p === AGENT && !ran[p]) { ran[p] = true; w.agentRows = load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     if (p === AGENT) return Promise.resolve(w.family);
+    // The store, the real one run above (goal/G49.23: the elements and data.js keep it as handed back).
+    if (p === 'spirit/client/script.js') return Promise.resolve(D);
     return Promise.resolve(Object.prototype.hasOwnProperty.call(STANDS, p) ? STANDS[p] : {});
   };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   load(FILE);
   // The element requires the agent family's api.js as it runs, and with it its data.js, once the element's tree has loaded.
   await settle();
-  AT = (((((global.window.spirit.required.spirit || {}).app || {}).agent || {}).element || {}).table || {});
+  // At its path on the spirit object itself (goal/G49.23: no spirit.required).
+  AT = ((((global.window.spirit.app || {}).agent || {}).element || {}).table || {});
   E.agentTable = AT.tableElement;
   AD = AT.tableElement || {};
   // What it asked as it loaded, kept apart from what this process asks later (the runner's own reports to testicle go
@@ -152,7 +159,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   return true;
 }, test.limit.quick);
 // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
-// ./row.js's. goal/G43.32: it stands at its path, spirit.required.spirit.app.agent.element.table.tableElement, its shared
+// ./row.js's. goal/G43.32: it stands at its path, spirit.app.agent.element.table.tableElement, its shared
 // pieces (once an element of their own, agentDetail) with its create.
 test.run('the file registers one element, the table editor with its create; the row editor lives in row.js', 0.2, function () {
   if (!AT) return false;
@@ -206,11 +213,12 @@ test.run('branchOf a table is the home node\'s <node>/spirit.app.agent/<table>, 
 // why: never a list drawn with no branch.
 test.run('with no agent branch\'s cache on the page, branchOf refuses and says why', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
-  const keptAD = ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
-  delete ((global.window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data;
+  // The branch's rows gone from what its api.js hands back (goal/G49.23: the element reads them there).
+  const keptAD = w.agentRows;
+  w.agentRows = null;
   let why = null; let drawn;
   try { drawn = AD.branchOf('job'); } catch (e) { why = e; }
-  global.window.spirit.required.spirit.data['spirit.app.agent'].data = keptAD;
+  w.agentRows = keptAD;
   return !!why && /agent/.test(String(why.message)) && /cache/.test(String(why.message)) ? true : false;
 }, test.limit.quick);
 
@@ -257,7 +265,7 @@ test.run('its list is a probabilitySearch in its own box, searched as it is made
   T.list = w.searches[0];
   return T.list && T.list.host === the(T.left, 'list') && T.list.refreshed >= 1 ? true : false;
 }, test.limit.quick);
-test.run('it searches the agent server\'s provider verb, seated in the branch <node>/spirit.app.agent/provider of spirit.required.spirit.data', 0.2, function () {
+test.run('it searches the agent server\'s provider verb, seated in the branch <node>/spirit.app.agent/provider of the store', 0.2, function () {
   if (!T.list) return false;
   return T.list.o.api === 'spirit/app/agent/api.js' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : false;
 }, test.limit.quick);

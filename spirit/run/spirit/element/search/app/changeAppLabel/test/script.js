@@ -35,14 +35,14 @@ test.run('a scratch node comes up, with a Chrome on its face page', 0.2, async f
   await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.requireScript and is spirit.required.spirit.element.search.app.changeAppLabel', 0.2, async function () {
+test.run('it loads through spirit.requireScript and is spirit.element.search.app.changeAppLabel', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/changeAppLabel/script.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.changeAppLabel && spirit.required.spirit.element.search.app.changeAppLabel.create); }, function () { return false; })');
+  loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/changeAppLabel/script.js"); }).then(function () { return !!(spirit.element.search.app.changeAppLabel && spirit.element.search.app.changeAppLabel.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 test.run('create, given a host and an app\'s key, answers an object with destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.required.spirit.element.search.app.changeAppLabel.create(b, { key: "spirit.app.agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
+  made = await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "l"; document.body.appendChild(b); window.__l = spirit.element.search.app.changeAppLabel.create(b, { key: "spirit.app.agent" }); return !!window.__l && typeof window.__l.destroy === "function"; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 

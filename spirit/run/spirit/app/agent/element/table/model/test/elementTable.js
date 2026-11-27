@@ -28,7 +28,8 @@ const PARTS = ['spirit/element/search/script.js', 'spirit/element/rowForm/script
 function load(file) { PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
+// A place on the spirit object itself, spirit.<its path> (goal/G49.23: no spirit.required; its first key spirit the object).
+const at = function (place) { return String(place).split('.').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); };
 
 // ── a small tree of nodes: markup, ids and classes, children in order, insertBefore, querySelector('#id' or '#id .class') ──
 function node(tag, attrs) {
@@ -121,7 +122,7 @@ test.run('before it runs, the page has no model table element', 0.2, function ()
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.model.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.required.spirit.app.agent.element.table.model.elementTable, with create', 0.2, async function () {
+test.run('it places spirit.app.agent.element.table.model.elementTable, with create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();

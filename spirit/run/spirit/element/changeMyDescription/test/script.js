@@ -94,7 +94,8 @@ function world(answer) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.nodeFacts = { key: 'KEY+DESCRIPTION/NODE==' };
-  win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
+  // goal/G49.23: the store at its path, spirit.client.
+  win.spirit.client.homeNode(win.spirit.nodeFacts.key);
   if (fs.existsSync(FILE)) pageRequire(SUBJECT);
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
   // outcome as spirit.js has it, and the node family's setDescription, which records every call and answers as the node would
@@ -107,8 +108,8 @@ function world(answer) {
     return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
   };
   win.spirit.readyPromise = Promise.resolve(win.spirit);
-  // goal/G43.32: it stands at its path.
-  w.E = win.spirit.required.spirit.element; w.win = win;
+  // goal/G43.32: it stands at its path; goal/G49.23: on the spirit object itself, spirit.element.
+  w.E = win.spirit.element || {}; w.win = win;
   return w;
 }
 const stored = function (name, args) { return { status: 200, body: { ok: true, description: String(args.description).trim() } }; };
@@ -118,7 +119,7 @@ let w, host, el, input, rf, save, said, inSpan, spanText, c, N, r, h2, i2, s2;
 test.run('spirit/element/changeMyDescription/script.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('it adds changeMyDescription.create to window.spirit.required', 0.2, function () {
+test.run('it adds changeMyDescription.create to window.spirit.element', 0.2, function () {
   w = world(stored);
   return (!!w.E.changeMyDescription && typeof w.E.changeMyDescription.create === 'function') ? true : false;
 }, test.limit.quick);
@@ -196,7 +197,7 @@ test.run('after the save it says saved', 0.2, function () {
 }, test.limit.quick);
 test.run('it requires spirit/node/api.js, and the description the node stored is kept in the card of the node branch\'s data', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
-  N = ((w.win.spirit.required.spirit.data || {}).node || {}).data;
+  N = ((w.win.spirit.client || {}).node || {}).data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !!N && !!N.card.get() && N.card.get().description === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('it requires no data script, as only an api.js requires its data.js', 0.2, function () {

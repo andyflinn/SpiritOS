@@ -58,8 +58,8 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js): the stream's branch rows land there.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
   global.window.spirit.dataStore = DATA;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
@@ -79,17 +79,17 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
   const standIn = function (p) {
     const keys = String(p).replace(/\.js$/, '').split('/'); if (keys[keys.length - 1] === 'script') keys.pop();
-    const v = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required);
+    const v = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); // goal/G49.23: on the spirit object itself
     return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
   };
   // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back,
   // the store this window ran above.
-  global.window.spirit.requireScript = function (p) { if (recording) required.push(String(p)); const was = recording; recording = false; try { dataScript(String(p)); } finally { recording = was; } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : p === 'spirit/client/script.js' ? DATA : standIn(p)); };
+  global.window.spirit.requireScript = function (p) { if (recording) required.push(String(p)); const was = recording; recording = false; try { dataScript(String(p)); } finally { recording = was; } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p]((global.window.spirit.element = global.window.spirit.element || {})); } return Promise.resolve(p === 'spirit/branch/script.js' ? branchBranch : p === 'spirit/client/script.js' ? DATA : standIn(p)); };
   // The branch branch is answered by its script.js path (goal/G49.6: never by a name; goal/G49.21).
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
-  A = ((global.window.spirit.required.spirit.data || {}).branch || {}).data;
+  E = global.window.spirit.element || {};
+  A = ((global.window.spirit.client || {}).branch || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;
@@ -105,7 +105,7 @@ test.run('it requires the branch branch\'s interface, spirit/branch/script.js, a
   if (!loaded) return false;
   return loaded.indexOf('spirit/branch/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) && hasA() ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.branch.row.create', 0.2, function () {
+test.run('it registers spirit.element.search.branch.row.create', 0.2, function () {
   if (!hasA()) return false;
   return hasRow() ? true : false;
 }, test.limit.quick);

@@ -28,16 +28,17 @@ const OLD = 'spirit/element/foo.js';
 const NEW = 'spirit/element/foo/script.js';
 
 // The scratch run root: what a move of spirit/element/foo.js to spirit/element/foo/script.js must find and fix.
+// Its dotted name at its place since goal/G49.23, on the spirit object itself: spirit.element.foo (no spirit.required).
 const PLANT = {
   'spirit/script.js': "'use strict';\n",
   // the script, with its own relative require
-  'spirit/element/foo.js': "'use strict';\n" + req('../script.js') + ";\nwindow.spirit.required.spirit.element.foo = { create: function () {} };\n",
+  'spirit/element/foo.js': "'use strict';\n" + req('../script.js') + ";\nwindow.spirit.element.foo = { create: function () {} };\n",
   // its test, its .md, a page fixture of its test
   'spirit/element/test/foo.js': "'use strict';\nconst FOO = " + req('../foo.js') + ";\nconst AT = /spirit\\/element\\/foo\\.js/;\n",
   'spirit/element/test/foo.md': "# foo\n\nThe tests of spirit/element/foo.js.\n",
   'spirit/element/test/foo-laid.html': "<!doctype html><script src=\"../foo.js\"></script>\n",
   // the files naming it: a require, spirit.requireScript, the dotted name, a path.join, a script tag, a doc
-  'spirit/element/bar.js': "'use strict';\n" + req('./foo.js') + ";\nspirit." + rs('spirit/element/foo.js') + ";\nconst f = spirit.required.spirit.element.foo.create;\n",
+  'spirit/element/bar.js': "'use strict';\n" + req('./foo.js') + ";\nspirit." + rs('spirit/element/foo.js') + ";\nconst f = spirit.element.foo.create;\n",
   'spirit/server/where.js': "'use strict';\nconst path = " + req('path') + ";\nconst P = path.join(__dirname, '..', 'element', 'foo.js');\n",
   'spirit/element/page.html': "<!doctype html><script src=\"/spirit/element/foo.js\"></script>\n",
   'spirit/README.md': "The foo element is spirit/element/foo.js.\n",
@@ -117,11 +118,11 @@ test.run('a spirit.requireScript of it names its new path', 0.4, function () {
 // spirit/element/foo.js stood, so the move leaves every dotted name as it was.
 test.run('its dotted name is left as it was where it is read, since a folder\'s script.js stands at its folder\'s name', 0.4, function () {
   const t = read(moved(), 'spirit/element/bar.js') || '';
-  return (t.indexOf('spirit.required.spirit.element.foo.create') !== -1 && t.indexOf('foo.script') === -1) || false;
+  return (t.indexOf('spirit.element.foo.create') !== -1 && t.indexOf('foo.script') === -1) || false;
 }, test.limit.slow);
 test.run('its dotted name is left as it was in the moved script itself', 0.4, function () {
   const t = read(moved(), NEW) || '';
-  return (t.indexOf('spirit.required.spirit.element.foo =') !== -1 && t.indexOf('foo.script') === -1) || false;
+  return (t.indexOf('spirit.element.foo =') !== -1 && t.indexOf('foo.script') === -1) || false;
 }, test.limit.slow);
 test.run('a path.join of its pieces names its new path', 0.4, function () {
   const t = read(moved(), 'spirit/server/where.js') || '';

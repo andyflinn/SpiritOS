@@ -21,7 +21,8 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 function placedAnswer(p, w) {
   const keys = String(p).replace(/\.js$/, '').split('/');
   if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-  const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, ((w || global.window).spirit || {}).required);
+  // goal/G49.23: on the spirit object itself, its first key spirit the object.
+  const at = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, (w || global.window).spirit);
   if (at && (typeof at === 'object' || typeof at === 'function')) return Promise.resolve(at);
   const no = Promise.reject(new Error('no stand-in for ' + p));
   no.catch(function () {});
@@ -69,7 +70,7 @@ test.run('the branch selector runs on a bare window', 0.2, async function () {
   };
   PAGE_LOAD.runAsPage(FILE, null, SRC);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  E = global.window.spirit.element || {};
   made = E.search.branch;
   return true;
 }, test.limit.quick);
@@ -79,7 +80,7 @@ test.run('it names nothing of the old shell\'s list search', 0.2, function () {
   const names = /shellCreateListSearch|listSearch\.js/.test(code);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.branch with a create, beside the other selectors; createBranchSelector gone', 0.2, function () {
+test.run('it registers spirit.element.search.branch with a create, beside the other selectors; createBranchSelector gone', 0.2, function () {
   if (!E) return false;
   return made && typeof made.create === 'function' && !('createBranchSelector' in E) ? true : false;
 }, test.limit.quick);

@@ -24,7 +24,8 @@ const ROW = 'spirit/app/agent/element/table/persona/elementRow.js';
 function load(file) { PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
+// A place on the spirit object itself, spirit.<its path> (goal/G49.23: no spirit.required; its first key spirit the object).
+const at = function (place) { return String(place).split('.').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); };
 
 // ── the world: a window of its own, the shared element and the row editor stand-ins ──
 // W.tables: each shared table made, { container, o, refreshed, destroyed }. W.rows: each row editor made. W.held: while
@@ -64,7 +65,7 @@ test.run('before it runs, the page has no persona table element', 0.2, function 
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.persona.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.required.spirit.app.agent.element.table.persona.elementTable, with create', 0.2, async function () {
+test.run('it places spirit.app.agent.element.table.persona.elementTable, with create', 0.2, async function () {
   if (!W.up) return false;
   // Its row editor's file run first, as the page's loader runs it, so it stands at its own place by the loader's placing
   // (goal/G49.9), never written there by this test; then this file, whose place sits beside it.
@@ -74,7 +75,7 @@ test.run('it places spirit.required.spirit.app.agent.element.table.persona.eleme
   E.table = at('spirit.app.agent.element.table.persona.elementTable');
   return (!!E.table && typeof E.table.create === 'function') || false;
 }, test.limit.quick);
-test.run('the row editor keeps its own place beside it, at spirit.required.spirit.app.agent.element.table.persona.elementRow', 0.2, function () {
+test.run('the row editor keeps its own place beside it, at spirit.app.agent.element.table.persona.elementRow', 0.2, function () {
   if (!E.table) return false;
   const r = at('spirit.app.agent.element.table.persona.elementRow');
   return (!!r && typeof r.create === 'function') || false;

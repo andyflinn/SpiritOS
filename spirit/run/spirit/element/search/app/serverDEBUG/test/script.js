@@ -70,7 +70,7 @@ const open = async function () {
 };
 // One serverDEBUG per app, each in a box of its own, named by the id's last word.
 const tag = function (key) { return key.slice(key.lastIndexOf('.') + 1); };
-const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + tag(key) + '"; document.body.appendChild(b); window["dbg_' + tag(key) + '"] = spirit.required.spirit.element.search.app.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + tag(key) + '"]; }())'); };
+const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + tag(key) + '"; document.body.appendChild(b); window["dbg_' + tag(key) + '"] = spirit.element.search.app.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + tag(key) + '"]; }())'); };
 const view = function (key) { return c.evaluate('(function () { var b = document.getElementById("dbg-' + tag(key) + '"); if (!b) return null; var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height, buttons: b.querySelectorAll("button").length }; }())'); };
 const pressIn = function (key) { return c.evaluate('(function () { var b = document.querySelector("#dbg-' + tag(key) + ' button"); if (!b) return false; b.click(); return true; }())'); };
 const hidden = function (v) { return !!v && v.height === 0 && v.text === ''; };
@@ -164,9 +164,9 @@ test.run('a Chrome page opens the face shell, and it has its spirit', 0.2, async
   if (c.error) return false;
   return (await open()) ? true : false;
 }, test.limit.slow);
-test.run('serverDEBUG.js loads through spirit.requireScript and puts its create on spirit.required', 0.2, async function () {
+test.run('serverDEBUG.js loads through spirit.requireScript and puts its create on spirit.element.search.app.serverDEBUG', 0.2, async function () {
   if (!c || c.error) return false;
-  loaded = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/serverDEBUG/script.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.serverDEBUG && spirit.required.spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
+  loaded = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/serverDEBUG/script.js"); }).then(function () { return !!(spirit.element.search.app.serverDEBUG && spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 
@@ -226,7 +226,7 @@ test.run('the page opens again', 0.2, async function () {
 }, test.limit.quick);
 test.run('the detail of Zz Debug is made', 0.2, async function () {
   if (!c || c.error) return false;
-  detail = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/detail/script.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.required.spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(ID) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
+  detail = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/detail/script.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(ID) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
   return detail === true ? true : false;
 }, test.limit.quick);
 test.run('the detail loads changeAppIcon.js and changeAppLabel.js', 0.2, async function () {

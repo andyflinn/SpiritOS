@@ -316,7 +316,8 @@ function relayWorld(rows, relayStatus) {
         return got;
       });
     },
-    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P } } },
+    // goal/G49.23: what stood under spirit.required stands on the spirit object itself, at its path.
+    ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P },
     // THE DATA SET IS spirit.dataStore (goal/G49.23): the one object a test plants its rows in; the element reads it there and
     // asks no client script.
     dataStore: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
@@ -416,7 +417,7 @@ test.run('The contact detail loads the arming button element itself through the 
 }, test.limit.quick);
 test.run('The contact detail is an element made by create, with no open of its own, so it opens as a panel', 0.2, function () {
   if (!P.w) return false;
-  const E = P.w.win.spirit.required.spirit.element.search.contact.detail;
+  const E = P.w.win.spirit.element.search.contact.detail;
   if (E && typeof E.create === 'function') P.E = E;
   return (!!E && typeof E.create === 'function' && E.open === undefined) || false;
 }, test.limit.quick);
@@ -654,7 +655,7 @@ test.run('For a relay, the detail loads the arming button element itself through
 }, test.limit.quick);
 test.run('For a relay, the detail is the same element made by create, told it is a relay, with no open of its own, so it opens as a panel', 0.2, function () {
   if (!L.w) return false;
-  const E = L.w.win.spirit.required.spirit.element.search.contact.detail;
+  const E = L.w.win.spirit.element.search.contact.detail;
   if (E && typeof E.create === 'function') L.E = E;
   return (!!E && typeof E.create === 'function' && E.open === undefined) || false;
 }, test.limit.quick);
@@ -1062,7 +1063,7 @@ test.run('In Chrome the contact detail is mounted for the relay\'s key, told it 
   await chrome.send('Page.navigate', { url: S.N.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
-  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail/script.js")).then(function () { var E = window.spirit.required.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
+  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail/script.js")).then(function () { var E = window.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
   if (mounted !== 'ok') return false;
   S.chrome = chrome;
   return true;
@@ -1217,7 +1218,7 @@ test.run('The face form has a function saying whether it has relays to offer', 0
   await S.chrome.send('Page.navigate', { url: S.N.base + '/' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
-  S.checkArgs = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/faceForm/script.js")).then(function () { var F = window.spirit.required.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
+  S.checkArgs = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/faceForm/script.js")).then(function () { var F = window.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
   return !!S.checkArgs || false;
 }, test.limit.slow);
 test.run('The face form offers a faceable relay, alone or beside one without 😏', 0.2, function () {
@@ -1310,7 +1311,7 @@ test.run('taking away a 😏 it does not have changes nothing', 0.2, async funct
 test.run('the panel draws for it', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Far) return false;
-  const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail/script.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.required.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
+  const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail/script.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
   await until(function () { return S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'); }, 8000);
   S.farStar = await S.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Give this relay full face capability") !== -1; }).length');
   return (farPanel === 'ok' && await S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0')) || false;

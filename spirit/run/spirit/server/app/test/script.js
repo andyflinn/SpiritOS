@@ -7,7 +7,7 @@
 // streamListener. The one spirit object is a stand-in, so nothing reaches a real node: the families answer by posting to
 // that pipe, and a delivery can be held back, or refused, until the test says otherwise. A restart is a second process:
 // this file run with --child <mode>, printing one RESULT line.
-// The one test file of appServer.js: the agentsFile part (AGENTS.md through spirit.required.spirit.fs.api.loadFile), the mount part (the
+// The one test file of appServer.js: the agentsFile part (AGENTS.md through spirit.fs.api.loadFile), the mount part (the
 // node starts a server from spirit/app/<name>/) and the stateCache part (its cache in spirit/state/<name>/cache/), once
 // appServer-agentsFile.js, appServer-mount.js and appServer-stateCache.js, are sections of it, run after its own checks
 // and never in a --child process.
@@ -232,8 +232,9 @@ function start(streamOpts, publisherOpts) {
   return { A: A, s: s, D: A.data };
 }
 // What the client's cache holds, asked of the family's data.js, which alone names its branches (goal/G41.28; Andy:
-// "the client manager should keep that cache"): spirit.required.spirit.data.<family>.data, attached by appServer to the process's spirit.
-const kept = function () { return (globalThis.spirit && ((globalThis.spirit.required.spirit.data || {})[FAMILY_ID] || {}).data) || null; };
+// "the client manager should keep that cache"): the store's <family>.data, attached by appServer to the process's spirit.
+// goal/G49.23: the store as spirit.requireScript hands it back (no spirit.required; the store places nothing itself).
+const kept = function () { const D = fake.requireScript('spirit/client/script.js'); return (D && (D[FAMILY_ID] || {}).data) || null; };
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
 const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 
@@ -563,7 +564,7 @@ function putBackTheRealSpirit() {
 // THE AGENTSFILE PART, once appServer-agentsFile.js.
 function agentsFilePart() {
   // Once spirit/run/spirit/test/appServer-agentsFile.js.
-  // THE AGENT'S AGENTS.md THROUGH spirit.required.spirit.fs.api.loadFile AT ITS PATH (goal/G43.27, requirement 8; spec: ./script.md),
+  // THE AGENT'S AGENTS.md THROUGH spirit.fs.api.loadFile AT ITS PATH (goal/G43.27, requirement 8; spec: ./script.md),
   // not through the family's FS: appServer.js's AGENTS paragraph. Andy: "easily changed, no?". appServer.js read as it is.
 
   const fs = require('fs');
@@ -573,7 +574,7 @@ function agentsFilePart() {
   // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
   function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
 
-  // appServer-agentsFile: the agent's AGENTS.md through spirit.required.spirit.fs.api.loadFile at its path (goal/G43.27), 8.
+  // appServer-agentsFile: the agent's AGENTS.md through spirit.fs.api.loadFile at its path (goal/G43.27), 8.
   let block = '';
   test.run('appServer.js\'s AGENTS paragraph is read', 0.2, function () {
     putBackTheRealSpirit();
@@ -581,7 +582,7 @@ function agentsFilePart() {
     block = (as.match(/AGENTS: AN APP'S RULES FOR AGENTS[\s\S]*?\n\n/) || [''])[0];
     return block.length > 100 || false;
   }, test.limit.quick);
-  test.run('it says AGENTS.md is read with spirit.required.spirit.fs.api.loadFile at its path', 0.2, function () {
+  test.run('it says AGENTS.md is read with spirit.fs.api.loadFile at its path', 0.2, function () {
     return (/spirit\.fs\.loadFile/.test(block) && !/family's FS|FS\.loadFile \{path: "AGENTS\.md"\}/.test(block)) || false;
   }, test.limit.quick);
 }
@@ -1221,11 +1222,11 @@ function ownPart() {
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
     return text.indexOf('item 2') !== -1 || false;
   }, test.limit.quick);
-  test.run('its spirit.required.spirit.data holds the cache under the sender\'s key, and nothing beside it at the top', 0.2, function () {
+  test.run('its store, spirit.client, holds the cache under the sender\'s key, and nothing beside it at the top', 0.2, function () {
     const one = C.one || {};
     return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || false;
   }, test.limit.quick);
-  test.run('under the sender\'s key its spirit.required.spirit.data holds the branch, as <key>.<branch>', 0.2, function () {
+  test.run('under the sender\'s key its store, spirit.client, holds the branch, as <key>.<branch>', 0.2, function () {
     const one = C.one || {};
     // The branch by its id, spirit.app.zzstream (goal/G49.19: an app's data-set family is its id).
     return (Array.isArray(one.family) && one.family.indexOf(FAMILY_ID) !== -1) || false;

@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the agent server's tables (goal/G41.28): job, model, persona and provider, each its own branch,
 // id -> the row, under the node that served it; the rows the server publishes merged in (goal/G41.16), and the reads the
-// tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
+// tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real store, spirit.client
 // (spirit/client/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
 // In node it comes with the family's api.js, spirit.requireScript('spirit/app/agent/api.js'). One test.run per test (goal/G47.2).
 
@@ -29,21 +29,23 @@ const W = {};
 let n = 0;
 // A row as the stream hands it: a job of module spirit.app.agent whose app is the agent server's publish (rowTable.js).
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.agent', data: {}, app: app }, from || HOME_KEY); };
-// The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.agent'], its rows at <node>/spirit.app.agent/<table>.
+// The family is the app's id (goal/G49.19): the store's ['spirit.app.agent'], its rows at <node>/spirit.app.agent/<table>.
 const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/spirit.app.agent/' + table + '/' + id); };
 
-test.run('loaded in a window beside the real data set, the agent branch\'s cache stands at spirit.required.spirit.data[\'spirit.app.agent\'].data', 0.2, function () {
+test.run('loaded in a window beside the real data set, the agent branch\'s cache stands at the store\'s [\'spirit.app.agent\'].data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
   win.spirit = { isBrowser: function () { return true; } };
   try {
     vm.createContext(win);
-    PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
-    win.spirit.required.spirit.data.homeNode(HOME_KEY);
+    // THE STORE AS THE PAGE'S LOADER HANDS IT BACK (goal/G49.23: no spirit.required): run as the page runs it, and handed
+    // as spirit.requireScript's answer, at once, to the data.js that asks for it.
+    W.D = PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+    PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': W.D });
+    W.D.homeNode(HOME_KEY);
     PAGE_LOAD.runAsPage(FILE, win);
   } catch (e) { return false; }
-  W.D = win.spirit.required.spirit.data;
   W.A = ((W.D || {})['spirit.app.agent'] || {}).data;
   return !!W.A || false;
 }, test.limit.quick);
@@ -164,10 +166,13 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
 }, test.limit.quick);
 
 // ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
-test.run('in node, requiring the agent interface brings its data.js, at spirit.required.spirit.data[\'spirit.app.agent\'].data with row and branch', 0.2, async function () {
+test.run('in node, requiring the agent interface brings its data.js, at the store\'s [\'spirit.app.agent\'].data with row and branch', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/agent/api.js')); } catch (e) { return false; }
-  const A = s.required.spirit.data && s.required.spirit.data['spirit.app.agent'] && s.required.spirit.data['spirit.app.agent'].data;
+  // The store as spirit.requireScript hands it back (goal/G49.23: no spirit.required).
+  let D = null;
+  try { D = await Promise.resolve(s.requireScript('spirit/client/script.js')); } catch (e) { return false; }
+  const A = D && D['spirit.app.agent'] && D['spirit.app.agent'].data;
   return (!!A && typeof A.row === 'function' && typeof A.branch === 'function') || false;
 }, test.limit.quick);

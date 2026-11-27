@@ -89,7 +89,7 @@ test.run('the face shell has its spirit object', 0.2, async function () {
 // the box: "without one they show it"
 test.run('its element\'s create, given a container, answers an object with destroy', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.required.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return ""; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : ""; }, function () { return ""; }); }())');
+  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/app/' + NAME + '/element.js").then(function (E) { if (!E || typeof E.create !== "function") return ""; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : ""; }, function () { return ""; }); }())');
   return made === 'ok' || false;
 }, test.limit.quick);
 // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search/script.js).
@@ -124,7 +124,7 @@ test.run('app.active switches the media app on', 0.2, async function () {
 }, test.limit.quick);
 test.run('its tile is there and pressed', 0.2, async function () {
   if (!W.page) return false;
-  await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzSel"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:10000;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.create(b, { face: "tiles" }); return "made"; }); }())');
+  await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzSel"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:10000;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function (E) { window.__sel = E.create(b, { face: "tiles" }); return "made"; }); }())');
   const pressed = await until(function () { return W.c.evaluate('(function () { var t = document.querySelector("#zzSel .app-icon[data-key=\\"' + KEY + '\\"]"); if (!t) return false; t.click(); return true; }())'); }, 15000);
   return !!pressed || false;
 }, test.limit.quick);

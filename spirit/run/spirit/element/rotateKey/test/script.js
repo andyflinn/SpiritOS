@@ -138,21 +138,21 @@ let w, at, E, host, made, said, missing, b, a, rot, after, slow, h2, b2, busy, n
 test.run('spirit/element/rotateKey/script.js is there', 0.2, function () {
   return (!!SRC) ? true : false;
 }, test.limit.quick);
-test.run('rotateKey.js sets spirit.required.spirit.element.rotateKey to an object with create', 0.2, function () {
+test.run('rotateKey.js sets spirit.element.rotateKey to an object with create', 0.2, function () {
   // an element mounted the new shell's way (goal/G43.24, requirements 7 and 8)
   w = world(rotated);
-  // goal/G43.32: it stands at its path.
-  at = ((w.win.spirit.required || {}).spirit || {}).element || {};
+  // goal/G43.32: it stands at its path; goal/G49.23: on the spirit object itself, spirit.element.
+  at = w.win.spirit.element || {};
   E = at.rotateKey;
   return (!!E && typeof E.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('rotateKey.js uses no spirit.shell.activateApp and no dialog of the old shell', 0.2, function () {
   return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
-test.run('rotateKey asks the node through the spirit object, by spirit.required.spirit.node.api.rotateCipher, and never by api.verb', 0.2, function () {
+test.run('rotateKey asks the node through the spirit object, by spirit.node.api.rotateCipher, and never by api.verb', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
   // Since goal/G49.6 the node branch is required by its api.js's path, and its verb called on what that answers, the object
-  // standing at spirit.required.spirit.node.api.
+  // standing at spirit.node.api (goal/G49.23).
   // Since goal/G49.9 (box v5) it keeps requireScript's answer by one helper of its own, keepAnswer(path), which calls
   // spirit.requireScript with it: asking that helper for the path is asking requireScript for it.
   const asks = /requireScript\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE) ||
@@ -228,7 +228,7 @@ test.run('after a disarm the next press only arms the button again: two presses 
   await settle();
   return (w.calls.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('the second press asks spirit.required.spirit.node.api.rotateCipher once, with no arguments', 0.2, async function () {
+test.run('the second press asks spirit.node.api.rotateCipher once, with no arguments', 0.2, async function () {
   // the second press: one rotateCipher, the result said
   b.fire('click', { preventDefault: function () {} });
   await settle();
@@ -249,7 +249,7 @@ test.run('once the node is asked, the button is drawn disabled until the answer 
   // while the node has not answered, the button waits
   slow = world(function () { return { wait: true, body: { ok: true, at: 3, relays: 2 } }; });
   h2 = node('<div>');
-  slow.win.spirit.required.spirit.element.rotateKey.create(h2, {});
+  slow.win.spirit.element.rotateKey.create(h2, {});
   await settle();
   b2 = slow.button(h2);
   b2.fire('click', { preventDefault: function () {} });
@@ -270,7 +270,7 @@ test.run('the node\'s refusal is said, escaped, and nothing claims a rotation', 
   // a refusal is said, and the button stays to try again
   no = world(function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner <only>' } }; });
   h3 = node('<div>');
-  no.win.spirit.required.spirit.element.rotateKey.create(h3, {});
+  no.win.spirit.element.rotateKey.create(h3, {});
   await settle();
   b3 = no.button(h3);
   b3.fire('click', { preventDefault: function () {} });
@@ -285,7 +285,7 @@ test.run('after a refusal the button is back, disarmed', 0.2, function () {
 test.run('a node that does not answer is said as no answer', 0.2, async function () {
   none = world(function () { return { status: 0, body: null }; });
   h4 = node('<div>');
-  none.win.spirit.required.spirit.element.rotateKey.create(h4, {});
+  none.win.spirit.element.rotateKey.create(h4, {});
   await settle();
   b4 = none.button(h4);
   b4.fire('click', { preventDefault: function () {} });
@@ -313,12 +313,12 @@ test.run('destroyed before its arming button loads, rotateKey draws and attaches
   letGo = null;
   late.hold = new Promise(function (r) { letGo = r; });
   // goal/G43.32: the run again takes the place of a fresh page's, where no element stands yet.
-  delete late.win.spirit.required.spirit.element.rotateKey;
+  delete late.win.spirit.element.rotateKey;
   // Its text run here, not through spirit.requireScript (goal/G49.6): requireScript loads a file once and hands back the same
   // one, as a page does, and this check needs it run a second time on a window that ran it already.
   PAGE_LOAD.runAsPage(FILE, late.win, SRC);
   h6 = node('<div>');
-  m6 = late.win.spirit.required.spirit.element.rotateKey.create(h6, {});
+  m6 = late.win.spirit.element.rotateKey.create(h6, {});
   m6.destroy();
   letGo({});
   await settle();

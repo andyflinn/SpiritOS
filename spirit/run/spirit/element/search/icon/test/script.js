@@ -51,10 +51,10 @@ test.run('the icon selector is made on the page', 0.2, async function () {
   left = glyphs[0];
   made = await chrome.evaluate(ASKS + '.then(function () {' +
     ' return window.spirit.requireScript("spirit/element/search/icon/script.js"); }).then(function () { var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:400px;z-index:99999";' +
-    ' window.__root = window.spirit.required.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function () { return null; });
+    ' window.__root = window.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function () { return null; });
   return made === 'made' ? true : false;
 }, test.limit.slow);
-test.run('it reads the icon set file and no other, through spirit.required.spirit.fs.api.loadFile', 0.2, async function () {
+test.run('it reads the icon set file and no other, through spirit.fs.api.loadFile', 0.2, async function () {
   if (made !== 'made') return false;
   await until(function () { return chrome.evaluate('window.__asks.length > 0'); }, 8000);
   await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);
@@ -99,7 +99,7 @@ test.run('a selector and two lists made together read the icon set file once', 0
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   await chrome.evaluate(ASKS + '.then(function () {' +
     ' return Promise.all([window.spirit.requireScript("spirit/element/search/icon/script.js"), window.spirit.requireScript("spirit/element/search/icon/list/script.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +
-    ' window.__root = window.spirit.required.spirit.element.search.icon.create(box, {}); window.spirit.required.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); window.spirit.required.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); return 1; })');
+    ' window.__root = window.spirit.element.search.icon.create(box, {}); window.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); window.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); return 1; })');
   await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);
   const once = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
   return once.length === 1 ? true : false;

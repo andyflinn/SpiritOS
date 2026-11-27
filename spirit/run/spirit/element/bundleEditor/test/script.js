@@ -39,7 +39,7 @@ function holds(root, cls) { return all(root).some(function (k) { return new RegE
 
 // What the tests make, shared by the tests after them.
 let recording = true;
-let SRC, asked, required, loaded, sels, forms, answer, bundle, STANDS, watches, arrive, E, box, made, input, add, rf,
+let STORE, SRC, asked, required, loaded, sels, forms, answer, bundle, STANDS, watches, arrive, E, box, made, input, add, rf,
   sel, r0, w0;
 test.run('the bundle editor names no api-branch selector and no description: a bundle is a label, and its branches are the branch editor\'s', 0.2, function () {
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
@@ -73,17 +73,18 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, required: { spirit: {} }, normalizeString: LOADER.normalizeString,
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, normalizeString: LOADER.normalizeString,
     readyPromise: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;
-  // goal/G43.32: fieldInput, a helper, stands in spirit.required (spirit/test/headLessChrome.js pageSpirit).
+  // goal/G43.32: fieldInput, a helper, stands at its path (spirit/test/headLessChrome.js pageSpirit); goal/G49.23: on the spirit object itself.
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, what it puts out is the store.
+  STORE = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'client', 'script.js'));
   // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
-  global.window.spirit.dataStore = global.window.spirit.required.spirit.data;
+  global.window.spirit.dataStore = STORE;
   global.window.spirit.nodeFacts = { key: 'KEY+BUNDLE/EDITOR==' };
-  global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
+  STORE.homeNode(global.window.spirit.nodeFacts.key);
   // A branch's cache: the bundle branch's script brings its client, as the real spirit/bundle/script.js does, run once on
   // this window from its path; the watches on its rows counted, and their releases.
   watches = { made: 0, released: 0 };
@@ -95,7 +96,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
     recording = false;
     try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'bundle', 'client', 'script.js'), 'utf8'), { filename: 'spirit/bundle/client/script.js' }); } finally { recording = true; }
     const count = function () {
-      const T = ((global.window.spirit.required.spirit.data || {}).bundle || {}).data;
+      const T = (STORE.bundle || {}).data;
       if (T && !T.counted) {
         const own = T.watch; T.counted = true;
         T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
@@ -106,24 +107,25 @@ test.run('the bundle editor requires the field input and the bundle selector thr
     count(); Promise.resolve().then(count);
   };
   // A bundle row on the node's own job spirit.bundle, as the bundle branch's client takes it (goal/G43.20, G49.21).
-  arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.bundle', data: { row: { id: id, label: label, owner: 'node' } } }); };
+  arrive = function (id, label) { STORE.takeJob({ id: 'spirit.bundle', data: { row: { id: id, label: label, owner: 'node' } } }); };
   // The data store is answered as spirit.requireScript('spirit/client/script.js') hands it back (goal/G49.23): the one this
   // window ran above.
-  global.window.spirit.requireScript = function (p) { if (recording) required.push(String(p)); if (p === 'spirit/client/script.js') return Promise.resolve(global.window.spirit.required.spirit.data); if (p === 'spirit/bundle/script.js') family(); if (p === 'spirit/bundle/script.js') return Promise.resolve(bundle); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
+  global.window.spirit.requireScript = function (p) { if (recording) required.push(String(p)); if (p === 'spirit/client/script.js') return Promise.resolve(STORE); if (p === 'spirit/bundle/script.js') family(); if (p === 'spirit/bundle/script.js') return Promise.resolve(bundle); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
   // The bundle branch is answered by its script's path (goal/G49.6: never by a name).
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   // What the editor asked as it loaded; the runner's own asks after this test are not the editor's.
   loaded = required.slice();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  // goal/G49.23: placed on the spirit object itself, spirit.element.bundleEditor.
+  E = global.window.spirit.element || {};
   // it loads what it uses itself (rule/26)
   return (['spirit/element/fieldInput/script.js', 'spirit/element/search/bundle/script.js'].every(function (p) { return required.indexOf(p) !== -1; })) ? true : false;
 }, test.limit.quick);
 test.run('the bundle editor requires spirit/bundle/script.js and no data.js or client script, and the bundles it adds stand on the page', 0.2, function () {
   if (!loaded) return false;
-  return (loaded.indexOf('spirit/bundle/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) && !!(((global.window.spirit.required.spirit.data || {}).bundle || {}).data)) ? true : false;
+  return (loaded.indexOf('spirit/bundle/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) && !!((STORE.bundle || {}).data)) ? true : false;
 }, test.limit.quick);
-test.run('the bundle editor registers spirit.required.spirit.element.bundleEditor.create', 0.2, function () {
+test.run('the bundle editor registers spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('the bundle editor draws a label input and an Add button', 0.2, async function () {
@@ -193,7 +195,7 @@ test.run('a valid label asks spirit.bundle.add to add it, as the rule writes it,
 }, test.limit.quick);
 test.run('once answered, but before the bundle is in the bundle branch\'s cache, the label stays and nothing is said added', 0.2, function () {
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
-  // via the spirit object"): what it adds, it listens for, in spirit.required.spirit.data.bundle.data.
+  // via the spirit object"): what it adds, it listens for, in spirit.dataStore.bundle.data (goal/G49.23).
   return (input.value === '  Reader ' && !/\badded\b/.test(text(box))) ? true : false;
 }, test.limit.quick);
 test.run('another bundle arriving leaves the label as it is', 0.2, async function () {
@@ -201,7 +203,7 @@ test.run('another bundle arriving leaves the label as it is', 0.2, async functio
   await settle();
   return (input.value === '  Reader ') ? true : false;
 }, test.limit.quick);
-test.run('once the bundle it asked for is in spirit.required.spirit.data.bundle.data, the input is empty and the add is said', 0.2, async function () {
+test.run('once the bundle it asked for is in spirit.dataStore.bundle.data, the input is empty and the add is said', 0.2, async function () {
   arrive(8, 'Reader');
   await settle();
   return (input.value === '' && /\badded\b/.test(text(box))) ? true : false;
@@ -234,7 +236,7 @@ test.run('destroy empties its box', 0.2, function () {
   made.destroy();
   return (box.kids.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('destroy lets its watch on spirit.required.spirit.data.bundle.data go', 0.2, function () {
+test.run('destroy lets its watch on spirit.dataStore.bundle.data go', 0.2, function () {
   return (watches.released === w0 + 1) ? true : false;
 }, test.limit.quick);
 test.run('destroy lets its bundle pane go', 0.2, function () {

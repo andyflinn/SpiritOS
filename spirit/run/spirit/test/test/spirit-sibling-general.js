@@ -51,7 +51,8 @@ PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit
 // plants stand there and set module.exports; the loader places them.
 const LISTENS = 'spirit/element/zzListen/writer.js';
 const DEAF = 'spirit/element/zzListen/deaf.js';
-const WRITES = 'it sends writes and watches spirit.required.spirit.data';
+// Its check's title since goal/G49.23 names the store, no spirit.required.
+const WRITES = 'it sends writes and watches the store';
 PLANT['spirit/element/zzListen/child.js'] = '\'use strict\';\nwindow.spirit.requireScript(\'spirit/element/search/script.js\');\nfunction branchOf(n) { return \'zz/\' + n; }\nvar made = function (o) { return { data: branchOf(o.table) }; };\nmodule.exports = { create: made };\n';
 PLANT[LISTENS] = '\'use strict\';\nwindow.spirit.requireScript(\'spirit/element/zzListen/child.js\');\nvar ask = { op: \'set\', table: \'zz\' };\nmodule.exports = { create: function () { return ask; } };\n';
 PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nmodule.exports = { create: function () { return ask; } };\n';

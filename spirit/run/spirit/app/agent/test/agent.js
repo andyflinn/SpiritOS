@@ -99,7 +99,7 @@ function filesUnder(dir) {
     if (STOP) return false;
     // The appSelector, as the shell app makes it, over the page. A second call replaces the first.
     selector = function (face) {
-      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function (E) { window.__sel = E.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
     // The box's text on one line, so a failure says what was on the page.
     shown = function () { return c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(function (t) { return String(t).replace(/\s+/g, ' '); }); };
@@ -203,14 +203,14 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   test.run('the server adds one more provider', 0.2, async function () {
     if (STOP) return false;
 
-    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.required.spirit.data.
+    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into the store, spirit.client (goal/G49.23).
     added = await call(N.base, MODULE + '.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
     liveId = added.body && added.body.id;
     return (!!liveId) ? true : false;
   }, test.limit.quick);
-  test.run('it reaches the page\'s spirit.required.spirit.data["spirit.app.agent"] with no reload', 0.2, async function () {
+  test.run('it reaches the page\'s store, spirit.client["spirit.app.agent"], with no reload', 0.2, async function () {
     if (STOP) return false;
-    onPage = function () { return c.evaluate('(function () { var r = spirit.required.spirit.data[\"spirit.app.agent\"] && spirit.required.spirit.data[\"spirit.app.agent\"].data && spirit.required.spirit.data[\"spirit.app.agent\"].data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
+    onPage = function () { return c.evaluate('(function () { var r = spirit.client[\"spirit.app.agent\"] && spirit.client[\"spirit.app.agent\"].data && spirit.client[\"spirit.app.agent\"].data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
     return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   // ── goal/G43.15, the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──

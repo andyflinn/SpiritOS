@@ -44,9 +44,9 @@ window.picker = function (answers) {
   // THE STAND-IN ON THE READY SPIRIT TOO (goal/G47.1): the shared search asks a family through spirit.readyPromise first, and only
   // then by spirit.requireScript (spirit/element/search/script.js, viaSpirit); so the agent family there is the stand-in as well, or the
   // Model dropdown's own search went to the scratch node, which runs no agent server, and drew none of its answer.
-  return Promise.resolve(spirit.startPage()).then(function () { return spirit.readyPromise; }).then(function (s) { if (s) s.agent = family; }).then(function () { return spirit.requireScript('spirit/app/agent/element/table/provider/elementRow.js'); }).then(function () {
-    // goal/G43.32: the row element stands at its path.
-    spirit.required.spirit.app.agent.element.table.provider.elementRow.create(pane, answers.provider, false, detail);
+  return Promise.resolve(spirit.startPage()).then(function () { return spirit.readyPromise; }).then(function (s) { if (s) s.agent = family; }).then(function () { return spirit.requireScript('spirit/app/agent/element/table/provider/elementRow.js'); }).then(function (row) {
+    // The row element as spirit.requireScript handed it back (goal/G49.23: no spirit.required).
+    row.create(pane, answers.provider, false, detail);
     return wait(1500);
   }).then(function () {
     var label = Array.prototype.filter.call(pane.querySelectorAll('label'), function (l) { return /^\s*Model\s*$/.test(l.textContent); })[0] || null;

@@ -32,7 +32,8 @@ let given, a, bare, b, cells, hn, ret, hName, hAge, hStatus, c, threw, unmounted
 test.run('kind and key are text', 0.2, function () {
   // create: what the element says of itself
   PAGE_LOAD.runAsPage(FILE);
-  R = window.spirit.required.spirit.element.row;
+  // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
+  R = window.spirit.element.row;
   given = { name: 'ann', age: 3 };
   a = R.create({ kind: 7, key: 42, row: given, fields: [{ name: 'name' }, { name: 'age' }],
     actions: [{ name: 'block', label: 'Block', run: function () {} }, { name: 'open', run: function () {} }] });

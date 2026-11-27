@@ -6,7 +6,7 @@
 // section at the end: noTeamChat.
 // The tests of spirit/app/desk/data.js, and of no other module (spec: ./data.md;
 // goal/G41.11, goal/G41.24). The translator
-// runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/client/script.js), which it writes into;
+// runs as it does: in a window of its own beside the real store, spirit.client (spirit/client/script.js), which it writes into;
 // the desk's rows are handed in as appServer's listener hands them, jobs of module spirit/app/desk.
 
 const fs = require('fs');
@@ -26,15 +26,17 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  // THE STORE AS THE PAGE'S LOADER HANDS IT BACK (goal/G49.23: no spirit.required), and handed as spirit.requireScript's
+  // answer, at once, to the data.js that asks for it.
+  const D = PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': D });
   PAGE_LOAD.runAsPage(FILE, win);
-  const D = win.spirit.required.spirit.data;
   let n = 0;
-  // The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.desk'].
-  const X = ((win.spirit.required.spirit.data || {})['spirit.app.desk'] || {}).data;
+  // The family is the app's id (goal/G49.19): the store's ['spirit.app.desk'].
+  const X = ((D || {})['spirit.app.desk'] || {}).data;
   // THE ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY SERVER-NODE-ID at
   // it's lowest level."): a row comes as appServer hands it, with its sender's key (take(job, key)); every read is
-  // spirit.required.spirit.data.desk.data's, which alone names the desk's branches.
+  // the store's desk family's, which alone names the desk's branches.
   return { win: win, D: D, X: X,
     // A row as the stream hands it: a job of module spirit/app/desk whose app is the desk's publish, from SENDER.
     job: function (app, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.desk', data: {}, app: app }, SENDER); },
@@ -73,9 +75,9 @@ test.run('the desk branch\'s api.js holds its verbs alone, with no cache', 0.2, 
 }, test.limit.quick);
 
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
-test.run('with spirit.required.spirit.data it answers the desk branch\'s data with published and took', 0.2, function () {
+test.run('with the store it answers the desk branch\'s data with published and took', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  // it registers on spirit.required.spirit.data
+  // it registers on the store
   w = world();
   return (!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function') ? true : false;
 }, test.limit.quick);

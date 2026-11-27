@@ -43,7 +43,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // on; any other part (the icon, word) answers an empty object.
   const STANDS = {
     // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
-    'spirit/client/script.js': function () { return global.window.spirit.required.spirit.data; },
+    'spirit/client/script.js': function () { return global.window.spirit.client; },
     'spirit/element/row/script.js': function () { return PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
     // What says a file's kind (goal/G43.17), the real one, should the row ask it.
     'spirit/element/fstat/script.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat', 'script.js'); return fs.existsSync(f) ? PAGE_LOAD.runAsPage(f) : {}; } };
@@ -60,8 +60,8 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // and fills nothing here, so the row fell back to "2048 B".
   (function () { const real = require(path.join(RUN, 'spirit', 'script.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  D = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  D = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.nodeFacts = { key: NODE_KEY };
@@ -80,8 +80,8 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
-  F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;
+  E = global.window.spirit.element || {};
+  F = ((global.window.spirit.client || {}).fs || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;
@@ -96,7 +96,7 @@ test.run('it requires the fs branch\'s interface, spirit/fs/script.js, whose cli
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/script.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it registers its create on spirit.required at its own path', 0.2, function () {
+test.run('it registers its create on the spirit object at its own path, spirit.element.search.file.row', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;
   return E.search.file.row && typeof E.search.file.row.create === 'function' ? true : false;
 }, test.limit.quick);

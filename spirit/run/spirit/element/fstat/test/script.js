@@ -88,7 +88,8 @@ function world(o) {
   // pageSpirit), run in this world, and placed at its path.
   H.pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT).then(null, function (e) { w.error = e; });
-  w.E = (((win.spirit.required || {}).spirit || {}).element || {}).fstat;
+  // goal/G49.23: placed on the spirit object itself, spirit.element.fstat.
+  w.E = (win.spirit.element || {}).fstat;
   return w;
 }
 
@@ -120,7 +121,7 @@ test.run('its code names neither the old shell, the owner app nor Open with', 0.
   own = code(FILE);
   return (!!own && !/\.shell\b|renderAppOfFile|renderOpenWith|launcherId|open-with|owner-app/.test(own)) ? true : false;
 }, test.limit.quick);
-test.run('it puts fstat on window.spirit.required, with create, read, mimeOf and kindOf, as fileViewer had them', 0.2, function () {
+test.run('it puts fstat on window.spirit.element, with create, read, mimeOf and kindOf, as fileViewer had them', 0.2, function () {
   w = world();
   V = w.E;
   return (!w.error && !!V && ['create', 'read', 'mimeOf', 'kindOf'].every(function (k) { return typeof V[k] === 'function'; })) ? true : false;

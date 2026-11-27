@@ -16,8 +16,9 @@
 // stated widths, and a probabilitySearch beside them, and what the browser makes of them, measured. Opened by
 // ./script.js at /DEBUG/spirit/element/rowForm/test/rowForm-laid.html.
 window.laid = function () {
-  return Promise.all([spirit.requireScript('spirit/element/rowForm/script.js').catch(function () { return null; }), spirit.requireScript('spirit/element/search/script.js').catch(function () { return null; })]).then(function () {
-    var R = (((spirit.required || {}).spirit || {}).element || {}).rowForm;
+  return Promise.all([spirit.requireScript('spirit/element/rowForm/script.js').catch(function () { return null; }), spirit.requireScript('spirit/element/search/script.js').catch(function () { return null; })]).then(function (got) {
+    // goal/G49.23: what spirit.requireScript handed back, no spirit.required.
+    var R = got[0];
     var out = { made: !!R && typeof R.create === 'function' };
     if (!out.made) return JSON.stringify(out);
     // What a press left, read once its button has settled (a busyButton clears its mark when run's answer comes).
@@ -59,7 +60,7 @@ window.laid = function () {
     out.wrapped = form(260, 4, 120);
     // probabilitySearch's bubble beside it: the one shared style (box: "The bubble is one shared style, the same
     // probabilitySearch's search bubble uses.").
-    var P = (((spirit.required || {}).spirit || {}).element || {}).search;
+    var P = got[1];
     if (P) {
       var pc = document.createElement('div'); pc.style.cssText = 'width:400px;height:200px;display:flex;flex-direction:column';
       document.body.appendChild(pc);

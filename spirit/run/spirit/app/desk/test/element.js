@@ -22,7 +22,8 @@ const DESK = 'spirit/app/desk/element/desk/desk.js';
 function load(file) { PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
+// A place on the spirit object itself, spirit.<its path> (goal/G49.23: no spirit.required; its first key spirit the object).
+const at = function (place) { return String(place).split('.').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit); };
 
 const W = { required: [], made: [] };
 
@@ -30,8 +31,9 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
   if (!fs.existsSync(FILE)) return false;
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  // goal/G49.23: the stand-in stands at its place as the loader puts a script's module.exports.
-  const placeAsLoader = function (p, v) { const keys = p.replace(/\.js$/, '').split('/'); let o = global.window.spirit.required; keys.slice(0, -1).forEach(function (k) { o = o[k] = o[k] || {}; }); o[keys[keys.length - 1]] = v; };
+  // goal/G49.23: the stand-in stands at its place as the loader puts a script's module.exports, on the spirit object itself, its
+  // first key spirit the object (no spirit.required).
+  const placeAsLoader = function (p, v) { const keys = p.replace(/\.js$/, '').split('/').slice(1); let o = global.window.spirit; keys.slice(0, -1).forEach(function (k) { o = o[k] = o[k] || {}; }); o[keys[keys.length - 1]] = v; };
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     // THE DESK PAGE IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
@@ -48,7 +50,7 @@ test.run('before the file runs, the page has no desk element', 0.2, function () 
   if (!W.up) return false;
   return at('spirit.app.desk.element') === undefined || false;
 }, test.limit.quick);
-test.run('the file places the desk element on spirit.required, with a create', 0.2, async function () {
+test.run('the file places the desk element on the spirit object, with a create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();
@@ -60,7 +62,7 @@ test.run('the file asks for the Desk page itself, spirit/app/desk/element/desk/d
   if (!W.up) return false;
   return W.required.indexOf(DESK) !== -1 || false;
 }, test.limit.quick);
-test.run('the Desk page keeps its own place on spirit.required beside the desk element', 0.2, function () {
+test.run('the Desk page keeps its own place on the spirit object beside the desk element', 0.2, function () {
   if (!W.E) return false;
   const d = at('spirit.app.desk.element.desk.desk');
   return (!!d && typeof d.create === 'function') || false;

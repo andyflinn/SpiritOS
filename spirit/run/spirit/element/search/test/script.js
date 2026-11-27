@@ -93,7 +93,7 @@ function markup(k) {
 // THE RANKING HELPERS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
 // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
 // fail/throw"): the real modules the search asks for as it runs, answered at once, as a second require is answered.
-global.window = { spirit: { required: { spirit: {} } } };
+global.window = { spirit: {} };
 LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, {
   'spirit/search/string.js': LOADER.requireScript('spirit/search/string.js'),
   'spirit/search/object.js': LOADER.requireScript('spirit/search/object.js'),
@@ -102,22 +102,23 @@ LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, 
   // fieldInput, a page helper, stands in: it holds the words to their rule, which the page test judges, not this one.
   'spirit/element/fieldInput/script.js': { attach: function () {} },
   // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the search reads it from what spirit/client/script.js hands back, never
-  // at spirit.required. The tests below swap the data set the page holds, so the answer is the one the page holds at each read.
-  'spirit/client/script.js': new Proxy({}, { get: function (t, k) { const D = window.spirit.required.spirit.data; return D ? D[k] : undefined; } }),
+  // at its place (goal/G49.23: the store at spirit.client). The tests below swap the data set the page holds, so the answer is the one the page holds at each read.
+  'spirit/client/script.js': new Proxy({}, { get: function (t, k) { const D = window.spirit.client; return D ? D[k] : undefined; } }),
 });
 // The element, once the first test has run its file.
 let PS = null;
 
 // EVERY SEARCH IS A VIEW OF A spirit.required.spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
 // spirit.required.spirit.data branch, no rows of their own"): the search takes no rows of its own, so each list here is made with a branch
-// of the real spirit.required.spirit.data (spirit/client/script.js, which runs in node), and the rows it shows are written into that branch.
+// of the real spirit.client (spirit/client/script.js, which runs in node), and the rows it shows are written into that branch.
 // branchOf(rows) makes a branch holding them; fill(branch, rows) makes it hold those rows, in that order, and no other.
-function loadData() { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'spirit/client/script.js' }); return window.spirit.required.spirit.data; }
+// goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client.
+function loadData() { PAGE_LOAD.runAsPage('spirit/client/script.js'); return window.spirit.client; }
 let REAL_DATA = loadData();
 let BRANCHES = 0;
 function rowOf(r) { const v = Object.assign({}, r); delete v.key; return v; }
 function fill(b, rows) {
-  const D = window.spirit.required.spirit.data;
+  const D = window.spirit.client;
   const want = (rows || []).map(function (r) { return String(r.key); });
   const had = Object.keys(D.branchAt(b) || {});
   had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + '/' + k); });
@@ -129,10 +130,10 @@ function fill(b, rows) {
   (rows || []).forEach(function (r) { D.setPath(b + '/' + r.key, rowOf(r)); });
 }
 function branchOf(rows) { const b = 'searchTest/search/b' + (++BRANCHES); fill(b, rows); return b; }
-// The same two on a page, over the page's own spirit.required.spirit.data (spirit.js loads spirit/client/script.js as it gets ready): window.__fill and
+// The same two on a page, over the page's own spirit.client (spirit.js loads spirit/client/script.js as it gets ready): window.__fill and
 // window.__branchOf, put on the page before a search is made there.
 const PAGE_DATA = 'window.__nb = window.__nb || 0; ' +
-  'window.__fill = function (b, rows) { var D = window.spirit.required.spirit.data; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
+  'window.__fill = function (b, rows) { var D = window.spirit.client; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
   'var had = Object.keys(D.branchAt(b) || {}); had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + "/" + k); }); ' +
   'var kept = had.filter(function (k) { return want.indexOf(k) !== -1; }); if (kept.join("|") !== want.slice(0, kept.length).join("|")) kept.forEach(function (k) { D.delPath(b + "/" + k); }); ' +
   '(rows || []).forEach(function (r) { var v = Object.assign({}, r); delete v.key; D.setPath(b + "/" + r.key, v); }); return b; }; ' +
@@ -199,7 +200,7 @@ const keys = function (list) { return list.map(function (x) { return x.key; }).j
 test.run('without words or sort the rows come in arrival order', 0.2, function () {
   // order: viewed, no words
   PAGE_LOAD.runAsPage(FILE);
-  PS = window.spirit.required.spirit.element.search;
+  PS = window.spirit.element.search;
   E = [{ key: 'c', row: { name: 'cy' }, at: 2 }, { key: 'a', row: { name: 'Al' }, at: 0 }, { key: 'b', row: { name: 'bo' }, at: 1 }];
   r = PS.order(E, {});
   return (keys(r) === 'a,b,c') ? true : false;
@@ -962,8 +963,8 @@ test.run('with data its rows are the branch\'s, drawn at once', 0.2, function ()
   unwatched = 0;
   // The branch as spirit/client/script.js holds it, id -> fields: the search reads a view's rows by branchAt (goal/G47.4), each filed
   // by its id there.
-  REAL_DATA = window.spirit.required.spirit.data;
-  window.spirit.required.spirit.data = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
+  REAL_DATA = window.spirit.client;
+  window.spirit.client = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
     seatRows: function (type, items) { seatedIn.push([type, items]); },
     watchPath: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
   c7 = container();
@@ -982,7 +983,7 @@ test.run('an answer is seated into the branch, not into the list\'s own cache', 
   return (seatedIn.length === 1 && seatedIn[0][0] === 'people' && seatedIn[0][1][0].key === 'p2' && c7.shown().indexOf('p2') === -1) ? true : false;
 }, test.limit.quick);
 test.run('a write to the branch redraws the list', 0.2, function () {
-  window.spirit.required.spirit.data.branchAt = function () { return { p1: { name: 'pia' }, p2: { name: 'per' } }; };
+  window.spirit.client.branchAt = function () { return { p1: { name: 'pia' }, p2: { name: 'per' } }; };
   watched[0][1]('people/p2', {});
   return (c7.shown().length === 2) ? true : false;
 }, test.limit.quick);
@@ -992,24 +993,25 @@ test.run('destroy drops the watch', 0.2, function () {
 }, test.limit.quick);
 // EVERY ROW OF THE BRANCH ITS OWN LINE, WHATEVER ITS FIELDS (goal/G47.4; Andy: "i want to see every single fucking grant row
 // that matches the fucking search, and not only one of many for a fucking family when the fucking verbs were fucking
-// granted separetely."). Over the real spirit.required.spirit.data (spirit/client/script.js): a grant row's key field is its contact's key, so two
+// granted separetely."). Over the real spirit.client (spirit/client/script.js): a grant row's key field is its contact's key, so two
 // grants of one contact, filed apart in the branch by key and path, share that field; the list draws them as two rows.
 let c7b = null;
-test.run('over the real spirit.required.spirit.data, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
-  window.spirit.required.spirit.data = undefined;
-  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'spirit/client/script.js' }); } catch (e) { return false; }
+test.run('over the real spirit.client, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
+  window.spirit.client = undefined;
+  // goal/G49.23: run as the page's loader runs it, the store stands at spirit.client.
+  try { PAGE_LOAD.runAsPage('spirit/client/script.js'); } catch (e) { return false; }
   // The node's grants, as a node's stream hands them (spirit/grant/client/script.js; goal/G49.21, once spirit/auth/data.js),
   // the branch the Grants app's list views.
   // goal/G49.23: the client files into the data set once requireScript('spirit/client/script.js') has handed it back, a promise;
   // this window's loader was taken away above, so for the client's ask it answers the data set this test ran, and goes again.
   const hadRequire = Object.prototype.hasOwnProperty.call(window.spirit, 'requireScript') ? window.spirit.requireScript : undefined;
-  window.spirit.requireScript = function (p) { return p === 'spirit/client/script.js' ? Promise.resolve(window.spirit.required.spirit.data) : Promise.reject(new Error('no stand-in for ' + p)); };
+  window.spirit.requireScript = function (p) { return p === 'spirit/client/script.js' ? Promise.resolve(window.spirit.client) : Promise.reject(new Error('no stand-in for ' + p)); };
   let ranGrant = true;
   try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' }); } catch (e) { ranGrant = false; }
   await tick();
   if (hadRequire === undefined) delete window.spirit.requireScript; else window.spirit.requireScript = hadRequire;
   if (!ranGrant) return false;
-  const D = window.spirit.required.spirit.data;
+  const D = window.spirit.client;
   const X = D && D.grant && D.grant.data;
   if (!X || typeof D.takeJob !== 'function') return false;
   const K = 'MCowBQYDK2VwAyEAsearchTestContactKey0123456789abcdefghijk=';
@@ -1021,11 +1023,11 @@ test.run('over the real spirit.required.spirit.data, two rows filed apart in the
   await tick();
   const shown = c7b.shown().length;
   L.destroy();
-  window.spirit.required.spirit.data = REAL_DATA;
+  window.spirit.client = REAL_DATA;
   return (shown === 2) ? true : false;
 }, test.limit.quick);
 test.run('a dropdown starts shut, its list not drawn', 0.2, function () {
-  window.spirit.required.spirit.data = REAL_DATA;
+  window.spirit.client = REAL_DATA;
   // create: the dropdown
   c8 = container();
   pk8 = [];
@@ -1110,7 +1112,7 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
         // or a function... or fail/throw"): the three files run as the page's loader runs them, fieldInput a stand-in, any other {}.
         if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) resolve(PAGE_LOAD.runAsPage(path.join(RUN, rel)));
         // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the one the page holds at each read, as above.
-        else if (rel === 'spirit/client/script.js') resolve(new Proxy({}, { get: function (t, k) { const D = window.spirit.required.spirit.data; return D ? D[k] : undefined; } }));
+        else if (rel === 'spirit/client/script.js') resolve(new Proxy({}, { get: function (t, k) { const D = window.spirit.client; return D ? D[k] : undefined; } }));
         else resolve(rel === 'spirit/element/fieldInput/script.js' ? { attach: function () {} } : {});
       }, delay);
     });
@@ -1121,7 +1123,7 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
   return (NEED.every(function (n) { return asked10.indexOf(n) !== -1; })) ? true : false;
 }, test.limit.quick);
 test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze puts zed first', 0.2, function () {
-  P2 = window.spirit.required.spirit.element.search;
+  P2 = window.spirit.element.search;
   made10 = null;
   threw = null;
   c10 = container();
@@ -1213,7 +1215,7 @@ async function keptPart() {
       HANDS + '; ' + PAGE_DATA +
       'K.rows = ' + JSON.stringify(FIVE) + '; K.b = window.__branchOf(K.rows); ' +
       'K.who = document.createElement("span"); K.who.value = ""; ' +
-      'K.list = spirit.required.spirit.element.search.create(b, { data: K.b, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
+      'K.list = spirit.element.search.create(b, { data: K.b, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
       '  filters: [{ name: "kind", multi: true, keepOne: true, choices: [{ value: "red", word: "red" }, { value: "green", word: "green" }], test: function (row, off) { var o = off || {}; return row && !o[row.kind] ? 1 : 0; } }], ' +
       '  selectors: [{ name: "who", element: K.who, test: function (row) { return !K.who.value || row.who === K.who.value ? 1 : 0; } }] }); ' +
       'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : null; }); }, function () { return null; })');
@@ -1552,7 +1554,7 @@ async function popupPart() {
       PAGE_DATA + 'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
       '[["a", 40, 100], ["b", 500, 100], ["low", 40, window.innerHeight - 70]].forEach(function (x) { var b = document.createElement("div"); b.id = "zz-" + x[0]; ' +
       'b.style.cssText = "position:absolute;left:" + x[1] + "px;top:" + x[2] + "px;width:320px;height:48px;overflow:hidden;border:1px solid"; document.body.appendChild(b); ' +
-      'spirit.required.spirit.element.search.create(b, { face: "dropdown", data: window.__branchOf(rows), columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
+      'spirit.element.search.create(b, { face: "dropdown", data: window.__branchOf(rows), columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
       'window.__z[x[0]] = { box: b, list: b.querySelector("[id$=list]"), field: b.querySelector("[id$=field]") }; }); ' +
       'var cover = document.createElement("div"); cover.id = "zz-cover"; cover.style.cssText = "position:absolute;left:0;top:160px;width:900px;height:200px;background:#333;z-index:20"; document.body.appendChild(cover); ' +
       'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : null; }, function () { return null; })');
@@ -1703,7 +1705,7 @@ async function tilesPart() {
   const type = async function (w) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(w) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()'); await sleep(500); };
   test.run('the tiles face draws one tile per row', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; ' + PAGE_DATA + ' window.__rowsB = window.__branchOf(window.__rows); window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.required.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
+    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; ' + PAGE_DATA + ' window.__rowsB = window.__branchOf(window.__rows); window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
     await until(function () { return js('window.__box.querySelectorAll(".app-icon").length > 0'); }, 3000);
     plain = await read();
     // "the same ranked rows, drawn as tiles", "No column headers or sorting"
@@ -1732,7 +1734,7 @@ async function tilesPart() {
   // SUPPOSED TO, GID OR NO GRID!!!!!!!!!!!!!!"). Forty rows in a 400 by 240 px box, once as tiles, once as the list: nothing
   // of it is drawn below the box, and the rows that do not fit are reached by scrolling inside it.
   const contained = async function (face) {
-    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); ' + PAGE_DATA + ' var rowsB = window.__branchOf(rows); var made = window.spirit.required.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, data: rowsB, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
+    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); ' + PAGE_DATA + ' var rowsB = window.__branchOf(rows); var made = window.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, data: rowsB, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
       ' return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var box = d.getBoundingClientRect(); var lowest = 0; [].forEach.call(d.querySelectorAll("*"), function (e) { var b = e.getBoundingClientRect(); if (!b.width || !b.height) return; var cut = false; for (var p = e.parentElement; p && p !== d; p = p.parentElement) { var o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll" || o === "hidden") && b.bottom > p.getBoundingClientRect().bottom + 1) { cut = true; break; } } if (!cut) lowest = Math.max(lowest, Math.round(b.bottom)); });' +
       ' var scrolls = [].some.call([d].concat([].slice.call(d.querySelectorAll("*"))), function (e) { var o = getComputedStyle(e).overflowY; return (o === "auto" || o === "scroll") && e.scrollHeight > e.clientHeight + 1; }); var out = { boxBottom: Math.round(box.bottom), lowest: lowest, scrolls: scrolls }; made.destroy(); d.remove(); return JSON.stringify(out); }); })()'));
   };
@@ -1897,11 +1899,11 @@ async function tilesPart() {
   test.run('a pane stays a table with headers', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "Any list can use it": the other two faces stay
-    pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.required.spirit.element.search.create(d, { data: window.__rowsB, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
+    pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.element.search.create(d, { data: window.__rowsB, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
     pn = JSON.parse(pane);
     return (pn.tiles === 0 && pn.headers > 0) ? true : false;
   }, test.limit.quick);
-  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.required.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
+  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
   const drop = function () { return js('(function () { if (window.__t) window.__t.remove(); return true; })()'); };
   const toggles = function () { return js('window.__t.querySelectorAll(".list-toggle").length'); };
   test.run('a dropdown has no toggle, even with a tile part', 0.2, async function () {
@@ -1969,7 +1971,7 @@ async function tilesPart() {
     return js('(function () { if (window.__t) window.__t.remove(); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__tilePressed = []; window.__tPicked = []; ' +
       'var o = Object.assign({ data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__tPicked.push(key); } }, ' + JSON.stringify(o) + '); ' +
       (o.withTile ? 'o.tile = function (row, key) { var n = document.createElement("div"); n.className = "zz-tile"; n.setAttribute("data-key", key); n.textContent = "tile " + key; n.addEventListener("click", function () { window.__tilePressed.push(key); }); return n; }; ' : '') +
-      'delete o.withTile; window.__tl = window.spirit.required.spirit.element.search.create(d, o); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()');
+      'delete o.withTile; window.__tl = window.spirit.element.search.create(d, o); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()');
   };
   const own = function () { return js('JSON.stringify({ toggles: window.__t.querySelectorAll(".list-toggle").length, plain: window.__t.querySelectorAll(".app-icon").length, mine: window.__t.querySelectorAll(".zz-tile").length, headers: window.__t.querySelectorAll("th").length })'); };
   let tp = null, noPart = null, noPartTiles = null;
@@ -2047,7 +2049,7 @@ async function reconnectPart() {
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/script.js"); }).then(function () { ' +
       'window.__r = { asked: 0, up: false }; spirit.eventStream.subscribe({ onConnection: function (u) { if (u) window.__r.up = true; } }); var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
-      'window.__r.h = spirit.required.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
+      'window.__r.h = spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
       '  search: function () { window.__r.asked += 1; var n = window.__r.asked; return Promise.resolve({ status: 200, body: { items: [{ key: "k" + n, label: JSON.stringify({ name: "answer " + n }) }], more: false } }); } }); ' +
       'window.__r.h.refresh(); return "made"; }, function () { return null; })');
     if (made !== 'made') return false;

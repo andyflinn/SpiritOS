@@ -49,7 +49,6 @@ function world(join) {
   };
   w.publish = function (id, j) { w.fns.slice().forEach(function (fn) { fn(id, j); }); };
   win.spirit = {
-    required: { spirit: { element: {}, app: {} } },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
     readyPromise: Promise.resolve({
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
@@ -66,7 +65,8 @@ function world(join) {
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps/script.js', SUBJECT] });
   if (SRC) win.spirit.requireScript(SUBJECT);
   w.win = win;
-  w.L = win.spirit.required.spirit.element.joinList;
+  // goal/G49.23: placed on the spirit object itself, spirit.element.joinList.
+  w.L = (win.spirit.element || {}).joinList;
   return w;
 }
 
@@ -80,7 +80,7 @@ test.run('join.json has its steps', 0.2, function () {
   try { steps = JSON.parse(fs.readFileSync(STEPS, 'utf8')).steps || []; } catch (e) { steps = []; }
   return (steps.length > 1) ? true : false;
 }, test.limit.quick);
-test.run('it stands at spirit.required.spirit.element.joinList with create', 0.2, function () {
+test.run('it stands at spirit.element.joinList with create', 0.2, function () {
   // it places itself, and draws the steps the spirit job says
   w = world({ seated: false, contact: false });
   return (!!w.L && typeof w.L.create === 'function') ? true : false;
@@ -101,7 +101,7 @@ test.run('with nothing done, every step is marked ⬜', 0.2, function () {
 test.run('it watches the jobs branch\'s cache once', 0.2, function () {
   return (w.watches === 1) ? true : false;
 }, test.limit.quick);
-test.run('a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps', 0.2, async function () {
+test.run('a new join on the spirit job, taken into spirit.dataStore, redraws the steps', 0.2, async function () {
   // what it watches redraws it
   w.publish('spirit', { id: 'spirit', data: { join: { seated: true, contact: false } } });
   await settle();

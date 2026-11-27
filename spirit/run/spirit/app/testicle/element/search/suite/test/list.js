@@ -90,7 +90,7 @@ const view = function (id) {
     ' rows: Array.prototype.filter.call(b.querySelectorAll("tr[data-key]"), seen).map(function (r) { return { key: r.getAttribute("data-key"), cells: Array.prototype.map.call(r.querySelectorAll("td"), function (td) { return String(td.innerText || "").trim(); }) }; }) }; }())');
 };
 const mount = function (id, opts) {
-  return c.evaluate('(function () { var E = ((((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).list); if (!E || typeof E.create !== "function") return false;' +
+  return c.evaluate('(function () { var E = (((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).list); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; b.style.cssText = "width:1200px;height:500px;display:flex;"; document.body.appendChild(b); window.__picked = window.__picked || [];' +
     ' var o = ' + JSON.stringify(opts) + '; o.pick = function (row, key) { window.__picked.push(key); };' +
     ' window[' + JSON.stringify(id) + '] = E.create(b, o); return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : false; }())');

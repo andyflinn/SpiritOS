@@ -12,7 +12,8 @@
 // another container."): one workBench at a time in a container of its own, every pane given 5000 pixels of content, and
 // what the browser makes of it, measured. Opened by ./script.js at /DEBUG/spirit/element/workBench/test/workBench-contained.html.
 window.contained = function (name) {
-  return spirit.requireScript('spirit/element/workBench/script.js').then(function () {
+  // goal/G49.23: the workBench as spirit.requireScript handed it back, no spirit.required.
+  return spirit.requireScript('spirit/element/workBench/script.js').then(function (WB) {
     document.body.querySelectorAll('.case').forEach(function (n) { n.remove(); });
     var c;
     var outer = null;
@@ -31,7 +32,7 @@ window.contained = function (name) {
       document.body.appendChild(c);
     }
     function tall(box) { var d = document.createElement('div'); d.style.cssText = 'height:5000px;flex:none'; d.textContent = 'tall'; box.appendChild(d); }
-    var b = spirit.required.spirit.element.workBench.create(c, {
+    var b = WB.create(c, {
       left: [{ name: 'a', icon: 'A', title: 'a', mount: tall }],
       right: [{ name: 'b', icon: 'B', title: 'b', mount: tall }],
     });
@@ -59,12 +60,14 @@ window.contained = function (name) {
 // strip.", and "this element will replace icons painting all shell elements and apps."): a workBench of n left tools in
 // a box of 300 pixels, its strip measured. An icon made here gives the class the icon element carries.
 window.strip = function (n) {
-  return Promise.all([spirit.requireScript('spirit/element/workBench/script.js'), Promise.resolve().then(function () { return spirit.requireScript('spirit/element/icon/script.js'); }).catch(function () { return null; })]).then(function () {
+  return Promise.all([spirit.requireScript('spirit/element/workBench/script.js'), Promise.resolve().then(function () { return spirit.requireScript('spirit/element/icon/script.js'); }).catch(function () { return null; })]).then(function (got) {
+    // goal/G49.23: the workBench and the icon as spirit.requireScript handed them back, no spirit.required.
+    var WB = got[0], IC = got[1];
     document.body.querySelectorAll('.case').forEach(function (x) { x.remove(); });
     var mark = '';
-    if (spirit.required.spirit.element.icon && typeof spirit.required.spirit.element.icon.create === 'function') {
+    if (IC && typeof IC.create === 'function') {
       var probe = document.createElement('div');
-      var made = spirit.required.spirit.element.icon.create(probe, { glyph: 'A' });
+      var made = IC.create(probe, { glyph: 'A' });
       mark = String(made && made.className || '').trim().split(/\s+/)[0] || '';
     }
     var c = document.createElement('div');
@@ -73,7 +76,7 @@ window.strip = function (n) {
     document.body.appendChild(c);
     var tools = [];
     for (var i = 0; i < n; i++) tools.push({ name: 't' + i, icon: ['🔑', '📦', '🧠', '📁', '⚙️', '🗂️'][i % 6], title: 't' + i, mount: function () {} });
-    spirit.required.spirit.element.workBench.create(c, { left: tools });
+    WB.create(c, { left: tools });
     var s = c.querySelector('[id$="strip-left"]');
     var sr = s.getBoundingClientRect();
     var inner = sr.left + s.clientLeft + s.clientWidth;

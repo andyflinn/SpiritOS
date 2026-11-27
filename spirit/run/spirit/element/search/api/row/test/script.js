@@ -41,7 +41,7 @@ test.run('the row runs on a bare window, with a stand-in for the shared row elem
   await settle();
   return true;
 }, test.limit.quick);
-test.run('it places itself on spirit.required at its path, with a create', 0.2, function () {
+test.run('it places itself on the spirit object at its path, spirit.element.search.api.row, with a create', 0.2, function () {
   return R && typeof R.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the shared row element itself', 0.2, function () {

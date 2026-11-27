@@ -85,19 +85,19 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
     // The bundle branch's interface (goal/G49.21): its client run once, as the real spirit/bundle/script.js requires it.
     // What the branch's own client asks as it runs is the branch's, not the row's (goal/G49.23): not recorded.
     'spirit/bundle/script.js': function () { const was = recording; recording = false; try { load('spirit/bundle/client/script.js'); } finally { recording = was; } return bundleBranch; },
-    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at spirit.required.
-    'spirit/client/script.js': function () { return global.window.spirit.required.spirit.data; },
+    // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the element reads it from what spirit/client/script.js hands back, never at its place.
+    'spirit/client/script.js': function () { return global.window.spirit.client; },
   };
   const made = {};
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
-    required: { spirit: {} }, normalizeString: LOADER.normalizeString, readyPromise: Promise.resolve({ bundle: bundleBranch }), bundle: bundleBranch, element: {} } };
+    normalizeString: LOADER.normalizeString, readyPromise: Promise.resolve({ bundle: bundleBranch }), bundle: bundleBranch, element: {} } };
   global.spirit = global.window.spirit;
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream's rows land there.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.required.spirit.data;
+  // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
+  DATA = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE DATA STORE IS spirit.dataStore (goal/G49.23; Andy: "spirit.dataStore is fine with me"), as spirit.js keeps it.
   global.window.spirit.dataStore = DATA;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
@@ -116,8 +116,8 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
   };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
-  A = ((global.window.spirit.required.spirit.data || {}).bundle || {}).data;
+  E = global.window.spirit.element || {};
+  A = ((global.window.spirit.client || {}).bundle || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.requireScript).
   loaded = required.slice();
@@ -140,7 +140,7 @@ test.run('as it loads, it requires no client script, as only a branch\'s script.
   if (!loaded) return false;
   return !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.required.spirit.element.search.bundle.row.create', 0.2, function () {
+test.run('it registers spirit.element.search.bundle.row.create', 0.2, function () {
   if (!hasA()) return false;
   return hasRow() ? true : false;
 }, test.limit.quick);

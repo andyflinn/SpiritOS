@@ -53,11 +53,11 @@ test.run('the row runs on a bare window', 0.2, async function () {
   // The row's own answer, what the loader places at its place.
   const answer = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  const TE = (((global.window.spirit.required.spirit || {}).app || {}).testicle || {}).element || {};
+  const TE = ((global.window.spirit.app || {}).testicle || {}).element || {};
   R = TE.search && TE.search.suite && TE.search.suite.row === answer ? answer : null;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.required.spirit.app.testicle.element.search.suite.row, with a create', 0.2, function () {
+test.run('it places itself at spirit.app.testicle.element.search.suite.row, with a create', 0.2, function () {
   if (!required) return false;
   return (R && typeof R.create === 'function') || false;
 }, test.limit.quick);

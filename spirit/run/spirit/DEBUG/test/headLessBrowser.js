@@ -17,14 +17,15 @@ const B = LOADER.requireScript('spirit/DEBUG/headLessBrowser.js');
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
-// The page's inline script, run on a window of its own. place(spirit) puts what the file places once it is required.
+// The page's inline script, run on a window of its own. place(spirit) is what the file hands back once it is required:
+// spirit.requireScript's answer, the page's one read of it (goal/G49.23: no spirit.required).
 async function mountIn(page, place) {
   const m = /<script>\n([\s\S]*?)\n<\/script>/.exec(page);
   const box = { id: 'mount-box' };
   const calls = { required: [], started: 0, created: [], mounted: [], rendered: 0, destroyed: 0 };
   const sp = {
     startPage: function () { calls.started += 1; return Promise.resolve(); },
-    requireScript: function (p) { calls.required.push(p); place(sp, calls); return Promise.resolve(); },
+    requireScript: function (p) { calls.required.push(p); return Promise.resolve(place(sp, calls)); },
     callOutcome: function (v) { return Promise.resolve(v).then(function (b) { return { status: 200, body: b }; }); },
     escapeHtml: function (s) { return String(s); },
     thing: { hello: function (a) { return { said: a.word }; } },
@@ -76,11 +77,11 @@ test.run('/spirit.js comes before the inline script', 0.2, function () {
   return page.body.indexOf('src="/spirit.js"') < page.body.indexOf('<script>\n') || false;
 }, test.limit.quick);
 
-// an element (goal/G43.32): spirit.required.<its path>.create(box), no options
-test.run('an element placed at its path is mounted', 0.2, async function () {
+// an element (goal/G43.32): what spirit.requireScript hands back, .create(box), no options (goal/G49.23)
+test.run('an element spirit.requireScript hands back is mounted', 0.2, async function () {
   if (!page) return false;
   el = await mountIn(page.body, function (sp, calls) {
-    sp.required = { spirit: { element: { zzThing: { create: function () { calls.created.push(Array.prototype.slice.call(arguments)); return { destroy: function () { calls.destroyed += 1; } }; } } } } };
+    return { create: function () { calls.created.push(Array.prototype.slice.call(arguments)); return { destroy: function () { calls.destroyed += 1; } }; } };
   });
   return !!el.report || false;
 }, test.limit.quick);
@@ -123,11 +124,11 @@ test.run('the app\'s api asks a verb of the spirit object\'s branch, and refuses
 }, test.limit.quick);
 
 // a file that places nothing: it fails and says where it looked
-test.run('a file that places no element fails, and says where it looked', 0.2, async function () {
+test.run('a file that hands back no element fails, and names the file it required', 0.2, async function () {
   if (!page) return false;
   none = await mountIn(page.body, function () {});
   const r = none.report || {};
-  return (r.state === 'failed' && /spirit\.required\.spirit\.element\.zzThing/.test(r.error)) || false;
+  return (r.state === 'failed' && /spirit\/element\/zzThing\.js/.test(r.error)) || false;
 }, test.limit.quick);
 // ITS STAND-IN FOR OLD APPS STAYS INSIDE ITS PAGE (goal/G49.23, box v21: "activateApp, the debug page's stand-in for old
 // apps, made inside that page, no longer on spirit.shell").

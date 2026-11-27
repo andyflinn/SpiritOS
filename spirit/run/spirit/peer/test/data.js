@@ -4,8 +4,8 @@
 // The tests of spirit/peer/data.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the peer family (goal/G41.28): nothing, the row an acquire files being the contact family's.
-// It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/client/script.js), which it writes into, the
-// stream's events handed in as spirit.required.spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
+// It runs as it does: in a window of its own beside the real spirit.client (spirit/client/script.js), which it writes into, the
+// stream's events handed in as spirit.client hands them (takeJob, takeRename), each from the node that served it. In node
 // it is loaded by its api.js (spirit/peer/api.js), the one script that requires it. The reads alone are read, never a
 // branch.
 
@@ -26,8 +26,9 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const OTHER = 'Zy+x/WvU9876543210zyxwvutsrqponmlkjihgfedcb=';
 
-// A window of its own: the real spirit.required.spirit.data, then the file, as a page loads them. Each translator the file adds is kept,
-// so an event spirit.required.spirit.data hands no suite (a job gone) can be handed as spirit.required.spirit.data hands it.
+// The store at its place since goal/G49.23, spirit.client (no spirit.required).
+// A window of its own: the real spirit.client, then the file, as a page loads them. Each translator the file adds is kept,
+// so an event spirit.client hands no suite (a job gone) can be handed as spirit.client hands it.
 function world() {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
@@ -35,7 +36,7 @@ function world() {
   vm.createContext(win);
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
   win.spirit.requireScript('spirit/client/script.js');
-  const D = win.spirit.required.spirit.data;
+  const D = win.spirit.client;
   const translators = [];
   const add = D.addTranslator;
   D.addTranslator = function (t) { translators.push(t); return add(t); };
@@ -56,7 +57,7 @@ function pageWorld() {
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.requireScript(SUBJECT);
-  const D = win.spirit.required.spirit.data;
+  const D = win.spirit.client;
   const F = D['peer'];
   return { D: D, X: F && F.data, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return Object.keys((F && F.cache) || {}); } };
 }
@@ -64,16 +65,16 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands at spirit.required.spirit.data.peer.data', 0.2, async function () {
+test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands at spirit.client.peer.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
   // By its path, as a client loads it (goal/G49.6): bound from the api.js on this disc, its companion data.js with it.
   try { await S.requireScript('spirit/peer/api.js'); } catch (e) { threw = e; }
-  const X = S.required.spirit.data && S.required.spirit.data['peer'] && S.required.spirit.data['peer'].data;
+  const X = S.client && S.client['peer'] && S.client['peer'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, it makes its branch there', 0.2, function () {
+test.run('run beside spirit.client, it makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -83,7 +84,7 @@ test.run('it has no reads yet', 0.2, function () {
   if (!w) return false;
   return Object.keys(w.X).length === 0 || false;
 }, test.limit.quick);
-test.run('it translates nothing, so it adds no translator to spirit.required.spirit.data', 0.2, function () {
+test.run('it translates nothing, so it adds no translator to spirit.client', 0.2, function () {
   if (!w) return false;
   return w.translators.length === 0 || false;
 }, test.limit.quick);

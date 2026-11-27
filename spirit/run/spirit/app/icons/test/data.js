@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/icons/test/data.js
 // The tests of spirit/app/icons/data.js, and of no other module (spec: ./data.md; goal/G43.19, box v16). The box: "it
 // implements a database-table interface, also reflected in api.js and data.js", and 10: "data.js on every open page follows
-// that one job", spirit.app.icons. The translator runs as it does: in a window of its own beside the real spirit.required.spirit.data
+// that one job", spirit.app.icons. The translator runs as it does: in a window of its own beside the real store, spirit.client
 // (spirit/client/script.js), which it writes into; the runs' rows are handed in as the node's stream hands them, jobs of module
 // spirit.app.icons.
 
@@ -26,11 +26,13 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  // THE STORE AS THE PAGE'S LOADER HANDS IT BACK (goal/G49.23: no spirit.required), and handed as spirit.requireScript's
+  // answer, at once, to the data.js that asks for it.
+  const D = PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
+  PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': D });
   PAGE_LOAD.runAsPage(FILE, win);
-  const D = win.spirit.required.spirit.data;
   let n = 0;
-  // The family is the app's id (goal/G49.19): spirit.required.spirit.data['spirit.app.icons'].
+  // The family is the app's id (goal/G49.19): the store's ['spirit.app.icons'].
   const I = ((D || {})['spirit.app.icons'] || {}).data;
   return { D: D, I: I,
     // A run's publish as the stream hands it: a job of module spirit.app.icons whose app is the row.

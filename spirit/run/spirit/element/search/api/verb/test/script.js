@@ -46,7 +46,7 @@ test.run('it names no shellCreateListSearch', 0.2, function () {
 }, test.limit.quick);
 
 // a shell element of its own, on probabilitySearch
-test.run('it adds apiVerbSelector with a create to window.spirit.required, and createApiVerbSelector no more', 0.2, async function () {
+test.run('it adds apiVerbSelector with a create to window.spirit.element.search.api.verb, and createApiVerbSelector no more', 0.2, async function () {
   if (!SRC) return false;
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   w = { lists: [], required: [] };
@@ -82,11 +82,11 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.nodeFacts = { key: 'KEY+VERB/SELECTOR==' };
-  win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
+  win.spirit.client.homeNode(win.spirit.nodeFacts.key);
   made = await pageRequire(SUBJECT);
   await settle();
-  // goal/G43.32: it stands at its path, spirit.required.spirit.element.search.api.verb, and is its require's answer.
-  E = ((win.spirit.required.spirit || {}).element || {});
+  // goal/G43.32, G49.23: it stands at its path on the spirit object, spirit.element.search.api.verb, and is its require's answer.
+  E = (win.spirit.element || {});
   if (!(E.search && E.search.api && E.search.api.verb === made)) made = null;
   return made && typeof made.create === 'function' && !('createApiVerbSelector' in E) ? true : false;
 }, test.limit.quick);
@@ -150,14 +150,14 @@ test.run('it requires spirit/node/api.js and no data.js, and its list is a view 
   mine = made.create(node('div'), {});
   await settle();
   m = w.lists[w.lists.length - 1];
-  N = ((win.spirit.required.spirit.data || {}).node || {}).data;
+  N = ((win.spirit.client || {}).node || {}).data;
   return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;
-  N.keepTree(TREE, win.spirit.required.spirit.fuckingGarbage.apiTreeIndex);
+  N.keepTree(TREE, win.spirit.fuckingGarbage.apiTreeIndex);
   mine.show(TREE, 'fs');
-  const kept = win.spirit.required.spirit.data.getPath(N.verbsBranch) || {};
+  const kept = win.spirit.client.getPath(N.verbsBranch) || {};
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];
   const shown = Object.keys(kept).filter(function (k) { return fam && fam.test(kept[k]); }).map(function (k) { return kept[k].name; }).sort();
   return !!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false ? true : false;

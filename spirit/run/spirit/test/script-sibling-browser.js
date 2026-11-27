@@ -160,8 +160,8 @@ const OWN_PROOF = {
   // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
   // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
   // Join app is joinList mounted, so its page takes the same proof.
-  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
-  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.dataStore, redraws the steps' },
+  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.dataStore, redraws the steps' },
 };
 // THE LONGEST FIELD THE TYPES ALLOW (goal/G49.13: the type files replaced fieldRules): the largest MAX_BYTES a type file under
 // spirit/type/ holds; a field that keeps more than this holds no rule at all.
@@ -183,7 +183,7 @@ const MOST_BYTES = (function () {
 // (spirit/client/script.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.eventStream.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.eventStream.subscribe and spirit.client.watchPath (a family view's, spirit.client.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -239,8 +239,8 @@ const WATCH = String.raw`(function () {
   function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
   // THE STREAM ANSWERED (rule/19, the box: "after a press, until the stream answers"): a stream event that comes while a write
   // is out ends the watch, even before the write's own reply; what the element draws from it is its stream's, not its own.
-  // So does a search answer seated into spirit.required.spirit.data, "merged into the tree like any event" (spirit/client/script.js seatRows): what it
-  // brings is the node's word, drawn from spirit.required.spirit.data.
+  // So does a search answer seated into the store (spirit.client), "merged into the tree like any event" (spirit/client/script.js seatRows): what it
+  // brings is the node's word, drawn from the store.
   function streamed() { if (watching && W.writes.length > w0) stop(); }
   var STREAMED = ['onSnapshot', 'onUpdate', 'onDelete', 'onPacket', 'onRelayEvent', 'onContactRename'];
   W.press = function (i) {
@@ -286,12 +286,12 @@ const WATCH = String.raw`(function () {
       return function () { s.live = false; return typeof off === 'function' ? off.apply(this, arguments) : undefined; };
     };
   }
-  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its spirit.required.spirit.data branch, and whether it ranks rows of its own.
+  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its branch of the store, and whether it ranks rows of its own.
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    // The search element stands at its path since goal/G43.32, spirit.required.spirit.element.search: every step of the path
-    // is followed as it is made, and the element wrapped when it is placed or read.
+    // The search element stands at its path, spirit.element.search since goal/G49.23 (no spirit.required), searches handed
+    // spirit.element: every step of the path is followed as it is made, and the element wrapped when it is placed or read.
     function along(o, keys, done) {
       if (!o || typeof o !== 'object') return;
       var k = keys[0];
@@ -302,12 +302,12 @@ const WATCH = String.raw`(function () {
       if (at) took(at);
     }
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane'), mount: !!host && (host === (window.spiritMount && window.spiritMount.box) || (typeof host.hasAttribute === 'function' && host.hasAttribute('data-spirit-cycle'))) }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
-  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.required.spirit.data path the module watches, and whether its
+  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each path of the store (spirit.client) the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
   // a branch, or '<node>/<family>/<branch>/<row>', a row; a watch of the home node holds '~' for the node, the page's
   // own node (data.home()) once it knows it.
   W.probe = function () {
-    var D = window.spirit && window.spirit.required.spirit.data;
+    var D = window.spirit && window.spirit.client;
     var box = window.spiritMount && window.spiritMount.box;
     var paths = []; W.subs.forEach(function (x) { if (x.mine && x.live && x.kind === 'data.watch' && x.path && paths.indexOf(x.path) === -1) paths.push(x.path); });
     if (!D || !box || typeof D.setPath !== 'function') return Promise.resolve([]);
@@ -348,9 +348,9 @@ const WATCH = String.raw`(function () {
       });
     }, Promise.resolve([]));
   };
-  // What each search draws that its spirit.required.spirit.data branch does not hold: the keys of its rows on screen, against the branch.
+  // What each search draws that its branch of the store does not hold: the keys of its rows on screen, against the branch.
   W.drawnOutside = function () {
-    var D = window.spirit && window.spirit.required.spirit.data;
+    var D = window.spirit && window.spirit.client;
     return W.searches.map(function (x, i) {
       var host = (window.spiritSearchHosts || [])[i];
       if (!host || !host.isConnected || !x.data || !D || typeof D.rowsOf !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
@@ -364,7 +364,7 @@ const WATCH = String.raw`(function () {
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
   };
-    along(els, ['spirit', 'element', 'search'], wrap);
+    along(els, ['search'], wrap);
   }
   function hook(o) {
     if (!o || typeof o !== 'object' || o.__watched) return;
@@ -372,9 +372,10 @@ const WATCH = String.raw`(function () {
     var els = o.element;
     Object.defineProperty(o, 'element', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
     searches(els);
-    // THE DATA SET STANDS AT spirit.required.spirit.data (goal/G49.4, step 1; Andy: "spirit.requireScript() places the loaded
-    // script at the exact same location/path in the spirit object"): its watches are kept there, the stream's on spirit.
-    // A level not made yet is waited for, as spirit.js makes spirit.required and its first levels as it goes.
+    // THE DATA SET STANDS AT ITS PATH (goal/G49.4, step 1; Andy: "spirit.requireScript() places the loaded script at the exact
+    // same location/path in the spirit object"), since goal/G49.23 on the spirit object itself, spirit.client (no
+    // spirit.required): its watches are kept there, the stream's on spirit; a watch on it is kept as a data watch.
+    // A level not made yet is waited for, as spirit.js places it as it goes.
     function at(obj, keys, then) {
       if (!obj || typeof obj !== 'object') return;
       if (!keys.length) return then(obj);
@@ -382,27 +383,28 @@ const WATCH = String.raw`(function () {
       if (cur && typeof cur === 'object') return at(cur, keys.slice(1), then);
       Object.defineProperty(obj, key, { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; Object.defineProperty(obj, key, { configurable: true, enumerable: true, writable: true, value: v }); at(v, keys.slice(1), then); } });
     }
-    [[['event', 'subscribe'], []], [['data', 'watch'], ['required', 'spirit']]].forEach(function (kk) {
+    [[['event', 'subscribe'], []], [['client', 'watch'], []]].forEach(function (kk) {
       var k = kk[0];
+      var kind = k[0] === 'client' ? 'data' : k[0];
       at(o, kk[1], function (place) {
       var cur = place[k[0]];
       function wrap(v) {
-          if (k[0] === 'data' && v && typeof v.seatRows === 'function' && !v.seatRows.__kept) {
+          if (kind === 'data' && v && typeof v.seatRows === 'function' && !v.seatRows.__kept) {
             var seat = v.seatRows;
             v.seatRows = function () { streamed(); return seat.apply(this, arguments); };
             v.seatRows.__kept = true;
           }
           if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) {
-            var f = kept(k[0] + '.' + k[1], v[k[1]]);
+            var f = kept(kind + '.' + k[1], v[k[1]]);
             // Each stream handler told first that the stream spoke (streamed, above).
             if (k[0] === 'event') f = (function (inner) { return function (h) { var hh = {}; Object.keys(h || {}).forEach(function (n) { hh[n] = typeof h[n] === 'function' && STREAMED.indexOf(n) !== -1 ? function () { streamed(); return h[n].apply(this, arguments); } : h[n]; }); return inner.call(this, hh); }; }(f));
             f.__kept = true; v[k[1]] = f;
           }
-          // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
-          // as one on spirit.required.spirit.data, under the whole path it watches.
-          // spirit.required.spirit.data names it viewAt (spirit/client/script.js); a watch through the view is the module's own watch.
+          // A family's view (goal/G41.28), the store's viewAt(node, family): a manager watches through it, so its watch is kept
+          // as one on the store, under the whole path it watches.
+          // The store names it viewAt (spirit/client/script.js); a watch through the view is the module's own watch.
           var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
-          if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
+          if (kind === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
             var at = v[VIEW];
             v[VIEW] = function () {
               var view = at.apply(this, arguments);
@@ -625,12 +627,14 @@ function productScripts() {
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
 // spirit.required.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
-// spirit.requireScript()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
+// spirit.requireScript()d alone on the node and on a page; where it loads, it stands at its path on the spirit object (goal/G49.23), and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
-// judged. An element script (isElementScript below) has a factory with a create at spirit.required.<its path> once
+// judged. An element script (isElementScript below) has a factory with a create at its path once
 // required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
-function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
+// A path's place on the spirit object itself (goal/G49.23, no spirit.required): its first key spirit the object, a folder's
+// script.js at its folder's own name (goal/G49.9), spirit/fs/script.js at spirit.fs.
+function placeKeys(rel) { const k = rel.replace(/\.js$/, '').split('/'); if (k.length > 1 && k[k.length - 1] === 'script') k.pop(); return k.slice(1); }
 // AN ELEMENT SCRIPT, BY ITS PLACE AND ITS EXPORTS (goal/G49.23: the loader places a script's module.exports, goal/G49.9): a
 // script under spirit/element/, or an app's element.js or under its element/, whose module.exports has a create: what
 // spirit.requireScript answered for it on the page (r.answered below).
@@ -643,7 +647,7 @@ function requireOnNode(run, rel) {
     const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
       '(async function () { let at = null, err = false, promise = false; try { at = s.requireScript(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = true; }' +
-      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
+      'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
@@ -660,7 +664,7 @@ function requireOnNode(run, rel) {
   });
 }
 // THE LOADER PLACES ELEMENTS (goal/G43.32; goal/G49.9: a script sets module.exports and the loader places it): no element
-// script puts itself on spirit.required or spirit.elements by hand.
+// script puts itself on spirit.element or spirit.elements by hand (goal/G49.23: no spirit.required).
 function placedByHand() {
   return productScripts().filter(function (f) {
     if (f === 'spirit/script.js') return false;
@@ -689,7 +693,7 @@ function every() {
   }, test.limit.slow);
   const nodeUp = function () { return !!E.node && E.node.up && E.node.debug; };
 
-  // every product script, placed in spirit.required where it is required
+  // every product script, placed on the spirit object where it is required
   test.run('there are product scripts to require, each alone, on the node and on a page', 0.2, function () {
     E.req = productScripts().filter(function (f) { return f !== 'spirit/script.js'; });
     return E.req.length > 100 || false;
@@ -709,7 +713,7 @@ function every() {
       // goal/G49.23: what requireScript answered (its module.exports) told apart from what stands at its place.
       const got = await page.evaluate('window.spirit.readyPromise.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.requireScript(' + JSON.stringify(f) + '); })' +
         '.then(function (ans) { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
-        ' var el = at(spirit.required); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function", answered: !!ans && typeof ans.create === "function", same: el === ans }); },' +
+        ' var el = at(spirit); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit) !== undefined, factory: !!el && typeof el.create === "function", answered: !!ans && typeof ans.create === "function", same: el === ans }); },' +
         ' function () { return JSON.stringify({ err: true, placed: false, factory: false, answered: false, same: false }); })');
       let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false, answered: false, same: false }; }
       if (r.err) continue;
@@ -721,11 +725,11 @@ function every() {
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
     return E.pageLoaded.length > 0 || false;
   }, test.limit.long);
-  test.run('every product script that loads on a page stands in spirit.required under its own path', 0.4, function () {
+  test.run('every product script that loads on a page stands on the spirit object under its own path', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.pageLoaded.length > 0 && !E.pageBad.length) || false;
   }, test.limit.quick);
-  test.run('every element script\'s module.exports, a factory with a create, stands in spirit.required under its own path', 0.4, function () {
+  test.run('every element script\'s module.exports, a factory with a create, stands on the spirit object under its own path', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
@@ -861,8 +865,8 @@ async function session() {
   // loading, the page looks at window.spirit.required at the script's own path, where [the loader, since goal/G49.9]
   // puts an element with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
   // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser.js).
-  // Since goal/G49.5's step 2 an element stands at spirit.required.<its path>, and the bare page names that place.
-  if (report && report.state === 'failed' && /places no element with a create at spirit\.required\./.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
+  // Since goal/G49.5's step 2 an element stands at its path; since goal/G49.23 the bare page says the file hands back none.
+  if (report && report.state === 'failed' && /(?:places|hands back) no element with a create/.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
   if (!report || report.state !== 'mounted') return P;
   P.stage = 'mounted';
 
@@ -948,7 +952,7 @@ async function session() {
     '  if (!el || el.textContent.replace(/[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u{1F3FB}-\\u{1F3FF}\\s]/gu, "") !== "") continue;' +
     '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
     '  out.push(true); } return out; }())';
-  await page.evaluate('Promise.resolve().then(function () { return spirit.requireScript("spirit/element/icon/script.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.required.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+  await page.evaluate('Promise.resolve().then(function () { return spirit.requireScript("spirit/element/icon/script.js"); }).then(function (icon) { var p = document.createElement("div"); var i = icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
   P.iconMark = await page.evaluate('window.spiritIconMark || ""');
   const loose = {};
   const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };
@@ -1034,14 +1038,14 @@ async function session() {
   const W = P.W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null, function (k, v) { return k === "listeners" || k === "intervals" ? undefined : v; })')) || { net: [], subs: [], writes: [], moved: [] };
   // THE FAMILIES IT USES, AND WHETHER IT LOADED THEIR INTERFACES ITSELF (Andy: "JUST BECAUSE api branches are intrinsic doesn't
   // fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT
-  // FUCKING NEEDS"): the families it called, and those whose spirit.required.spirit.data branches it watched; on a bare page each one's api.js
-  // (spirit/<family>/api.js or spirit/app/<family>/api.js) stands in spirit.required only if this file loaded it.
+  // FUCKING NEEDS"): the families it called, and those whose branches of the store it watched; on a bare page each one's api.js
+  // (spirit/<family>/api.js or spirit/app/<family>/api.js) stands at its path on the spirit object (goal/G49.23) only if this file loaded it.
   P.usedFamilies = (W.families || []).slice();
   (W.subs || []).forEach(function (x) { if (x.mine && x.kind === 'data.watch' && x.path) { const f = String(x.path).split('/')[1]; if (f && P.usedFamilies.indexOf(f) === -1) P.usedFamilies.push(f); } });
-  P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var r = (window.spirit && window.spirit.required) || {}; var s = r.spirit || {}; return !((s[f] && s[f].api) || (s.app && s.app[f] && s.app[f].api)); }))'));
+  P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var s = window.spirit || {}; return !((s[f] && s[f].api) || (s.app && s.app[f] && s.app[f].api)); }))'));
 
   // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
-  // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.required.spirit.data path it watches must change
+  // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each path of the store it watches must change
   // its box. A watch that redraws nothing is not listening.
   let probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
   // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/search/script.js, setOpen: "opened, ... draw()"): while
@@ -1072,7 +1076,7 @@ async function session() {
     // the page holds before, and after the element was created there, left a second to draw, and destroyed; the box taken
     // away. All it made is gone again: no listener on window or document, no interval, no element anywhere on the page.
     P.cycle = JSON.parse(await page.evaluate('(function () { var W = window.spiritWatch; var file = ' + JSON.stringify(rel) + ';' +
-      ' var el = file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);' +
+      ' var el = ' + JSON.stringify(placeKeys(rel)) + '.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit);' +
       ' if (!W || !W.held || !el || typeof el.create !== "function") return JSON.stringify(null);' +
       ' var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
       ' var box = document.createElement("div"); box.setAttribute("data-spirit-cycle", ""); document.body.appendChild(box); var before = W.held(); box.remove();' +
@@ -1235,10 +1239,10 @@ function oneFile(P) {
   // they cause, since andy request an element generates would imply that it must listen for confirmation of the
   // results"): one that sent a write holds, while mounted, a listener on the page's stream of its own making.
   // THROUGH SPIRIT.DATA, NOT THE RAW STREAM (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
-  // changes shit it listens to fucking update via the spirit object"): what it listens with is a spirit.required.spirit.data.watchPath of
+  // changes shit it listens to fucking update via the spirit object"): what it listens with is a watchPath of the store (spirit.client, goal/G49.23) of
   // its own making, its searches' included. A subscription of its own to the raw stream, taken into a store of its own,
-  // is how the Desk List kept rows spirit.required.spirit.data never held: it does not count.
-  // <address>: what it watches in spirit.required.spirit.data redraws it
+  // is how the Desk List kept rows the store never held: it does not count.
+  // <address>: what it watches in the store redraws it
   const probed = P.probed || [];
   const seenProbe = probed.filter(function (x) { return !x.hidden; });
   if (mounted && !probed.length) {}
@@ -1268,10 +1272,10 @@ function oneFile(P) {
       return !P.unloaded.length || false;
     }, test.limit.quick);
   }
-  // <address>: what it changes, it listens for through spirit.required.spirit.data
+  // <address>: what it changes, it listens for through the store
   if (mounted && !W.writes.length) {}
   else {
-    test.run('it sent writes and watches spirit.required.spirit.data paths for them', 0.4, function () {
+    test.run('it sent writes and watches the store\'s paths for them', 0.4, function () {
       if (notDrawn()) return false;
       const watching = W.subs.filter(function (x) { return x.mine && x.live && x.kind === 'data.watch'; }).length;
       return watching > 0 || false;
@@ -1291,26 +1295,26 @@ function oneFile(P) {
   // EVERY SEARCH FROM SPIRIT.DATA (goal/G41.28; Andy, box v15: "general test for screen objects will make sure that all
   // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.required.spirit.data branch (its
   // data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.").
-  // <address>: every search it makes ranks spirit.required.spirit.data
+  // <address>: every search it makes ranks the store
   // ITS searches: the ones the module makes. When the module handed is the search itself (spirit/element/search/script.js),
   // the test's own mounts of it, bare in the mount box and once more in the create-and-destroy box, are the test's, not
   // searches the module made, and are not judged; every search the module makes inside them is.
   const made = (W.searches || []).filter(function (x) { return !x.mount; });
   if (mounted && !made.length) {}
   else {
-    test.run('its searches are each made with a spirit.required.spirit.data branch, no rows of their own', 0.4, function () {
+    test.run('its searches are each made with a branch of the store, no rows of their own', 0.4, function () {
       if (notDrawn()) return false;
       const off = made.filter(function (x) { return !x.data || x.rows; });
       return !off.length || false;
     }, test.limit.quick);
   }
   // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
-  // row of its branch in spirit.required.spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
+  // row of its branch in the store. A list that keeps its rows anywhere else draws what the branch does not hold.
   const outside = P.outside || [];
   const drew = outside.reduce(function (n, x) { return n + x.drawn; }, 0);
   if (mounted && !drew) {}
   else {
-    test.run('every row its searches draw is a row their spirit.required.spirit.data branch holds', 0.4, function () {
+    test.run('every row its searches draw is a row their branch of the store holds', 0.4, function () {
       if (notDrawn()) return false;
       const strays = outside.filter(function (x) { return x.outside.length; });
       return !strays.length || false;

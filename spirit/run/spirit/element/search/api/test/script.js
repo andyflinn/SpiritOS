@@ -26,7 +26,8 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 function placedAnswer(p, w) {
   const keys = String(p).replace(/\.js$/, '').split('/');
   if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
-  const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, ((w || global.window).spirit || {}).required);
+  // goal/G49.23: on the spirit object itself, its first key spirit the object.
+  const at = keys.slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, (w || global.window).spirit);
   if (at && (typeof at === 'object' || typeof at === 'function')) return Promise.resolve(at);
   const no = Promise.reject(new Error('no stand-in for ' + p));
   no.catch(function () {});
@@ -61,15 +62,15 @@ function world() {
   // asks, and a check below judges that no data.js is asked; through requireScript it would not see those asks.
   const real = function (file) { return function (win) { PAGE_LOAD.runAsPage(path.join(JS, file), win); }; };
   const STANDS = {
-    'spirit/element/search/script.js': function (win) { const at = win.spirit.required.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
+    'spirit/element/search/script.js': function (win) { const at = win.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },
     // Its two halves (goal/G43.32): the family list, search/api/list.js, and the verb half, search/api/verb.js.
     'spirit/element/search/api/list/script.js': real('search/api/list/script.js'),
     'spirit/element/search/api/verb/script.js': real('search/api/verb/script.js'),
   };
   const win = {
-    // goal/G43.32: an element stands at spirit.required.<its path>.
-    spirit: { required: { spirit: { element: {} } }, escapeHtml: function (s) { return String(s); },
+    // goal/G49.23: an element stands on the spirit object at its path (spirit.element.<...>).
+    spirit: { element: {}, escapeHtml: function (s) { return String(s); },
       // What readyPromise answers is the spirit instance itself (goal/G49.6), whose apiTree reads the node's tree.
       readyPromise: Promise.resolve({ apiTree: function () { return Promise.resolve(TREE); } }) },
     document: { createElement: function (t) { return node(t); } },
@@ -78,7 +79,7 @@ function world() {
     console: { log: function () {}, error: function () {} },
   };
   // The node family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
-  // itself to the data set; the api tree is the node family's (spirit.required.spirit.data.node.data).
+  // itself to the data set; the api tree is the node family's (spirit.client.node.data).
   let ran = false;
   win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } if (Object.prototype.hasOwnProperty.call(ANSWERS, p)) return Promise.resolve(ANSWERS[p]); return placedAnswer(p, win); };
   // What the halves require and this world does not run, as requireScript answers them: the node branch's interface and its
@@ -91,16 +92,16 @@ function world() {
   // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   win.spirit.requireScript('spirit/client/script.js');
-  pageData = win.spirit.required.spirit.data;
+  pageData = win.spirit.client;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');
   win.spirit.requireScript(SUBJECT);
-  w.E = win.spirit.required.spirit.element;
+  w.E = win.spirit.element;
   return w;
 }
-// What a list offers, as the search element would draw it: the rows of its spirit.required.spirit.data branch (goal/G41.28), or for
+// What a list offers, as the search element would draw it: the rows of its spirit.client branch (goal/G41.28), or for
 // another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
 let pageData = null;
 const names = function (l) {

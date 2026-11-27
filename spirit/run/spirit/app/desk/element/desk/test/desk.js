@@ -51,7 +51,7 @@ function caller(page) {
       .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
   };
 }
-const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()";
+const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function (E) { E.create(d, {}); return true; }); })()";
 
 // no icon table, no lookup into one
 const readCode = function () { if (W.code === undefined) W.code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, ''); return W.code; };
@@ -218,53 +218,63 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  // The page's caches are the desk and backup families' data.js, over the one spirit.required.spirit.data (goal/G41.28): each comes with
+  // The page's caches are the desk and backup families' data.js, over the one store (goal/G41.28): each comes with
   // its family's api.js, as the real api.js requires its companion data.js (goal/G47.1), and runs as it is, so the List is
   // a search of what the cache holds; anything else is answered and not run.
   const REAL = { 'spirit/client/script.js': 'spirit/client/script.js', 'spirit/app/desk/api.js': 'spirit/app/desk/data.js', 'spirit/app/backup/api.js': 'spirit/app/backup/data.js' };
   const ran = {};
   let listOpts = null;
+  // goal/G43.32: the parts by their path, handed as requireScript's answers (goal/G49.23: no spirit.required; the page keeps what
+  // the require hands back): one tree, its first key spirit, kept by the test and placed nowhere.
+  const STOOD = { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
+    'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } };
   win.spirit = { escapeHtml: api.escapeHtml,
     requireScript: function (p) {
       const rel = String(p).replace(/^\/+/, '');
       required.push(rel);
       const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
-      if (run && !ran[run]) { ran[run] = true; PAGE_LOAD.runAsPage(path.join(RUN, run), win); }
+      // What each real file put out, kept and handed back (goal/G49.23: no spirit.required): the store as the store's answer, a
+      // data.js's reads as its api.js answer's data, as the loader hands an old-shape branch back.
+      if (run && !ran[run]) { ran[run] = true; ran[run] = PAGE_LOAD.runAsPage(path.join(RUN, run), win); }
+      if (rel === 'spirit/client/script.js') return Promise.resolve(ran[run]);
       // A branch by its api.js path (goal/G49.6: never by a name): every verb of it reaches the recorder as <branch>.<verb>, an
       // app's branch named by its id, its folder's path in dots (goal/G49.19: spirit.app.desk.items.search).
       const b = /^spirit\/(app\/)?([^/]+)\/api\.js$/.exec(String(rel));
       const bn = b ? (b[1] ? SPIRIT.dottedPath('spirit/app/' + b[2]) : b[2]) : '';
-      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { return rest === 'then' ? undefined : function (args) { return api.verb(bn + '.' + String(rest), args); }; } }));
-      return Promise.resolve({});
+      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { if (rest === 'data') return run && ran[run] !== true ? ran[run] : null; return rest === 'then' ? undefined : function (args) { return api.verb(bn + '.' + String(rest), args); }; } }));
+      // A part by its path, handed back from STOOD (goal/G49.23: the page keeps what the require hands back); anything else an object.
+      const keys = rel.replace(/\.js$/, '').split('/'); if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+      const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, STOOD);
+      return Promise.resolve(at && (typeof at === 'object' || typeof at === 'function') ? at : {});
     },
-    // goal/G43.32: the parts stand where the page reads them, at spirit.required.<their path>.
-    required: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
-      'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
     // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A branch's verb is asked of the
     // branch its api.js path binds (requireScript above: every desk.<verb> reaches the recorder), its answer through outcome, and
     // the desk's publishes through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
     readyPromise: Promise.resolve({}),
     callOutcome: function (p) { return p; } };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, so each element is placed at its path as it runs.
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each element is placed at its path as it runs.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
   win.spirit.requireScript('spirit/client/script.js');
+  // The store as it was handed back (goal/G49.23: no spirit.required).
+  const STORE = ran['spirit/client/script.js'];
   // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the key as
   // spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): as spirit.startPage does once node.card answers,
   // the key kept on spirit.nodeFacts and handed to the data set, so the cache files the page's rows under its node.
   win.spirit.nodeFacts = { key: PAGE_NODE_KEY };
-  win.spirit.required.spirit.data.homeNode(PAGE_NODE_KEY);
-  PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js'), win);
-  PAGE_LOAD.runAsPage(FILE, win, raw);
-  const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
+  STORE.homeNode(PAGE_NODE_KEY);
+  // The real row element, handed as requireScript's answer (goal/G49.23), and the page as it put itself out.
+  STOOD.spirit.element.row = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js'), win);
+  const page = PAGE_LOAD.runAsPage(FILE, win, raw);
+  const w = { document: document, made: made, asked: asked, required: required, api: api, win: win, stood: STOOD };
   w.mount = async function () {
-    win.spirit.required.spirit.app.desk.element.desk.desk.create(document.body.appendChild(document.createElement('div')), {});
+    page.create(document.body.appendChild(document.createElement('div')), {});
     await settle();
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, named by its own current row
     // (goal/G49.8: "the \"current\" selection is just another streamed item"); the page reads it from there, never from a
     // search answer.
-    const K = ((win.spirit.required.spirit.data || {})[ID] || {}).data;
+    const K = ((STORE || {})[ID] || {}).data;
     if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); K.published({ change: 1, current: goal.id }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {
@@ -603,8 +613,9 @@ const fillOf = function (verb) {
 test.run('the List stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
   const wf = deskWorld(goal, [item]);
   const panes = W.panes = [];
-  const realCreate = wf.win.spirit.required.spirit.element.search.create;
-  wf.win.spirit.required.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
+  // The search part as the page holds it, handed back (goal/G49.23).
+  const realCreate = wf.stood.spirit.element.search.create;
+  wf.stood.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   W.mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   W.deskDoc = wf.document;

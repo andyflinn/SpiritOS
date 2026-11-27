@@ -30,7 +30,7 @@ test.after(async function () {
   try { if (chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 const ask = async function (verb, args) { const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return { status: r.status, body: JSON.parse(await r.text()) }; } catch (e) { return { status: r.status, body: null }; } };
-const held = function () { return W.chrome.evaluate('JSON.stringify(spirit.required.spirit.data.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
+const held = function () { return W.chrome.evaluate('JSON.stringify(spirit.client.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
 // Each run-only app of the tree written out, so that each check has a plain title of its own.
 const rowsOf = function (K) {
   const a = W.only.filter(function (a) { return a.key === K; })[0] || { key: K, label: K };
@@ -40,7 +40,7 @@ const rowsOf = function (K) {
 };
 // The app detail, made now: its Activate row reads the app cache as the job left it (no list on the page to ask again).
 const activateUnder = function (expr) { return W.chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
-const detailOf = function (key, label) { return W.chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.required.spirit.element.search.app.detail.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
+const detailOf = function (key, label) { return W.chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.search.app.detail.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
 const noActivate = async function (key, label) {
   await detailOf(key, label);
   await sleep(1500);
@@ -106,14 +106,14 @@ test.run('before the job the tiles draw apps, no run-only one among them', 0.2, 
   if (!W.loaded) return false;
   const chrome = W.chrome, only = W.only, plain = W.plain;
   // The app list in tiles mode, drawn, so the cache holds every row app.search answered, and kept on the page while the job comes.
-  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.required.spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
+  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
   await until(function () { return held().then(function (r) { return only.every(function (a) { return !!r[a.key]; }) && !!r[plain.key]; }); }, 8000);
   await until(function () { return chrome.evaluate('document.querySelectorAll("#tiles *").length > 5'); }, 8000);
   await sleep(1000);
   // From here on: every value the cache holds for a run-only app, and every app label a tile ever draws (a MutationObserver).
   const LABELS = JSON.stringify(W.own.map(function (a) { return a.label; }));
   await chrome.evaluate('(function () { window.seen = {}; window.drawn = []; var want = window.want = ' + LABELS + ';' +
-    ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.required.spirit.data.app.data.watch(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
+    ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.client.app.data.watch(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
     ' function look() { var all = document.querySelectorAll("#tiles *"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && window.drawn.indexOf(t) === -1) window.drawn.push(t); } }' +
     ' look(); window.before = window.drawn; window.drawn = []; new MutationObserver(look).observe(document.getElementById("tiles"), { childList: true, subtree: true, characterData: true }); return true; }())');
   const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));
