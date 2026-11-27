@@ -461,10 +461,11 @@ function familyApi(family) {
   // path"): its data.js beside its api.js. A trunk branch of the old shape still names itself by its word (contact), its
   // data.js in spirit/<word>/ (wsl's red, goal/G49.12), until its own turn.
   // Run paths, required as they are (goal/G49.13; Andy: "Why would you fucking have that resolve shit on requireScript()").
-  const inApp = spirit.slashedPath(String(family)) + '/data.js';
-  const inTrunk = 'spirit/' + String(family) + '/data.js';
-  const file = String(family).indexOf('spirit.') === 0 ? inApp : inTrunk;
-  if (!fs.existsSync(path.join(RUN_ROOT, file))) return null;
+  // A BRANCH OF THE NEW SHAPE HOLDS ITS CLIENT AS client/script.js (goal/G49.22, wsl's find: spirit.contact's was never found, so a
+  // client kept no cache of it): looked for first, then the old data.js beside an api.js.
+  const dir = String(family).indexOf('spirit.') === 0 ? spirit.slashedPath(String(family)) : 'spirit/' + String(family);
+  const file = [dir + '/client/script.js', dir + '/data.js'].filter(function (f) { return fs.existsSync(path.join(RUN_ROOT, f)); })[0];
+  if (!file) return null;
   try { return spirit.requireScript(file); } catch (e) { return null; }
 }
 function senderOf(key, family) {
