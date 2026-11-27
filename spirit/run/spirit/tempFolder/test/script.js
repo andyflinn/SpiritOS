@@ -94,3 +94,41 @@ test.run('a run with no key yet is named by its own path, hashed the same way', 
   const want = crypto.createHash('sha256').update('run:' + path.resolve(bare)).digest('hex').slice(0, 16);
   return path.basename(path.dirname(T.path('zzRoute', { run: bare }))) === want || false;
 }, test.limit.quick);
+
+// IT LEAVES NO GARBAGE (goal/G49.23; Andy: "make sure spirit/tempFolder/ leaves NO garbage, use tests to ensure that"): a
+// test or a process that is killed, by its time limit or a crash, never cleans its own spot; so each spot is marked with the
+// process that asked for it, and every hand-out removes the spots whose process is gone. A live process's spots stay.
+const CP = require('child_process');
+function childMakes(route, stay) {
+  const code = "require('./spirit/script.js'); const d = spirit.requireScript('spirit/tempFolder/script.js').tempFolder(" + JSON.stringify(route) + "); process.stdout.write(d + '\\n');" + (stay ? ' setInterval(function () {}, 1000);' : '');
+  return CP.spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'ignore'] });
+}
+function dirOf(child) {
+  return new Promise(function (resolve) { let out = ''; child.stdout.on('data', function (b) { out += b; if (/\n/.test(out)) resolve(out.trim()); }); child.on('exit', function () { resolve(out.trim()); }); });
+}
+test.run('a spot whose process has ended is removed by the next hand-out', 0.2, async function () {
+  const T2 = S.requireScript('spirit/tempFolder/script.js');
+  const kid = childMakes('zzLeft/gone', false);
+  const dir = await dirOf(kid);
+  await new Promise(function (r) { if (kid.exitCode !== null) r(); else kid.on('exit', r); });
+  if (!dir || !fs.existsSync(dir)) return false;
+  made.push(T2.tempFolder('zzLeft/other'));
+  return !fs.existsSync(dir) || false;
+}, test.limit.slow);
+test.run('a spot whose process still runs stays through another hand-out', 0.2, async function () {
+  const T2 = S.requireScript('spirit/tempFolder/script.js');
+  const kid = childMakes('zzLeft/alive', true);
+  const dir = await dirOf(kid);
+  try {
+    if (!dir || !fs.existsSync(dir)) return false;
+    made.push(T2.tempFolder('zzLeft/another'));
+    return fs.existsSync(dir) || false;
+  } finally { try { kid.kill(); } catch (e) { /* gone */ } made.push(dir); }
+}, test.limit.slow);
+test.run('a process\'s own spot stays through its own next hand-out', 0.2, function () {
+  const T2 = S.requireScript('spirit/tempFolder/script.js');
+  const mine = T2.tempFolder('zzLeft/mine');
+  made.push(mine);
+  made.push(T2.tempFolder('zzLeft/mineToo'));
+  return fs.existsSync(mine) || false;
+}, test.limit.quick);
