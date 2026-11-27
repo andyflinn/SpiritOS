@@ -30,7 +30,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
   // fucking data.js is installed"): the icon element, spirit.required.spirit.data, testicle's interface and testicle's cache manager, its
   // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
-  var parts = Promise.all([keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/client/script.js'), keepAnswer('spirit/app/testicle/api.js'), keepAnswer('spirit/app/testicle/words.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/app/testicle/api.js'), keepAnswer('spirit/app/testicle/words.js')]);
   // Its words testicle's own (goal/G47.1; ../words.js): every line it shows worded there, none here.
   function W() { return ANSWER['spirit/app/testicle/words.js']; }
   parts.catch(function () {});
@@ -97,7 +97,7 @@
     }
     function draw() {
       if (gone) return;
-      var m = ANSWER['spirit/client/script.js']['spirit.app.testicle'].data.monitor.get();
+      var m = ANSWER['spirit/app/testicle/api.js'].data.monitor.get();
       var busy = !!(m && m.busy);
       var glyph = busy ? '🚶‍➡️' : '🛌';
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
@@ -126,7 +126,7 @@
     }
     parts.then(function () {
       if (gone) return;
-      var D = ANSWER['spirit/client/script.js']['spirit.app.testicle'].data;
+      var D = ANSWER['spirit/app/testicle/api.js'].data;
       // The mode it stands at, asked once; the stream keeps it after.
       Promise.resolve(ANSWER['spirit/app/testicle/api.js'].preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
       draw();
