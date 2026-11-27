@@ -35,7 +35,7 @@ existing file list with a filter for production *.js files: no new list."*
 - A workBench whose left strip holds two icons, 📁 then ⚙ (goal/G47.1, box v79, 2: *"the second icon below the existing one"*), and whose right strip holds none.
 - ⚙ opens the panel *"⚙ Configuration"* in the left pane: one switch, the toggle form the app list uses (rowFormToggle), on interactive, off auto, drawn from the preference interactive (asked of testicle.preferences once, then followed in testicle's branch, which the stream keeps); no Save: a press sends the other mode at once, and the switch moves only when the stream brings it back (goal/G47.1, box v80, 2). A refusal is said below the form.
 - Ahead of the 🛌/🚶‍➡️ icon the monitor row shows the mode, 🤖 auto or 🖖 interactive, from the same branch (box v80, 2).
-- While the server classifies or tests, the monitor row's message is what it is doing, as the server says it: *classifying 120 of 253*, *running <suite> for <script>*; idle, the last change (goal/G47.1, Andy: *"do that"*).
+- While the server classifies or tests, the monitor row's two rows say what it is doing (goal/G47.4, the box, ### status bar, which replaced the last-change line and the doing text): classifying, row 1 the classifier's file and row 2 *"<n> of <total>: <script>"*, n counting up; running a suite, row 1 *"<suites owed>: <suite>"* and row 2 *"<tests reported>: <script>"*.
 - Its leftmost pane shows the file list; the centre holds the testicle search's tab alone (below).
 - The list shows production `*.js` files only: a `.js` outside any `test/` folder shows; a `.md`, a `.json`, and a test in
   a `test/` folder never show.
@@ -65,8 +65,8 @@ suite search is spirit/app/testicle/element/search/suite.js and its folder"*.
   updated in any of its three tables"*, *"The row has a constant height, and the message is ellipsed, never wrapped"*,
   *"the page never asks testicle.busy"*. The row sits above the left pane, its text starting with the icon; neither the
   face nor data.js asks testicle.busy; while iota's suite, started by its 🏃‍♂️, runs, the icon shows 🚶‍➡️, then 🛌 once
-  the server listens again; a new script's file makes the message name it; a script with a long name leaves the row's
-  height as it was, its message on one line, overflow hidden, ellipsed.
+  the server listens again; a script with a long name, classified by itself, leaves the row's height as it was while the
+  bar names it, that row on one line, overflow hidden, ellipsed (goal/G47.4: the last-change line went).
 - The missing own test (goal/G47.1): *"A script tab shows, right under its title line, the name of the script's own test in
   red when that test is missing on disc: the folder test/ beside the script, the same file name ... When the own test is
   there, nothing shows in that place. It follows the disc: once the test file is written, the red name goes by itself."*

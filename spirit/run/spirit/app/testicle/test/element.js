@@ -134,9 +134,13 @@ const HANDS = '(function () {' +
   // Every icon the monitor row shows, in order, from the moment this is called.
   '  recordIcons: function () { window.__icons = []; var last = null; var note = function () { var m = window.__t.monitor(); var i = m ? m.icon : null; if (i && i !== last) { window.__icons.push(i); last = i; } }; note(); new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); return true; },' +
   '  icons_seen: function () { return window.__icons || []; },' +
-  // goal/G47.1: every message the monitor row shows, in order, from the moment this is called.
-  '  recordMessages: function () { window.__msgs = []; var last = null; var note = function () { var m = window.__t.monitor(); var x = m ? m.message : null; if (x && x !== last) { window.__msgs.push(x); last = x; } }; note(); new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); return true; },' +
-  '  messages_seen: function () { return window.__msgs || []; },' +
+  // THE STATUS BAR'S TWO ROWS (goal/G47.4, the box, ### status bar: row 1 "<suites owed>: <suite file name>", row 2 "<tests
+  // reported>: <script file name>", while classifying row 2 "<n> of <total>" and the script; it replaced the last-change line
+  // and the doing text, spirit/app/testicle/element/statusBox.js): each row of the monitor as read, with how it holds its text,
+  // and the monitor row's height. Every distinct pair of rows is recorded from the moment recordBar is called.
+  '  bar: function () { var m = window.__t.monitor(); var b = box(); var rs = b ? Array.prototype.slice.call(b.querySelectorAll(".testicle-row")).filter(seen) : []; return { height: m ? m.height : null, rows: rs.map(function (r) { var cs = getComputedStyle(r); return { text: String(r.innerText || "").trim(), nowrap: cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre", ellipsis: cs.textOverflow === "ellipsis", hidden: cs.overflow === "hidden" || cs.overflowX === "hidden", overflows: r.scrollWidth > r.clientWidth }; }) }; },' +
+  '  recordBar: function () { window.__bars = []; window.__barLast = null; var note = function () { var x = window.__t.bar(); var k = JSON.stringify(x.rows.map(function (r) { return r.text; })); if (k !== window.__barLast) { window.__bars.push(x); window.__barLast = k; } }; note(); if (!window.__barObserved) { window.__barObserved = true; new MutationObserver(note).observe(box(), { subtree: true, childList: true, characterData: true }); } return true; },' +
+  '  bars_seen: function () { return window.__bars || []; },' +
   '  centerText: function () { var b = box(); var c = b ? b.querySelector("[id$=\\"center\\"]") : null; return c ? String(c.innerText || "").trim() : null; },' +
   '}; return "hands"; }())';
 
@@ -668,7 +672,9 @@ test.run('the run button is the busy button, spirit/element/busyButton/script.js
   const files = ['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element.js'];
   return files.some(function (f) { return /['"]spirit\/element\/busyButton\/script\.js['"]/.test(code(path.join(RUN, f))); }) || false;
 }, test.limit.quick);
-test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {
+// Its title names the button by its words: the glyph holds a zero-width joiner, which the reporter's title rule refuses as an
+// invisible character, so the test never ran (goal/G49.23; spirit/test/testReport.js, titleProblem).
+test.run('a press on iota\'s own suite\'s run button is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {
   if (!face()) return false;
   const row = iotaRows.filter(function (r) { return r.key === iotaOwn || r.key === F5 + '|' + iotaOwn || String(r.text).indexOf('iota.js') !== -1 && String(r.text).indexOf('sibling') === -1; })[0];
   iotaKey = row ? row.key : '';
@@ -707,31 +713,27 @@ test.run('once the server is back to listening, the monitor shows 🛌', 0.2, as
   const ok = await waitFor('monitor() && monitor().icon === "🛌" && icons_seen().indexOf("🚶‍➡️") !== -1', 20000);
   return !!ok || false;
 }, test.limit.slow);
-const LASTFILE = 'spirit/zzTesticle/zzMonitorLast.js';
+// THE LAST-CHANGE LINE WENT (goal/G47.4, the box, ### status bar: the two rows replace "the last-change line, the doing text";
+// spirit/app/testicle/element/statusBox.js): its check "after the icon, the message shows the last change" with it. A script
+// with a long name is classified by itself, so the bar's second row names it while it is.
 const LONGFILE = 'spirit/zzTesticle/zzMonitor' + 'Long'.repeat(60) + '.js';
-let monitorBefore = null, monitorLong = null;
-test.run('after the icon, the message shows the last change, a new script\'s row', 0.2, async function () {
+let monitorBefore = null, barLong = null;
+test.run('a long script name in the status bar leaves the row\'s height as it was', 0.2, async function () {
   if (!face()) return false;
-  fs.writeFileSync(path.join(s.run, LASTFILE), '\'use strict\';\n// a new script, for the monitor\n');
-  const ok = await waitFor('monitor() && monitor().message.indexOf("zzMonitorLast.js") !== -1', 15000);
   monitorBefore = await T('monitor()');
-  return !!ok || false;
-}, test.limit.slow);
-test.run('a long message leaves the row\'s height as it was', 0.2, async function () {
-  if (!face()) return false;
-  if (!monitorBefore) return false;
+  if (!monitorBefore || !(await T('recordBar()'))) return false;
   fs.writeFileSync(path.join(s.run, LONGFILE), '\'use strict\';\n// a script with a long name, for the monitor\n');
-  const ok = await waitFor('monitor() && monitor().message.indexOf("LongLongLong") !== -1', 15000);
-  const m = await T('monitor()');
-  // Read while the long message shows: the classifying of the new script follows it and puts a short one there.
-  monitorLong = ok && m && m.message.indexOf('LongLongLong') !== -1 ? m : null;
-  return (!!ok && Math.abs(m.height - monitorBefore.height) < 0.5) || false;
-}, test.limit.slow);
-test.run('a long message is ellipsed, never wrapped', 0.2, async function () {
+  const long = function (b) { return (b.rows || []).some(function (r) { return r.text.indexOf('LongLongLong') !== -1; }); };
+  await until(function () { return T('bars_seen()').then(function (all) { return (all || []).some(long); }); }, 240000);
+  // Read as it was drawn, while the long name showed: the bar is recorded on each change, so a short moment is caught too.
+  barLong = ((await T('bars_seen()')) || []).filter(long)[0] || null;
+  return (!!barLong && Math.abs(barLong.height - monitorBefore.height) < 0.5) || false;
+}, test.limit.long);
+test.run('a long name in the status bar is ellipsed, never wrapped', 0.2, function () {
   if (!face()) return false;
-  const m = monitorLong;
-  if (!m) return false;
-  return (m.nowrap && m.ellipsis && m.hidden && m.overflows) || false;
+  const r = barLong ? barLong.rows.filter(function (x) { return x.text.indexOf('LongLongLong') !== -1; })[0] : null;
+  if (!r) return false;
+  return (r.nowrap && r.ellipsis && r.hidden && r.overflows) || false;
 }, test.limit.quick);
 
 // ── goal/G47.1, box v79, 2 and 4: the ⚙ Configuration panel ──
@@ -808,29 +810,36 @@ test.run('a set by the verb elsewhere is followed: interactive true shows the to
 // "running <suite>" while it tests: "cw, do that", "wsl, test that this is how it's done.") ──
 const ZM = 'spirit/zzTesticle/zzMonitorRun.js', ZMS = 'spirit/zzTesticle/test/zzMonitorRun.js';
 let msgsAt = false;
+// The bar's words as the box words them now (goal/G47.4, ### status bar; statusBox.js): while classifying row 1 names the
+// classifier's file and row 2 reads "<n> of <total>: <script>"; while a suite runs row 1 "<suites owed>: <suite>" and row 2
+// "<tests reported>: <script>". The old wording, "classifying N of M" and "running <suite> for <script>", went with the doing text.
+const CLASSIFIER = 'spirit/test/scriptClassify.js';
+const rowsSeen = function () { return T('bars_seen()').then(function (all) { return (all || []).map(function (b) { return (b.rows || []).map(function (r) { return r.text; }); }); }); };
 test.run('the monitor row\'s messages are recorded, and the classifier is changed so every script is classified again', 0.2, async function () {
   if (!face()) return false;
-  msgsAt = (await T('recordMessages()')) === true;
+  msgsAt = (await T('recordBar()')) === true;
   fs.appendFileSync(path.join(s.run, 'spirit', 'test', 'scriptClassify.js'), '// the classifier, changed, for the status bar\n');
   return msgsAt || false;
 }, test.limit.quick);
-test.run('while it classifies, the status bar says "classifying N of M", N counting up', 0.2, async function () {
+test.run('while it classifies, the status bar names the classifier in row 1 and says "<n> of <total>: <script>" in row 2, n counting up', 0.2, async function () {
   if (!msgsAt) return false;
-  const ok = await waitFor('messages_seen().filter(function (m) { return /^classifying \\d+ of \\d+$/.test(m); }).length >= 2', 240000);
-  const seen = ((await T('messages_seen()')) || []).filter(function (m) { return /^classifying \d+ of \d+$/.test(m); });
-  const ns = seen.map(function (m) { return Number(/^classifying (\d+)/.exec(m)[1]); });
+  const counting = function (rs) { return rs.length === 2 && rs[0].indexOf(CLASSIFIER) !== -1 && /^\d+ of \d+: \S/.test(rs[1]); };
+  await until(function () { return rowsSeen().then(function (all) { return all.filter(counting).length >= 2; }); }, 240000);
+  const seen = (await rowsSeen()).filter(counting);
+  const ns = seen.map(function (rs) { return Number(/^(\d+) of/.exec(rs[1])[1]); });
   const up = ns.length >= 2 && ns.every(function (n, i) { return i === 0 || n >= ns[i - 1]; });
-  return (!!ok && up) || false;
+  return up || false;
 }, test.limit.long);
-test.run('while it runs a suite, the status bar says "running <suite> for <script>"', 0.2, async function () {
+test.run('while it runs a suite, the status bar names the suite in row 1 and its script in row 2', 0.2, async function () {
   if (!msgsAt) return false;
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
   fs.writeFileSync(path.join(s.run, ZMS), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\ntest.run('zzMonitorRun waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);\n");
   fs.writeFileSync(path.join(s.run, ZM), "'use strict';\n// zzMonitorRun\n");
   await until(function () { return call(N.base, 'spirit.app.testicle.suite.search', { script: ZM, text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
   await call(N.base, 'spirit.app.testicle.run', { script: ZM, suite: ZMS });
-  // Its own test is run: the suite named (cw's build names it by its file name; a general suite adds " for <script>").
-  const ok = await waitFor('messages_seen().some(function (m) { return /^running (spirit\\/zzTesticle\\/test\\/)?zzMonitorRun\\.js( for |$)/.test(m); })', 240000);
+  // Its own test is run: row 1 its suite, row 2 its script, each after its number.
+  const running = function (rs) { return rs.length === 2 && /^(\d+:\s*)?(\S*\/)?test\/zzMonitorRun\.js$/.test(rs[0]) && /^(\d+:\s*)?(\S*\/)?zzTesticle\/zzMonitorRun\.js$/.test(rs[1]); };
+  const ok = await until(function () { return rowsSeen().then(function (all) { return all.some(running); }); }, 240000);
   return !!ok || false;
 }, test.limit.long);
 

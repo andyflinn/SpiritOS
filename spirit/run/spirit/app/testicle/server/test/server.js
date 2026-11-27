@@ -126,7 +126,9 @@ const PLANT = {
   // gone; red if not").
   'spirit/app/testicle/temp/zzTesticle/stray.js': '\'use strict\';\n// stray\n',
   'spirit/app/testicle/temp/zzTesticle/test/stray.js': SUITE_HEAD + [
-    "require(path.join(__dirname, '..', '..', '..', '..', '..', 'tempFolder.js'))('spirit/app/testicle/temp/zzTesticle/test/stray/kept');",
+    // The helper at its place since the flag-day moves (goal/G49.12: spirit/tempFolder/script.js, its function in an object,
+    // goal/G49.16); at its old place the require threw at load, and the suite hung (goal/G49.23).
+    "require(path.join(__dirname, '..', '..', '..', '..', '..', 'tempFolder', 'script.js')).tempFolder('spirit/app/testicle/temp/zzTesticle/test/stray/kept');",
     "test.run('stray answers', 0.2, function () { return true; }, test.limit.quick);",
   ].join('\n') + '\n',
   'spirit/app/testicle/temp/zzTesticle/mu.js': '\'use strict\';\n// mu\n',
@@ -2113,7 +2115,7 @@ test.run('spirit/app/testicle/temp/zzBatch/ is planted with its three kinds of g
   if (!up()) return false;
   put(BZ + 'zzBatch.js', '\'use strict\';\n// zzBatch\n');
   put(BA, '\'use strict\';\ndocument.title = String(document.title);\n');
-  put(BB, '\'use strict\';\nrequire(\'../../../../spirit.js\');\nconst fs = require(\'fs\');\nmodule.exports = { fs: typeof fs.readFileSync };\n');
+  put(BB, '\'use strict\';\nrequire(\'../../../../script.js\');\nconst fs = require(\'fs\');\nmodule.exports = { fs: typeof fs.readFileSync };\n');
   put(BC, '\'use strict\';\n(function (root) { var v = { both: true }; if (typeof module === \'object\' && module && module.exports) module.exports = v; else root.zzbBoth = v; }(this));\n');
   ['general', 'node', 'browser'].forEach(function (k) { put(BZ + 'test/zzBatch-sibling-' + k + '.js', BATCH_SUITE(k)); });
   const ok = await until(function () { const t = tables(DB); return Promise.resolve([BA, BB, BC].every(function (f) { const r = scriptRow(t, f); return !!r && no(r.reClassify); })); }, 280000);
@@ -2172,7 +2174,9 @@ const TOP_LOG = "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', 
   "function log(name, ev) { require('fs').appendFileSync(LOG, JSON.stringify({ suite: name, ev: ev, at: Date.now() }) + '\\n'); }\n";
 // ITS LONG RUN, KEPT SHORT (goal/G49.8; Andy: "something is severly wrong when one single suite takes a half hour"): zzLong only
 // has to be still running when the other change lands, two seconds after its start, so 15 s does what 40 s did, twice over.
-const LONG_MS = 15000;
+// 30 S, NOT 15 (goal/G49.23): the stop's check bounds zzRed's start by zzLong's wait, and that start comes after the quiet second,
+// the stop and zzRed's classifying first (box v128), which on a loaded machine took more than the 13 s that 15 s left.
+const LONG_MS = 30000;
 let topWorld = false, longBefore = null, redChanged = 0, longStart = 0;
 test.run('spirit/app/testicle/temp/zzTop/ is planted with a long suite, a suite red at 0.9 and a green one, each run once', 0.2, async function () {
   if (!up()) return false;
@@ -2493,8 +2497,10 @@ function MICRO_GENERAL(body) {
 // first, so it is no hang in a test (cw). aOk.js reports before it; cLater.js is never reached.
 {
   const LIMIT_LINE = 'const JOB_LIMIT_MS = 120 * 60 * 1000;';
-  // Its planted suites answer at once (MICRO_GENERAL), so a run limit of 15 s still lets aOk.js finish before it.
-  const SHORT_LIMIT_MS = 15000;
+  // 60 S AGAIN, NOT 15 (goal/G49.23): the limit holds every run of the copy, its first classifying too, and a classifying run
+  // killed at it fails every script it had not classified yet (server.js killJob), aOk.js among them, which then never runs.
+  // Classifying the copy's ~50 scripts in debug mode takes some 35 s; bHang.js's test still works on for 240 s, past it.
+  const SHORT_LIMIT_MS = 60000;
   const AOK = 'spirit/app/testicle/temp/zzLimit/aOk.js';
   const BHANG = 'spirit/app/testicle/temp/zzLimit/bHang.js';
   const CLATER = 'spirit/app/testicle/temp/zzLimit/cLater.js';
