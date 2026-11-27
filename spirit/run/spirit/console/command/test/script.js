@@ -155,11 +155,8 @@ const describes = function (out, verb, file) {
   return keys[keys.length - 1] === 'usage' && typeof o.usage === 'string' && o.usage.split(' ')[0] === verb &&
     o.description === file.description && JSON.stringify(o.request) === JSON.stringify(file.request);
 };
-test.run('"api" at the root, where spirit has no api.js, answers a JSON error', 0.4, async function () {
-  if (!up() || at() !== '') return false;
-  const p = await go('api');
-  return refused(p, '') || false;
-}, test.limit.slow);
+// "api" AT THE ROOT NO LONGER REFUSES (goal/G49.23, box v22 Part 2): the root is the spirit branch, and its verbs answer
+// (the check below); the old check that the root has no api.js went with spirit/node/.
 // The spirit branch at the root, spirit, where spirit.nodeFacts' verbs stood at node (goal/G49.23, box v22 Part 2).
 test.run('"api" at the root, the spirit branch, lists its verbs in JSON, by name only and sorted, as spirit.verbs names them', 0.4, async function () {
   if (!up()) return false;
