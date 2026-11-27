@@ -534,8 +534,18 @@ async function chromePage(chrome) {
   if (process.env.SPIRIT_CHROME_PORT) return pageOf(process.env.SPIRIT_CHROME_PORT);
   sweepProfiles();
   const profile = tempFolder(PROFILES + '/chrome-' + require('crypto').randomBytes(6).toString('hex'));
-  const kid = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
-    '--window-size=1280,800', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
+  // ALL IT WRITES INSIDE ITS PROFILE, AND NO CRASH DUMP (goal/G49.23; Andy: "they still fucking litter, and fill the temp folders",
+  // "whatever assigns those TEMP spots, should be able two know which shit needs cleaning up"): Chrome's own scratch folders went
+  // to the system temp folder beside its profile, where no sweep owns them, and a Chrome that crashed under WSL left a core
+  // dump of 669 GB in its crash folder. Its temp is a folder inside its profile, so the profile's removal takes it; its crash
+  // reporter is off; and on Linux it starts with core dumps at zero (exec keeps its process id, so its watch and its kill hold).
+  const scratch = path.join(profile, 'tmp');
+  fs.mkdirSync(scratch, { recursive: true });
+  const env = Object.assign({}, process.env, { TEMP: scratch, TMP: scratch, TMPDIR: scratch });
+  const args = ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
+    '--disable-breakpad', '--disable-crash-reporter', '--window-size=1280,800', 'about:blank'];
+  const how = { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: env };
+  const kid = process.platform === 'linux' ? spawn('/bin/sh', ['-c', 'ulimit -c 0; exec "$0" "$@"', chrome].concat(args), how) : spawn(chrome, args, how);
   watchChrome(kid, profile);
   let err = '';
   kid.stderr.on('data', function (d) { err += String(d); });
