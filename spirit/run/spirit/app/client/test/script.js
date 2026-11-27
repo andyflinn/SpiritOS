@@ -84,17 +84,28 @@ test.run('the app search and the app detail load', 0.2, async function () {
 // Andy: "the helpes must not be words there either, this goes for all spirit.app contained objects."
 // spirit.app: no helper is a word, on it or on an app it holds. The auto-verbs every bound branch has, remote, listener,
 // subscribe and unsubscribe (spirit.js, goal/G47.5), are its verbs, not helpers, and are left out.
-// spirit.app.client IS NO APP (goal/G49.23; Andy: "\"client\" i a word. why would anything classify it as an app itself?"): the
-// app branch's own client, standing at its path since the root placement, in the folder the new shape reserves for it; its
-// reads are words by the box (rows, watch), and it is not judged as an app.
+// WHAT IS AN APP, THE SYSTEM'S OWN RULE SAYS (goal/G49.23; Andy: "the test should only assert how the how the system must
+// work, and the system has clear rules for old and new format branches and apps"): the folders under spirit/app that
+// spirit/fs/filter/app/script.js takes for apps, old format or new; only those are judged as apps. Others standing under
+// spirit.app (its own client, by its path) are no app.
 // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
 test.run('spirit.app holds keys, and no app in it has a createApp, monitor\'s being its element.js', 0.2, async function () {
   if (!W.up) return false;
-  try { W.onApp = JSON.parse(await W.chrome.evaluate('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.requireScript(p)).then(null, function () { return null; }); })).then(function () {' +
+  // The apps by the system's rule, judged in node over the tree; none would judge nothing, so none is red.
+  const FILTER = SPIRIT.requireScript('spirit/fs/filter/app/script.js');
+  const appNames = fs.readdirSync(APPS).filter(function (n) {
+    const dir = 'spirit/app/' + n;
+    const has = function (rel) { return fs.existsSync(path.join(RUN, rel)); };
+    const read = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return null; } };
+    return has(dir) && fs.statSync(path.join(RUN, dir)).isDirectory() && FILTER.app(dir, has, read) === true;
+  });
+  W.appNames = appNames;
+  if (!appNames.length) return false;
+  try { W.onApp = JSON.parse(await W.chrome.evaluate('(function () { var APPS_JSON = ' + JSON.stringify(appNames) + '; var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.requireScript(p)).then(null, function () { return null; }); })).then(function () {' +
     ' var out = { keys: Object.keys(S.app || {}), words: [] };' +
     ' var AUTO = ["remote", "listener", "subscribe", "unsubscribe"];' +
     ' out.keys.forEach(function (k) { var v = S.app[k]; if (typeof v === "function" && !/[A-Z]/.test(k) && AUTO.indexOf(k) === -1) out.words.push(k);' +
-    ' else if (k !== "FS" && k !== "client" && v && typeof v === "object") Object.keys(v).forEach(function (h) { if (typeof v[h] === "function" && !/[A-Z]/.test(h)) out.words.push(k + "." + h); }); });' +
+    ' else if (k !== "FS" && APPS_JSON.indexOf(k) !== -1 && v && typeof v === "object") Object.keys(v).forEach(function (h) { if (typeof v[h] === "function" && !/[A-Z]/.test(h)) out.words.push(k + "." + h); }); });' +
     ' out.apps = out.keys.filter(function (k) { return S.app[k] && typeof S.app[k].createApp === "function"; });' +
     ' return JSON.stringify(out); }); })()')); } catch (e) { W.onApp = null; }
   const onApp = W.onApp || {};
