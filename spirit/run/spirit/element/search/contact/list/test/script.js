@@ -40,7 +40,8 @@ test.run('the contacts list runs on a window of its own, with its row element an
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = window.spirit;
   window.spirit.readyPromise = Promise.resolve({
-    contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
+    // goal/G49.22: the contact branch in the new shape, spirit.contact.<verb>.
+    spirit: { contact: { search: function (b) { asked.push({ verb: 'spirit.contact.search', body: b }); return Promise.resolve(searchAnswer); } } },
     peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
       // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
       post: function (b) {
@@ -84,8 +85,16 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // A branch's api.js (spirit.requireScript('spirit/contact/script.js')): its real companion data.js runs once, attaching itself to
   // the data set loaded below, as the real api.js requires it (goal/G47.1).
   const ran = {};
+  // A BRANCH OF THE NEW SHAPE (goal/G49.22): its interface spirit/<path>/script.js, its client spirit/<path>/client/script.js run
+  // once, as the real interface requires it; the branch the stand-in node's spirit.<path in dots>, refused when it has none.
+  const NEW_SHAPE = { 'spirit/contact/script.js': { client: 'spirit/contact/client/script.js', at: ['spirit', 'contact'] } };
   window.spirit.requireScript = function (p) {
     required.push(p);
+    const ns = NEW_SHAPE[String(p)];
+    if (ns) {
+      if (!ran[ns.client]) { ran[ns.client] = true; load(path.join(JS, '..', '..', ns.client)); }
+      return Promise.resolve(window.spirit.readyPromise).then(function (f) { const b = ns.at.reduce(function (o, k) { return o == null ? undefined : o[k]; }, f); if (!b) throw new Error('not-found ' + p); return b; });
+    }
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
     if (companion && !ran[companion] && fs.existsSync(path.join(JS, '..', '..', companion))) { ran[companion] = true; load(path.join(JS, '..', '..', companion)); }
@@ -214,11 +223,12 @@ test.run('it fills as soon as it is drawn: one refresh at create', 0.2, function
   if (!o) return false;
   return made.refreshes === 1 ? true : false;
 }, test.limit.quick);
-test.run('its search asks contact.search with the text trimmed, and answers as a reply', 0.2, async function () {
+// goal/G49.22: contact.search is spirit.contact.search.
+test.run('its search asks spirit.contact.search with the text trimmed, and answers as a reply', 0.2, async function () {
   if (!o) return false;
   const got = await o.search({ q: '  an ' }, 'search');
   const s = asked.pop();
-  return s.verb === 'contact.search' && s.body.q === 'an' && got.status === 200 && got.body.ok === true && got.body.items.length === 1 && got.body.more === true ? true : false;
+  return s.verb === 'spirit.contact.search' && s.body.q === 'an' && got.status === 200 && got.body.ok === true && got.body.items.length === 1 && got.body.more === true ? true : false;
 }, test.limit.quick);
 test.run('an empty answer is an empty list, like any other', 0.2, async function () {
   if (!o) return false;
@@ -324,7 +334,7 @@ test.run('a table names its branch and verb, has no contact filters, nothing to 
   if (!L) return false;
   realReady = window.spirit.readyPromise;
   window.spirit.readyPromise = Promise.resolve({ agent: { job: function (b) { tableAsked.push(b); return Promise.resolve({ items: [{ key: 'row1', label: JSON.stringify({ id: 'KJ', title: 'Night job' }) }] }); } },
-    contact: { search: function (b) { tableAsked.push({ contact: b }); return Promise.resolve({ items: [] }); } } });
+    spirit: { contact: { search: function (b) { tableAsked.push({ contact: b }); return Promise.resolve({ items: [] }); } } } });
   global.spirit = window.spirit;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/agent/job', key: 'id', label: 'title', face: 'dropdown' });
   to = made.opts;

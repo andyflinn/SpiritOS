@@ -370,7 +370,8 @@ test.run('a person is in the book', 0.2, async function () {
   // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style."
   // Andy: "contact details and relay details should be proper panels in the newest shell style."
   // A person in the book beside the relay the node starts with: a key of our own, blocked, so the book holds it.
-  planted = await call(N.base, 'contact.block', { publicKey: zzKey, publicLabel: 'zzPerson' });
+  // goal/G49.22: the contact branch's calls are spirit.contact.<verb>.
+  planted = await call(N.base, 'spirit.contact.block', { publicKey: zzKey, publicLabel: 'zzPerson' });
   return (planted.status === 200) ? true : false;
 }, test.limit.quick);
 // CONTACTS OPENS ON PEOPLE (goal/G47.4, box v29: "👨‍👩‍👧‍👦 People (nodes only, includes node-puppets, excludes relays and
@@ -402,7 +403,7 @@ test.run('the node knows a relay', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
   if (!c || c.error) return false;
-  found = await call(N.base, 'contact.search', { q: '' });
+  found = await call(N.base, 'spirit.contact.search', { q: '' });
   people = ((found.body && found.body.items) || []).map(function (i) { return Object.assign({ key: i.key }, parsed(i.label) || {}); });
   // Each kind's flow, its results kept for its checks: Contacts opened, the row's details opened over it, and closed.
   relay = people.filter(function (p) { return p.relay === true; })[0];
@@ -466,7 +467,7 @@ test.run('a second person is in the book', 0.2, async function () {
   // goal/G43.18, Andy: "now you need to give each contact row its own detail panel, similar to the concept where tabs in
   // "agent" can hold the same ui for different rows, thing of the contact list in the exact same way."
   // Andy: "give each contact row its own detail panel", as the agent's tabs hold the same ui for different rows
-  planted2 = await call(N.base, 'contact.block', { publicKey: zzKey2, publicLabel: 'zzPersonTwo' });
+  planted2 = await call(N.base, 'spirit.contact.block', { publicKey: zzKey2, publicLabel: 'zzPersonTwo' });
   return (planted2.status === 200) ? true : false;
 }, test.limit.quick);
 test.run('Contacts lists both people', 0.2, async function () {

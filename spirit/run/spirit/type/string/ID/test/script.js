@@ -48,6 +48,7 @@ test.run('its default is the node\'s own public key, once the node is known', 0.
 // node of its own, contact.label, whose publicKey is a spirit.type.string.ID, takes the node's own key past its argument
 // check, and refuses a well-formed key nobody there has seen, naming publicKey. A lookup is no change (Q16, Andy: "yes." to
 // "Shall contact.get stay a read ... that answers not-known for a stranger"): contact.get takes that key and answers 404.
+// goal/G49.22: the branch's calls are spirit.contact.<verb> (were contact.<verb>).
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 const N = {};
 async function call(verb, args) {
@@ -67,20 +68,20 @@ test.after(async function () {
   try { if (N.node) await N.node.release(); } catch (e) { /* gone */ }
   try { if (N.node) H.freeTree(N.node); } catch (e) { /* left */ }
 });
-test.run('at the node, contact.label takes the node\'s own key past its argument check', 0.4, async function () {
+test.run('at the node, spirit.contact.label takes the node\'s own key past its argument check', 0.4, async function () {
   if (!N.card || N.card.status !== 200) return false;
-  const r = await call('contact.label', { publicKey: N.card.body.publicKey, myLabel: 'zz own' });
+  const r = await call('spirit.contact.label', { publicKey: N.card.body.publicKey, myLabel: 'zz own' });
   return (r.status !== 0 && !typeRefused(r, 'publicKey')) || false;
 }, test.limit.slow);
 let stranger = '';
-test.run('at the node, contact.label refuses a well-formed key nobody there has seen, naming publicKey', 0.4, async function () {
+test.run('at the node, spirit.contact.label refuses a well-formed key nobody there has seen, naming publicKey', 0.4, async function () {
   if (!N.card || N.card.status !== 200) return false;
   try { stranger = spirit.requireScript('spirit/relayAuth/script.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
-  const r = await call('contact.label', { publicKey: stranger, myLabel: 'zz stranger' });
+  const r = await call('spirit.contact.label', { publicKey: stranger, myLabel: 'zz stranger' });
   return typeRefused(r, 'publicKey') || false;
 }, test.limit.slow);
-test.run('at the node, contact.get takes that stranger\'s key and answers 404, not known', 0.4, async function () {
+test.run('at the node, spirit.contact.get takes that stranger\'s key and answers 404, not known', 0.4, async function () {
   if (!stranger) return false;
-  const r = await call('contact.get', { key: stranger });
+  const r = await call('spirit.contact.get', { key: stranger });
   return (r.status === 404 && !typeRefused(r)) || false;
 }, test.limit.slow);

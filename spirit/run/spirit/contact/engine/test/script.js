@@ -17,10 +17,10 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/contact/test/script/' + name + tempAsked); }
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/contact/engine/test/script/' + name + tempAsked); }
 // Its store closed first: on Windows a folder holding an open database cannot be removed, and the suite was red on
 // 'it leaves no temp folder behind' for that alone.
-test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/contact/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/contact/engine/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 // A file not there yet is no crash at load: each check below finds nothing and is red (goal/G49.4, the move).
 let contacts = {};
 try { contacts = LOADER.requireScript('spirit/contact/engine/script.js'); } catch (e) { contacts = {}; }
@@ -72,14 +72,14 @@ test.run('a newer card naming nobody leaves no star', 0.8, function () {
   return (said3.ok === true && (W.seen.get(W.puppet.publicKey) || {}).mine === false) || false;
 }, test.limit.quick);
 
-// /spirit on a scratch node, over a raw POST.
+// /spirit on a scratch node, over a raw POST. goal/G49.22: the branch's calls are spirit.contact.<verb> (were contact.<verb>).
 const call = async function (name, args) {
   const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });
   const text = await r.text(); let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, body: body, text: text };
 };
 // The star, as the list reads it: contact.search with its yes-filter, whatever else the row is.
-const starred = async function (key) { const g = await call('contact.search', { q: '', mine: true }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === key; }); };
+const starred = async function (key) { const g = await call('spirit.contact.search', { q: '', mine: true }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === key; }); };
 const refused = function (r) { return r.status >= 400 && r.status < 500 && !!(r.body && r.body.code) && r.body.code !== 'no-such-verb' && r.body.code !== 'no-such-family'; };
 function noNode() { return !(W.node && W.node.up); }
 test.run('the scratch node comes up', 0.2, async function () {
@@ -96,8 +96,8 @@ const runOf = function () { return W.node.run || path.join(W.node.root, 'spirit'
 // A row of the scratch node's table, its signed card naming that owner.
 const rowWithCard = async function (label, owner) {
   const id = auth.generateIdentity(label);
-  await call('contact.block', { publicKey: id.publicKey, publicLabel: label });
-  await call('contact.unblock', { publicKey: id.publicKey });
+  await call('spirit.contact.block', { publicKey: id.publicKey, publicLabel: label });
+  await call('spirit.contact.unblock', { publicKey: id.publicKey });
   const said = contacts.setCard(runOf(), id.publicKey, cardOf(id, owner, 1));
   return said.ok === true ? id.publicKey : '';
 };
@@ -111,33 +111,33 @@ test.run('a node whose card names another owner has no star', 0.4, async functio
   const theirs = await rowWithCard('not ours', auth.generateIdentity('someone else').publicKey);
   return (!!theirs && !(await starred(theirs))) || false;
 }, test.limit.quick);
-test.run('contact.own is no verb any more', 0.2, async function () {
+test.run('spirit.contact.own is no verb', 0.2, async function () {
   if (noNode()) return false;
-  const gone = await call('contact.own', { key: W.KEY, own: false });
+  const gone = await call('spirit.contact.own', { key: W.KEY, own: false });
   return (gone.status >= 400 && await starred(W.KEY)) || false;
 }, test.limit.quick);
-test.run('contact.faceable refuses a node with a code, and its star stays', 0.2, async function () {
+test.run('spirit.contact.faceable refuses a node with a code, and its star stays', 0.2, async function () {
   if (noNode()) return false;
-  const onNode = await call('contact.faceable', { key: W.KEY, faceable: true });
+  const onNode = await call('spirit.contact.faceable', { key: W.KEY, faceable: true });
   return (refused(onNode) && await starred(W.KEY)) || false;
 }, test.limit.quick);
-test.run('contact.faceable taking 😏 off changes no star', 0.2, async function () {
+test.run('spirit.contact.faceable taking 😏 off changes no star', 0.2, async function () {
   if (noNode()) return false;
-  const off = await call('contact.faceable', { key: W.KEY, faceable: false });
+  const off = await call('spirit.contact.faceable', { key: W.KEY, faceable: false });
   return (off.status === 200 && await starred(W.KEY)) || false;
 }, test.limit.quick);
 test.run('a key with no row is refused with a code', 0.2, async function () {
   if (noNode()) return false;
-  const unknown = await call('contact.faceable', { key: auth.generateIdentity('nobody').publicKey, faceable: true });
+  const unknown = await call('spirit.contact.faceable', { key: auth.generateIdentity('nobody').publicKey, faceable: true });
   return refused(unknown) || false;
 }, test.limit.quick);
 test.run('faceable that is not true or false is refused', 0.2, async function () {
   if (noNode()) return false;
-  const notBool = await call('contact.faceable', { key: W.KEY, faceable: 'yes' });
+  const notBool = await call('spirit.contact.faceable', { key: W.KEY, faceable: 'yes' });
   return refused(notBool) || false;
 }, test.limit.quick);
 test.run('a key of the wrong type is refused', 0.2, async function () {
   if (noNode()) return false;
-  const badKey = await call('contact.faceable', { key: 12345, faceable: true });
+  const badKey = await call('spirit.contact.faceable', { key: 12345, faceable: true });
   return refused(badKey) || false;
 }, test.limit.quick);

@@ -1085,8 +1085,9 @@ function mountPart() {
   };
   test.run('a client gets back what it kept of a node branch', 0.2, async function () {
     if (!s) return false;
-    const keptOld = await kept('contact');
-    return (!!keptOld && keptOld.kept === 'contact') || false;
+    // goal/G49.22: the contact branch is in the new shape, spirit.contact (was contact), its client spirit/contact/client/script.js.
+    const keptOld = await kept('spirit.contact');
+    return (!!keptOld && keptOld.kept === 'spirit.contact') || false;
   }, test.limit.quick);
   test.run('a client gets back nothing of a branch with no data.js here', 0.2, async function () {
     if (!s) return false;

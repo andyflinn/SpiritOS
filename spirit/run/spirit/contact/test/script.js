@@ -72,11 +72,13 @@ function mounted(family) {
 
 // What the world loads, read by every test after it.
 const W = { api: null, verbs: {}, names: [], mounted: null };
-const call = function (verb, args) { return spirit.checkArgs('contact.' + verb, W.verbs[verb], args); };
+// goal/G49.22: the branch's calls are spirit.contact.<verb>, mounted under spirit.contact (was contact).
+const call = function (verb, args) { return spirit.checkArgs('spirit.contact.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
-test.run('api.js loads as spirit.js runs it on a page: its text run with module, exports and spirit.requireScript of the page', 0.2, function () {
+// goal/G49.22: spirit/contact/api.js is spirit/contact/script.js, its data.js spirit/contact/client/script.js.
+test.run('script.js loads as spirit.js runs it on a page: its text run with module, exports and spirit.requireScript of the page', 0.2, function () {
   try {
     const m = { exports: {} };
     // AS SPIRIT.JS RUNS IT ON A PAGE (loadInterface): module and exports, and the page's window.spirit.requireScript, which it asks for
@@ -90,12 +92,12 @@ test.run('api.js loads as spirit.js runs it on a page: its text run with module,
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('it asks for its companion data.js, spirit/contact/client/script.js, and for nothing else', 0.2, function () {
+test.run('it asks for its companion client, spirit/contact/client/script.js, and for nothing else', 0.2, function () {
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/contact/client/script.js' ? true : false;
 }, test.limit.quick);
 test.run('server.js mounts the contact branch', 0.2, function () {
-  try { W.mounted = mounted('contact'); } catch (e) { return false; }
+  try { W.mounted = mounted('spirit.contact'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
 

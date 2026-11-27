@@ -1160,17 +1160,18 @@ function atFace(relay, method, p, body, sid) {
 // A real join, the star pressed at home (box v29: a face only on a starred relay), a real face, a real login.
 async function faceOf(N, R) {
   // The relay verbs are contact's, the relay named by its row's key (goal/G49.11, box v9); add alone takes the url, and answers the key.
-  const added = await homeCall(N.base, 'contact.add', { url: R.base, label: 'scratch' });
+  // Their names are spirit.contact.<verb> since goal/G49.22 (were contact.<verb>).
+  const added = await homeCall(N.base, 'spirit.contact.add', { url: R.base, label: 'scratch' });
   const key = String((added.body && added.body.relayKey) || R.relayKey || '');
-  await homeCall(N.base, 'contact.join', { key: key, email: MAIL });
+  await homeCall(N.base, 'spirit.contact.join', { key: key, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!code) return {};
-  await homeCall(N.base, 'contact.join', { key: key, email: MAIL, code: code });
-  const star = await homeCall(N.base, 'contact.faceable', { key: R.relayKey, faceable: true });
+  await homeCall(N.base, 'spirit.contact.join', { key: key, email: MAIL, code: code });
+  const star = await homeCall(N.base, 'spirit.contact.faceable', { key: R.relayKey, faceable: true });
   if (star.status !== 200) return {};
   let f = null;
-  for (let i = 0; i < 10; i++) { f = await homeCall(N.base, 'contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+  for (let i = 0; i < 10; i++) { f = await homeCall(N.base, 'spirit.contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
   await until(function () { return atFace(R, 'POST', '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
@@ -1316,11 +1317,12 @@ function walk(dir, base, out) {
 // the world
 const FF = {};
 // The node's relay branch is gone (goal/G49.11): peer stands in for it, a branch with no app folder of its name.
-test.run('ten or more branch names have an api.js in the tree, contact and peer among them', 0.2, function () {
+// contact's interface is spirit/contact/script.js since goal/G49.22, no api.js: node stands in for it.
+test.run('ten or more branch names have an api.js in the tree, node and peer among them', 0.2, function () {
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
   const by = interfaces(RUN, files);
-  return (Object.keys(by).length >= 10 && !!by.contact && !!by.peer) || false;
+  return (Object.keys(by).length >= 10 && !!by.node && !!by.peer) || false;
 }, test.limit.quick);
 test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;

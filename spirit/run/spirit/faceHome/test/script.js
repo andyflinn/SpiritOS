@@ -227,9 +227,10 @@ test.run('a starred relay where this node set no face gets nothing', 0.8, sentAn
 // THE STAR IS SET AT HOME (Andy: "so this button will put the star on relays and puppets. AND take it away."; every
 // contact's panel has it "at home"). From a face, even on a relay this node owns, it would let whoever is in on one
 // face hand the machine to another relay. contact.faceable never comes through a face.
-const OWN_CALL = { call: 'contact.faceable', args: { key: 'K', faceable: true } };
-test.run('an unsealed contact.faceable on a relay this node owns is refused with a code and never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return OWN_CALL; }), test.limit.quick);
-test.run('a sealed contact.faceable on a relay this node owns is refused with a code and never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return sealed(OWN_CALL); }), test.limit.quick);
+// goal/G49.22: the branch's calls are spirit.contact.<verb> (were contact.<verb>) here and below.
+const OWN_CALL = { call: 'spirit.contact.faceable', args: { key: 'K', faceable: true } };
+test.run('an unsealed spirit.contact.faceable on a relay this node owns is refused with a code and never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return OWN_CALL; }), test.limit.quick);
+test.run('a sealed spirit.contact.faceable on a relay this node owns is refused with a code and never reaches the door', 0.8, sentAndRefused('ownMine', starredWorld, MINE, function () { return sealed(OWN_CALL); }), test.limit.quick);
 
 // GOAL/G41.33. THE BOX: "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's
 // a member of or owns", and "this includes" bundles, branches and grants; a job deleted; running jobs; join steps; relay
@@ -399,10 +400,11 @@ test.run('the queue\'s levels are as they were', 0.2, function () {
 test.run('every verb of every branch reaches the door, unsealed and sealed', 0.2, async function () {
   const free = lazy('free', starredWorld);
   let shut = 0;
-  for (const fam of allFamilies()) {
-    const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js'));
-    for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : 'spirit/app/' + fam + '/api.js')) {
-      if (fam + '.' + v === 'contact.faceable') continue;
+  // goal/G49.22: the contact branch has no api.js any more; its verbs are spirit/contact/script.js's, called spirit.contact.<verb>.
+  const families = allFamilies().map(function (fam) { const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js')); return [fam, inSpirit ? 'spirit/' + fam + '/api.js' : 'spirit/app/' + fam + '/api.js']; }).concat([['spirit.contact', 'spirit/contact/script.js']]);
+  for (const [fam, file] of families) {
+    for (const v of verbsOf(file)) {
+      if (fam + '.' + v === 'spirit.contact.faceable') continue;
       const c = { call: fam + '.' + v, args: {} };
       for (const form of [c, sealed(c)]) {
         const a = await send(free, MINE, form);
@@ -527,7 +529,7 @@ const JOB = { call: 'spirit.job.create', args: { command: process.execPath, args
 const SAVE = { call: 'fs.save', args: { path: SAVED, content: 'from the face' } };
 const face = function (req) { return page(S.R, 'harbour', '/face/call', req, S.L.sid); };
 // 😏 as the row says it (goal/G47.4, box v33: "😏 is the row field faceable").
-const starOf = async function (key) { const a = await home(S.N.base, 'contact.get', { key: key }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
+const starOf = async function (key) { const a = await home(S.N.base, 'spirit.contact.get', { key: key }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
 const faceName = async function (base) { const g = await home(S.N.base, 'relay.get', { key: base }); const r = g.body && g.body.relay; return r && r.face && typeof r.face === 'object' ? String(r.face.name || '') : String((r && r.face) || ''); };
 const loggedIn = function () { return !!(S.L && S.L.sid); };
 // The face on the first relay asked q, with no star or after it came off: refused.
@@ -592,9 +594,9 @@ test.run('the relay has no star', 0.8, async function () {
 test.run('with no faceable mark on the relay, a call from the face is refused and never reaches the door', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
 
 // The star on, pressed at home: everything is back.
-test.run('contact.faceable at home puts the star on the relay\'s row', 0.2, async function () {
+test.run('spirit.contact.faceable at home puts the star on the relay\'s row', 0.2, async function () {
   if (!S.me || !S.R) return false;
-  const on = await home(S.N.base, 'contact.faceable', { key: S.R.relayKey, faceable: true });
+  const on = await home(S.N.base, 'spirit.contact.faceable', { key: S.R.relayKey, faceable: true });
   return (on.status === 200 && (await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 test.run('owner.command from the face reaches the door', 0.2, async function () {
@@ -620,9 +622,9 @@ test.run('spirit.job.create of /bin/sh is still refused, starred or not', 0.8, a
   await sleep(WAIT_MS);
   return (sh.status >= 400 && sh.status < 500 && !fs.existsSync(shMark)) || false;
 }, test.limit.slow);
-test.run('contact.faceable from the face is refused even here, and the star stays', 0.8, async function () {
+test.run('spirit.contact.faceable from the face is refused even here, and the star stays', 0.8, async function () {
   if (!loggedIn()) return false;
-  const self = await face({ call: 'contact.faceable', args: { key: S.R.relayKey, faceable: false } });
+  const self = await face({ call: 'spirit.contact.faceable', args: { key: S.R.relayKey, faceable: false } });
   return (self.status >= 400 && self.status < 500 && (await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 
@@ -633,9 +635,9 @@ test.run('the node holds a face on the relay', 0.2, async function () {
   S.before = await faceName(S.R.base);
   return !!S.before || false;
 }, test.limit.quick);
-test.run('contact.faceable at home takes the star away', 0.2, async function () {
+test.run('spirit.contact.faceable at home takes the star away', 0.2, async function () {
   if (!S.me || !S.R) return false;
-  const off = await home(S.N.base, 'contact.faceable', { key: S.R.relayKey, faceable: false });
+  const off = await home(S.N.base, 'spirit.contact.faceable', { key: S.R.relayKey, faceable: false });
   return (off.status === 200 && !(await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 test.run('the node holds no face on that relay any more', 0.8, async function () {
@@ -645,7 +647,7 @@ test.run('the node holds no face on that relay any more', 0.8, async function ()
 test.run('with the star off, node.card through it is refused', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
 test.run('the star put back opens nothing, because the face is gone, not hidden', 0.8, async function () {
   if (!loggedIn()) return false;
-  await home(S.N.base, 'contact.faceable', { key: S.R.relayKey, faceable: true });
+  await home(S.N.base, 'spirit.contact.faceable', { key: S.R.relayKey, faceable: true });
   const back = await face({ call: 'node.card', args: {} });
   return starRefused(back) || false;
 }, test.limit.quick);
@@ -684,7 +686,7 @@ test.run('the face logs in', 0.2, async function () {
 // so the mark goes on first and the stream opens on it.
 test.run('the star is put on at home', 0.2, async function () {
   if (!S.LS || !S.LS.sid) return false;
-  const sOn = await home(S.N.base, 'contact.faceable', { key: S.S.relayKey, faceable: true });
+  const sOn = await home(S.N.base, 'spirit.contact.faceable', { key: S.S.relayKey, faceable: true });
   return sOn.status === 200 || false;
 }, test.limit.quick);
 test.run('the stream opens and carries the node\'s file tree', 0.2, async function () {
@@ -724,7 +726,7 @@ test.run('when starred, the bundle reaches the face', 0.2, async function () {
 test.run('when starred, a first contact appears at home', 0.2, async function () {
   if (!streamUp()) return false;
   const someone = auth.generateIdentity('zz').publicKey;
-  const blocked = await home(S.N.base, 'contact.block', { publicKey: someone });
+  const blocked = await home(S.N.base, 'spirit.contact.block', { publicKey: someone });
   return blocked.status < 300 || false;
 }, test.limit.quick);
 test.run('when starred, the join steps reach the face as the join news of the spirit job', 0.2, async function () {
@@ -736,17 +738,17 @@ test.run('when starred, the join steps reach the face as the join news of the sp
 // A starred face has no restrictions, except changing stars.
 test.run('the first relay\'s star is taken off again', 0.2, async function () {
   if (!streamUp() || !S.R) return false;
-  const rOff = await home(S.N.base, 'contact.faceable', { key: S.R.relayKey, faceable: false });
+  const rOff = await home(S.N.base, 'spirit.contact.faceable', { key: S.R.relayKey, faceable: false });
   return rOff.status === 200 || false;
 }, test.limit.quick);
 test.run('starring another relay from it is refused, and no star lands', 0.8, async function () {
   if (!streamUp() || !S.R) return false;
-  const anotherStar2 = await sface({ call: 'contact.faceable', args: { key: S.R.relayKey, faceable: true } });
+  const anotherStar2 = await sface({ call: 'spirit.contact.faceable', args: { key: S.R.relayKey, faceable: true } });
   return (starRefused(anotherStar2) && !(await starOf(S.R.relayKey))) || false;
 }, test.limit.quick);
 test.run('taking its own star off from it is refused, and the star stays', 0.8, async function () {
   if (!streamUp()) return false;
-  const ownOff = await sface({ call: 'contact.faceable', args: { key: S.S.relayKey, faceable: false } });
+  const ownOff = await sface({ call: 'spirit.contact.faceable', args: { key: S.S.relayKey, faceable: false } });
   return (starRefused(ownOff) && (await starOf(S.S.relayKey))) || false;
 }, test.limit.quick);
 // Last, since it takes the page's address away: the face you call through, renamed through it, on a star.
@@ -763,7 +765,7 @@ test.run('the face has its new name on the relay', 0.2, async function () {
 // The star off with the stream open: the face goes, so the next event stays home.
 test.run('the star is taken off at home while the stream is open', 0.2, async function () {
   if (!streamUp()) return false;
-  const sOff = await home(S.N.base, 'contact.faceable', { key: S.S.relayKey, faceable: false });
+  const sOff = await home(S.N.base, 'spirit.contact.faceable', { key: S.S.relayKey, faceable: false });
   return sOff.status === 200 || false;
 }, test.limit.quick);
 // A job's id is its route, the same for every run (goal/G43.20): only what the stream says from here on is judged.
@@ -832,7 +834,7 @@ function forgedRefused(q) {
 test.run('node.card through it is refused with no-face-here', 0.8, forgedRefused({ call: 'node.card', args: {} }), test.limit.quick);
 test.run('a star does not open it, because with no face of mine nothing opens', 0.8, async function () {
   if (!S.L3 || !S.L3.sid) return false;
-  const on3 = await home(S.N.base, 'contact.faceable', { key: S.D.relayKey, faceable: true });
+  const on3 = await home(S.N.base, 'spirit.contact.faceable', { key: S.D.relayKey, faceable: true });
   const a3 = await page(S.D, 'forged', '/face/call', JOB, S.L3.sid);
   return (on3.status === 200 && a3.status === 403 && !!a3.body && a3.body.code === 'no-face-here') || false;
 }, test.limit.quick);
@@ -952,7 +954,7 @@ function noApp(names) { return !!names && A.atHome && A.atHome.length > 0 && !A.
 // The star: every app the home desktop shows.
 test.run('the star is put on at home to check every app', 0.2, async function () {
   if (!browsing()) return false;
-  const on = await home(A.N.base, 'contact.faceable', { key: A.R.relayKey, faceable: true });
+  const on = await home(A.N.base, 'spirit.contact.faceable', { key: A.R.relayKey, faceable: true });
   return on.status === 200 || false;
 }, test.limit.quick);
 test.run('every app on the home desktop is on the starred face', 0.2, async function () {
@@ -979,7 +981,7 @@ test.run('pressing that tile throws nothing in the page', 0.2, async function ()
 // The star off: nothing again.
 test.run('the star is taken off at home', 0.2, async function () {
   if (!browsing()) return false;
-  const off = await home(A.N.base, 'contact.faceable', { key: A.R.relayKey, faceable: false });
+  const off = await home(A.N.base, 'spirit.contact.faceable', { key: A.R.relayKey, faceable: false });
   return off.status === 200 || false;
 }, test.limit.quick);
 test.run('with the star off again, the face draws none of the apps of the home desktop', 0.8, async function () {

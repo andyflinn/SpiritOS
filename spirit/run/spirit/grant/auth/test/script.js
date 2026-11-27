@@ -346,10 +346,11 @@ test.run('a grant of anything in the fs branch to a peer is refused, and the pee
   const held = auth.pathsOf(PEER).filter(function (p) { return p === 'spirit.fs' || p.indexOf('spirit.fs.') === 0; });
   return (answers.every(function (r) { return !!r && r.refusal === 'owner-only'; }) && held.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('a grant of contact.faceable to a peer is refused, and the peer does not hold it', 0.8, async function () {
+// goal/G49.22: faceable is spirit.contact.faceable (was contact.faceable).
+test.run('a grant of spirit.contact.faceable to a peer is refused, and the peer does not hold it', 0.8, async function () {
   if (!auth || !PEER) return false;
-  const r = await auth.grant({ key: PEER, path: 'contact.faceable' });
-  return (!!r && r.refusal === 'owner-only' && auth.pathsOf(PEER).indexOf('contact.faceable') === -1) ? true : false;
+  const r = await auth.grant({ key: PEER, path: 'spirit.contact.faceable' });
+  return (!!r && r.refusal === 'owner-only' && auth.pathsOf(PEER).indexOf('spirit.contact.faceable') === -1) ? true : false;
 }, test.limit.quick);
 
 // Every change is told, row by row, for the stream.

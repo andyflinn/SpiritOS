@@ -45,8 +45,9 @@ test.run('the contact row runs on a window of its own, with the data set and the
   global.spirit = window.spirit;
   // What readyPromise answers holds no branch (goal/G49.6); the branches are answered by their api.js paths, below.
   window.spirit.readyPromise = Promise.resolve({});
-  const BRANCHES = { contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
-    forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } };
+  // goal/G49.22: the contact branch's calls are spirit.contact.<verb>.
+  const BRANCHES = { contact: { block: verb('spirit.contact.block'), unblock: verb('spirit.contact.unblock'),
+    forget: verb('spirit.contact.forget'), label: verb('spirit.contact.label'), get: verb('spirit.contact.get') }, peer: { acquire: verb('peer.acquire') } };
   ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.normalizeString = LOADER.normalizeString;
   // The label type is the real one (goal/G49.13: the type files replaced fieldRules), loaded from its path below.
   // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
@@ -128,11 +129,11 @@ test.run('add asks peer.acquire with the key and the name it gave the relay', 0.
   const add = asked.pop();
   return add && add.verb === 'peer.acquire' && add.body.publicKey === 'K2' && add.body.publicLabel === 'bob' ? true : false;
 }, test.limit.quick);
-test.run('block, unblock, remove ask contact.block, contact.unblock, contact.forget by the key', 0.2, async function () {
+test.run('block, unblock, remove ask spirit.contact.block, spirit.contact.unblock, spirit.contact.forget by the key', 0.2, async function () {
   if (!kept) return false;
   await kept.act('block'); await kept.act('unblock'); await kept.act('remove');
   const three = asked.splice(-3).map(function (a) { return a.verb + ':' + a.body.publicKey; }).join(',');
-  return three === 'contact.block:K1,contact.unblock:K1,contact.forget:K1' ? true : false;
+  return three === 'spirit.contact.block:K1,spirit.contact.unblock:K1,spirit.contact.forget:K1' ? true : false;
 }, test.limit.quick);
 let opens = null;
 // GOAL/G43.32 (Andy: "the contact list already knows the difference between contact types. so should the detail panel."): one
@@ -229,7 +230,7 @@ test.run('the new actions of a row the owner adds ask the node', 0.2, async func
   if (!found) return false;
   await found.act('block');
   const blockAfterAdd = asked.pop();
-  return blockAfterAdd && blockAfterAdd.verb === 'contact.block' && blockAfterAdd.body.publicKey === 'K14' ? true : false;
+  return blockAfterAdd && blockAfterAdd.verb === 'spirit.contact.block' && blockAfterAdd.body.publicKey === 'K14' ? true : false;
 }, test.limit.quick);
 test.run('a row that leaves the book offers Add again', 0.2, function () {
   if (!found) return false;
@@ -255,19 +256,19 @@ test.run('a name the rule refuses is refused here, and not asked', 0.2, async fu
   let said = ''; try { LOADER.requireScript('spirit/type/string/label/script.js').isValid(''); } catch (e) { said = e.message; }
   return bad.ok === false && !!said && bad.error === said && asked.length === n ? true : false;
 }, test.limit.quick);
-test.run('a good name is normalized and asked of contact.label', 0.2, async function () {
+test.run('a good name is normalized and asked of spirit.contact.label', 0.2, async function () {
   if (!labelField) return false;
   const good = await labelField.edit({ key: 'K13' }, '  Eve  ');
   const lab = asked.pop();
-  return good.ok === true && lab.verb === 'contact.label' && lab.body.publicKey === 'K13' && lab.body.myLabel === 'Eve' ? true : false;
+  return good.ok === true && lab.verb === 'spirit.contact.label' && lab.body.publicKey === 'K13' && lab.body.myLabel === 'Eve' ? true : false;
 }, test.limit.quick);
 
-// expandInfo asks contact.get once, for a row in the book
-test.run('contact.get is asked by key, once, and the answer is kept', 0.2, async function () {
+// expandInfo asks spirit.contact.get once, for a row in the book
+test.run('spirit.contact.get is asked by key, once, and the answer is kept', 0.2, async function () {
   if (!kept) return false;
   m = asked.length;
   await kept.expandInfo(); await kept.expandInfo();
-  gets = asked.slice(m).filter(function (x) { return x.verb === 'contact.get'; });
+  gets = asked.slice(m).filter(function (x) { return x.verb === 'spirit.contact.get'; });
   return gets.length === 1 && gets[0].body.key === 'K1' ? true : false;
 }, test.limit.quick);
 test.run('a row not in the book and a relay expand to nothing, asking nothing', 0.2, async function () {
@@ -420,17 +421,17 @@ function page(relayServer, p, body) {
 // A real join, a real face, a real login; answers the session, or none.
 async function faceOf(N, R) {
   // The relay verbs are contact's since goal/G49.11 (box v9: "each one becomes a contact verb and names the relay by its row's public
-  // key"): add by its url, which answers the relay's key, then join and face by that key.
-  const added = await home(N.base, 'contact.add', { url: R.base, label: 'scratch' });
+  // key"): add by its url, which answers the relay's key, then join and face by that key. goal/G49.22: spirit.contact.<verb>.
+  const added = await home(N.base, 'spirit.contact.add', { url: R.base, label: 'scratch' });
   const key = (added.body && added.body.relayKey) || '';
   if (!key) return {};
-  await home(N.base, 'contact.join', { key: key, email: MAIL });
+  await home(N.base, 'spirit.contact.join', { key: key, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const joinCode = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!joinCode) return {};
-  await home(N.base, 'contact.join', { key: key, email: MAIL, code: joinCode });
+  await home(N.base, 'spirit.contact.join', { key: key, email: MAIL, code: joinCode });
   let f = null;
-  for (let i = 0; i < 10; i++) { f = await home(N.base, 'contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+  for (let i = 0; i < 10; i++) { f = await home(N.base, 'spirit.contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
   await until(function () { return page(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
@@ -482,10 +483,10 @@ test.run('the browser holds the login', 0.2, async function () {
   return set.result && set.result.success ? true : false;
 }, test.limit.quick);
 // THE STAR, PUT ON AT HOME (goal/G43.18, box v29: "A face is whole, or there is none"; Andy, Q18: a face with no star shows
-// nothing): the relay faceable, its face draws the home desktop, Contacts on it. contact.faceable is 😏's one writer, at home.
+// nothing): the relay faceable, its face draws the home desktop, Contacts on it. spirit.contact.faceable (goal/G49.22) is 😏's one writer, at home.
 test.run('the relay is starred at home, so its face is whole', 0.2, async function () {
   if (!RF.N || !RF.N.up || !RF.R || !RF.R.relayKey) return false;
-  const on = await home(RF.N.base, 'contact.faceable', { key: RF.R.relayKey, faceable: true });
+  const on = await home(RF.N.base, 'spirit.contact.faceable', { key: RF.R.relayKey, faceable: true });
   return on.status === 200 ? true : false;
 }, test.limit.quick);
 // The face's desktop is drawn, so Contacts is there to press.

@@ -30,8 +30,12 @@ const settle = async function () {
 // ── A SMALL DOM ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 // A branch of the stand-in node by its api.js path (goal/G49.6: never by a name), or null for any other path; never then-able,
 // so a promise hands it on as the branch it is.
+// A BRANCH OF THE NEW SHAPE (goal/G49.22) by its interface's path, spirit/contact/script.js: the branch spirit.contact, named
+// by its path in dots, its calls spirit.contact.<verb>.
+const NEW_SHAPE = { 'spirit/contact/script.js': 'spirit.contact' };
 function branchAt(families, p) {
-  const m = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(p).replace(/^\/+/, ''));
+  const at = String(p).replace(/^\/+/, '');
+  const m = NEW_SHAPE[at] ? [at, NEW_SHAPE[at]] : /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(at);
   if (!m) return null;
   const b = families[m[1]];
   return new Proxy({}, { get: function (t, k) { return k === 'then' ? undefined : b[k]; } });
@@ -174,7 +178,7 @@ function personWorld(person, relayRows) {
         const name = String(fam) + '.' + String(verb);
         w.calls.push({ name: name, body: body });
         if (w.refuse && w.refuse[name]) return Promise.reject(w.refuse[name]);
-        return Promise.resolve(name === 'contact.get' ? { ok: true, person: person } : { ok: true });
+        return Promise.resolve(name === 'spirit.contact.get' ? { ok: true, person: person } : { ok: true });
       };
     } });
   } });
@@ -246,15 +250,16 @@ function relayWorld(rows, relayStatus) {
     // relay.join, relay.claim, relay.leave and relay.remove from its panels: contact.get, contact.join, contact.claim, contact.leave
     // and contact.forget"): contact.search lists the rows' keys, contact.get answers each row as relay.get did, with its report.
     // Its other verbs recorded, as every family's are below; forget answers forgotten, as the node's does.
-    if (fam === 'contact') return new Proxy({}, { get: function (t2, verb) {
+    // goal/G49.22: the contact branch is spirit.contact, its calls spirit.contact.<verb>.
+    if (fam === 'spirit.contact') return new Proxy({}, { get: function (t2, verb) {
       if (verb === 'search') return function () { return Promise.resolve({ ok: true, items: rows.map(function (r) { return { key: r.key }; }), more: false }); };
       if (verb === 'get') return function (body) {
-        w.calls.push({ name: 'contact.get', body: body });
+        w.calls.push({ name: 'spirit.contact.get', body: body });
         const r = rows.filter(function (x) { return x.key === (body && body.key); })[0];
         const report = r && relayStatus ? relayStatus[r.url] : undefined;
         return Promise.resolve(r ? Object.assign({ ok: true, key: r.key, relay: JSON.parse(JSON.stringify(r)) }, report ? { report: report } : {}) : { ok: false, status: 404 });
       };
-      return function (body) { w.calls.push({ name: 'contact.' + String(verb), body: body }); return Promise.resolve(verb === 'forget' ? { publicKey: body && body.publicKey, forgotten: true } : { ok: true }); };
+      return function (body) { w.calls.push({ name: 'spirit.contact.' + String(verb), body: body }); return Promise.resolve(verb === 'forget' ? { publicKey: body && body.publicKey, forgotten: true } : { ok: true }); };
     } });
     if (fam === 'peer') return { post: function (b) {
       const sent = P.decode(b.text);
@@ -345,6 +350,7 @@ const SEATED = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: 
 const MAIL = 'bert@example.org';
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
+// The node's verbs by their names on the wire; the contact branch's are spirit.contact.<verb> since goal/G49.22.
 async function home(base, verb, args) {
   const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
   const text = await r.text();
@@ -416,7 +422,7 @@ test.run('The contact detail asks the node for the person\'s row when it opens',
   P.w.open(KEY);
   await settle();
   P.opened = true;
-  return P.w.calls.some(function (c) { return c.name === 'contact.get' && c.body.key === KEY; }) || false;
+  return P.w.calls.some(function (c) { return c.name === 'spirit.contact.get' && c.body.key === KEY; }) || false;
 }, test.limit.quick);
 
 // Block is an arming button
@@ -442,7 +448,7 @@ test.run('Pressing the armed Block button asks the node to block the row on scre
   const before = P.w.calls.length;
   if (typeof P.block.opts.run === 'function') await P.block.opts.run();
   await settle();
-  const asked = P.w.calls.slice(before).filter(function (c) { return c.name === 'contact.block'; })[0];
+  const asked = P.w.calls.slice(before).filter(function (c) { return c.name === 'spirit.contact.block'; })[0];
   return (!!asked && asked.body.publicKey === KEY) || false;
 }, test.limit.quick);
 
@@ -470,7 +476,7 @@ test.run('its run posts nothing to any relay, the one this node owns included: n
   if (typeof P.forget.opts.run === 'function') await P.forget.opts.run();
   await settle();
   P.forgetRan = true;
-  P.forgot = P.w.calls.slice(before).filter(function (c) { return c.name === 'contact.forget'; })[0];
+  P.forgot = P.w.calls.slice(before).filter(function (c) { return c.name === 'spirit.contact.forget'; })[0];
   P.forgetCalls = P.w.calls.slice(before);
   const posts = P.w.posts.slice(postsBefore);
   return !posts.length || false;
@@ -492,7 +498,7 @@ test.run('two presses on the drawn Block block nobody without the element', 0.2,
   const drawn = w2.document.getElementById('cd-block') || (armingFor(w2, 'Block') || {}).button;
   const before2 = w2.calls.length;
   if (drawn) { drawn.click(); await settle(); const again = w2.document.getElementById('cd-block') || drawn; again.click(); await settle(); }
-  return (!!drawn && !w2.calls.slice(before2).some(function (c) { return c.name === 'contact.block'; })) || false;
+  return (!!drawn && !w2.calls.slice(before2).some(function (c) { return c.name === 'spirit.contact.block'; })) || false;
 }, test.limit.quick);
 
 // a blocked row offers Unblock, and Forget still arms
@@ -555,12 +561,12 @@ test.run('a press on the button alone sends nothing: the arming button holds it'
   const b5 = P.w5.calls.length;
   const drawn5 = P.w5.document.getElementById('cd-faceable');
   if (drawn5) { drawn5.click(); await settle(); }
-  return (!!drawn5 && !P.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.faceable'; })) || false;
+  return (!!drawn5 && !P.w5.calls.slice(b5).some(function (c) { return c.name === 'spirit.contact.faceable'; })) || false;
 }, test.limit.quick);
 test.run('The second press asks the node to make that relay faceable', 0.2, async function () {
   if (!P.w5) return false;
   if (P.s5) { await P.s5.opts.run(); await settle(); }
-  const sent5 = P.w5.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  const sent5 = P.w5.calls.filter(function (c) { return c.name === 'spirit.contact.faceable'; }).pop();
   return (!!sent5 && sent5.body.key === 'K5' && sent5.body.faceable === true) || false;
 }, test.limit.quick);
 test.run('On a faceable relay\'s row the same button asks the node to take 😏 away', 0.2, async function () {
@@ -569,7 +575,7 @@ test.run('On a faceable relay\'s row the same button asks the node to take 😏 
   await settle();
   const s6 = personFaceOf(w6);
   if (s6) { await s6.opts.run(); await settle(); }
-  const sent6 = w6.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  const sent6 = w6.calls.filter(function (c) { return c.name === 'spirit.contact.faceable'; }).pop();
   return (!!sent6 && sent6.body.key === 'K6' && sent6.body.faceable === false) || false;
 }, test.limit.quick);
 test.run('A relay with no seat draws no 😏 button', 0.2, async function () {
@@ -602,11 +608,11 @@ test.run('mounted with its key alone, no layer, it reads the row and draws it', 
   w8.detail.create(box8, { key: 'K8' });
   await settle();
   P.w8 = w8;
-  return (w8.calls.some(function (c) { return c.name === 'contact.get' && c.body.key === 'K8'; }) && /carol/.test(box8.innerHTML)) || false;
+  return (w8.calls.some(function (c) { return c.name === 'spirit.contact.get' && c.body.key === 'K8'; }) && /carol/.test(box8.innerHTML)) || false;
 }, test.limit.quick);
 test.run('a verb the node refuses says its status and words', 0.2, async function () {
   if (!P.w8) return false;
-  P.w8.refuse = { 'contact.block': { status: 403, body: { ok: false, error: 'not yours' } } };
+  P.w8.refuse = { 'spirit.contact.block': { status: 403, body: { ok: false, error: 'not yours' } } };
   const b8 = armingFor(P.w8, 'Block');
   if (b8) { await b8.opts.run(); await settle(); }
   const html = P.w8.box.innerHTML;
@@ -725,7 +731,7 @@ test.run('Pressing the armed Remove button asks the node to remove this relay', 
   await settle();
   L.removeRan = true;
   // relay.remove is gone (goal/G49.11): judged on what replaced it, contact.forget of this relay's row by its public key.
-  const asked = L.w.calls.slice(before).filter(function (c) { return c.name === 'contact.forget'; })[0];
+  const asked = L.w.calls.slice(before).filter(function (c) { return c.name === 'spirit.contact.forget'; })[0];
   return (!!asked && asked.body.publicKey === OWNED[0].key) || false;
 }, test.limit.quick);
 test.run('The page closes once the node says the relay is removed', 0.2, function () {
@@ -742,7 +748,7 @@ test.run('two presses on the drawn Remove remove nothing without the element', 0
   const before2 = w2.calls.length;
   const drawn = await press(w2, '.nd-remove');
   await press(w2, '.nd-remove');
-  return (!!drawn && !w2.calls.slice(before2).some(function (c) { return c.name === 'contact.forget'; })) || false;
+  return (!!drawn && !w2.calls.slice(before2).some(function (c) { return c.name === 'spirit.contact.forget'; })) || false;
 }, test.limit.quick);
 
 // Leave, on a relay this node holds a seat on, is an arming button with the reset it lacked
@@ -768,7 +774,7 @@ test.run('Pressing the armed Leave button asks the node to leave this relay', 0.
   if (typeof L.leave.opts.run === 'function') await L.leave.opts.run();
   await settle();
   // relay.leave is gone (goal/G49.11): judged on contact.leave, naming this relay's row by its key.
-  const asked = L.w3.calls.slice(before).filter(function (c) { return c.name === 'contact.leave'; })[0];
+  const asked = L.w3.calls.slice(before).filter(function (c) { return c.name === 'spirit.contact.leave'; })[0];
   return (!!asked && asked.body.key === SEATED[0].key) || false;
 }, test.limit.quick);
 test.run('two presses on the drawn Leave leave nothing without the element', 0.2, async function () {
@@ -779,7 +785,7 @@ test.run('two presses on the drawn Leave leave nothing without the element', 0.2
   const before4 = w4.calls.length;
   const drawnLeave = await press(w4, '.nd-leave');
   await press(w4, '.nd-leave');
-  return (!!drawnLeave && !w4.calls.slice(before4).some(function (c) { return c.name === 'contact.leave'; })) || false;
+  return (!!drawnLeave && !w4.calls.slice(before4).some(function (c) { return c.name === 'spirit.contact.leave'; })) || false;
 }, test.limit.quick);
 
 // THE STAR ON A RELAY (goal/G41.30; Andy: "the message is different for members and owners, showing members who they
@@ -816,12 +822,12 @@ test.run('a press on the button alone sends nothing', 0.2, async function () {
   const b5 = L.w5.calls.length;
   const drawn5 = L.w5.document.querySelector('.nd-faceable');
   if (drawn5) { drawn5.click(); await settle(); }
-  return (!!drawn5 && !L.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.faceable'; })) || false;
+  return (!!drawn5 && !L.w5.calls.slice(b5).some(function (c) { return c.name === 'spirit.contact.faceable'; })) || false;
 }, test.limit.quick);
 test.run('The second press on a relay\'s 😏 button asks the node to make that relay faceable', 0.2, async function () {
   if (!L.w5) return false;
   if (L.s5) { await L.s5.opts.run(); await settle(); }
-  const sent5 = L.w5.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  const sent5 = L.w5.calls.filter(function (c) { return c.name === 'spirit.contact.faceable'; }).pop();
   return (!!sent5 && sent5.body.key === 'RK2' && sent5.body.faceable === true) || false;
 }, test.limit.quick);
 test.run('a relay claiming this node says: "If you DID install this relay on a VPS and you DID set its DNS records"', 0.2, async function () {
@@ -846,7 +852,7 @@ test.run('on a faceable relay the same button takes 😏 away', 0.2, async funct
   await press(w7, '[data-fold="faceable"]');
   const s7 = relayStarOf(w7);
   if (s7) { await s7.opts.run(); await settle(); }
-  const sent7 = w7.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  const sent7 = w7.calls.filter(function (c) { return c.name === 'spirit.contact.faceable'; }).pop();
   return (!!sent7 && sent7.body.key === 'RK' && sent7.body.faceable === false) || false;
 }, test.limit.quick);
 test.run('On a face, a relay\'s detail draws no 😏 button', 0.2, async function () {
@@ -887,7 +893,7 @@ test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s det
   const boxR = wr.document.createElement('div'); wr.document.body.appendChild(boxR);
   wr.detail.create(boxR, { key: 'RK', layer: wr.layer });
   await settle();
-  return (/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'contact.get'; })) || false;
+  return (/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'spirit.contact.get'; })) || false;
 }, test.limit.quick);
 test.run('Holding a person\'s row in the cache, the detail draws a person\'s details by asking the node for the person\'s row', 0.2, async function () {
   const wp = relayWorld(OWNED, OWNED_SAID);
@@ -895,7 +901,7 @@ test.run('Holding a person\'s row in the cache, the detail draws a person\'s det
   const boxP = wp.document.createElement('div'); wp.document.body.appendChild(boxP);
   wp.detail.create(boxP, { key: 'KP', layer: wp.layer });
   await settle();
-  return wp.calls.some(function (c) { return c.name === 'contact.get' && c.body && c.body.key === 'KP'; }) || false;
+  return wp.calls.some(function (c) { return c.name === 'spirit.contact.get' && c.body && c.body.key === 'KP'; }) || false;
 }, test.limit.quick);
 
 // ── BOX v170, THE RELAY'S CAPACITY: ONE FIGURE (goal/G47.1) ──
@@ -940,7 +946,7 @@ const last = function (key) { const r = rowsOf(key); return r.length ? r[r.lengt
 const joinCode = function (relay) { return relay.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(relay.mailed[0].text)) || [])[1]; };
 const panelText = function () { return S.chrome.evaluate('document.getElementById("zzPanel").textContent').then(String); };
 // 😏 as the row says it (goal/G47.4, box v33: "😏 is the row field faceable").
-const starred = async function (k) { const a = await home(S.N.base, 'contact.get', { key: k }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
+const starred = async function (k) { const a = await home(S.N.base, 'spirit.contact.get', { key: k }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
 
 test.after(async function () {
   try { if (S.stream) S.stream.stop(); } catch (e) { /* gone */ }
@@ -962,15 +968,15 @@ test.run('the relay mails a join code', 0.2, async function () {
   S.stream = stream(S.N.base);
   S.key = S.R.relayKey;
   S.up = true;
-  await home(S.N.base, 'contact.add', { url: S.R.base, label: 'scratch' });
-  await home(S.N.base, 'contact.join', { key: S.R.relayKey, email: MAIL });
+  await home(S.N.base, 'spirit.contact.add', { url: S.R.base, label: 'scratch' });
+  await home(S.N.base, 'spirit.contact.join', { key: S.R.relayKey, email: MAIL });
   await until(function () { return S.R.mailed.length > 0; }, 5000);
   S.code = joinCode(S.R);
   return !!S.code || false;
 }, test.limit.slow);
 test.run('Once the join code is given, the relay\'s row says it is claimed', 0.2, async function () {
   if (!S.code) return false;
-  await home(S.N.base, 'contact.join', { key: S.R.relayKey, email: MAIL, code: S.code });
+  await home(S.N.base, 'spirit.contact.join', { key: S.R.relayKey, email: MAIL, code: S.code });
   await until(function () { const r = last(S.key); return !!r && r.claimed === true && r.status === 200; }, 10000);
   S.seated = last(S.key) || {};
   return S.seated.claimed === true || false;
@@ -1104,7 +1110,7 @@ test.run('With no 😏, the relay\'s detail has no "A face name" fold', 0.2, asy
 }, test.limit.slow);
 test.run('The home node makes the relay faceable', 0.2, async function () {
   if (!S.up) return false;
-  const sOn = await home(S.N.base, 'contact.faceable', { key: S.key, faceable: true });
+  const sOn = await home(S.N.base, 'spirit.contact.faceable', { key: S.key, faceable: true });
   return sOn.status === 200 || false;
 }, test.limit.quick);
 test.run('Once the relay is faceable, the "A face name" fold comes with no reload', 0.2, async function () {
@@ -1121,7 +1127,7 @@ test.run('Opened, the "A face name" fold holds the face form\'s field and its bu
 }, test.limit.slow);
 test.run('The home node takes 😏 off the relay', 0.2, async function () {
   if (!S.up) return false;
-  const sOff = await home(S.N.base, 'contact.faceable', { key: S.key, faceable: false });
+  const sOff = await home(S.N.base, 'spirit.contact.faceable', { key: S.key, faceable: false });
   return sOff.status === 200 || false;
 }, test.limit.quick);
 test.run('With 😏 off, the "A face name" fold is gone again', 0.2, async function () {
@@ -1167,10 +1173,10 @@ test.run('a second relay comes up', 0.2, async function () {
 test.run('the other relay\'s row, seated and not owned, is on the stream', 0.2, async function () {
   if (!S.Other) return false;
   const Other = S.Other;
-  await home(S.N.base, 'contact.add', { url: Other.base, label: 'zzOtherRelay' });
-  await home(S.N.base, 'contact.join', { key: Other.relayKey, email: MAIL });
+  await home(S.N.base, 'spirit.contact.add', { url: Other.base, label: 'zzOtherRelay' });
+  await home(S.N.base, 'spirit.contact.join', { key: Other.relayKey, email: MAIL });
   await until(function () { return Other.mailed.length > 0; }, 5000);
-  await home(S.N.base, 'contact.join', { key: Other.relayKey, email: MAIL, code: joinCode(Other) });
+  await home(S.N.base, 'spirit.contact.join', { key: Other.relayKey, email: MAIL, code: joinCode(Other) });
   await until(function () { const r = last(Other.relayKey); return !!r && r.claimed === true && r.owned === false; }, 10000);
   const otherRow = last(Other.relayKey) || {};
   return (otherRow.claimed === true && otherRow.owned === false) || false;
@@ -1236,7 +1242,7 @@ test.run('With one relay faceable, the face form comes with no reload and offers
   if (!S.chrome) return false;
   if (!S.Other) return false;
   S.readsBefore = infoReads();
-  await home(S.N.base, 'contact.faceable', { key: S.key, faceable: true });
+  await home(S.N.base, 'spirit.contact.faceable', { key: S.key, faceable: true });
   await until(function () { return options().then(function (o) { return o.indexOf(S.R.base) !== -1; }); }, 5000);
   const one = await options();
   return ((await tileShown()) && one.indexOf(S.R.base) !== -1 && one.indexOf(S.Other.base) === -1) || false;
@@ -1248,7 +1254,7 @@ test.run('The face form followed the row without reading anything', 0.2, functio
 test.run('With both relays faceable, the face form offers both', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
-  await home(S.N.base, 'contact.faceable', { key: S.Other.relayKey, faceable: true });
+  await home(S.N.base, 'spirit.contact.faceable', { key: S.Other.relayKey, faceable: true });
   await until(function () { return options().then(function (o) { return o.length >= 2; }); }, 5000);
   const both = await options();
   return (both.indexOf(S.R.base) !== -1 && both.indexOf(S.Other.base) !== -1) || false;
@@ -1256,7 +1262,7 @@ test.run('With both relays faceable, the face form offers both', 0.2, async func
 test.run('With 😏 taken off one, that relay is gone from the dropdown and the other stays', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
-  await home(S.N.base, 'contact.faceable', { key: S.Other.relayKey, faceable: false });
+  await home(S.N.base, 'spirit.contact.faceable', { key: S.Other.relayKey, faceable: false });
   await until(function () { return options().then(function (o) { return o.indexOf(S.Other.base) === -1; }); }, 5000);
   const left = await options();
   return (left.indexOf(S.Other.base) === -1 && left.indexOf(S.R.base) !== -1) || false;
@@ -1277,9 +1283,9 @@ test.run('a third relay comes up', 0.2, async function () {
 }, test.limit.slow);
 test.run('The home node refuses with a code to make faceable a relay that is listed but holds no seat', 0.2, async function () {
   if (!S.Far) return false;
-  await home(S.N.base, 'contact.add', { url: S.Far.base, label: 'zzFar' });
+  await home(S.N.base, 'spirit.contact.add', { url: S.Far.base, label: 'zzFar' });
   await until(function () { return rowsOf(S.Far.relayKey).length > 0; }, 8000);
-  const farNo = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
+  const farNo = await home(S.N.base, 'spirit.contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farNo.status >= 400 && farNo.status < 500 && !!(farNo.body && farNo.body.code)) || false;
 }, test.limit.quick);
 test.run('No 😏 lands on the relay with no seat', 0.2, async function () {
@@ -1288,12 +1294,12 @@ test.run('No 😏 lands on the relay with no seat', 0.2, async function () {
 }, test.limit.quick);
 test.run('taking away a 😏 it does not have changes nothing', 0.2, async function () {
   if (!S.Far) return false;
-  await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: false });
+  await home(S.N.base, 'spirit.contact.faceable', { key: S.Far.relayKey, faceable: false });
   const pass = !(await starred(S.Far.relayKey));
   // A node that is no relay is refused 😏 (box v33: "for a relay this node holds a seat on only").
   S.person = LOADER.requireScript('spirit/relayAuth/script.js').generateIdentity('zzPuppet').publicKey;
-  await home(S.N.base, 'contact.block', { publicKey: S.person });
-  const personAns = await home(S.N.base, 'contact.faceable', { key: S.person, faceable: true });
+  await home(S.N.base, 'spirit.contact.block', { publicKey: S.person });
+  const personAns = await home(S.N.base, 'spirit.contact.faceable', { key: S.person, faceable: true });
   return (pass && personAns.status >= 400 && personAns.status < 500) || false;
 }, test.limit.slow);
 
@@ -1315,18 +1321,18 @@ test.run('The detail of a relay with no seat has no 😏 fold', 0.2, function ()
 // Leaving: read from his ruling, and Q21 asks him outright (ubi: "a relay you have left keeps its star"); if he says no, these two checks go.
 test.run('Once this node has joined the relay, 😏 goes on', 0.2, async function () {
   if (!S.Far) return false;
-  await home(S.N.base, 'contact.join', { key: S.Far.relayKey, email: MAIL });
+  await home(S.N.base, 'spirit.contact.join', { key: S.Far.relayKey, email: MAIL });
   await until(function () { return S.Far.mailed.length > 0; }, 5000);
-  await home(S.N.base, 'contact.join', { key: S.Far.relayKey, email: MAIL, code: joinCode(S.Far) });
+  await home(S.N.base, 'spirit.contact.join', { key: S.Far.relayKey, email: MAIL, code: joinCode(S.Far) });
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === true; }, 10000);
-  const farYes = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
+  const farYes = await home(S.N.base, 'spirit.contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farYes.status === 200 && await starred(S.Far.relayKey)) || false;
 }, test.limit.long);
 test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
   if (!S.Far) return false;
   // The first ask may still be waiting for the relay's card, as relay.face's does.
   let left = null;
-  for (let i = 0; i < 8; i++) { left = await home(S.N.base, 'contact.leave', { key: S.Far.relayKey }); if (left.status < 300 || left.status === 404) break; await sleep(2000); }
+  for (let i = 0; i < 8; i++) { left = await home(S.N.base, 'spirit.contact.leave', { key: S.Far.relayKey }); if (left.status < 300 || left.status === 404) break; await sleep(2000); }
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === false; }, 8000);
   return ((last(S.Far.relayKey) || {}).claimed) === false || false;
 }, test.limit.long);
@@ -1337,7 +1343,7 @@ test.run('Leaving the relay takes 😏 away with the seat', 0.2, async function 
 }, test.limit.quick);
 test.run('😏 cannot be put back on a relay this node has left', 0.2, async function () {
   if (!S.Far) return false;
-  const notAgain = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
+  const notAgain = await home(S.N.base, 'spirit.contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (notAgain.status >= 400 && notAgain.status < 500) || false;
 }, test.limit.quick);
 
@@ -1352,18 +1358,18 @@ test.run('a relay naming this node its owner comes up', 0.2, async function () {
 test.run('Once the owned relay\'s report has come, its row says it is owned', 0.2, async function () {
   if (!S.Own) return false;
   const Own = S.Own;
-  await home(S.N.base, 'contact.add', { url: Own.base, label: 'zzOwned' });
-  await home(S.N.base, 'contact.join', { key: Own.relayKey, email: MAIL });
+  await home(S.N.base, 'spirit.contact.add', { url: Own.base, label: 'zzOwned' });
+  await home(S.N.base, 'spirit.contact.join', { key: Own.relayKey, email: MAIL });
   await until(function () { return Own.mailed.length > 0; }, 5000);
   const ownCode = joinCode(Own);
-  if (ownCode) await home(S.N.base, 'contact.join', { key: Own.relayKey, email: MAIL, code: ownCode });
+  if (ownCode) await home(S.N.base, 'spirit.contact.join', { key: Own.relayKey, email: MAIL, code: ownCode });
   await until(function () { const r = last(Own.relayKey); return !!r && r.owned === true; }, 20000);
   const ownedRow2 = last(Own.relayKey) || {};
   return ownedRow2.owned === true || false;
 }, test.limit.slow);
 test.run('On a relay this node owns, 😏 goes on', 0.2, async function () {
   if (!S.Own) return false;
-  const ownYes = await home(S.N.base, 'contact.faceable', { key: S.Own.relayKey, faceable: true });
+  const ownYes = await home(S.N.base, 'spirit.contact.faceable', { key: S.Own.relayKey, faceable: true });
   return (ownYes.status === 200 && await starred(S.Own.relayKey)) || false;
 }, test.limit.quick);
 
@@ -1374,9 +1380,9 @@ const CLICK = '(function () { var e = Array.prototype.slice.call(document.queryS
 test.run('a relay\'s label is bold and italic, under 📡 Relays', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.person) return false;
-  await home(S.N.base, 'contact.label', { publicKey: S.person, myLabel: 'zzPersonRow' });
-  await home(S.N.base, 'contact.unblock', { publicKey: S.person });
-  await home(S.N.base, 'contact.accept', { publicKey: S.person });
+  await home(S.N.base, 'spirit.contact.label', { publicKey: S.person, myLabel: 'zzPersonRow' });
+  await home(S.N.base, 'spirit.contact.unblock', { publicKey: S.person });
+  await home(S.N.base, 'spirit.contact.accept', { publicKey: S.person });
   await S.chrome.send('Page.navigate', { url: S.N.base + '/' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);

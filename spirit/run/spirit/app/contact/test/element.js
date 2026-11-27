@@ -121,18 +121,19 @@ test.run('a scratch node comes up for this suite', 0.2, async function () {
 // the box: "A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay"
 test.run('the scratch node knows a contact', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
-  const found = await call(W.N.base, 'contact.search', { q: '' });
+  // goal/G49.22: the contact branch's calls are spirit.contact.<verb>.
+  const found = await call(W.N.base, 'spirit.contact.search', { q: '' });
   W.items = (found.body && found.body.items) || [];
   W.relay = W.items.map(function (i) { return Object.assign({ key: i.key }, parsed(i.label) || {}); }).filter(function (r) { return r.name; })[0] || {};
   return W.items.length > 0 || false;
 }, test.limit.quick);
-test.run('no row of contact.search carries unansweredInbound, inboundPerDay or outboundPerDay', 0.2, function () {
+test.run('no row of spirit.contact.search carries unansweredInbound, inboundPerDay or outboundPerDay', 0.2, function () {
   if (!W.items) return false;
   return W.items.every(function (i) { const r = parsed(i.label) || {}; return COUNTERS.every(function (k) { return !(k in r); }); }) || false;
 }, test.limit.quick);
-test.run('contact.get carries none of those counters either', 0.2, async function () {
+test.run('spirit.contact.get carries none of those counters either', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
-  const got = await call(W.N.base, 'contact.get', { key: (W.relay || {}).key });
+  const got = await call(W.N.base, 'spirit.contact.get', { key: (W.relay || {}).key });
   const person = (got.body && (got.body.person || got.body)) || {};
   return got.status === 200 && COUNTERS.every(function (k) { return !(k in person); }) ? true : false;
 }, test.limit.quick);

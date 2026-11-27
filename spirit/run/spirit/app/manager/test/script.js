@@ -76,8 +76,9 @@ test.run('a face may call app.search', 0.2, function () {
   const said = faceRefuses({ call: 'spirit.app.search', args: {} });
   return said === '' || false;
 }, test.limit.quick);
-test.run('the same question refuses contact.faceable, so it can refuse', 0.8, function () {
-  return faceRefuses({ call: 'contact.faceable', args: {} }) !== '' || false;
+// faceable's name is spirit.contact.faceable since goal/G49.22.
+test.run('the same question refuses spirit.contact.faceable, so it can refuse', 0.8, function () {
+  return faceRefuses({ call: 'spirit.contact.faceable', args: {} }) !== '' || false;
 }, test.limit.quick);
 
 test.run('the scratch node comes up', 0.2, async function () {

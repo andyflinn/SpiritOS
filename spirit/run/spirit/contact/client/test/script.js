@@ -63,7 +63,8 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, requiring spirit/contact/script.js brings the contact branch\'s data.js, at spirit.required.spirit.data.contact.data', 0.2, async function () {
+// goal/G49.22: the branch's data.js is spirit/contact/client/script.js, its api.js spirit/contact/script.js.
+test.run('in node, requiring spirit/contact/script.js brings the contact branch\'s client, at spirit.required.spirit.data.contact.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
