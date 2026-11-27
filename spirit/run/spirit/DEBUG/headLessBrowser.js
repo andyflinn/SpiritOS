@@ -5,11 +5,9 @@ require('../script.js');
 // be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit/script.js"> and the most minimal
 // mount for armingButton.js". Its first user is the shell's general rules (spirit/test/script-sibling-browser.md).
 //
-// The page loads /spirit/script.js, then the module through spirit.requireScript, alone (rule/26). An app (it calls
-// spirit.shell.activateApp) is mounted into the box with an api as the face
-// gives one (shell/boot.js apiFor). An element
+// The page loads /spirit/script.js, then the module through spirit.requireScript, alone (rule/26). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
-// by the elements own test script"): the element that stands at spirit.required.<the file's path> once it is required,
+// by the elements own test script"): the element the require hands back,
 // put there by the loader from its module.exports (goal/G49.9, G49.23; Andy, G43.32: "element scripts installed by the above
 // logic place their element-factory at spirit.element.<path-of-fucking-element-script>"); none there fails and says where it looked.
 // /shell.css is the shell's one sheet, a link and not a script. What happened is on
@@ -23,29 +21,7 @@ function mountScript(file) {
     'var report = window.spiritMount = { state: "loading", error: "", box: box, destroy: null };\n' +
     'function failed(e) { report.state = "failed"; report.error = String((e && e.message) || e || "failed"); }\n' +
     'var file = ' + JSON.stringify(file) + ';\n' +
-    'function ask(verb, args) {\n' +
-    '  var name = String(verb); var dot = name.indexOf(".");\n' +
-    '  var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;\n' +
-    '  var fn = fam && typeof fam[name.slice(dot + 1)] === "function" ? fam[name.slice(dot + 1)] : null;\n' +
-    '  if (!fn) return Promise.resolve({ status: 400, text: "", body: { ok: false, code: "no-such-verb", error: "no verb " + name } });\n' +
-    '  return spirit.callOutcome(fn(args || {})).then(function (o) { return { status: o.status, text: o.body == null ? "" : JSON.stringify(o.body), body: o.body }; });\n' +
-    '}\n' +
-    'var api = {\n' +
-    '  escapeHtml: spirit.escapeHtml, verb: ask,\n' +
-    '  launchApp: function () {}, callDialog: function () { return Promise.resolve(); }, closeDialog: function () {},\n' +
-    '  setScreenTitle: function () {}, setScreenMark: function () {}, addTitlebarLink: function () {},\n' +
-    '  armUntilElsewhere: function () {}, isVisible: function () { return true; }, refresh: function () {},\n' +
-    '  onJobs: function () { return function () {}; }, onFiles: function () { return function () {}; }, onRelayEvent: function () { return function () {}; }\n' +
-    '};\n' +
-    'var app = null;\n' +
-    '(spirit.shell = spirit.shell || {}).activateApp = function (behavior) { app = behavior; };\n' +
     'Promise.resolve(spirit.startPage()).then(function () { return spirit.requireScript(file); }).then(function (el) {\n' +
-    '  if (app && typeof app.mount === "function") {\n' +
-    '    app.mount(box, api);\n' +
-    '    if (typeof app.render === "function") app.render();\n' +
-    '    report.state = "mounted";\n' +
-    '    return;\n' +
-    '  }\n' +
     // AN INTERFACE IS NO ELEMENT (goal/G49.7; Andy's red on spirit/job/script.js): a branch's api.js stands at its place bound, its
     // verbs table beside its functions, and a verb named create (job's) is no element's factory; it is judged as no element.
     // The element is what spirit.requireScript hands back (goal/G49.23), never read at its place.

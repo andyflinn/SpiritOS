@@ -261,7 +261,6 @@
         delete window.spirit.transport;
         waiting.forEach(function (h) { spirit.eventStream.subscribe(h); });
       }
-      Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
       link.loaded = true;
       openStream();
       joinFromLink();
@@ -272,23 +271,9 @@
     });
   }
 
-  // The old shell's fact row (its factRow), the same markup, for the dialogs that draw with it
-  // (Relay Details, Contact): pairs of [label, value], escaped.
-  function factRow(pairs) {
-    var esc = spirit.escapeHtml;
-    return '<div class="fact-row">' + (pairs || []).map(function (pair) {
-      return '<div class="fact">' +
-        '<span class="fact-label">' + esc(String(pair[0])) + '</span>' +
-        '<span class="fact-value">' + esc(String(pair[1])) + '</span>' +
-        '</div>';
-    }).join('') + '</div>';
-  }
-
-  // THE CALLER'S LINK (goal/G40.10, box v25; Andy: "the join-app-link, which only the shell really knows"): this page,
-  // opening Join; the relay adds its code and key to it and mails it. At home the node's /, on a relay this face.
-  (window.spirit.shell = window.spirit.shell || {}).joinLink = function () {
-    return window.location.origin + window.location.pathname + '?app=join';
-  };
+  // The old shell's fact row and the caller's join link stood here, on the shell's hand-made object; since goal/G49.23 (box v22
+  // Part 1) each is a script of its own, spirit/fuckingGarbage/factRow/script.js and spirit/fuckingGarbage/joinLink/script.js,
+  // required by its readers.
 
   // THE MAILED JOIN LINK (goal/G40.10): the relay mails /?join=<code>&relay=<its key>&app=join. Read here, before
   // the address is cleared; once the page is up the code goes to contact.join, at the relay this node lists under that key
