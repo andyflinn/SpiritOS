@@ -605,7 +605,7 @@
   // ON A PAGE, WHAT A SCRIPT PLACED FOR ITSELF IS ITS ANSWER (goal/G43.32; Andy, goal/G49.4: "have i NOT fucking specified, that
   // on both, browser and node, spirit.requireScript() places the loaded script at the exact same motherfucking location/path in the
   // spirit object??????", "FUCKING FIX THAT!!"): a page script has no module box, so it stands at spirit.required.<its path>
-  // by placing itself there as it runs (spirit/data/script.js does); the loader answers that object, as in node it answers the
+  // by placing itself there as it runs (spirit/client/script.js does); the loader answers that object, as in node it answers the
   // module's exports. A script that placed nothing gets an empty object there, which says it is loaded.
   function keptAt(p) {
     var keys = placeKeys(p);
@@ -1095,7 +1095,7 @@
     // translator, which its type loads; a process follows a stream only through appServer's listener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.required.spirit.data is there now.
     module.exports = self;
-    requireOne('spirit/data/script.js');
+    requireOne('spirit/client/script.js');
     return;
   }
 
@@ -1149,7 +1149,7 @@
       // cache it made.
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
-      return parsed().then(function () { return requireOne('spirit/data/script.js'); });
+      return parsed().then(function () { return requireOne('spirit/client/script.js'); });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a

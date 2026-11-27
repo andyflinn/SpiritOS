@@ -82,8 +82,8 @@
           (Array.isArray(r.items) ? r.items : []).forEach(function (i) { labels[String(i.key)] = String(i.label || i.key); });
           showCurrent();
         }
-        // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/data/script.js"): the server's
-        // published remote row, filed there by spirit/data/script.js, is followed as it comes.
+        // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/client/script.js"): the server's
+        // published remote row, filed there by spirit/client/script.js, is followed as it comes.
         var unwatchRemote = S.required.spirit.data && typeof S.required.spirit.data.watchPath === 'function' ? S.required.spirit.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
         keepAnswer('spirit/element/search/script.js').then(function () {
           if (dropped) return;

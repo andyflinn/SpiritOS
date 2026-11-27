@@ -412,7 +412,7 @@ const RUN_ROOT = path.resolve(__dirname, '..', '..', '..');
 // A server that follows a stream hands serve() opts.stream = { module, translator, onRow, cache }: the module the
 // sender publishes as (spirit.app.<name>), the stream's translator (its data.js), a handler for each row if it wants
 // one, and the cache switch. serve() then adds the verb listener {json} -> {heard: true}: one bundle. Each row
-// goes straight into the server's spirit.required.spirit.data (spirit/data/script.js) through the translator, exactly as a face app
+// goes straight into the server's spirit.required.spirit.data (spirit/client/script.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
 // own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
 // follow(key) also grants that key the verb on this server's own node (spirit.grant.add <server>.listener, through the
@@ -435,12 +435,12 @@ const CACHE_LIMIT = 4 * 1024 * 1024;
 const CACHE_SAVE_MS = 10;
 let streamData = null;
 function dataSet() {
-  if (!streamData) streamData = spirit.requireScript('spirit/data/script.js');
+  if (!streamData) streamData = spirit.requireScript('spirit/client/script.js');
   return streamData;
 }
 // One per sender this server follows: where it stands and what it keeps.
 //   { key, family, run, n, rows: [{ row, paths }], pushing: [{ row, paths }] | null, cached, api, saving }
-// paths are what the row wrote into the data set (spirit/data/script.js recording), so a row that goes takes them with it.
+// paths are what the row wrote into the data set (spirit/client/script.js recording), so a row that goes takes them with it.
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 // THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28): its name the key as spirit.required.spirit.data names the node, <node id>.json.
@@ -1138,7 +1138,7 @@ function withRemote(verbs, name) {
       if (remote.refused) throw Object.assign(new Error('no-remote-support'), { refusal: 'no-remote-support' });
       if (!caller || caller.owner !== true) throw Object.assign(new Error('owner-only'), { refusal: 'owner-only', extra: { why: 'remote is the owner\'s alone' } });
       // An empty call publishes the list too, to this node's own pages alone, so every open page's spirit.required.spirit.data.<server>.remote
-      // holds it (spirit/data/script.js files it), and then the peers are checked again in the background.
+      // holds it (spirit/client/script.js files it), and then the peers are checked again in the background.
       if (a.id === undefined) { publishRemote(); refreshRemote(); return remoteList(); }
       return switchRemote(String(a.id));
     },
@@ -1312,7 +1312,7 @@ function saveCaches() {
 // spirit.js reads itself as it is required: the port from spirit/state/environment.json, the rest from --node.
 
 module.exports = {
-  // goal/G33.4: the data set a following server keeps (spirit/data/script.js), filled by its stream's translator.
+  // goal/G33.4: the data set a following server keeps (spirit/client/script.js), filled by its stream's translator.
   get data() { return dataSet(); },
   // goal/G33.8: the one publish, to the pages and to the subscribers.
   publish: publish,

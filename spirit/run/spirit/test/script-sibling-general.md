@@ -31,8 +31,8 @@ all rulers relating to branches."*, *"would that not actually be a general test 
 
 It took in, per branch, the branch rules of five tests (Q6: *"absolutely, AND MAKE SURE NO TEST GETS LOST."*):
 `spirit-familyFinder.js`, `data-caches.js`, `apiDoor-familyGate.js`, `server-appFamily.js`,
-`introSpector-branchVerbs.js`. What judges no branch stayed with the test of the module it judges: `../data/test/script.js`, once `./data-caches.js`
-(the data set, `spirit/data/script.js`) and `./script.js`, its familyFinder part (the finder, on planted folders); the other three are
+`introSpector-branchVerbs.js`. What judges no branch stayed with the test of the module it judges: `../client/test/script.js`, once `./data-caches.js`
+(the data set, `spirit/client/script.js`) and `./script.js`, its familyFinder part (the finder, on planted folders); the other three are
 gone. From `./app.js`: that an app's description names its icon and label. A scratch node; never a live one.
 
 ### Requirements
@@ -145,7 +145,7 @@ key is its description, nothing else"*): a title that changes from run to run is
 
     node spirit/test/script-sibling-titleRules.js spirit/app/desk          every suite under that folder
     node spirit/test/script-sibling-titleRules.js spirit/app/desk/desk.js  that production file's own suite
-    node spirit/test/script-sibling-titleRules.js spirit/data/test/script.js      that suite
+    node spirit/test/script-sibling-titleRules.js spirit/client/test/script.js      that suite
     node spirit/test/script-sibling-titleRules.js                          every suite of the tree
 
 ### What it reads

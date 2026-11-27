@@ -7,10 +7,10 @@
 // The rows come on the node's own job spirit.bundle, each changed row, gone when deleted. Every event ends in set or del.
 (function family(given) {
   var ROWS = 'rows';
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : given;
   // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
   // again with it once it has loaded.
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('bundle', function () {
     var HOME = D.viewAt(null, 'bundle');
     D.addTranslator({

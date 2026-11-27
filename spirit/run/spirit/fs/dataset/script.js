@@ -15,7 +15,7 @@ require('../../script.js');
 // loads the file at once and then binds spirit.fs; a process with no port to bind to (the node's own main process on a
 // fresh tree) is refused the binding, never the file, so that refusal is let go.
 Promise.resolve(spirit.requireScript('spirit/fs/script.js')).then(null, function () { /* the binding; the dataset is here */ });
-const D = spirit.requireScript('spirit/data/script.js');
+const D = spirit.requireScript('spirit/client/script.js');
 
 let fed = false;
 let following = false;

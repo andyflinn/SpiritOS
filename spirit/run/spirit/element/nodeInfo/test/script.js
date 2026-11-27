@@ -23,7 +23,7 @@ const SUBJECT = 'spirit/element/nodeInfo/script.js';
 const FILE = path.join(RUN, SUBJECT);
 // The files of the tree its worlds load as they are, by their paths, through the page stand-in: the data set, a branch's
 // companion data.js, and the subject.
-const REAL = function (p) { return p === 'spirit/data/script.js' || p === SUBJECT || /^spirit\/[^/]+\/data\.js$/.test(p); };
+const REAL = function (p) { return p === 'spirit/client/script.js' || p === SUBJECT || /^spirit\/[^/]+\/data\.js$/.test(p); };
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
@@ -135,7 +135,7 @@ function world(o) {
   // a branch's companion data.js and the subject run in this window by their paths, through the page stand-in (goal/G49.6).
   win.spirit = win.spirit || {};
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
-  win.spirit.requireScript('spirit/data/script.js');
+  win.spirit.requireScript('spirit/client/script.js');
   const S = win.spirit;
   Object.assign(S.required.spirit, page.spirit);
   S.nodeFacts = { key: 'NODEKEY+INFO==',
@@ -534,7 +534,7 @@ function formsPart() {
     const REAL2 = function (p) { return REAL(p) || p === 'spirit/element/joinForm/script.js' || p === 'spirit/element/faceForm/script.js'; };
     win.spirit = win.spirit || {};
     LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL2 });
-    win.spirit.requireScript('spirit/data/script.js');
+    win.spirit.requireScript('spirit/client/script.js');
     const S = win.spirit;
     // goal/G43.32: every element stands at its path, spirit.required.spirit.element.<name>, the stand-ins with them.
     Object.assign(S.required.spirit, { element: {} });

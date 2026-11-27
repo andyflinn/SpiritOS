@@ -6,7 +6,7 @@
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.required.spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //
-// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.required.spirit.data (spirit/data/script.js),
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.required.spirit.data (spirit/client/script.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache
@@ -34,12 +34,12 @@
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
     ? require('../../script.js').requireScript('spirit/app/desk/cacheRules.js').rules({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ONCE PER DATA SET: spirit.required.spirit.data.makeFamily runs this once, however often the file is loaded.
-  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : given;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : given;
   // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place): this file runs
   // again with it once it has loaded.
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
-  // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function (got) { if (got) family(got); }); return; }
+  // data.js exactly as api.js"): on a page that has not loaded spirit/client/script.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got); }); return; }
   D.makeFamily('spirit.app.desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.required.spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk

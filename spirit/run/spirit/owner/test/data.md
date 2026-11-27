@@ -2,7 +2,7 @@
 
 What a client knows of the owner family (goal/G41.28; Andy: *"WSL, make sure you assert that every family in the api
 tree HAS a clientCacheManager"*). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs as it does, in a window of its own beside the real
-`spirit/data/script.js`, which it writes into; in node it comes with the family's `api.js`, the one script that requires it.
+`spirit/client/script.js`, which it writes into; in node it comes with the family's `api.js`, the one script that requires it.
 
 No client reads the owner's boxes or sends his commands from a page yet.
 

@@ -54,7 +54,7 @@ function branchRules(ARGS) {
 // spirit.<name>.data.js"). Every check is named by its branch folder. What it took in, per branch, from the five tests
 // that held branch rules (goal/G43.32, Q6: "absolutely, AND MAKE SURE NO TEST GETS LOST."): spirit-familyFinder.js,
 // data-caches.js, apiDoor-familyGate.js, server-appFamily.js, introSpector-branchVerbs.js; what judges no branch went back
-// to the test of the module it judges (../data/test/script.js, which data-caches.js went into, ./script.js, its familyFinder part). A scratch node; never a live one.
+// to the test of the module it judges (../client/test/script.js, which data-caches.js went into, ./script.js, its familyFinder part). A scratch node; never a live one.
 
 const fs = require('fs');
 const path = require('path');
@@ -236,7 +236,7 @@ if (apps.length) {
 // Andy, on G41.28: "WSL, make sure you assert that every family in the api tree HAS a clientCacheManager, AND the a
 // node.js Process like DeskClient uses the Exact same code as the browser for the cache management. The only difference
 // is the appServer serializes the cache to disk."
-const DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 // Every branch with an interface has its data.js in its own folder.
 if (withApi.length) {
   // <branch>: its cache
@@ -259,7 +259,7 @@ if (withData.length) {
   // path of them to a spirit.required.spirit.data reader or writer (D.get('desk/' + id), a watch on such a path).
   // <branch>: its branch <name>
   if (owning.length) test.run('the branch is named by its data.js alone; every other file asks it', 0.4, function () {
-    const managers = tracked.filter(function (f) { return /\/data\.js$/.test(f) && f !== 'spirit/data/script.js' && !/\/test\//.test(f); });
+    const managers = tracked.filter(function (f) { return /\/data\.js$/.test(f) && f !== 'spirit/client/script.js' && !/\/test\//.test(f); });
     const readers = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\/|\/vendor\//.test(f) && !VENDORED_FOLDERS.holds(f) && managers.indexOf(f) === -1; });
     const readerCode = readers.map(function (f) { return { f: f, c: code(path.join(RUN, f)) }; });
     return overAll(owning, function (b) {
@@ -271,8 +271,8 @@ if (withData.length) {
   }, test.limit.quick);
   // <branch>: its cache, the rest
   // ONE PATTERN (goal/G43.7, the box: "ALL ... files will be converted to "data.js" files", "using the module
-  // spirit/data/script.js", "with the SAME pattern"; from ./data-families.js): the guard, the attach
-  // and the write on spirit are spirit/data/script.js's, none of it rolled by the family by hand.
+  // spirit/client/script.js", "with the SAME pattern"; from ./data-families.js): the guard, the attach
+  // and the write on spirit are spirit/client/script.js's, none of it rolled by the family by hand.
   test.run('its data.js rolls none of it by hand', 0.4, function () {
     return overAll(withData, function (b) { return !/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(b.src); });
   }, test.limit.quick);
@@ -588,7 +588,7 @@ function titleRules(ARGS) {
 //
 //   node spirit/test/script-sibling-titleRules.js spirit/app/desk          every suite under that folder
 //   node spirit/test/script-sibling-titleRules.js spirit/app/desk/desk.js  that production file's own suite
-//   node spirit/test/script-sibling-titleRules.js spirit/data/test/script.js      that suite (a file in a test/ folder)
+//   node spirit/test/script-sibling-titleRules.js spirit/client/test/script.js      that suite (a file in a test/ folder)
 //   node spirit/test/script-sibling-titleRules.js                          every suite of the tree
 //
 // A suite is a .js file in a folder named test, not one of spirit/test/'s tools. A TEST is one call to the reporter,
@@ -983,10 +983,10 @@ if (WHOLE || MODULE) {
 
 // THE ANSWER OF spirit.requireScript IS THE DOOR (goal/G49.9, box v5: "a general test in script-sibling-general: \"a script
 // reaches another only through what spirit.requireScript hands back\", red on every file that reads spirit.required.<path>,
-// spirit.js and spirit/data/script.js left out", "its severity is 0.81"; Andy: "call requireScript() and then assume where the result
+// spirit.js and spirit/client/script.js left out", "its severity is 0.81"; Andy: "call requireScript() and then assume where the result
 // lives???? ... just plain bad programming practice"). Its code read with its comments taken out: any .required in it is a
 // read of spirit.required, in one piece or in steps. Product scripts: a test still reads the places it checks.
-const PLACERS = ['spirit/script.js', 'spirit/data/script.js'];
+const PLACERS = ['spirit/script.js', 'spirit/client/script.js'];
 const readsRequired = function (rel) {
   let code = '';
   try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; }
@@ -1311,7 +1311,7 @@ const MOST_BYTES = (function () {
 // THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
 // rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
 // sourceURL). Spirit's own code is spirit.js, its families (spirit-interface/), spirit/client/ and the page's data set
-// (spirit/data/script.js); shell/boot.js, the face's own transport, is the one exception the network rule names
+// (spirit/client/script.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
 //   subs:  every spirit.eventStream.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
@@ -1320,7 +1320,7 @@ const MOST_BYTES = (function () {
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
 const WATCH = String.raw`(function () {
   var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [] };
-  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/data\/script\.js|shell\/boot\.js)$/;
+  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/client\/script\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
   function spirits(f) { return SPIRIT.test(file(f)); }
@@ -1471,7 +1471,7 @@ const WATCH = String.raw`(function () {
         if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }
         // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
         // as one on spirit.required.spirit.data, under the whole path it watches.
-        // spirit.required.spirit.data names it viewAt (spirit/data/script.js); a watch through the view is the module's own watch.
+        // spirit.required.spirit.data names it viewAt (spirit/client/script.js); a watch through the view is the module's own watch.
         var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
         if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
           var at = v[VIEW];
@@ -1755,9 +1755,9 @@ const OWN_NODE_MODULES_SKIP = /['"]node_modules['"]/;
 const BY_NAME_LOADER = /\bcacheManager\s*\(/;
 // AN api.js LOADS ITS OWN data.js, AND NOTHING ELSE DOES (goal/G47.1, Andy: "RULE: \"every api.js requires it's companion
 // data.js, and is the only script to require that data.js\"", then "GO!"). A branch's data.js is a data.js with an api.js
-// beside it; spirit/data/script.js, the data module every data.js loads, is no branch's. Read from the code, comments left out.
+// beside it; spirit/client/script.js, the data module every data.js loads, is no branch's. Read from the code, comments left out.
 function branchDataFiles(files) {
-  return (files || []).filter(function (f) { return /(^|\/)data\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/data/script.js' && fs.existsSync(path.join(RUN, f.replace(/data\.js$/, 'api.js'))); });
+  return (files || []).filter(function (f) { return /(^|\/)data\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/client/script.js' && fs.existsSync(path.join(RUN, f.replace(/data\.js$/, 'api.js'))); });
 }
 // The branch data.js paths a file's code requires by its written path.
 function dataRequiresOf(rel) {

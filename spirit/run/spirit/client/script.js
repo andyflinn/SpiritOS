@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/data/script.js
+// spirit/run/spirit/client/script.js
 // THE FACELESS LAYER (goal/G30.16, box v14-v16). Andy: "we need to view the shell like a transient version of a node. it
 // needs a 100% faceless layer", "accurately mirror the exact state of the node that is its partner", "the shell stores
 // all data in one central location". The UI is a fast reading of this; nothing here touches the page, so it runs and
@@ -172,7 +172,7 @@
     return capBytes;
   }
   // EVERYTHING KEPT GOES, ASKED (forgetAll): the branches stay the same objects, emptied; each type that held anything is told
-  // once, as ready tells. No longer on a reconnect (goal/G47.1, box v148: "on a reconnect spirit/data/script.js forgets nothing").
+  // once, as ready tells. No longer on a reconnect (goal/G47.1, box v148: "on a reconnect spirit/client/script.js forgets nothing").
   function forget() {
     branches().forEach(function (type) {
       var b = branch(type);
@@ -321,7 +321,7 @@
     return k;
   }
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
-  // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/data/script.js", not a server's own data.js,
+  // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/client/script.js", not a server's own data.js,
   // which "would have to be duplicated for all servers"): a server publishes { remote: { current, items, more } } as a job of
   // its module, its id spirit.app.<name>; it is kept as spirit.required.spirit.data['spirit.app.<name>'].remote, a later row
   // replacing it, and told to whoever watches remote/<that id> (the title bar's Remote dropdown, spirit/element/panel/script.js).
@@ -401,7 +401,7 @@
     if (handing()) each('onDelete', stamped({ id: String(id) }, from));
   }
   // A SNAPSHOT IS A CONNECT (spirit.eventStream hands one on every open of the stream, the first and each reconnect). THE CACHE IS
-  // NOT WIPED (goal/G47.1, box v148: "on a reconnect spirit/data/script.js forgets nothing; the snapshot's jobs are laid over what is
+  // NOT WIPED (goal/G47.1, box v148: "on a reconnect spirit/client/script.js forgets nothing; the snapshot's jobs are laid over what is
   // kept, and every app's rows stay"; Andy, overruling goal/G41.3 Q2's "on a reconnect a cache forgets": "THE FUCKING CACHE
   // IS NOT WIPED OUT."): nothing kept goes, and each job the snapshot brings is laid over it as an update is.
   function onSnapshot(jobs) {
@@ -490,7 +490,7 @@
   var sp = root.spirit;
   function relayEvent(ev) { each('onRelay', ev); }
   // A RECONNECT, SAID TO WHOEVER ASKS (goal/G47.1, the box, "Reload Problems with the face": "on a reconnect every search a
-  // page shows ... runs once more"): the searches hear it here, since only this file takes the node's stream (spirit/data/test/script.js,
+  // page shows ... runs once more"): the searches hear it here, since only this file takes the node's stream (spirit/client/test/script.js,
   // "no client takes the node's stream itself"). whenReconnected(fn) answers its release.
   var reconnected = [];
   function whenReconnected(fn) {

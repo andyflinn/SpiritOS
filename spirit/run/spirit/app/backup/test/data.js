@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the backup (goal/G41.28): the backup server's status, kept as status.get answered it, under the
 // node that served it; its one branch named by this file alone. It runs as a page runs it: in a window of its own beside
-// the real spirit.required.spirit.data (spirit/data/script.js), which it writes into. In node it comes with its branch's interface,
+// the real spirit.required.spirit.data (spirit/client/script.js), which it writes into. In node it comes with its branch's interface,
 // spirit/app/backup/api.js, the one script that requires it. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -17,7 +17,7 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 // The node's public key, base64 with a + and a / in it, as a node's key is.
 const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';

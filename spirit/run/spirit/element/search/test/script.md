@@ -66,7 +66,7 @@ draws and ranks.
   - It draws its search field, its list and its filters into the container.
   - With `data`, a branch of spirit.required.spirit.data, it draws at once (goal/G48.4; the browser rule: *"its searches are each made
     with a spirit.required.spirit.data branch, no rows of their own"*). Every list in this test is made with a branch of the real
-    spirit.required.spirit.data (`spirit/data/script.js`), the rows it shows written into that branch; it takes no rows of its own.
+    spirit.required.spirit.data (`spirit/client/script.js`), the rows it shows written into that branch; it takes no rows of its own.
   - Each row is a `tr` with `data-key`, its cells marked by `matchRanges`.
   - With no row to show, it shows `empty`, or "Nothing matches.".
 - **Typing**:
@@ -282,5 +282,5 @@ The box: *"Tile mode is a search's own: a search that has a tile.js, beside its 
 
 Andy: *"i want to see every single fucking grant row that matches the fucking search, and not only one of many for a
 fucking family when the fucking verbs were fucking granted separetely."* Over the real spirit.required.spirit.data and the auth family's
-data (spirit/data/script.js, spirit/auth/data.js), two grants of one contact, filed apart in the branch by key and path but
+data (spirit/client/script.js, spirit/auth/data.js), two grants of one contact, filed apart in the branch by key and path but
 sharing the key field (the contact's key), are drawn as two rows.

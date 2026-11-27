@@ -2,7 +2,7 @@
 // THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
 // spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
 var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/testicle/element/search/testicle/detail.js
 // ONE TEST'S DETAIL, AN ELEMENT (goal/G47.1, the search cycle): its history of flips, what testicle's face shows in a closable
 // tab when a test row of the testicle search is clicked (the box: "The testicle detail is a history of flips, and opens in a

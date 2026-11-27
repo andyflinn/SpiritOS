@@ -4,7 +4,7 @@ What a page knows of its chats (goal/G4.9 on). goal/G43.31, the box: *"The branc
 
 ## How it is tested
 
-In a window of its own beside the real spirit.required.spirit.data (`spirit/data/script.js`), which it writes into; the server's lines handed in as the node's stream hands them, jobs of module `spirit.app.chat` whose `app.line` is the line.
+In a window of its own beside the real spirit.required.spirit.data (`spirit/client/script.js`), which it writes into; the server's lines handed in as the node's stream hands them, jobs of module `spirit.app.chat` whose `app.line` is the line.
 
 ## Requirements
 

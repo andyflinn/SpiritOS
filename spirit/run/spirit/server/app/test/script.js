@@ -47,7 +47,7 @@ function plantFamilies() {
   const head = "'use strict';\n// Planted by spirit/server/app/test/script.js for its stream checks, and removed when it ends.\n";
   fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
-    "const D = require('../../script.js').requireScript('spirit/data/script.js');",
+    "const D = require('../../script.js').requireScript('spirit/client/script.js');",
     "D.makeFamily('" + FAMILY_ID + "', function () {",
     "  const HOME = D.viewAt(null, '" + FAMILY_ID + "');",
     "  D.addTranslator({ onJob: function (job) {",
@@ -124,7 +124,7 @@ function release() { gate.held = false; const w = gate.waiting.splice(0); w.forE
 const asked = [];
 // spirit.js loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
 // puts it on the stand-in, where the planted family's translator finds it.
-delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data', 'script.js'))];
+delete require.cache[require.resolve(path.join(RUN, 'spirit', 'client', 'script.js'))];
 const fake = {
   requireScript: function (p, key) {
     const q = String(p);
@@ -668,7 +668,7 @@ function stateCachePart() {
       "S.serve({}, { stream: { translator: 'spirit/app/" + NAME + "/rows.js', cache: true, module: 'a.test' } });",
       "setTimeout(function () { require('fs').writeFileSync(process.env.SAVED, JSON.stringify(S.saveCaches())); }, 1500);",
     ].join('\n') + '\n');
-    const nodeId = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/data/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: run, encoding: 'utf8' }).stdout;
+    const nodeId = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/client/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: run, encoding: 'utf8' }).stdout;
     state = path.join(run, 'spirit', 'state', 'app', NAME);
     cache = path.join(state, 'cache');
     if (nodeId.length > 10) id = nodeId;

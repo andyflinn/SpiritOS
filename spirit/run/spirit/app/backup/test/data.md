@@ -3,7 +3,7 @@
 What a client knows of the backup (goal/G41.28; Andy: *"anything not using the new spiritData.js and it's buddies
 clientCacheManager.js must do so in this item. no exceptions."*): the backup server's status as `status.get` last
 answered it, kept in the page's `spirit.required.spirit.data` under the node that served it. Owed since the rule *"every production
-script has its own test"* (goal/G47.1, box v72). It runs in a window of its own beside the real `spirit/data/script.js`; in
+script has its own test"* (goal/G47.1, box v72). It runs in a window of its own beside the real `spirit/client/script.js`; in
 node it comes with its branch's interface, `spirit/app/backup/api.js`, the one script that requires it.
 
 - It stands at `spirit.required.spirit.data.backup.data`, with `keep`, `status`, `watch` and `branch`.

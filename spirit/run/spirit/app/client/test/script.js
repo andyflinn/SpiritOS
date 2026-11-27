@@ -79,7 +79,7 @@ test.run('the app search and the app detail load', 0.2, async function () {
   W.loaded = loaded === 'loaded';
   return W.loaded || false;
 }, test.limit.quick);
-// MOVED HERE FROM spirit/data/test/script.js (goal/G47.1, Andy: "WHERE DOES THIS STUFF BELONG?????????????"): spirit.app is the app
+// MOVED HERE FROM spirit/client/test/script.js (goal/G47.1, Andy: "WHERE DOES THIS STUFF BELONG?????????????"): spirit.app is the app
 // branch's object, not data.js's, so its rules stand in the app branch's own test.
 // Andy: "the helpes must not be words there either, this goes for all spirit.app contained objects."
 // spirit.app: no helper is a word, on it or on an app it holds. The auto-verbs every bound branch has, remote, listener,

@@ -2,7 +2,7 @@
 
 What a client knows of the peer family (goal/G41.28; Andy: *"WSL, make sure you assert that every family in the api
 tree HAS a clientCacheManager"*). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs as it does, in a window of its own beside the real
-`spirit/data/script.js`, which it writes into; in node it is loaded by its api.js, the one script that requires it (goal/G47.1).
+`spirit/client/script.js`, which it writes into; in node it is loaded by its api.js, the one script that requires it (goal/G47.1).
 
 peer.post carries a packet and peer.acquire files a key, whose row the contact family's manager keeps.
 

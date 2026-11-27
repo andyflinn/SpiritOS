@@ -2,7 +2,7 @@
 
 What a client knows of the config family (goal/G41.28; Andy: *"WSL, make sure you assert that every family in the api
 tree HAS a clientCacheManager"*). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs as it does, in a window of its own beside the real
-`spirit/data/script.js`, which it writes into; in node it is loaded as every client loads it, by requiring its branch's api.js.
+`spirit/client/script.js`, which it writes into; in node it is loaded as every client loads it, by requiring its branch's api.js.
 
 The branch has no verb yet (kept empty for later use, goal/G30.20).
 

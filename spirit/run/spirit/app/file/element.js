@@ -2,7 +2,7 @@
 // THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
 // spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
 var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/file/element.js
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.

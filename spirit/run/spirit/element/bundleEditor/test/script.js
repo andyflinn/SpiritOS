@@ -79,7 +79,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   // (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: 'KEY+BUNDLE/EDITOR==' };
   global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
   // A branch's cache: the bundle branch's script brings its client, as the real spirit/bundle/script.js does, run once on

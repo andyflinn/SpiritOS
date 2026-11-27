@@ -4,7 +4,7 @@
 // The tests of spirit/net/data.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the net family (goal/G41.28): nothing, net.fetch answering one fetch, not a row read again.
-// It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data/script.js), which it writes into, the
+// It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/client/script.js), which it writes into, the
 // stream's events handed in as spirit.required.spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
 // it comes with its branch's interface, spirit/net/api.js, the one script that requires it. The reads alone are read,
 // never a branch.
@@ -19,7 +19,7 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/net/data.js';
 const FILE = path.join(RUN, SUBJECT);
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
 // Two nodes' public keys, base64 with a + and a / in them, as a node's key is.
@@ -33,8 +33,8 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data/script.js', SUBJECT] });
-  win.spirit.requireScript('spirit/data/script.js');
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
+  win.spirit.requireScript('spirit/client/script.js');
   const D = win.spirit.required.spirit.data;
   const translators = [];
   const add = D.addTranslator;
@@ -53,8 +53,8 @@ function pageWorld() {
   win.window = win;
   win.spirit = { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } };
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data/script.js', SUBJECT] });
-  win.spirit.requireScript('spirit/data/script.js');
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
+  win.spirit.requireScript('spirit/client/script.js');
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.required.spirit.data;
   const F = D['net'];

@@ -6,7 +6,7 @@
 // What a client knows of the agent server's tables (goal/G41.28): job, model, persona and provider, each its own branch,
 // id -> the row, under the node that served it; the rows the server publishes merged in (goal/G41.16), and the reads the
 // tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
-// (spirit/data/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
+// (spirit/client/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
 // In node it comes with the family's api.js, spirit.requireScript('spirit/app/agent/api.js'). One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -18,7 +18,7 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 // The sender's public key, base64 with a + and a / in it, as a node's key is; and another node's.
 const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';

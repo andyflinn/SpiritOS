@@ -6,7 +6,7 @@
 // What a client knows of testicle's server (goal/G41.28, goal/G47.1): its three tables, script, suite and testicle, each
 // a branch under the node that served it, the rows the server publishes merged in, every suite made once from its rows,
 // and the monitor's one row. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
-// (spirit/data/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module
+// (spirit/client/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module
 // spirit.app.testicle. In node it is loaded by its api.js, spirit/app/testicle/api.js, the one script that requires it.
 // One test.run per test (goal/G47.2).
 
@@ -17,7 +17,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const OTHER_KEY = 'Zz+y/XwV9876543210zyxwvutsrqponmlkjihgfedcba=';

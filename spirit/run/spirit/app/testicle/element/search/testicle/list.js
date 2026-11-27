@@ -2,7 +2,7 @@
 // THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
 // spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
 var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/testicle/element/search/testicle/list.js
 // THE TESTICLE LIST, AN ELEMENT (goal/G47.1, the search cycle): every current test row of testicle's test table, what the
 // testicle search (../testicle.js) draws in the first, non-closable tab of testicle's face. Its row is ./row.js; a

@@ -196,10 +196,10 @@ test.run('the two element files place spirit.required.spirit.app.agent.element.t
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A family's
   // data.js comes with its api.js, the stand-in above running it from disk.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   // What the page files require is what is asked from here on.

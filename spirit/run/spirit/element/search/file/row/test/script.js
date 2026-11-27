@@ -58,7 +58,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   (function () { const real = require(path.join(RUN, 'spirit', 'script.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
   // goal/G43.32: every element places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   D = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';

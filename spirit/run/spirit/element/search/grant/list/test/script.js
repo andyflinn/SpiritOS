@@ -153,7 +153,7 @@ test.run("it is a pane unless told otherwise; given face dropdown, a dropdown, i
 // for the node's grants with no row drawn, and its first grant taken by spirit.required.spirit.data.
 test.run('a list made with no row drawn is a view of the branch its first grant lands in', 0.2, async function () {
   if (noList()) return false;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   global.window.spirit.nodeFacts = { key: 'nOdE+key/one==' };

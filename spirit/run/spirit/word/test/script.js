@@ -318,7 +318,7 @@ test.run('no word stands twice along a path', 0.2, function () {
   return (!T.notJson.length && !twice.length) || false;
 }, test.limit.quick);
 // the tree: "node-side a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'": nothing below may take a word reserved above it
-// Q11, Andy: "the word is defined ONCE, at the "largest" scope", and "spirit/app/client/script.js is "plugin" of spirit/data/script.js": a file
+// Q11, Andy: "the word is defined ONCE, at the "largest" scope", and "spirit/app/client/script.js is "plugin" of spirit/client/script.js": a file
 // below that borrows from the word is no second definition. Only data has a way to show it: the file calls the one helper.
 const BORROWS = { data: /\.makeFamily\(/ };
 function borrows(e) { const re = BORROWS[stem(e.name)]; return !!re && !e.dir && re.test(fs.readFileSync(path.join(SPIRIT, e.rel), 'utf8')); }

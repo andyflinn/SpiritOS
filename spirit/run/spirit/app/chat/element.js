@@ -2,7 +2,7 @@
 // THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
 // spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
 var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/chat/element.js
 // THE CHAT APP'S ELEMENT (goal/G43.31; Andy: "the app-element must be spirit/app/chat/element.js", "all it's custom (app
 // specific) elements go into spirit/app/chat/element/"), what was chatter.js, the face of this node's chat server

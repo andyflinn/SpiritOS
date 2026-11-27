@@ -2,7 +2,7 @@
 
 What a client knows of testicle's server (goal/G41.28, goal/G47.1): its three tables, `script`, `suite` and `testicle`,
 each a branch under the node that served it, and the monitor's one row. Owed since the rule *"every production script
-has its own test"* (goal/G47.1, box v72). It runs in a window of its own beside the real `spirit/data/script.js`, the rows
+has its own test"* (goal/G47.1, box v72). It runs in a window of its own beside the real `spirit/client/script.js`, the rows
 handed in as the stream hands them; in node it is loaded by its api.js, `spirit/app/testicle/api.js`, the one script that requires it (goal/G47.1).
 
 - It stands at `spirit.required.spirit.data.testicle.data`; its `tables` are script, suite, testicle; `branch(table)` is

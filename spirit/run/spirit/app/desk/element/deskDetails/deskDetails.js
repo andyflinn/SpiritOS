@@ -2,7 +2,7 @@
 // THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: a script reaches another only through what
 // spirit.requireScript hands back), kept once loaded; this file's own load waits for it, being part of its tree.
 var KEPT_DATA = null;
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/data/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/client/script.js')).then(function (d) { KEPT_DATA = d || null; }, function () { /* not loaded: nothing kept */ });
 // spirit/run/spirit/app/desk/element/deskDetails/deskDetails.js
 // ONE ITEM OF THE DESK, AS A DIALOG — desk/G2.7.
 //
@@ -758,7 +758,7 @@ function ddRename() {
 // EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
-// one cache for deskClient and this page: spirit.required.spirit.data (spirit/data/script.js) with the desk's translator
+// one cache for deskClient and this page: spirit.required.spirit.data (spirit/client/script.js) with the desk's translator
 // (the desk family's data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 // Asked of the cache's manager (goal/G41.28): spirit.required.spirit.data['spirit.app.desk'].data answers an item's parts; no branch is named here.

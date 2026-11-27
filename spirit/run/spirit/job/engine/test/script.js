@@ -94,11 +94,11 @@ const PLANTED = {
   'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
   'zzserve/zzserve.js': ["'use strict';", "require('../../script.js');", "spirit.requireScript('spirit/server/app/script.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
   'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/zzserve/data.js'); else window.spirit.requireScript('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzserve', function () { return {}; }); }());", ''].join('\n'),
+  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzserve', function () { return {}; }); }());", ''].join('\n'),
   'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
   'zzshot/zzshot.js': ["'use strict';", "require('../../script.js');", ''].join('\n'),
   'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/zzshot/data.js'); else window.spirit.requireScript('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzshot', function () { return {}; }); }());", ''].join('\n'),
+  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('spirit.app.zzshot', function () { return {}; }); }());", ''].join('\n'),
 };
 function plantApps(run) {
   Object.keys(PLANTED).forEach(function (rel) { const p = path.join(run, 'spirit', 'app', rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, PLANTED[rel]); });
@@ -854,7 +854,7 @@ function mountPart() {
     fs.writeFileSync(path.join(dir, 'data.js'), [
       '(function family() {',
       "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data/script.js');",
-      "  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(family); return; }",
+      "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(family); return; }",
       "  D.makeFamily('" + appId(name) + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
       '}());',
@@ -1071,7 +1071,7 @@ function mountPart() {
     const folder = path.join(s.run, 'spirit', 'state', 'app', 'follower', 'cache');
     fs.rmSync(folder, { recursive: true, force: true });
     fs.mkdirSync(folder, { recursive: true });
-    const id = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/data/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: s.run, encoding: 'utf8' }).stdout;
+    const id = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/client/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: s.run, encoding: 'utf8' }).stdout;
     fs.writeFileSync(path.join(folder, id + '.json'), JSON.stringify({ key: SENDER, family: family, run: 'r', n: 1, rows: [{ kept: family }] }));
     const seen = path.join(s.root, 'row-seen.json');
     fs.rmSync(seen, { force: true });

@@ -199,7 +199,7 @@ const MOST_BYTES = (function () {
 // THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
 // rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
 // sourceURL). Spirit's own code is spirit.js, its families (spirit-interface/), spirit/client/ and the page's data set
-// (spirit/data/script.js); shell/boot.js, the face's own transport, is the one exception the network rule names
+// (spirit/client/script.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
 //   subs:  every spirit.eventStream.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
@@ -224,7 +224,7 @@ const WATCH = String.raw`(function () {
   window.clearInterval = function (id) { W.intervals.forEach(function (x) { if (x.id === id) x.live = false; }); return clearI.apply(window, arguments); };
   // What lives now: listeners, intervals, and the elements on the page.
   W.held = function () { return { listeners: W.listeners.filter(function (x) { return x.live; }).length, intervals: W.intervals.filter(function (x) { return x.live; }).length, nodes: document.querySelectorAll('*').length }; };
-  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/data\/script\.js|shell\/boot\.js)$/;
+  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/client\/script\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
   function spirits(f) { return SPIRIT.test(file(f)); }
@@ -258,7 +258,7 @@ const WATCH = String.raw`(function () {
   function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
   // THE STREAM ANSWERED (rule/19, the box: "after a press, until the stream answers"): a stream event that comes while a write
   // is out ends the watch, even before the write's own reply; what the element draws from it is its stream's, not its own.
-  // So does a search answer seated into spirit.required.spirit.data, "merged into the tree like any event" (spirit/data/script.js seatRows): what it
+  // So does a search answer seated into spirit.required.spirit.data, "merged into the tree like any event" (spirit/client/script.js seatRows): what it
   // brings is the node's word, drawn from spirit.required.spirit.data.
   function streamed() { if (watching && W.writes.length > w0) stop(); }
   var STREAMED = ['onSnapshot', 'onUpdate', 'onDelete', 'onPacket', 'onRelayEvent', 'onContactRename'];
@@ -419,7 +419,7 @@ const WATCH = String.raw`(function () {
           }
           // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
           // as one on spirit.required.spirit.data, under the whole path it watches.
-          // spirit.required.spirit.data names it viewAt (spirit/data/script.js); a watch through the view is the module's own watch.
+          // spirit.required.spirit.data names it viewAt (spirit/client/script.js); a watch through the view is the module's own watch.
           var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
           if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
             var at = v[VIEW];

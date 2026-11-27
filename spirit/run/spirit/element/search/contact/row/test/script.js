@@ -75,7 +75,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
     const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);
     return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
-  load(path.join(JS, '..', '..', 'spirit', 'data', 'script.js'));
+  load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };

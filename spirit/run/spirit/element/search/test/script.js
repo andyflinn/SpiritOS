@@ -107,9 +107,9 @@ let PS = null;
 
 // EVERY SEARCH IS A VIEW OF A spirit.required.spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
 // spirit.required.spirit.data branch, no rows of their own"): the search takes no rows of its own, so each list here is made with a branch
-// of the real spirit.required.spirit.data (spirit/data/script.js, which runs in node), and the rows it shows are written into that branch.
+// of the real spirit.required.spirit.data (spirit/client/script.js, which runs in node), and the rows it shows are written into that branch.
 // branchOf(rows) makes a branch holding them; fill(branch, rows) makes it hold those rows, in that order, and no other.
-function loadData() { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'spirit/data/script.js' }); return window.spirit.required.spirit.data; }
+function loadData() { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'spirit/client/script.js' }); return window.spirit.required.spirit.data; }
 let REAL_DATA = loadData();
 let BRANCHES = 0;
 function rowOf(r) { const v = Object.assign({}, r); delete v.key; return v; }
@@ -126,7 +126,7 @@ function fill(b, rows) {
   (rows || []).forEach(function (r) { D.setPath(b + '/' + r.key, rowOf(r)); });
 }
 function branchOf(rows) { const b = 'searchTest/search/b' + (++BRANCHES); fill(b, rows); return b; }
-// The same two on a page, over the page's own spirit.required.spirit.data (spirit.js loads spirit/data/script.js as it gets ready): window.__fill and
+// The same two on a page, over the page's own spirit.required.spirit.data (spirit.js loads spirit/client/script.js as it gets ready): window.__fill and
 // window.__branchOf, put on the page before a search is made there.
 const PAGE_DATA = 'window.__nb = window.__nb || 0; ' +
   'window.__fill = function (b, rows) { var D = window.spirit.required.spirit.data; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
@@ -957,7 +957,7 @@ test.run('with data its rows are the branch\'s, drawn at once', 0.2, function ()
   watched = [];
   seatedIn = [];
   unwatched = 0;
-  // The branch as spirit/data/script.js holds it, id -> fields: the search reads a view's rows by branchAt (goal/G47.4), each filed
+  // The branch as spirit/client/script.js holds it, id -> fields: the search reads a view's rows by branchAt (goal/G47.4), each filed
   // by its id there.
   REAL_DATA = window.spirit.required.spirit.data;
   window.spirit.required.spirit.data = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
@@ -989,12 +989,12 @@ test.run('destroy drops the watch', 0.2, function () {
 }, test.limit.quick);
 // EVERY ROW OF THE BRANCH ITS OWN LINE, WHATEVER ITS FIELDS (goal/G47.4; Andy: "i want to see every single fucking grant row
 // that matches the fucking search, and not only one of many for a fucking family when the fucking verbs were fucking
-// granted separetely."). Over the real spirit.required.spirit.data (spirit/data/script.js): a grant row's key field is its contact's key, so two
+// granted separetely."). Over the real spirit.required.spirit.data (spirit/client/script.js): a grant row's key field is its contact's key, so two
 // grants of one contact, filed apart in the branch by key and path, share that field; the list draws them as two rows.
 let c7b = null;
 test.run('over the real spirit.required.spirit.data, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
   window.spirit.required.spirit.data = undefined;
-  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'spirit/data/script.js' }); } catch (e) { return false; }
+  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'spirit/client/script.js' }); } catch (e) { return false; }
   // The node's grants, as a node's stream hands them (spirit/grant/client/script.js; goal/G49.21, once spirit/auth/data.js),
   // the branch the Grants app's list views.
   try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' }); } catch (e) { return false; }

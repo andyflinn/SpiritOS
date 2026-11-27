@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/element/table/test/row.js
 // The tests of spirit/app/agent/element/table/row.js, and of no other module (spec: ./row.md; goal/G41.4, goal/G41.28).
 // Its tables' shared element (../tableElement.js, spirit.required.spirit.app.agent.element.table.tableElement) is part of its tree and runs real beside it.
-// The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/data/script.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/client/script.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 // One test.run per test (goal/G47.2): each test does its step and judges it; what the steps make is kept below for the
@@ -115,7 +115,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'spirit', 'data', 'script.js'));
+  load(path.join(RUN, 'spirit', 'client', 'script.js'));
   D = global.window.spirit.required.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.nodeFacts.key; the row element requires the agent branch's interface (spirit/app/agent/api.js), which brings

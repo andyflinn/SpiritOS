@@ -2,7 +2,7 @@
 
 ## The caches part: one cache code in the browser and in node
 
-One cache code in the browser and in node, the data set's side (goal/G41.28). A test by name of `spirit/data/script.js`: the
+One cache code in the browser and in node, the data set's side (goal/G41.28). A test by name of `spirit/client/script.js`: the
 data set, and the two places a family's cache runs, a page and a server process that follows a stream (appServer). Its
 test, once `./data-caches.js`, is a section of `./script.js`.
 
@@ -17,7 +17,7 @@ what judges no branch. The numbers are those of the requirements before they mov
 ### Requirements
 
 2. **One code**:
-   - the data set is one file, `spirit/data/script.js`: `spirit.js` brings it to a page, appServer requires the same file;
+   - the data set is one file, `spirit/client/script.js`: `spirit.js` brings it to a page, appServer requires the same file;
    - appServer takes a family's cache from the family's own `data.js`.
 3. **The same rows make the same cache**: the desk's `data.js` and the data set, run in node as appServer
    runs them (required, on the process's global) and in a page's window as a page runs them (plain scripts,
@@ -30,7 +30,7 @@ what judges no branch. The numbers are those of the requirements before they mov
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
    from all documentation and all comments and all code and tests in the entire repo."*):
    - no client file (under `shell/`, `spirit/element/` or `spirit/app/`, but `shell/boot.js`, the face's own transport)
-     takes the node's stream itself (`event.subscribe`): only `spirit/data/script.js` takes it, for every client. Those paths
+     takes the node's stream itself (`event.subscribe`): only `spirit/client/script.js` takes it, for every client. Those paths
      are the test's; `boot.js` and `seal.js` have been in `spirit/shell/` since goal/G43.18, which the list does not
      reach, so `spirit/shell/seal/script.js` is not judged; the apps left in `shell/` are, and every app of `spirit/app/`,
      where the apps and the servers moved (goal/G43.20);
@@ -63,9 +63,9 @@ committed.
 
 ## The families part: every family at spirit.required.spirit.data.<name>
 
-The end state of goal/G43.7: every family at `spirit.required.spirit.data.<name>`, through `spirit/data/script.js`. Its test, once `./data-families.js`, is a section of `./script.js`. Each family is checked on its own, so the count of what is owed falls as each one moves.
+The end state of goal/G43.7: every family at `spirit.required.spirit.data.<name>`, through `spirit/client/script.js`. Its test, once `./data-families.js`, is a section of `./script.js`. Each family is checked on its own, so the count of what is owed falls as each one moves.
 
-Andy, box: *"we rename it spirit/data/script.js and it IS the the spirit.required.spirit.data object."*
+Andy, box: *"we rename it spirit/client/script.js and it IS the the spirit.required.spirit.data object."*
 
 ### Requirements
 
@@ -74,7 +74,7 @@ on a page) is judged on each branch folder by `../../test/script-sibling-general
 no one branch: one helper for all, no old names in the code, the shape of `spirit.required.spirit.data` and `spirit.app`, the cache by
 node, the reads moved.
 
-- `spirit/data/script.js` stands.
+- `spirit/client/script.js` stands.
 - Each family's own `data.js` (there, made with the one helper under its folder's name, rolling nothing by hand, the old file gone) is judged on each branch folder by `../../test/script-sibling-general.js`, its branch rules. That no code reads a `spirit.<name>Data`, or names the old cache manager or the old module, is that file's rule of every file (goal/G47.1). Andy's words in a comment are not judged.
 - On a page, each family's data comes with its interface (goal/G47.1: *"every api.js requires it's companion data.js,
   and is the only script to require that data.js"*): the page requires `spirit/app/script.js` for `app`,
@@ -93,4 +93,4 @@ The box names no helper, so the test finds it by its call: a function called wit
 
 - On a reconnect the cache stays (box v148; Andy: "THE FUCKING CACHE IS NOT WIPED OUT."): what a search seated is still there after a second snapshot, and the snapshot's jobs bring it up to date.
 - `whenReconnected(fn)` (box v148: on a reconnect every search a page shows runs once more): fn is told each time the page's stream comes back, so a search hears it without taking the node's stream itself (only this file does); answers its release. Not judged by this test: spirit/element/search/test/script.js judges a search asked again after a node restart.
-- Every server's remote row is filed here (goal/G47.5; Andy: *"all, agreed. spirit/data/script.js"*, not a server's own data.js, which *"would have to be duplicated for all servers"*): a job of module `spirit.app.<name>` whose app is `{ remote: { current, items, more } }` lands under `spirit.required.spirit.data.<name>.remote`; a later row of the same server replaces it, and another server's lands under its own name.
+- Every server's remote row is filed here (goal/G47.5; Andy: *"all, agreed. spirit/client/script.js"*, not a server's own data.js, which *"would have to be duplicated for all servers"*): a job of module `spirit.app.<name>` whose app is `{ remote: { current, items, more } }` lands under `spirit.required.spirit.data.<name>.remote`; a later row of the same server replaces it, and another server's lands under its own name.

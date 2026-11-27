@@ -113,7 +113,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   };
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
   window.spirit.eventStream = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
-  load(path.join(JS, '..', '..', 'spirit', 'data', 'script.js'));
+  load(path.join(JS, '..', '..', 'spirit', 'client', 'script.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };

@@ -22,7 +22,7 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   // ON A PAGE, THE DATA SET AS spirit.requireScript HANDS IT BACK (goal/G49.23; goal/G49.9: never read at its place), kept once loaded.
   var pageData = null;
   if (typeof require !== 'function' && root && root.spirit && typeof root.spirit.requireScript === 'function') {
-    Promise.resolve(root.spirit.requireScript('spirit/data/script.js')).then(function (d) { pageData = d || null; }, function () { /* not loaded: the form decides */ });
+    Promise.resolve(root.spirit.requireScript('spirit/client/script.js')).then(function (d) { pageData = d || null; }, function () { /* not loaded: the form decides */ });
   }
   function onPage() {
     var C = pageData && pageData.contact && pageData.contact.data;

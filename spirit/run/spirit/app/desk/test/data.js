@@ -6,7 +6,7 @@
 // section at the end: noTeamChat.
 // The tests of spirit/app/desk/data.js, and of no other module (spec: ./data.md;
 // goal/G41.11, goal/G41.24). The translator
-// runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data/script.js), which it writes into;
+// runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/client/script.js), which it writes into;
 // the desk's rows are handed in as appServer's listener hands them, jobs of module spirit/app/desk.
 
 const fs = require('fs');
@@ -18,7 +18,7 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 
 function world() {

@@ -803,11 +803,11 @@ test.run('on a page, the object the loader hands out carries _spiritPath, its ru
   const got = await T.wq.spirit.requireScript(PAGE_COMPONENT);
   return (!!got && got._spiritPath === PAGE_COMPONENT) || false;
 }, test.limit.quick);
-test.run('on a page, spirit/data/script.js required stands at spirit.required.spirit.data, the real one, and the require answers it', 0.2, async function () {
+test.run('on a page, spirit/client/script.js required stands at spirit.required.spirit.data, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   let onPage = null;
-  try { onPage = await wq.spirit.requireScript('spirit/data/script.js'); } catch (e) { onPage = null; }
+  try { onPage = await wq.spirit.requireScript('spirit/client/script.js'); } catch (e) { onPage = null; }
   const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.data;
   return (!!placed && typeof placed.makeFamily === 'function' && typeof placed.viewAt === 'function' && onPage === placed) || false;
 }, test.limit.quick);
@@ -899,7 +899,7 @@ test.run('on a page, a script never required has no place in spirit.required', 0
 
 // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
 // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
-// cache is spirit/data/script.js (spirit.required.spirit.data); spirit.js loads it when its client part starts, page and process alike.
+// cache is spirit/client/script.js (spirit.required.spirit.data); spirit.js loads it when its client part starts, page and process alike.
 // 7b. spirit.js loads the cache itself, on a page and in a process
 function isCache(d) { return !!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'; }
 test.run('on a page, once spirit.js has started, spirit.required.spirit.data is the cache, with nothing else loading it', 0.2, async function () {

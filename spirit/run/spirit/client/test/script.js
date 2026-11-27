@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/data/test/script.js
-// The tests of spirit/data/script.js, and of no other module (spec: ./script.md). The faceless layer runs in node:
+// spirit/run/spirit/client/test/script.js
+// The tests of spirit/client/script.js, and of no other module (spec: ./script.md). The faceless layer runs in node:
 // required, it answers its api and ranks with the spirit's own probability files.
 // The one test file of data.js: the caches part (one cache code in the browser and in node) and the families part
 // (every family at spirit.required.spirit.data.<name>, goal/G43.7), once data-caches.js and data-families.js, are sections of it, run
@@ -174,7 +174,7 @@ test.run('every job taken is handed to the translators with the api, with data o
   return jobs.length === 2 && jobs[0][0].type === 'x' && jobs[1][0].type === 'nodata' && jobs[0][1] === D ? true : false;
 }, test.limit.quick);
 
-// EVERY SERVER'S remote ROW, FILED HERE (goal/G47.5; Andy: "all, agreed. spirit/data/script.js", on where the data of appServer's
+// EVERY SERVER'S remote ROW, FILED HERE (goal/G47.5; Andy: "all, agreed. spirit/client/script.js", on where the data of appServer's
 // auto-verbs belongs: not a server's own data.js, "would have to be duplicated for all servers"): a server publishes
 // { remote: { current, items, more } } as a job of its module, spirit.app.<name>, and it lands under spirit.required.spirit.data['spirit.app.<name>'].remote,
 // a later row replacing it; filed under the module's id whole, where the panel listens (goal/G49.19). No server's data.js is loaded for it.
@@ -390,7 +390,7 @@ test.run('a translator added late on a page has its branch whole at once', 0.2, 
   return (LATE.P.get('job/a') || {}).n === 2 && (LATE.P.get('job/c') || {}).n === 1 ? true : false;
 }, test.limit.quick);
 
-// goal/G47.1, Q7, Andy: "For the detail missing files, shall spirit/data/script.js keep the whole file list for late loaders (1), or
+// goal/G47.1, Q7, Andy: "For the detail missing files, shall spirit/client/script.js keep the whole file list for late loaders (1), or
 // the late fs list ask the node for it (2)?" "then the choice is 1." The node's files are one job, spirit.fs, one update per
 // file (job.js:204, "data.command {op, path, at}"); a late fs mirror is handed the tree as it stands, every path once.
 const TREE = {};
@@ -430,7 +430,7 @@ test.run('a file deleted before the late loader came is not handed to it', 0.4, 
   return (made.indexOf('spirit/kept.js') !== -1 && made.indexOf('spirit/gone.js') === -1) || false;
 }, test.limit.quick);
 
-// in a process the cache sheds oldest first past a byte cap; a page has the same cap (goal/G49.8, box v3: "spirit/data/script.js caps a
+// in a process the cache sheds oldest first past a byte cap; a page has the same cap (goal/G49.8, box v3: "spirit/client/script.js caps a
 // page's cache at 4 MB, as a process's already is"; Andy: "the browser will need a cache limit", "I'd say 9000 rows are more than plenty")
 const CAP = {};
 test.run('in a process the cache has a cap, in bytes', 0.2, function () {
@@ -521,7 +521,7 @@ test.run('on a page, a branch\'s probability decides what goes: past 4 MB its lo
 // THE CACHES PART, once data-caches.js.
 // Once spirit/run/spirit/test/data-caches.js.
 // ONE CACHE CODE IN THE BROWSER AND IN NODE, THE DATA SET'S SIDE (goal/G41.28; spec: ./script.md). A test by name of
-// spirit/data/script.js, the data set. Andy, on G41.28: "WSL, make sure you assert that every family in the api tree HAS a
+// spirit/client/script.js, the data set. Andy, on G41.28: "WSL, make sure you assert that every family in the api tree HAS a
 // clientCacheManager, AND the a node.js Process like DeskClient uses the Exact same code as the browser for the cache
 // management. The only difference is the appServer serializes the cache to disk."
 //
@@ -560,14 +560,14 @@ function cachesRead() {
 // Andy: "we needed it so node.js based clients could share the exact same client code. please move the file to
 // repo:/spirit/run/spirit/spiritData.js". Every client's file, so it sits with spirit's own, not the shell's.
 // goal/G43.32: appServer loads it by spirit.requireScript and its run-root path, as every script loads the tree.
-test.run('the data set is one file: spirit.js brings spirit/data/script.js to a page, and appServer requires the same file', 0.2, function () {
+test.run('the data set is one file: spirit.js brings spirit/client/script.js to a page, and appServer requires the same file', 0.2, function () {
   cachesRead();
-  return !!/['"]spirit\/data\/script\.js['"]/.test(C.spiritJs) && /\.require(?:Script)?\(\s*['"]spirit\/data\/script\.js['"]\s*\)/.test(C.appServer) ? true
+  return !!/['"]spirit\/client\/script\.js['"]/.test(C.spiritJs) && /\.require(?:Script)?\(\s*['"]spirit\/client\/script\.js['"]\s*\)/.test(C.appServer) ? true
     : false;
 }, test.limit.quick);
-test.run('the data set is spirit/data/script.js', 0.2, function () {
+test.run('the data set is spirit/client/script.js', 0.2, function () {
   cachesRead();
-  return C.tracked.indexOf('spirit/data/script.js') !== -1 ? true : false;
+  return C.tracked.indexOf('spirit/client/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('appServer takes a branch\'s cache from the branch\'s own data.js', 0.2, function () {
   cachesRead();
@@ -576,7 +576,7 @@ test.run('appServer takes a branch\'s cache from the branch\'s own data.js', 0.2
 }, test.limit.quick);
 
 // ── 3. THE SAME ROWS, THE SAME CACHE: the same rows make the same spirit.required.spirit.data in node and in a page ──
-const DATA = path.join(RUN, 'spirit', 'data', 'script.js');
+const DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 const DESK = path.join(RUN, managerOf('desk'));
 // The desk's family is its id (goal/G49.19).
 const DESK_FAMILY = 'spirit.app.desk';
@@ -599,7 +599,7 @@ function inNode() {
   let out = null;
   try {
     const S = require(path.join(RUN, 'spirit', 'script.js'));
-    const SD = S.requireScript('spirit/data/script.js');
+    const SD = S.requireScript('spirit/client/script.js');
     S.requireScript(path.relative(RUN, DESK).split(path.sep).join('/'));
     SD.homeNode(SERVER);
     ROWS.forEach(function (row) { SD[DESK_FAMILY].data.published(JSON.parse(JSON.stringify(row))); });
@@ -613,7 +613,7 @@ function inPage() {
   win.window = win; win.spirit = {};
   vm.createContext(win);
   try {
-    vm.runInContext(fs.readFileSync(DATA, 'utf8'), win, { filename: 'spirit/data/script.js' });
+    vm.runInContext(fs.readFileSync(DATA, 'utf8'), win, { filename: 'spirit/client/script.js' });
     vm.runInContext(fs.readFileSync(DESK, 'utf8'), win, { filename: 'data.js' });
     if (!win.spirit.required.spirit.data[DESK_FAMILY]) return { threw: true };
     win.spirit.required.spirit.data.homeNode(SERVER);
@@ -653,13 +653,13 @@ test.run('no other module writes a cache file of its own', 0.2, function () {
 
 // ── 7. NO OTHER WAY: nothing keeps node rows but spirit.required.spirit.data, and no file names another way ──
 // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
-// item. no exceptions." A client that takes the node's stream itself keeps rows outside spirit.required.spirit.data: only spirit/data/script.js
+// item. no exceptions." A client that takes the node's stream itself keeps rows outside spirit.required.spirit.data: only spirit/client/script.js
 // takes it, for every client. boot.js is the face's own transport, before spirit (Andy: "boot.js MUST be an exception").
 // The node's own side (spirit/, kernel, events) serves the stream and is no client. The client list below names shell/
 // and shell/boot.js; goal/G43.18 moved boot.js and seal.js to spirit/shell/, which the list does not reach, so boot.js
 // stays out by its new place and spirit/shell/seal/script.js is not read; the apps left in shell/ still are, and every app of
 // spirit/app/, where the apps and the servers moved to (goal/G43.12, G43.17, G43.20).
-test.run('no client takes the node\'s stream itself: spirit/data/script.js takes it for all', 0.2, function () {
+test.run('no client takes the node\'s stream itself: spirit/client/script.js takes it for all', 0.2, function () {
   cachesRead();
   const clients = C.tracked.filter(function (f) { return !!/\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|spirit\/app)\//.test(f) && f !== 'shell/boot.js'; });
   const takers = clients.filter(function (f) { return !!/\bevent\.subscribe\(|\bev\.subscribe\(/.test(cacheCode(path.join(RUN, f))); });
@@ -673,7 +673,7 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
   const REPO = path.join(RUN, '..', '..');
   const OLD = [/\buncached\b/i, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
   const every = require('child_process').execFileSync('git', ['ls-files'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) {
-    return f && /\.(js|md|html|json)$/.test(f) && !/^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/spirit/data/test/script.js' && f !== 'spirit/run/spirit/data/test/script.md';
+    return f && /\.(js|md|html|json)$/.test(f) && !/^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/spirit/client/test/script.js' && f !== 'spirit/run/spirit/client/test/script.md';
   });
   const naming = every.filter(function (f) { let t = ''; try { t = fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return false; } return OLD.some(function (re) { return re.test(t); }); });
   return !naming.length ? true : false;
@@ -684,7 +684,7 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
 
 // THE FAMILIES PART, once data-families.js.
 // Once spirit/run/spirit/test/data-families.js.
-// The tests of goal/G43.7 (spec: ./script.md). Andy, the box: "we rename it spirit/data/script.js and it IS the the spirit.required.spirit.data
+// The tests of goal/G43.7 (spec: ./script.md). Andy, the box: "we rename it spirit/client/script.js and it IS the the spirit.required.spirit.data
 // object", "ALL "clientCacheManager.js" files will be converted to "data.js" files with the SAME pattern." Every check is per
 // family, so the count of what is owed falls as each family moves.
 const H = S.requireScript('spirit/test/headLessChrome.js');
@@ -707,10 +707,10 @@ const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/script.js' : NODE_FAMILIES.indexOf(n) !== -1 ? (newShape(path.join(RUN, 'spirit', n)) ? 'spirit/' + n + '/script.js' : 'spirit/' + n + '/api.js') : S.slashedPath(n) + '/api.js'; });
 const F = {};
 
-// data-families: spirit.required.spirit.data: every family at spirit.required.spirit.data.<name>, through spirit/data/script.js (goal/G43.7)
-// the box: "we rename it spirit/data/script.js"
-test.run('the file spirit/data/script.js exists', 0.2, function () {
-  return fs.existsSync(path.join(RUN, 'spirit', 'data', 'script.js')) ? true : false;
+// data-families: spirit.required.spirit.data: every family at spirit.required.spirit.data.<name>, through spirit/client/script.js (goal/G43.7)
+// the box: "we rename it spirit/client/script.js"
+test.run('the file spirit/client/script.js exists', 0.2, function () {
+  return fs.existsSync(path.join(RUN, 'spirit', 'client', 'script.js')) ? true : false;
 }, test.limit.quick);
 
 // Each family's own data.js, made with the one helper under its folder's name, is judged on each branch folder by

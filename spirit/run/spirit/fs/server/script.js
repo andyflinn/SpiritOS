@@ -40,11 +40,11 @@ const RUN_ROOT = path.join(__dirname, '..', '..', '..');
 // spirit.eventStream --> browsers and node processes"): the watcher writes each command into this process's
 // spirit.required.spirit.data, where spirit/fs/client/script.js files it as it does a page's stream, and reads it back from there.
 // fsWatching is the watcher whose tree it is, null once it stopped.
-const FS_HOME = 'local'; // the node's own name in its spirit.required.spirit.data, as a child that follows the stream names it (spirit/data/script.js)
+const FS_HOME = 'local'; // the node's own name in its spirit.required.spirit.data, as a child that follows the stream names it (spirit/client/script.js)
 let fsWatching = null;
 function fsDataset() { return spirit.requireScript('spirit/fs/dataset/script.js'); }
 function fsWrite(command) {
-  spirit.requireScript('spirit/data/script.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
+  spirit.requireScript('spirit/client/script.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
 }
 // A FOLDER'S FLAGS, EACH ITS FILTER'S ANSWER (goal/G49.15). has(path): the tree holds that path; read(path): that file's
 // text from disc, or null (live reads an app's node.json).
@@ -101,7 +101,7 @@ function start(rootDir, jobs) {
     if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }, read));
     fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
   });
-  spirit.requireScript('spirit/data/script.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
+  spirit.requireScript('spirit/client/script.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
   const has = function (q) { return !!tree.file(q); };
   // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
   const job = jobs.ownJob('spirit.fs');

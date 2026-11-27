@@ -2,7 +2,7 @@
 
 Its test is `./data.js`. The box (goal/G43.19, v16): *"it implements a database-table interface, also reflected in api.js and data.js"*, and 10: *"data.js on every open page follows that one job"*, `spirit.app.icons`.
 
-The translator runs as it does: in a window of its own beside the real `spirit.required.spirit.data` (`spirit/data/script.js`); a run's rows are handed in as the node's stream hands them, jobs of module `spirit.app.icons`.
+The translator runs as it does: in a window of its own beside the real `spirit.required.spirit.data` (`spirit/client/script.js`); a run's rows are handed in as the node's stream hands them, jobs of module `spirit.app.icons`.
 
 ## Requirements
 

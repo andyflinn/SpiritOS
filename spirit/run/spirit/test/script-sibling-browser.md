@@ -213,7 +213,7 @@ box is its own check, named by the element's path and the box's id chain."*
 - **All it sends goes through spirit** (goal/G41.27; Andy: *"can it assert that no element posts or fetches by itself,
   and that all wire-stuff goes through spirit?"*): every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon
   the page makes, watched from before its first script, is made by spirit's own code (`spirit.js`, its families,
-  `spirit/client/`, the page's data set `spirit/data/script.js`), told by the file the call was made in. The one
+  `spirit/client/`, the page's data set `spirit/client/script.js`), told by the file the call was made in. The one
   exception is `boot.js`, the face's own transport, now `spirit/shell/boot/script.js` (Andy: *"boot.js MUST be an exception to
   the rules."*).
   **Two reds outside goal/G41.28, still red** (Andy: *"WSL will drop Q23 from this item, and mark those two related reds
@@ -229,7 +229,7 @@ box is its own check, named by the element's path and the box's id chain."*
   (`shell-busy`), a button's `disabled`, `aria-busy` or class, and fine print (`job-manifest-note`, `job-start-error`,
   `job-refusal`, `fine-print`). A press that sends no write is not judged. A child put into or taken out of a node is
   judged by itself, so a busy mark put into its button is a busy mark. The watch ends at the node's answer, at the
-  first stream event, or at a search answer seated into spirit.required.spirit.data (*"merged into the tree like any event"*, spirit/data/script.js),
+  first stream event, or at a search answer seated into spirit.required.spirit.data (*"merged into the tree like any event"*, spirit/client/script.js),
   whichever comes first. Before each watched press an open dropdown is shut by a press on the page
   outside every element, so its closing is not counted against the next press.
 - **Its searches match the whole row** (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and

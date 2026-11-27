@@ -58,7 +58,7 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   D = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';

@@ -418,10 +418,10 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js comes with its api.js, and the stand-in require above runs the real file for it.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });

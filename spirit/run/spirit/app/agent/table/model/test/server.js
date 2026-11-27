@@ -217,7 +217,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), row: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
   // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
-  // requires its companion data.js; the data set (spirit/data/script.js) is run below.
+  // requires its companion data.js; the data set (spirit/client/script.js) is run below.
   const ANSWERS = { 'spirit/element/search/script.js': STAND.search, 'spirit/element/rowForm/script.js': STAND.rowForm, 'spirit/element/busyButton/script.js': STAND.busyButton,
     'spirit/app/agent/element/table/tableElement.js': Object.assign({}, STAND.agentDetail, STAND.agentTable), 'spirit/app/agent/element/table/row.js': STAND.agentRow };
   const ran = {};
@@ -237,10 +237,10 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
   // (spirit/test/headLessChrome.js pageSpirit).
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js is loaded by its api.js, through the stand-in above.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });
