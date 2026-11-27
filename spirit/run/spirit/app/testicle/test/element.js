@@ -537,8 +537,10 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
 // spirit/app/testicle/data.js names; nothing is asked of the node for it.
 const ETA_TEST = 'eta answers its question';
 const pageTests = function () {
-  return c.evaluate('(function () { var R = window.spirit.client["spirit.app.testicle"] && window.spirit.client["spirit.app.testicle"].data; if (!R) return null; ' +
-    'var b = window.spirit.client.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
+  // THE PAGE'S TEST ROWS FROM THE BRANCH THE REQUIRE HANDS BACK (goal/G49.23, cw: "spirit.requireScript('spirit/app/testicle/api.js')
+  // hands back the branch, its data.rows('testicle') is key -> row"), never the store by a name.
+  return c.evaluate('Promise.resolve(window.spirit.requireScript("spirit/app/testicle/api.js")).then(function (br) { var R = br && br.data; if (!R || typeof R.rows !== "function") return null; ' +
+    'var b = R.rows("testicle") || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }, function () { return null; })');
 };
 const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
 let flipSet = null, kept = null;
