@@ -11,7 +11,10 @@
 // handleFsSave, handleFsDelete), so spirit.js hands back the same answers and the same refusals on both sides; or
 // undefined for a verb this half does not answer, which then goes to the node as before. search is such a verb: it ranks
 // the node's file tree, which the node holds.
-const FS = require('../fileSystem/script.js');
+// The spirit object first, the tree through spirit.requireScript (the general module rules; wsl's find): in node it hands a
+// script's module.exports back at once.
+require('../../script.js');
+const FS = spirit.requireScript('spirit/fs/fileSystem/script.js');
 
 function path(args) { return String((args && args.path) || ''); }
 function written(r) {
