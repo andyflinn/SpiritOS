@@ -2670,6 +2670,11 @@ if (!GIVEN.length) {
       if (wrapped) a = wrapped[1];
       else a = a.replace(/\)$/, '').trim();
       if (FULL.test(a)) continue;
+      // A WHOLE PATH HELD IN A NAME (goal/G49.23, Q7; Andy: "yes, aggreed." to "a path that comes whole (wire, user, fs cache), or
+      // the loader's parent lookup: may requireScript take it held in a name"; and Q6: slashedPath/dottedPath "are exactly for
+      // that"): a name or a field, x or o.path, is handed in as it is. A path glued from pieces stays red where it is glued: the
+      // checks beside this one judge every 'spirit/' + a word, every .split('.').join('/') and every + 'script.js' in product code.
+      if (/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/.test(a)) continue;
       if (/^[A-Za-z_$][\w$]*$/.test(a)) {
         // A helper's parameter, at any place in its list: function <name>(..., a, ...) whose every call in the file hands a
         // full path there.
@@ -2713,7 +2718,7 @@ if (!GIVEN.length) {
     }
     return bad;
   };
-  test.run('every spirit.requireScript in product code is handed a full path, \'spirit/<...>.js\', written out as one string', 0.6, function () {
+  test.run('every spirit.requireScript in product code is handed a full path, \'spirit/<...>.js\', written out as one string or held whole in a name', 0.6, function () {
     const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
     if (files.length < 100) return false;
     return !files.some(function (f) { return unfull(f).length > 0; }) || false;
