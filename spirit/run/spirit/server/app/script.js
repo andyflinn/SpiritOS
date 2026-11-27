@@ -864,8 +864,7 @@ function withAgents(verbs, script) {
 // for an API call MUST be validated twice: a) on the browser ... b) ON THE FUCKING NODE ... and it MUST be the same code",
 // and "appClient.js has no business running or parsing code. that must be done by the plugin. i don't care if it's
 // spirit/server/app/script.js, since it'll crash with the server process and leave the node intact." So the same spirit.checkArgs the
-// page runs, against the branch's api.js where spirit.requireScript placed it (spirit.required.spirit.app.<name>.api), before the
-// handler. THE AUTO-VERBS' ARGUMENTS NAME THEIR TYPES TOO (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*";
+// page runs, against what the branch's api.js puts out, loaded by its path, before the handler. THE AUTO-VERBS' ARGUMENTS NAME THEIR TYPES TOO (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*";
 // Andy: "aren't there more undefined args?"): appServer's own DEBUG, listener and remote, which no api.js declares, are
 // checked by the same spirit.checkArgs against AUTO_RULES; a verb neither declares goes on unchecked, as before.
 const AUTO_RULES = {
@@ -882,24 +881,34 @@ function withChecked(verbs, script) {
   // The branch a refusal names: the app's id, its folder in dots (goal/G49.19).
   const branch = spirit.dottedPath(dir);
   if (!fs.existsSync(path.join(RUN_ROOT, apiPath))) return verbs;
-  // spirit.requireScript places the file at once; its binding asks a node, which this check needs nothing of.
-  try { Promise.resolve(spirit.requireScript(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }
-  // Its place since goal/G49.23 is on the spirit object itself, spirit/app/desk/api.js at spirit.app.desk.api (box v21: no
-  // spirit.required). Still a read at its place, as before: Andy's to say whether the loader should hand it back at once in node.
-  const api = (dir + '/api').split('/').slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit);
-  const declaredVerbs = api && api.verbs && typeof api.verbs === 'object' ? api.verbs : null;
-  if (!declaredVerbs) return verbs;
+  // THE DEFINITION AS THE REQUIRE HANDS IT BACK (goal/G49.23; Andy: "if you know a branches path, you know how to load the
+  // branches ./script.js"): spirit.requireScript of the app's api.js by its path answers the branch, its verbs each with its
+  // argument rules; never read at a place on the spirit object (goal/G49.9). A call waits for that answer, then is checked.
+  // One that cannot be had leaves every call refused, never unchecked.
+  const NO_VERBS = {};
+  let defined = null;
+  try { defined = Promise.resolve(spirit.requireScript(apiPath)).then(function (b) { return b && b.verbs && typeof b.verbs === 'object' ? b.verbs : NO_VERBS; }, function () { return null; }); } catch (e) { return verbs; }
   const out = Object.assign({}, verbs);
   Object.keys(out).forEach(function (v) {
-    const declared = Object.prototype.hasOwnProperty.call(declaredVerbs, v);
-    if ((!declared && !Object.prototype.hasOwnProperty.call(AUTO_RULES, v)) || !out[v] || typeof out[v].handler !== 'function') return;
+    if (!out[v] || typeof out[v].handler !== 'function') return;
     const own = out[v].handler;
-    const rule = declared ? declaredVerbs[v] : AUTO_RULES[v];
     out[v] = Object.assign({}, out[v], {
-      handler: function (a, caller) {
-        const bad = spirit.checkArgs(branch + '.' + v, rule, a);
-        if (bad) throw Object.assign(new Error(String(bad.message || 'bad-request')), { refusal: bad.refusal && errors.byCode(bad.refusal) ? bad.refusal : 'bad-request', extra: { why: String(bad.message || '') } });
-        return own.apply(this, arguments);
+      handler: function () {
+        const self = this;
+        const given = arguments;
+        return defined.then(function (declaredVerbs) {
+          if (!declaredVerbs) throw Object.assign(new Error('its interface did not load'), { refusal: 'bad-request', extra: { why: branch + ': its interface did not load' } });
+          // An api.js that declares no verbs checks nothing, the auto-verbs neither, as before.
+          if (declaredVerbs === NO_VERBS) return own.apply(self, given);
+          const declared = Object.prototype.hasOwnProperty.call(declaredVerbs, v);
+          // A verb neither its api.js nor AUTO_RULES declares goes on unchecked, as before.
+          const rule = declared ? declaredVerbs[v] : AUTO_RULES[v];
+          if (rule) {
+            const bad = spirit.checkArgs(branch + '.' + v, rule, given[0]);
+            if (bad) throw Object.assign(new Error(String(bad.message || 'bad-request')), { refusal: bad.refusal && errors.byCode(bad.refusal) ? bad.refusal : 'bad-request', extra: { why: String(bad.message || '') } });
+          }
+          return own.apply(self, given);
+        });
       },
     });
   });
