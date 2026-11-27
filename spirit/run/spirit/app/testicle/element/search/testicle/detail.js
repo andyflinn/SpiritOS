@@ -1,4 +1,7 @@
 'use strict';
+// IN A FUNCTION OF ITS OWN (goal/G49.23; the browser rule "it does not pollute the window namespace"): a page may load this file by a
+// plain script tag, so nothing it declares stands on the window; what it hands out goes through module.exports.
+(function () {
 // THE BRANCHES IT READS, AS spirit.requireScript HANDS THEM BACK (goal/G49.23, box v22 Part 1: "an element reads a branch's rows from
 // the branch spirit.requireScript hands back; it asks for no client"): each kept once loaded, its rows on it, a new-shape branch's
 // as client, an old-shape branch's as data.
@@ -170,4 +173,5 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
 
   // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
   module.exports = { create: create };
+}());
 }());

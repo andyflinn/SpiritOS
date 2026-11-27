@@ -709,15 +709,16 @@
   // own script has run, needing nothing farther from the root; what lies under it waits for that connect only, so nothing waits
   // in a circle, its own client neither. A folder above is a branch by its mark in the fs cache (Andy: "the page knows from it's
   // fs-cache which parent nodes in the file tree are branches."; spirit/fs/filter/branch/script.js: script.js and
-  // client/script.js); until that cache is ready, by looking its client/script.js up, once and remembered, never by waiting for
-  // the cache (the fs branch's own load needs scripts that would then wait for it). An element's folder above (the search
+  // client/script.js); until that cache is ready, by the node's spirit.fs.stat of its client/script.js, once and remembered, never by
+  // waiting for the cache (the fs branch's own load needs scripts that would then wait for it). A stat through the door, not a fetch
+  // of the file: a folder that is no branch answers the stat no, where a fetch of its absent client asked for a missing file (the
+  // browser rules "every file it asks for is there" and "it says no error on the console"). An element's folder above (the search
   // element's, above the file search) is none. The spirit object itself is loaded already.
   var branchFolder = Object.create(null);
   // THE STORE AND THE LIMITS AS THE REQUIRE HANDS THEM BACK (goal/G49.23; goal/G49.9: never read at their place), kept for the
   // loader's own reads: the fs cache's branch marks, the page's home node, a face call's size.
   var STORE = null;
   var LIMITS = null;
-  var looked = Object.create(null);
   function isBranchFolder(dir) {
     // The fs client as the loader placed it, at spirit.fs.client (goal/G49.23, box v22 Part 1); the loader reads what it placed itself.
     var fsData = placedAt('spirit/fs/client/script.js');
@@ -726,9 +727,9 @@
       return Promise.resolve(!!(row && row.branch === true));
     }
     if (!branchFolder[dir]) {
-      // Its answer is kept for the load that follows, so no file is fetched twice.
-      var lookedPath = dir + '/client/script.js';
-      branchFolder[dir] = get(lookedPath).then(function (r) { if (r && r.status === 200) looked[lookedPath] = r; return !!r && r.status === 200; }, function () { return false; });
+      branchFolder[dir] = post('spirit.fs.stat', { path: dir + '/client/script.js' }).then(function (r) {
+        return !!r && (r.status === undefined ? typeof r.size === 'number' : r.status === 200);
+      }, function () { return false; });
     }
     return branchFolder[dir];
   }
@@ -805,7 +806,7 @@
     if (requiredOnce[p]) { if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
     // A script the page loaded by its own tag (the home shell's index.html) has run: it counts as required.
     if (loadedByTag(p)) { connected(p); requiredOnce[p] = Promise.resolve(keptAt(p)); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
-    var answer = parentsFirst(p).then(function () { var kept = looked[p]; if (kept) { delete looked[p]; return kept; } return get(p); }).then(function (r) {
+    var answer = parentsFirst(p).then(function () { return get(p); }).then(function (r) {
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
       var outer = collecting;
       var tree = collecting = [];

@@ -1,4 +1,7 @@
 'use strict';
+// IN A FUNCTION OF ITS OWN (goal/G49.23; the browser rule "it does not pollute the window namespace"): a page may load this file by a
+// plain script tag, so nothing it declares stands on the window; what it hands out goes through module.exports.
+(function () {
 // spirit/run/spirit/app/testicle/element/statusBox.js
 // THE STATUS BOX, AN ELEMENT OF ITS OWN (goal/G47.1, box v134-135: "every part of testicle's face is an element of its own,
 // just spirit/app/testicle/element/<element-name>.js", "element/statusBox.js (the monitor row with its status box)"). It was
@@ -146,4 +149,5 @@
 
   // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
   module.exports = { create: create };
+}());
 }());

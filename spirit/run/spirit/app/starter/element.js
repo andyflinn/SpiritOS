@@ -1,4 +1,7 @@
 'use strict';
+// IN A FUNCTION OF ITS OWN (goal/G49.23; the browser rule "it does not pollute the window namespace"): a page may load this file by a
+// plain script tag, so nothing it declares stands on the window; what it hands out goes through module.exports.
+(function () {
 // spirit/run/spirit/app/starter/element.js
 // THE SMALLEST APP, IN THE SHAPE OF spirit/app/ (goal/G43.27). Andy: "cw, you bring deskClient and ... into
 // spirit/app/ under their old names, do the backup as well (and fix it) and starter as well". Copy this folder to begin:
@@ -48,4 +51,5 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
   module.exports = { create: create };
+}());
 }());
