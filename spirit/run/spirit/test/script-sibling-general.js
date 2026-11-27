@@ -74,7 +74,19 @@ function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } cat
 // NOBODY ADDS A BRANCH PAST THE RULES: the tree is every file git keeps and every file not yet added that git does not
 // ignore, so a new app's branch is judged before it is committed.
 const tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
-const ALL = branchesOf(RUN);
+// NEW-SHAPE BRANCHES TOO (goal/G49.15, box v16; goal/G49.23): a folder holding script.js and client/script.js, by the system's
+// own rule, spirit/fs/filter/branch/script.js; branchesOf knows the old shape (api.js and data.js) and the apps alone.
+const BRANCH_FILTER = SPIRIT.requireScript('spirit/fs/filter/branch/script.js');
+const ALL = (function () {
+  const old = branchesOf(RUN);
+  const known = old.map(function (b) { return b.dir; });
+  const inTree = function (rel) { return tracked.indexOf(rel) !== -1 && has(rel); };
+  const dirs = tracked.filter(function (f) { return /^spirit\/.+\/script\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f); })
+    .map(function (f) { return path.posix.dirname(f); });
+  const fresh = dirs.filter(function (d, i) { return dirs.indexOf(d) === i && known.indexOf(d) === -1 && BRANCH_FILTER.branch(d, inTree) === true; })
+    .map(function (d) { return { dir: d, name: path.posix.basename(d), kind: 'branch' }; });
+  return old.concat(fresh).sort(function (x, y) { return x.dir < y.dir ? -1 : 1; });
+}());
 // WHAT FITS (box v94, 2: "all scripts listed in the arguments that fit"): a branch folder, or a file in one, which is judged
 // as its branch; anything in no branch is not this part's, and it judges nothing.
 const handed = ARGS[0] ? String(ARGS[0]).replace(/^\.\//, '').replace(/^spirit\/run\//, '').replace(/\/$/, '') : '';
@@ -1731,7 +1743,9 @@ const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
 // The vendored libraries' old place (goal/G43.25), and the suites that name it on purpose: job.js's, which compares the
 // libraries with the commit before their move, and fileSystem's and deskClient's.
 const OLD_NODE_MODULES = /spirit\/run\/node_modules/;
-const NODE_MODULES_ON_PURPOSE = /^spirit\/run\/spirit\/test\/(job|fileSystem)\.(js|md)$|^spirit\/run\/spirit\/app\/deskClient\/test\/deskClient\.(js|md)$/;
+// goal/G49.23: those suites stand at their scripts' tests now, spirit/job/engine/test/script.js and spirit/fs/server/test/script.js
+// (the job and fileSystem suites, moved with their scripts); deskClient is gone.
+const NODE_MODULES_ON_PURPOSE = /^spirit\/run\/spirit\/(job\/engine|fs\/server)\/test\/script\.(js|md)$/;
 // Each line of a script's code, its comments left out (a comment may quote Andy), that matches re, as <file>:<line>.
 // With bare, each line read alone, its strings and its comment left out: a test's title, message or regular expression may
 // name an old home to say it is gone, and a line read alone is not misled by a quote mark inside a regular expression above it.
@@ -1889,7 +1903,7 @@ const NG_LAB = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const NODE_GLOBALS_PROBE = 'const path = require("path"); const fs = require("fs"); const g0 = Object.getOwnPropertyNames(globalThis), p0 = Object.getOwnPropertyNames(process); let err = "";' +
   'process.on("exit", function () { try { fs.writeSync(1, "\\n@@" + JSON.stringify({ err: err, g: Object.getOwnPropertyNames(globalThis).filter(function (k) { return g0.indexOf(k) === -1; }),' +
   ' p: Object.getOwnPropertyNames(process).filter(function (k) { return p0.indexOf(k) === -1; }) }) + "\\n"); } catch (e) { /* gone */ } });' +
-  'try { const s = require(path.join(process.cwd(), "spirit", "spirit.js")); s.requireScript(process.argv[1]); } catch (e) { err = String(e && e.message || e); }' +
+  'try { const s = require(path.join(process.cwd(), "spirit", "script.js")); s.requireScript(process.argv[1]); } catch (e) { err = String(e && e.message || e); }' +
   'process.exit(0);';
 // { err, leaks }: leaks the names this script's own code put on globalThis (global) or process; null when it could not be
 // loaded at all.
@@ -2021,7 +2035,8 @@ function every() {
   test.run('under spirit/element/search/ every name is a word, and every folder sits beside its <name>.js', 0.4, function () {
     const at = path.join(RUN, 'spirit', 'element', 'search');
     const top = fs.existsSync(at) ? fs.readdirSync(at, { withFileTypes: true }).filter(function (d) { return d.name !== 'test'; }) : [];
-    const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !fs.existsSync(path.join(at, d.name + '.js')) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
+    // goal/G49.5: <name>.js became <name>/script.js, so the search element stands in its own folder, its script.js beside its parts.
+    const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !(fs.existsSync(path.join(at, d.name + '.js')) || fs.existsSync(path.join(at, d.name, 'script.js'))) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
     return (top.length > 0 && !odd.length) || false;
   }, test.limit.quick);
   test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
@@ -2830,19 +2845,23 @@ if (!GIVEN.length) {
   // "spirit/joinStepsJob/ --> spirit/job/joinStepsJob/", "spirit/job/api.js --> spirit/job/script.js", "spirit/job/data.js -->
   // spirit/job/client/script.js", and "spirit.processJob() leaves spirit/script.js and becomes spirit/job/processJob/script.js".
   const inTree = function (rel) { return shFs.existsSync(shPath.join(SH.run, rel)); };
+  // ONE PLAIN TITLE EACH, ITS PATH THE SCRIPT IT IS REPORTED FOR (goal/G49.23: the title rule, "every title is one plain string,
+  // nothing built into it"; it read rel + ' is there').
+  const isThere = function (rel) { test.run('the moved script is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick, { script: rel }); };
+  const isGone = function (rel) { test.run('the old path is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick, { script: rel }); };
   ['spirit/job/engine/script.js', 'spirit/job/joinStepsJob/script.js', 'spirit/job/client/script.js', 'spirit/job/processJob/script.js'].forEach(function (rel) {
-    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+    isThere(rel);
   });
   ['spirit/job/api.js', 'spirit/job/data.js', 'spirit/joinStepsJob'].forEach(function (rel) {
-    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+    isGone(rel);
   });
   // THE APP BRANCH IN THE NEW SHAPE (goal/G49.20, box v31): "spirit/app/script.js --> spirit/app/manager/script.js",
   // "spirit/app/api.js --> spirit/app/script.js", "spirit/app/data.js --> spirit/app/client/script.js".
   ['spirit/app/manager/script.js', 'spirit/app/client/script.js'].forEach(function (rel) {
-    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+    isThere(rel);
   });
   ['spirit/app/api.js', 'spirit/app/data.js'].forEach(function (rel) {
-    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+    isGone(rel);
   });
   // SOME TRUNK MOVES, AND THE AUTH TABLES AS BRANCHES (goal/G49.21, box v24): "spirit/client/packet.js -->
   // spirit/peer/packet/script.js", apiTreeIndex and boxes into spirit/fuckingGarbage/, "delete the directory spirit/client/";
@@ -2852,15 +2871,15 @@ if (!GIVEN.length) {
   ['spirit/peer/packet/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/fuckingGarbage/boxes.js', 'spirit/grant/auth/script.js',
     'spirit/grant/script.js', 'spirit/grant/client/script.js', 'spirit/bundle/script.js', 'spirit/bundle/client/script.js',
     'spirit/branch/script.js', 'spirit/branch/client/script.js'].forEach(function (rel) {
-    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+    isThere(rel);
   });
   ['spirit/boxes', 'spirit/apiAuth', 'spirit/authTableInterface', 'spirit/grant/tables', 'spirit/auth'].forEach(function (rel) {
-    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+    isGone(rel);
   });
   // spirit/client CAME BACK AS THE STORE (goal/G49.23; Andy: "do move spirit/data/ to spirit/client/ first"): what G49.21 took
   // out of it stays out; it holds the store, spirit/client/script.js.
   ['spirit/client/packet.js', 'spirit/client/apiTreeIndex.js'].forEach(function (rel) {
-    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+    isGone(rel);
   });
   test.run('spirit/client/script.js is there', 0.2, function () { return inTree('spirit/client/script.js') || false; }, test.limit.quick);
   test.run('no product script requires spirit/client/packet.js; the spirit object requires spirit/peer/packet/script.js', 0.2, function () {
@@ -2876,11 +2895,11 @@ if (!GIVEN.length) {
   ['spirit/peer/relay/key/seal/script.js', 'spirit/peer/door/script.js', 'spirit/peer/relay/key/script.js', 'spirit/app/adapter/script.js',
     'spirit/peer/arrivals/script.js', 'spirit/fs/coreFiles/script.js', 'spirit/console/loop/script.js', 'spirit/console/command/script.js',
     'spirit/contact/engine/script.js', 'spirit/contact/client/script.js'].forEach(function (rel) {
-    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+    isThere(rel);
   });
   ['spirit/answerRelay', 'spirit/apiDoor', 'spirit/relayKeys', 'spirit/appClient', 'spirit/arrivals', 'spirit/coreFiles',
     'spirit/console/loop.js', 'spirit/console/command.js', 'spirit/contact/api.js', 'spirit/contact/data.js'].forEach(function (rel) {
-    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+    isGone(rel);
   });
   test.run('spirit/contact/script.js is the contact branch\'s interface: the same thirteen verbs as before', 0.2, function () {
     let m = null;
@@ -2941,10 +2960,10 @@ if (!GIVEN.length) {
     return !files.some(function (f) { return /\.processJob\b/.test(codeText(f)); }) || false;
   }, test.limit.quick);
   ['spirit/app/testicle/server/server.js', 'spirit/app/icons/server/server.js', 'spirit/app/publishData/publishData.js', 'spirit/server/app/script.js', 'spirit/script.js'].forEach(function (rel) {
-    test.run(rel + ' requires spirit/job/processJob/script.js by its path', 0.2, function () {
+    test.run('it requires spirit/job/processJob/script.js by its path', 0.2, function () {
       // The spirit object loads its own parts by requireOne, the function its requireScript is (spirit/script.js).
       return /require(Script|One)\(\s*['"]spirit\/job\/processJob\/script\.js['"]\s*\)/.test(codeText(rel)) || false;
-    }, test.limit.quick);
+    }, test.limit.quick, { script: rel });
   });
 }
 if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });

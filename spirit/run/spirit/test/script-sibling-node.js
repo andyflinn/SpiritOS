@@ -45,12 +45,16 @@ function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && f !== 'spirit/script.js' && fs.existsSync(path.join(RUN, f)); });
 }
+const BRANCH_FILTER = S.requireScript('spirit/fs/filter/branch/script.js');
+function isBranchScript(rel) { return /\/script\.js$/.test(rel) && BRANCH_FILTER.branch(path.posix.dirname(rel), function (p) { return fs.existsSync(path.join(RUN, p)); }) === true; }
 function requireOnNode(run, rel) {
   return new Promise(function (resolve) {
     // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
     // answers at once and stands at its place as that answer.
-    const iface = /\/api\.js$/.test(rel);
-    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
+    // A new-shape branch's script.js is its interface too (goal/G49.23; the system's own rule, spirit/fs/filter/branch/script.js):
+    // bound as an api.js is, so judged the same way.
+    const iface = /\/api\.js$/.test(rel) || isBranchScript(rel);
+    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "script.js"));' +
       '(async function () { let at = null, err = false, promise = false; try { at = s.requireScript(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = !!String(e && e.message || e); }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';

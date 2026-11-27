@@ -155,9 +155,10 @@ test.run('startNodeOn starts a node on a tree lab handed out, and refuses a run 
   if (!r || r === 'waiting' || r.error) return false;
   return (r.up === true && /no lab node/.test(r.refused)) || false;
 }, test.limit.long);
+// Its tree judged by the spirit object's own file, spirit/script.js (goal/G49.23: spirit/server.js is gone, the node is spirit/server/script.js).
 test.run('freeTree frees the lab node and deletes nothing: its tree is still there, its lock gone', 0.4, async function () {
   const r = await inChild('const t = H.scratchTree(); const lock = require("path").join(' + JSON.stringify(LAB_NODES) + ', t.name + ".lock"); const held = require("fs").existsSync(lock); H.freeTree({ root: t.root, run: t.run });' +
-    ' console.log("@@" + JSON.stringify({ held: held, lock: require("fs").existsSync(lock), tree: require("fs").existsSync(require("path").join(t.run, "spirit", "server.js")) })); setTimeout(function () { process.exit(0); }, 200);', 120000);
+    ' console.log("@@" + JSON.stringify({ held: held, lock: require("fs").existsSync(lock), tree: require("fs").existsSync(require("path").join(t.run, "spirit", "script.js")) })); setTimeout(function () { process.exit(0); }, 200);', 120000);
   if (!r || r === 'waiting' || r.error) return false;
   return (r.held === true && r.lock === false && r.tree === true) || false;
 }, test.limit.long);

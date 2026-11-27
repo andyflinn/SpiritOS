@@ -37,7 +37,14 @@ const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude
 // THE ONE SUB-FOLDER WITH NO MANIFEST (the box: "spirit/app/test/ is the app branch's own test folder (its api.js and
 // data.js), the one sub-folder with no manifest.").
 const BRANCH_TESTS = 'test';
-const APPS = Array.from(new Set(TREE.map(function (f) { const m = /^spirit\/app\/([^/]+)\//.exec(f); return m ? m[1] : ''; }).filter(Boolean))).sort();
+// WHAT IS AN APP, THE SYSTEM'S OWN RULE SAYS (goal/G49.23; Andy: "the system has clear rules for old and new format branches
+// and apps"): the sub-folders spirit/fs/filter/app/script.js takes for apps, old format or new. The app branch's own scripts
+// (spirit/app/manager/, spirit/app/client/, spirit/app/adapter/) are no app.
+const APP_FILTER = spirit.requireScript('spirit/fs/filter/app/script.js');
+function treeHas(rel) { return TREE.some(function (f) { return f === rel || f.indexOf(rel + '/') === 0; }); }
+function treeRead(rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return null; } }
+const APPS = Array.from(new Set(TREE.map(function (f) { const m = /^spirit\/app\/([^/]+)\//.exec(f); return m ? m[1] : ''; }).filter(Boolean))).sort()
+  .filter(function (n) { return n === BRANCH_TESTS || APP_FILTER.app('spirit/app/' + n, treeHas, treeRead) === true; });
 
 // Asked about one file: the app it is in. spirit/app/manager/script.js and the branch's own files (spirit/app/<file>, spirit/app/test/)
 // are judged with every app, since they are no app's.
@@ -107,7 +114,8 @@ function appApp() {
   }, test.limit.quick);
   test.run('the app branch is intrinsic, its six parts (changeAppIcon to serverDEBUG) standing in spirit/element/search/app/', 0.4, function () {
     const parts = ['changeAppIcon', 'changeAppLabel', 'detail', 'rowFormAppActive', 'rowFormToggle', 'serverDEBUG'];
-    const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '.js'); });
+    // goal/G49.23: each part is a folder of its own now, its script at <part>/script.js.
+    const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '/script.js'); });
     return !missing.length ? true : false;
   }, test.limit.quick);
 }

@@ -29,7 +29,10 @@ const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV
   .map(function (a) { return String(a).split(path.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, ''); });
 // Its reach: a script under spirit/app/<name>/, in no test folder. Handed nothing, every one the tree keeps.
 const appOf = function (rel) { return (/^spirit\/app\/([^/]+)\/.+\.js$/.exec(rel) || [])[1] || ''; };
-const inReach = function (rel) { return !!appOf(rel) && !/(^|\/)test\//.test(rel) && fs.existsSync(path.join(RUN, rel)); };
+// A script the node never serves to a page (an app's server/ folder) is no page script (goal/G49.23: fileServable, the system's
+// own rule, is asked; its 404 was judged as a failed mount).
+const FILES = S.requireScript('spirit/fs/fileSystem/script.js');
+const inReach = function (rel) { return !!appOf(rel) && !/(^|\/)test\//.test(rel) && fs.existsSync(path.join(RUN, rel)) && FILES.fileServable(rel); };
 const TARGETS = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n')).filter(inReach);
 // What an app owes its elements: its api.js and data.js, where its folder holds them.
 const owed = function (app) { return ['api', 'data'].filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'app', app, n + '.js')); }); };
@@ -93,7 +96,7 @@ async function world() {
     if (W.chrome.error) { W.fail = true; return; }
     process.env.SPIRIT_CHROME_PORT = String(W.chrome.port);
   }
-  test.run('there are scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () { return true; }, test.limit.quick);
+  sayWorld();
   W.worldSaid = true;
   const closePage = function () { try { if (W.page && W.page.sock) W.page.sock.close(); } catch (e) { /* gone */ } try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ } try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } W.page = null; };
   for (const rel of TARGETS) {
@@ -262,6 +265,10 @@ function judgeApp(a) {
   });
 }
 
+// ITS WORLD, SAID IN ONE PLACE (goal/G49.23: the title rule, "no suite says one title twice"): green once it stands, red when it failed.
+function sayWorld() {
+  test.run('there are scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () { return !W.fail || false; }, test.limit.quick);
+}
 // EACH SCRIPT JUDGED THE MOMENT ITS PAGE IS READ (box v144: "every result reaches testicle the moment the page knows it"): its
 // test said at once, for its own script (test.forScript), while the run is held open (test.hold).
 function judge(rel) {
@@ -281,9 +288,7 @@ function judge(rel) {
 
 test.hold();
 world().then(null, function () { W.fail = true; }).then(function () {
-  if (!W.worldSaid) test.run('there are scripts under spirit/app/ to judge, a scratch node with their apps\' servers on, and a Chrome page', 0.2, function () {
-    return !W.fail || false;
-  }, test.limit.quick);
+  if (!W.worldSaid) sayWorld();
   // A script the world never reached, after it failed, is said too, red for that reason.
   TARGETS.forEach(function (rel) { if (!(rel in W.reports) && W.fail) judge(rel); });
   // The apps' checks are said too when the world or the apps phase never ran them, red for that reason.

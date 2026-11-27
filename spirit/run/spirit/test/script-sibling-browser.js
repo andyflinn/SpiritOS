@@ -113,8 +113,8 @@ async function batch() {
       });
       useScript(d.full || d.rel);
       test.forScript(d.rel, function () {
-        if (!d.full) test.run('the file it was handed is there', 0.2, function () { return false; }, test.limit.quick);
-        else if (!d.P) test.run('the file it was handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
+        if (!d.full) handedMissing();
+        else if (!d.P) handedNoPage();
         else oneFile(d.P);
       });
     }
@@ -146,8 +146,14 @@ function useScript(a) {
 // only those): known by its path alone, no code read; whether it installs an element the bare page says (session).
 function pageScript(file) {
   const f = String(file || '');
-  return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f);
+  // A script the node never serves to a page (spirit/DEBUG/, spirit/server/, an app's server/) is no page script (goal/G49.23:
+  // the system's own rule, fileServable, is asked; its pages were judged red on a 404).
+  return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && SERVABLE.fileServable(f);
 }
+const SERVABLE = SPIRIT.requireScript('spirit/fs/fileSystem/script.js');
+// A NODE-ONLY SCRIPT, AS THE CLASSIFIER TELLS ONE (spirit/test/scriptClassify.js LACKS_NODE, goal/G47.1 box v94): its page load
+// failed for want of node's own names or modules.
+const LACKS_NODE = /answered 404|\b(require|process|module|exports|__dirname|__filename|Buffer|global) is not defined\b|Cannot find module|\bfs\b.*not defined/;
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
@@ -187,6 +193,8 @@ const MOST_BYTES = (function () {
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
+// The loader's file, the spirit object's own, by where require resolves it (goal/G49.23).
+const LOADER_REL = path.relative(RUN, require.resolve('../script.js')).split(path.sep).join('/');
 const WATCH = String.raw`(function () {
   // The longest a probe waits for a redraw before it says none came (a limit, not a wait: its redraw ends it).
   var PROBE_LIMIT_MS = 1000;
@@ -205,7 +213,8 @@ const WATCH = String.raw`(function () {
   window.clearInterval = function (id) { W.intervals.forEach(function (x) { if (x.id === id) x.live = false; }); return clearI.apply(window, arguments); };
   // What lives now: listeners, intervals, and the elements on the page.
   W.held = function () { return { listeners: W.listeners.filter(function (x) { return x.live; }).length, intervals: W.intervals.filter(function (x) { return x.live; }).length, nodes: document.querySelectorAll('*').length }; };
-  var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/client\/script\.js|shell\/boot\.js)$/;
+  // goal/G49.23: the loader's own file as this process resolved it (spirit/script.js since it moved into the spirit folder).
+  var SPIRIT = new RegExp('(\\/' + ${JSON.stringify(LOADER_REL)}.replace(/[.\/]/g, '\\$&') + '|spirit-interface\\/|spirit\\/client\\/|spirit\\/client\\/script\\.js|shell\\/boot\\.js)$');
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
   function spirits(f) { return SPIRIT.test(file(f)); }
@@ -269,7 +278,7 @@ const WATCH = String.raw`(function () {
     // A write is the module's: made with its code on the way, spirit carrying it.
     // EVERY FAMILY IT CALLS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS"): the
     // family of each call its code made, read or write, spirit's own asks (the stream, an interface) left out.
-    if (moduleMade()) { try { var cb = JSON.parse(String((o && o.body) || '')); var fam = cb && typeof cb.call === 'string' && cb.call !== 'api' && cb.call !== 'spirit.subscribe' ? cb.call.split('.')[0] : ''; if (fam && W.families.indexOf(fam) === -1) W.families.push(fam); } catch (e) { /* no call */ } }
+    if (moduleMade()) { try { var cb = JSON.parse(String((o && o.body) || '')); var fam = cb && typeof cb.call === 'string' && cb.call !== 'api' && cb.call !== 'spirit.subscribe' ? cb.call : ''; if (fam && W.families.indexOf(fam) === -1) W.families.push(fam); } catch (e) { /* no call */ } }
     var w = moduleMade() ? isWrite(o && o.body) : null;
     if (!w) return realFetch.apply(this, arguments);
     W.writes.push(w); opened();
@@ -301,7 +310,7 @@ const WATCH = String.raw`(function () {
       try { Object.defineProperty(o, k, { configurable: true, enumerable: true, get: function () { if (last) done(at); return at; }, set: function (v) { at = v; took(v); } }); } catch (e) { /* kept as it is */ }
       if (at) took(at);
     }
-    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane'), mount: !!host && (host === (window.spiritMount && window.spiritMount.box) || (typeof host.hasAttribute === 'function' && host.hasAttribute('data-spirit-cycle'))) }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
+    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; var hd = x.data && typeof x.data === 'object' && typeof x.data.rows === 'function' ? x.data : null; (window.spiritSearchHandles = window.spiritSearchHandles || [])[W.searches.length] = hd; W.searches.push({ data: typeof x.data === 'string' ? x.data : hd ? String(hd.path || '') : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane'), mount: !!host && (host === (window.spiritMount && window.spiritMount.box) || (typeof host.hasAttribute === 'function' && host.hasAttribute('data-spirit-cycle'))) }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
   // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each path of the store (spirit.client) the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
   // a branch, or '<node>/<family>/<branch>/<row>', a row; a watch of the home node holds '~' for the node, the page's
@@ -353,8 +362,10 @@ const WATCH = String.raw`(function () {
     var D = window.spirit && window.spirit.client;
     return W.searches.map(function (x, i) {
       var host = (window.spiritSearchHosts || [])[i];
-      if (!host || !host.isConnected || !x.data || !D || typeof D.rowsOf !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
-      var held = {}; (D.rowsOf(x.data) || []).forEach(function (r) { held[String(r.key)] = true; });
+      // goal/G49.23: a search is handed a handle on its branch (<client>.handle(branch)): its rows are the handle's own.
+      var hd = (window.spiritSearchHandles || [])[i];
+      if (!host || !host.isConnected || !x.data || (!hd && (!D || typeof D.rowsOf !== 'function'))) return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
+      var held = {}; ((hd ? hd.rows() : D.rowsOf(x.data)) || []).forEach(function (r) { held[String(r.key)] = true; });
       // A search mounted inside another's host (branch's family filter in its 🪣 row) draws its own rows: they are judged
       // against its own branch, not this one's.
       var inner = (window.spiritSearchHosts || []).filter(function (h, j) { return j !== i && h && h !== host && host.contains(h); });
@@ -503,8 +514,6 @@ const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testRepo
   'script-sibling-generalRules.js', 'script-sibling-generalRules.md', 'script-sibling-noFuckingGarbage.js', 'script-sibling-noFuckingGarbage.md',
   'script-sibling-searchRules.js', 'script-sibling-searchRules.md', 'script-sibling-testReachRules.js', 'script-sibling-testReachRules.md',
   'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md'];
-// The tools of run://spirit/test/: tools, not tests (Q2).
-const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
 const SELF = ['script-sibling-browser.js', 'script-sibling-browser.md'];
 function gitIn(cwd, args) { return require('child_process').execFileSync('git', args, { cwd: cwd, encoding: 'utf8' }).split('\n').filter(Boolean); }
 function ignoredByGit(rel) {
@@ -645,7 +654,7 @@ function requireOnNode(run, rel) {
     // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
     // answers at once and stands at its place as that answer.
     const iface = /\/api\.js$/.test(rel);
-    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
+    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "script.js"));' +
       '(async function () { let at = null, err = false, promise = false; try { at = s.requireScript(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = true; }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
@@ -704,19 +713,19 @@ function every() {
     if (!chrome) return false;
     const page = E.page = await chromePage(chrome);
     if (!page || page.error) return false;
-    E.pageLoaded = []; E.pageBad = []; E.noFactory = [];
+    E.pageLoaded = []; E.pageBad = []; E.noFactory = []; E.nodeOnly = [];
     E.elements = [];
     for (const f of E.req) {
       await page.send('Page.navigate', { url: E.node.base + '/' });
       await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, WAIT);
       const keys = JSON.stringify(placeKeys(f));
       // goal/G49.23: what requireScript answered (its module.exports) told apart from what stands at its place.
-      const got = await page.evaluate('window.spirit.readyPromise.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.requireScript(' + JSON.stringify(f) + '); })' +
+      const got = await page.evaluate('window.spirit.readyPromise.then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String((e && e.message) || "error")); }); return spirit.requireScript(' + JSON.stringify(f) + '); })' +
         '.then(function (ans) { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
-        ' var el = at(spirit); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit) !== undefined, factory: !!el && typeof el.create === "function", answered: !!ans && typeof ans.create === "function", same: el === ans }); },' +
-        ' function () { return JSON.stringify({ err: true, placed: false, factory: false, answered: false, same: false }); })');
+        ' var el = at(spirit); return JSON.stringify({ why: (window.pageErrors || []).join("; "), err: (window.pageErrors || []).length > 0, placed: at(spirit) !== undefined, factory: !!el && typeof el.create === "function", answered: !!ans && typeof ans.create === "function", same: el === ans }); },' +
+        ' function (e) { return JSON.stringify({ why: String((e && e.message) || e), err: true, placed: false, factory: false, answered: false, same: false }); })');
       let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false, answered: false, same: false }; }
-      if (r.err) continue;
+      if (r.err) { if (LACKS_NODE.test(String(r.why || ''))) E.nodeOnly.push(f); continue; }
       E.pageLoaded.push(f);
       if (!r.placed) E.pageBad.push(f);
       if (isElementScript(f, r)) { E.elements.push(f); if (!r.factory || !r.same) E.noFactory.push(f); }
@@ -739,7 +748,12 @@ function every() {
     if (!nodeUp()) return false;
     if (!E.files2 || !E.files2.length) return false;
     const red = [];
-    for (const f of E.files2) {
+    // WHERE IT DOES NOT LOAD, NOTHING IS JUDGED (this file's rule, above; testicle hands it no node-only script): handed
+    // nothing, its page is judged for every script but the node-only ones, a page load that failed for want of node's own
+    // (LACKS_NODE, the classifier's rule).
+    const onPage = (E.files2 || []).filter(function (f) { return (E.nodeOnly || []).indexOf(f) === -1; });
+    if (!onPage.length) return false;
+    for (const f of onPage) {
       const out = await new Promise(function (resolve) {
         const kid = spawn(process.execPath, [__filename, f], { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: E.node.base }), stdio: ['ignore', 'pipe', 'pipe'] });
         let text = '';
@@ -1040,9 +1054,23 @@ async function session() {
   // fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT
   // FUCKING NEEDS"): the families it called, and those whose branches of the store it watched; on a bare page each one's api.js
   // (spirit/<family>/api.js or spirit/app/<family>/api.js) stands at its path on the spirit object (goal/G49.23) only if this file loaded it.
-  P.usedFamilies = (W.families || []).slice();
-  (W.subs || []).forEach(function (x) { if (x.mine && x.kind === 'data.watch' && x.path) { const f = String(x.path).split('/')[1]; if (f && P.usedFamilies.indexOf(f) === -1) P.usedFamilies.push(f); } });
-  P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var s = window.spirit || {}; return !((s[f] && s[f].api) || (s.app && s.app[f] && s.app[f].api)); }))'));
+  // goal/G49.23: a branch is its folder's path (spirit.app.desk, spirit.job), so a call or a store family is taken to the
+  // longest prefix that is a branch folder of the tree (it holds api.js or script.js), and looked up at its path on the
+  // spirit object, its api (old shape) or its verbs (new shape) there. The spirit branch itself is the loader's: never asked.
+  const branchOfName = function (name) {
+    const n = String(name || '');
+    const parts = (n === 'spirit' || n.indexOf('spirit.') === 0 ? n : 'spirit.' + n).split('.');
+    for (let i = parts.length; i > 1; i--) {
+      const dir = path.join(RUN, ...parts.slice(0, i));
+      try { if (fs.statSync(dir).isDirectory() && (fs.existsSync(path.join(dir, 'api.js')) || fs.existsSync(path.join(dir, 'script.js')))) return parts.slice(0, i).join('.'); } catch (e) { /* no folder */ }
+    }
+    return '';
+  };
+  P.usedFamilies = [];
+  const used = function (name) { const b = branchOfName(name); if (b && P.usedFamilies.indexOf(b) === -1) P.usedFamilies.push(b); };
+  (W.families || []).forEach(used);
+  (W.subs || []).forEach(function (x) { if (x.mine && x.kind === 'data.watch' && x.path) used(String(x.path).split('/')[1]); });
+  P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var at = f.split(".").slice(1).reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit || {}); return !(at && (at.api || at.verbs)); }))'));
 
   // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
   // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each path of the store it watches must change
@@ -1366,12 +1394,14 @@ function pageAfter(P) {
   });
 }
 
+// A FILE HANDED THAT IT CANNOT JUDGE, red, each title said in one place (goal/G49.23: the title rule, "no suite says one title
+// twice"); hoisted, so batch() above says them too.
+function handedMissing() { test.run('the file it was handed is there', 0.2, function () { return false; }, test.limit.quick); }
+function handedNoPage() { test.run('the file it was handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick); }
 // What it judges: given no file, the tree and every page module; given a file, that file. A page module's page is drawn
 // before its rules are said (session above), so a rule its page gives nothing to judge is never said green.
 if (GIVEN.length > 1) batch();
 else if (!arg) every();
-else if (!full) {
-  test.run('the file it was handed is there', 0.2, function () { return false; }, test.limit.quick);
-} else if (!pageScript(rel)) {
-  test.run('the file it was handed is a page script of the tree', 0.2, function () { return false; }, test.limit.quick);
-} else bounded(session()).then(oneFile);
+else if (!full) handedMissing();
+else if (!pageScript(rel)) handedNoPage();
+else bounded(session()).then(oneFile);
