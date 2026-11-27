@@ -83,7 +83,8 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = global.window.spirit.element || {};
-  F = ((global.window.spirit.client || {}).fs || {}).data;
+  // goal/G49.23: the file tree read from the fs branch's client, never from the store by a short name.
+  F = fsFamily.client;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;

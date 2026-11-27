@@ -73,6 +73,8 @@ function world() {
     // ITS ROWS ON THE BRANCH, AS THE LOADER HANDS AN OLD-SHAPE BRANCH BACK (goal/G49.23, box v22 Part 1: an api.js answer
     // carries what its data.js put out, as data): the real data.js's, once it has run.
     if (table === 'data') return w.agentRows;
+    // An old-shape branch has no client (goal/G49.23): the element reads its client before its data.
+    if (table === 'client') return undefined;
     return function (args) {
       w.calls.push({ table: table, args: args });
       const a = w.answer ? w.answer(table, args) : { id: 'KNEW' };
@@ -102,7 +104,8 @@ test.run('the shared element runs on a window of its own, over the real store, s
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.nodeFacts.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
   // with it, the real file run once from disk, as the real api.js does. That data.js (spirit/app/agent/data.js) keeps the tables'
-  // branches, <node>/spirit.app.agent/<table>, and answers them through the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+  // branches, <node>/spirit.app.agent/<table>, and answers them through what it put out, its reads (w.agentRows; goal/G49.23: the store hands
+  // out no family by name), the family named by the app's id (goal/G49.19).
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   const ran = {};

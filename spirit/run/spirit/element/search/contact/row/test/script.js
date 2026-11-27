@@ -87,11 +87,13 @@ test.run('the contact row runs on a window of its own, with the data set and the
   for (let i = 0; i < 5; i += 1) await new Promise(function (r) { setImmediate(r); });
   C = window.spirit.element.search.contact.row;
   D = window.spirit.client;
-  CD = ((window.spirit.client || {}).contact || {}).data;
+  // goal/G49.23: the contact rows read from the contact branch's client, never from the store by a short name.
+  CD = BRANCHES.contact.client;
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.
   loaded = required.slice();
   // The direct writes below are the contact family's own view of the home node, as its manager files them.
-  V = D.viewAt(null, 'contact');
+  // goal/G49.23: the contact family is named by its branch's path, spirit.contact.
+  V = D.viewAt(null, 'spirit.contact');
   return true;
 }, test.limit.quick);
 
@@ -121,7 +123,7 @@ test.run('a row carrying publicKey instead of key is keyed by it', 0.2, function
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   return byPublic.key === 'K9' ? true : false;
 }, test.limit.quick);
-test.run('the row requires spirit/contact/script.js, which puts the contact branch\'s data in spirit.client on the page', 0.2, function () {
+test.run('the row requires spirit/contact/script.js, which puts the contact branch\'s data on its client on the page', 0.2, function () {
   return required.indexOf('spirit/contact/script.js') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
 }, test.limit.quick);
 

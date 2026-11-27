@@ -14,9 +14,10 @@
 // /DEBUG/spirit/element/appHeader/appHeader/test/appHeader-pinned.html.
 window.pinned = function () {
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  return spirit.requireScript('spirit/element/appHeader/appHeader/script.js').then(function () {
+  // goal/G49.23: no spirit.required; the header as spirit.requireScript hands it back.
+  return spirit.requireScript('spirit/element/appHeader/appHeader/script.js').then(function (A) {
     var pane = document.getElementById('the-pane');
-    var head = spirit.required.spirit.element.appHeader.appHeader.create(pane);
+    var head = A.create(pane);
     head.innerHTML = '<div style="display:flex;gap:8px"><button type="button">List</button><button type="button">Rules</button></div>';
     var content = document.createElement('div');
     content.style.cssText = 'height:3000px;flex:none';

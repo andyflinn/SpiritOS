@@ -30,6 +30,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fuckingGarbage/joinLink/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   var store = window.spirit && typeof window.spirit.requireScript === 'function' ? Promise.resolve(Promise.resolve(window.spirit.readyPromise)) : Promise.resolve();
   // goal/G49.23, box v22 Part 1 (Andy: "no spirit.dataStore"): the contacts are the reads of the contact branch spirit.requireScript
@@ -107,10 +108,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (!key) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
     // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/script.js')'s answer.join answers the reply's body, or refuses with
     // the node's words; the relay named by its row's public key (goal/G49.11).
-    // THE CALLER'S LINK (goal/G40.10, box v25): the link the shell wants the mail to open, which only the shell knows
-    // (spirit.shell.joinLink); without a shell that says, the node puts its own face on the loopback.
-    var shell = window.spirit && window.spirit.shell;
-    var joinLink = shell && typeof shell.joinLink === 'function' ? String(shell.joinLink() || '') : '';
+    // THE CALLER'S LINK (goal/G40.10, box v25): the link the mail is to open, from spirit/fuckingGarbage/joinLink/script.js
+    // (goal/G49.23, box v21: "joinLink to spirit/fuckingGarbage/joinLink/script.js, the join form requiring it by that path");
+    // with none, the node puts its own face on the loopback.
+    var J = ANSWER['spirit/fuckingGarbage/joinLink/script.js'];
+    var joinLink = J && typeof J.joinLink === 'function' ? String(J.joinLink() || '') : '';
     var args = { key: key, email: email, code: '' };
     if (joinLink) args.link = joinLink;
     return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/script.js'); }).then(function (s) { return s.join(args); }).then(function (said) {

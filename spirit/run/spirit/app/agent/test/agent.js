@@ -203,14 +203,15 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   test.run('the server adds one more provider', 0.2, async function () {
     if (STOP) return false;
 
-    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into the store, spirit.client (goal/G49.23).
+    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into the store, read at spirit.app.agent.data (goal/G49.23).
     added = await call(N.base, MODULE + '.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
     liveId = added.body && added.body.id;
     return (!!liveId) ? true : false;
   }, test.limit.quick);
-  test.run('it reaches the page\'s store, spirit.client["spirit.app.agent"], with no reload', 0.2, async function () {
+  test.run('it reaches the page\'s agent branch, its reads at spirit.app.agent.data, with no reload', 0.2, async function () {
     if (STOP) return false;
-    onPage = function () { return c.evaluate('(function () { var r = spirit.client[\"spirit.app.agent\"] && spirit.client[\"spirit.app.agent\"].data && spirit.client[\"spirit.app.agent\"].data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
+    // The branch's reads at its data.js's path (goal/G49.23: the store hands out no family by name).
+    onPage = function () { return c.evaluate('(function () { var r = spirit.app && spirit.app.agent && spirit.app.agent.data && typeof spirit.app.agent.data.row === \"function\" && spirit.app.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
     return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   // ── goal/G43.15, the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──

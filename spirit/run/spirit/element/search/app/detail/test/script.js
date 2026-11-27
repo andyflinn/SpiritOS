@@ -101,8 +101,9 @@ test.run('once the node answers, the button is a plain button again', 0.2, async
   return plain === true ? true : false;
 }, test.limit.quick);
 // A job's id is its route (spirit/job/engine/script.js, goal/G43.20): an app's run is spirit.app.<name>.
+// goal/G49.23: the job read from the job branch's client, spirit.job.client, never from the store by a short name.
 test.run('the press started the app on the node: its job, spirit.app.zzrun, running its script', 0.2, async function () {
   if (!pressed) return false;
-  const job = await until(function () { return chrome.evaluate('(function () { var j = window.spirit.client.job.data.job("spirit.app.zzrun"); return !!(j && j.data && (j.data.args || []).indexOf("spirit/app/zzrun/zzrun.js") !== -1); }())'); }, 10000);
+  const job = await until(function () { return chrome.evaluate('(function () { var j = window.spirit.job.client.job("spirit.app.zzrun"); return !!(j && j.data && (j.data.args || []).indexOf("spirit/app/zzrun/zzrun.js") !== -1); }())'); }, 10000);
   return job ? true : false;
 }, test.limit.quick);

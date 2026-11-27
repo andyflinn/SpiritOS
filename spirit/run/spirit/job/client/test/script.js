@@ -22,6 +22,9 @@ const FILE = path.join(RUN, SUBJECT);
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
+// The nodes a family keeps rows for (goal/G49.23: the store hands no family, and so no cache, out by name): read off every
+// branch it holds, <node>/<family>/<branch>.
+const nodesOf = function (D, fam) { const out = []; D.allBranches().forEach(function (p) { const s = p.split('/'); if (s[1] === fam && out.indexOf(s[0]) < 0) out.push(s[0]); }); return out; };
 // Two nodes' public keys, base64 with a + and a / in them, as a node's key is.
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const OTHER = 'Zy+x/WvU9876543210zyxwvutsrqponmlkjihgfedcb=';
@@ -41,10 +44,12 @@ function world() {
   const add = D.addTranslator;
   D.addTranslator = function (t) { translators.push(t); return add(t); };
   win.spirit.requireScript(SUBJECT);
-  const F = D['job'];
-  return { win: win, D: D, F: F, X: F && F.data, translators: translators,
+  // goal/G49.23: the store hands no family out by name; the reads stand at the client's path, spirit.job.client, and its rows
+  // are the store's under the family spirit.job.
+  const X = win.spirit.job && win.spirit.job.client;
+  return { win: win, D: D, X: X, translators: translators,
     job: function (job, from) { D.takeJob(job, from || SENDER); },
-    nodes: function () { return Object.keys((F && F.cache) || {}); } };
+    nodes: function () { return nodesOf(D, 'spirit.job'); } };
 }
 
 // The same on a page: spirit.isBrowser() true and the page's node known (spirit.nodeFacts.key, as node.card answered it), so
@@ -58,20 +63,22 @@ function pageWorld() {
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.client;
-  const F = D['job'];
-  return { D: D, X: F && F.data, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return Object.keys((F && F.cache) || {}); } };
+  // goal/G49.23: the reads at the client's path, the rows under the family spirit.job.
+  const X = win.spirit.job && win.spirit.job.client;
+  return { D: D, X: X, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return nodesOf(D, 'spirit.job'); } };
 }
 
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, loaded by requiring its api.js, spirit/job/script.js, it stands at spirit.client.job.data', 0.2, async function () {
+test.run('in node, loaded by requiring its api.js, spirit/job/script.js, it stands at spirit.job.client', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
   // By its path, as a client loads it (goal/G49.6): bound from the api.js on this disc, its companion data.js with it.
   try { await S.requireScript('spirit/job/script.js'); } catch (e) { threw = e; }
-  const X = S.client && S.client['job'] && S.client['job'].data;
+  // goal/G49.23: a client stands at its path, spirit.job.client; the store hands no family out by name.
+  const X = S.job && S.job.client;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
 test.run('run beside spirit.client, it makes its branch there', 0.2, function () {
@@ -175,7 +182,7 @@ test.run('a job the stream deletes goes, and its events with it', 0.2, function 
 }, test.limit.quick);
 test.run('branch is the jobs\' whole path, under the node that served them', 0.2, function () {
   if (!w) return false;
-  const pre = w.D.nodeId(SENDER) + '/job/';
+  const pre = w.D.nodeId(SENDER) + '/spirit.job/';   // goal/G49.23: the family is named by its branch's path
   return (typeof w.X.branch === 'string' && w.X.branch.indexOf(pre) === 0 && w.X.branch.length > pre.length) || false;
 }, test.limit.quick);
 test.run('on a page, a job another node served is filed under that node, never among the page\'s own node\'s jobs', 0.2, function () {

@@ -29,10 +29,11 @@ const W = {};
 let n = 0;
 // A row as the stream hands it: a job of module spirit.app.agent whose app is the agent server's publish (rowTable.js).
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.agent', data: {}, app: app }, from || HOME_KEY); };
-// The family is the app's id (goal/G49.19): the store's ['spirit.app.agent'], its rows at <node>/spirit.app.agent/<table>.
+// The family is the app's id (goal/G49.19), its rows at <node>/spirit.app.agent/<table>; its reads are its data.js's, at spirit.app.agent.data
+// (goal/G49.23: the store hands out no family by name).
 const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/spirit.app.agent/' + table + '/' + id); };
 
-test.run('loaded in a window beside the real data set, the agent branch\'s cache stands at the store\'s [\'spirit.app.agent\'].data', 0.2, function () {
+test.run('loaded in a window beside the real data set, the agent branch\'s reads stand at its path, spirit.app.agent.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -46,7 +47,9 @@ test.run('loaded in a window beside the real data set, the agent branch\'s cache
     W.D.homeNode(HOME_KEY);
     PAGE_LOAD.runAsPage(FILE, win);
   } catch (e) { return false; }
-  W.A = ((W.D || {})['spirit.app.agent'] || {}).data;
+  // At the data.js's path, where the page's loader places it (goal/G49.23: the store hands out no family by name).
+  const A = (((win.spirit || {}).app || {}).agent || {}).data;
+  W.A = A && typeof A.row === 'function' ? A : null;
   return !!W.A || false;
 }, test.limit.quick);
 test.run('its tables are job, model, persona and provider', 0.2, function () {
@@ -166,13 +169,11 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
 }, test.limit.quick);
 
 // ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
-test.run('in node, requiring the agent interface brings its data.js, at the store\'s [\'spirit.app.agent\'].data with row and branch', 0.2, async function () {
+test.run('in node, requiring the agent interface brings its data.js, its reads with row and branch', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/agent/api.js')); } catch (e) { return false; }
-  // The store as spirit.requireScript hands it back (goal/G49.23: no spirit.required).
-  let D = null;
-  try { D = await Promise.resolve(s.requireScript('spirit/client/script.js')); } catch (e) { return false; }
-  const A = D && D['spirit.app.agent'] && D['spirit.app.agent'].data;
+  // Its data.js where the loader placed it, spirit.app.agent.data (goal/G49.23: the store hands out no family by name).
+  const A = s.app && s.app.agent && s.app.agent.data;
   return (!!A && typeof A.row === 'function' && typeof A.branch === 'function') || false;
 }, test.limit.quick);

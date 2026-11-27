@@ -412,7 +412,8 @@ test.run('the provider\'s elementTable and elementRow are placed on the spirit o
     made.required.push(String(p));
     // The store, run below as the page's loader runs it, handed as the answer (goal/G49.23): a data.js keeps it so.
     if (p === 'spirit/client/script.js') return Promise.resolve(STORE);
-    if (p === 'spirit/app/agent/api.js' && !ran[p]) { ran[p] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
+    // Run as the page's loader runs it, so it stands at its path, spirit.app.agent.data (goal/G49.23: the store hands out no family by name).
+    if (p === 'spirit/app/agent/api.js' && !ran[p]) { ran[p] = true; PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
     // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
     // function... or fail/throw"): the shared table and row elements, the page files' own answers once they ran, and an
@@ -481,7 +482,8 @@ test.run('the provider editor\'s fields in order: label, url, API key as a secre
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
-// node that served them, and is read through the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+// node that served them, and is read at its path, spirit.app.agent.data, the family named by the app's id (goal/G49.19; goal/G49.23: the store hands out no
+// family by name).
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require the agent branch\'s interface, spirit/app/agent/api.js', 0.2, function () {
   if (!P.made) return false;
@@ -494,7 +496,7 @@ test.run('its page files require no data script, as only an api.js requires its 
 test.run('the agent branch\'s data.js is loaded with its api.js, and its provider branch is the home node\'s spirit.app.agent/provider path', 0.2, function () {
   if (!P.made) return false;
   const DATA = STORE;
-  const AD = P.AD = ((STORE || {})['spirit.app.agent'] || {}).data;
+  const AD = P.AD = (((global.window.spirit || {}).app || {}).agent || {}).data;
   P.BRANCH = DATA.nodeId(HOME_KEY) + '/spirit.app.agent/provider';
   return !!AD && typeof AD.branch === 'function' && AD.branch('provider') === P.BRANCH ? true : false;
 }, test.limit.quick);

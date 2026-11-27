@@ -158,7 +158,8 @@ function world(o) {
     // A family's cache (goal/G41.28): a branch's interface brings its data.js, as the real api.js does; it runs once on
     // this window over the real data set, from its path.
     const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
-    if (fam && !(S.client[fam[1]] && S.client[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
+    // goal/G49.23: a branch's data stands at the branch's path (spirit.<name>.data), never on the store by a short name.
+    if (fam && !(S[fam[1]] && S[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
     // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
     // function... or fail/throw"): each element part, the panel and rotateKey, answered as what their paths hand back.
@@ -289,8 +290,9 @@ test.run('it asks spirit.node.api.card once, with an empty object', 0.2, functio
   card = w.calls.filter(function (c) { return c.name === 'node.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : false;
 }, test.limit.quick);
-test.run('it requires spirit/node/api.js, no data.js, and keeps node.card\'s answer in spirit.client.node.data', 0.2, function () {
-  N = ((w.S.client || {}).node || {}).data;
+// goal/G49.23: the card read from the node branch the element requires, its data (spirit.node.data), never from the store by a short name.
+test.run('it requires spirit/node/api.js, no data.js, and keeps node.card\'s answer in the node branch\'s data, spirit.node.data', 0.2, function () {
+  N = (w.S.node || {}).data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
 }, test.limit.quick);
 test.run('a card read says nothing', 0.2, function () {
@@ -307,7 +309,7 @@ test.run('a card refused is said in the node\'s words, and nothing is kept', 0.2
   m2 = refused.els.nodeInfo.create(h2, {});
   await m2.ready;
   await settle();
-  N2 = refused.S.client.node && refused.S.client.node.data;
+  N2 = refused.S.node && refused.S.node.data;
   return (/owner only/.test(refused.slot(h2, 'said').textContent) && !(N2 && N2.card.get())) ? true : false;
 }, test.limit.quick);
 test.run('a node that does not answer is said as node.card did not answer', 0.2, async function () {
@@ -353,7 +355,7 @@ test.run('the fields and the card do not wait for the relays', 0.2, async functi
   m4 = slow.els.nodeInfo.create(h4, {});
   await m4.ready;
   await settle();
-  return (slow.made.length === 2 && !!(slow.S.client.node && slow.S.client.node.data.card.get()) && slow.forms.length === 0) ? true : false;
+  return (slow.made.length === 2 && !!(slow.S.node && slow.S.node.data && slow.S.node.data.card.get()) && slow.forms.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('the forms are drawn when the relays land', 0.2, async function () {
   letRelays(answered(ROWS));
@@ -441,7 +443,7 @@ test.run('a card that lands after destroy is not kept', 0.2, async function () {
   m6.destroy();
   letCard(CARD);
   await settle();
-  return (!(late.S.client.node && late.S.client.node.data.card.get())) ? true : false;
+  return (!(late.S.node && late.S.node.data && late.S.node.data.card.get())) ? true : false;
 }, test.limit.quick);
 test.run('relays that land after destroy draw no form', 0.2, async function () {
   letRel = null;
@@ -563,7 +565,8 @@ function formsPart() {
       if (real[p]) { delete real[p]; return pageRequire(p); }
       // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
       const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
-      if (fam && !(S.client[fam[1]] && S.client[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
+      // goal/G49.23: a branch's data stands at the branch's path (spirit.<name>.data), never on the store by a short name.
+      if (fam && !(S[fam[1]] && S[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
       // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an
       // object or a function... or fail/throw"): the rowForm the real forms ask for, the two fields, the panel and rotateKey.
       // nodeInfo.js still reads the fields and the panel at their places, spirit.element (goal/G49.23; not yet swept), so those stand there too.

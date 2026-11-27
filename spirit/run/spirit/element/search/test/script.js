@@ -9,7 +9,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..'), 'spirit', 'test', 'testReport.js'));
 
 // EACH WORLD FREES THE ONE BEFORE IT (goal/G47.1, cw: "it makes four worlds, each on a lab node it frees only in test.after,
@@ -1017,13 +1016,16 @@ test.run('over the real spirit.client, two rows filed apart in the branch but sh
   // this window's loader was taken away above, so for the client's ask it answers the data set this test ran, and goes again.
   const hadRequire = Object.prototype.hasOwnProperty.call(window.spirit, 'requireScript') ? window.spirit.requireScript : undefined;
   window.spirit.requireScript = function (p) { return p === 'spirit/client/script.js' ? Promise.resolve(window.spirit.client) : Promise.reject(new Error('no stand-in for ' + p)); };
-  let ranGrant = true;
-  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' }); } catch (e) { ranGrant = false; }
+  // goal/G49.23: run as the page's loader runs it, what the grant client puts out is that branch's client, its reads; the store
+  // hands out no family by a short name. Whatever this window held at spirit.grant is put back after.
+  let ranGrant = true, X = null;
+  const hadGrant = Object.prototype.hasOwnProperty.call(window.spirit, 'grant') ? window.spirit.grant : undefined;
+  try { X = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'grant', 'client', 'script.js')); } catch (e) { ranGrant = false; }
+  if (hadGrant === undefined) delete window.spirit.grant; else window.spirit.grant = hadGrant;
   await tick();
   if (hadRequire === undefined) delete window.spirit.requireScript; else window.spirit.requireScript = hadRequire;
   if (!ranGrant) return false;
   const D = window.spirit.client;
-  const X = D && D.grant && D.grant.data;
   if (!X || typeof D.takeJob !== 'function') return false;
   const K = 'MCowBQYDK2VwAyEAsearchTestContactKey0123456789abcdefghijk=';
   const NODE = 'MCowBQYDK2VwAyEAsearchTestNodeKey0123456789abcdefghijklmn=';

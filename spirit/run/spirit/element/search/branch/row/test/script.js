@@ -72,7 +72,8 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/script\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'client', 'script.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; const out = PAGE_LOAD.runAsPage(f); if (b === 'spirit/branch') branchBranch.client = out; } };
   // goal/G49.23, box v22 Part 1: what the branch branch's client puts out is that branch's client, on the branch its require answers.
   // The direct writes below are the branch branch's own view of the home node, its rows at rows/<id>, as its client files them.
-  V = DATA.viewAt(null, 'branch');
+  // goal/G49.23: the branch branch's family is named by its branch's path, spirit.branch.
+  V = DATA.viewAt(null, 'spirit.branch');
   // EACH STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
   // "spirit.requireScript must allways return either an object or a function... or fail/throw"): what the stand-in made for its
   // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
@@ -88,7 +89,8 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = global.window.spirit.element || {};
-  A = ((global.window.spirit.client || {}).branch || {}).data;
+  // goal/G49.23: the rows read from the branch branch's client, never from the store by a short name.
+  A = branchBranch.client;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;

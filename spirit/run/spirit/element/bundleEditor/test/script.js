@@ -123,7 +123,8 @@ test.run('the bundle editor requires the field input and the bundle selector thr
 }, test.limit.quick);
 test.run('the bundle editor requires spirit/bundle/script.js and no data.js or client script, and the bundles it adds stand on the page', 0.2, function () {
   if (!loaded) return false;
-  return (loaded.indexOf('spirit/bundle/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) && !!((STORE.bundle || {}).data)) ? true : false;
+  // goal/G49.23: the bundles stand on the bundle branch's client, never on the store by a short name.
+  return (loaded.indexOf('spirit/bundle/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$|\/client\/script\.js$/.test(p); }) && !!bundle.client && typeof bundle.client.watch === 'function') ? true : false;
 }, test.limit.quick);
 test.run('the bundle editor registers spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : false;

@@ -93,11 +93,12 @@ test.run('while its job runs, the line shows the name and the text the app publi
   return running ? true : false;
 }, test.limit.long);
 // spirit/job/engine/script.js: a cancelled run is removed, so Run comes back.
+// goal/G49.23: the job read from the job branch's client, spirit.job.client, never from the store by a short name.
 test.run('Cancel ends its job, and the row offers Run again with the name alone', 0.4, async function () {
   if (!running) return false;
   await press('zztask');
   const back = await waitFor('zztask', function (l) { return l.button === 'Run' && l.line === 'Zz Task'; }, 15000);
-  const gone = await chrome.evaluate('!window.spirit.client.job.data.job("spirit.app.zztask")');
+  const gone = await chrome.evaluate('!window.spirit.job.client.job("spirit.app.zztask")');
   return back && gone === true ? true : false;
 }, test.limit.long);
 // Andy: "run-apps usually self-delete if they're successful, if they fail, they stay and offer "delete"".
@@ -114,7 +115,7 @@ test.run('Delete takes the failed job away, and the row offers Run again', 0.4, 
   if (!failed) return false;
   await press('zzfail');
   const back = await waitFor('zzfail', function (l) { return l.button === 'Run' && l.line === 'Zz Fail'; }, 15000);
-  const gone = await chrome.evaluate('!window.spirit.client.job.data.job("spirit.app.zzfail")');
+  const gone = await chrome.evaluate('!window.spirit.job.client.job("spirit.app.zzfail")');
   return back && gone === true ? true : false;
 }, test.limit.long);
 test.run('destroyed, it leaves its container empty', 0.2, async function () {

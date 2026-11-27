@@ -32,8 +32,8 @@ function world() {
   PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': D });
   PAGE_LOAD.runAsPage(FILE, win);
   let n = 0;
-  // The family is the app's id (goal/G49.19): the store's ['spirit.app.icons'].
-  const I = ((D || {})['spirit.app.icons'] || {}).data;
+  // The family is the app's id (goal/G49.19); its reads at its data.js's path, where the page's loader places it (goal/G49.23: the store hands out no family by name).
+  const I = (((win.spirit || {}).app || {}).icons || {}).data;
   return { D: D, I: I,
     // A run's publish as the stream hands it: a job of module spirit.app.icons whose app is the row.
     job: function (app, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.icons', data: {}, app: app }, SENDER); } };

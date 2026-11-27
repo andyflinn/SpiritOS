@@ -106,7 +106,8 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
   // The bundle branch's script requires its client, as the real one does: the real file run once, attaching
   // itself to the data set; the bundles are the bundle branch's (goal/G41.28; goal/G49.21, was the auth family's).
   // The direct writes below are the bundle branch's own view of the home node, its rows at rows/<id>, as its client files them.
-  V = DATA.viewAt(null, 'bundle');
+  // goal/G49.23: the bundle branch's family is named by its branch's path, spirit.bundle.
+  V = DATA.viewAt(null, 'spirit.bundle');
   global.window.spirit.requireScript = function (p) {
     if (recording) required.push(String(p));
     if (!Object.prototype.hasOwnProperty.call(STANDS, p)) return Promise.reject(new Error('no stand-in for ' + p));
@@ -116,7 +117,8 @@ test.run('the row runs on a bare window, with the page\'s data set and the bundl
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = global.window.spirit.element || {};
-  A = ((global.window.spirit.client || {}).bundle || {}).data;
+  // goal/G49.23: the rows read from the bundle branch's client, never from the store by a short name.
+  A = bundleBranch.client;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.requireScript).
   loaded = required.slice();

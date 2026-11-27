@@ -14,15 +14,14 @@
 // /DEBUG/spirit/element/faceForm/test/faceForm-laid.html.
 window.laid = function () {
   var made = [];
-  return spirit.requireScript('spirit/element/rowForm/script.js').catch(function () { return null; }).then(function () {
-    var R = (((spirit.required || {}).spirit || {}).element || {}).rowForm;
+  // goal/G49.23: no spirit.required; each element as spirit.requireScript hands it back.
+  return spirit.requireScript('spirit/element/rowForm/script.js').catch(function () { return null; }).then(function (R) {
     if (R && typeof R.create === 'function') {
       var real = R.create;
       R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };
     }
     return spirit.requireScript('spirit/element/faceForm/script.js');
-  }).catch(function () { return null; }).then(function () {
-    var F = (((spirit.required || {}).spirit || {}).element || {}).faceForm;
+  }).catch(function () { return null; }).then(function (F) {
     var out = { made: !!F && typeof F.mount === 'function' };
     if (!out.made) return JSON.stringify(out);
     // The form offers the relays this node is seated on (goal/G40.11) AND that are faceable (goal/G47.4, box v33: 😏 "is what

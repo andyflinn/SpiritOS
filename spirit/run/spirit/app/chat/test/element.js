@@ -104,10 +104,11 @@ test.run('it never asks a verb of chatClerver', 0.2, async function () {
   return await page.evaluate('!window.sent.some(function (b) { return /chatClerver/.test(b); })')
     ? true : false;
 }, test.limit.quick);
-test.run('its lines are the branch spirit.app.chat\'s cache, the store\'s spirit.client[\'spirit.app.chat\']', 0.2, async function () {
+test.run('its lines are the branch spirit.app.chat\'s cache, read at its data.js\'s path, spirit.app.chat.data', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
-  return await H.until(function () { return page.evaluate('!!(spirit.client && spirit.client[\"spirit.app.chat\"] && spirit.client[\"spirit.app.chat\"].data)'); }, 10000) ? true : false;
+  // At the data.js's path (goal/G49.23: the store hands out no family by name), with its lines read.
+  return await H.until(function () { return page.evaluate('!!(spirit.app && spirit.app.chat && spirit.app.chat.data && typeof spirit.app.chat.data.lines === \"function\")'); }, 10000) ? true : false;
 }, test.limit.quick);
 
 // ── destroy ──

@@ -34,14 +34,16 @@ function world() {
   PAGE_LOAD.pageSpirit(win.spirit, { 'spirit/client/script.js': D });
   D.homeNode(HOME_KEY);
   PAGE_LOAD.runAsPage(FILE, win);
-  // The family is the app's id (goal/G49.19): the store's ['spirit.app.backup'], its branch at <node>/spirit.app.backup/.
-  return { win: win, D: D, B: ((D || {})['spirit.app.backup'] || {}).data };
+  // The family is the app's id (goal/G49.19), its branch at <node>/spirit.app.backup/; its reads at the data.js's path,
+  // spirit.app.backup.data, where the page's loader places it (goal/G49.23: the store hands out no family by name).
+  const B = (((win.spirit || {}).app || {}).backup || {}).data;
+  return { win: win, D: D, B: B && typeof B.status === 'function' ? B : null };
 }
 const STATUS = { lastCheck: '2026-11-13T09:00:00.000Z', lastCopy: '2026-11-13T08:00:00.000Z', lastError: '' };
 
 const W = {};
 
-test.run('in a window, beside the real store, it stands at the store\'s [\'spirit.app.backup\'].data', 0.2, function () {
+test.run('in a window, beside the real store, it stands at its path, spirit.app.backup.data', 0.2, function () {
   try { Object.assign(W, world()); } catch (e) { return false; }
   return !!W.B || false;
 }, test.limit.quick);
@@ -105,13 +107,11 @@ test.run('it translates nothing: a job of the backup on the stream writes nothin
 }, test.limit.quick);
 
 // ── in node, brought by its branch's interface, the one script that requires it ──
-test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at the store\'s [\'spirit.app.backup\'].data', 0.2, async function () {
+test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at its path, spirit.app.backup.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/backup/api.js')); } catch (e) { return false; }
-  // The store as spirit.requireScript hands it back (goal/G49.23: no spirit.required).
-  let D = null;
-  try { D = await Promise.resolve(s.requireScript('spirit/client/script.js')); } catch (e) { return false; }
-  const B = D && D['spirit.app.backup'] && D['spirit.app.backup'].data;
+  // Its data.js where the loader placed it (goal/G49.23: the store hands out no family by name).
+  const B = s.app && s.app.backup && s.app.backup.data;
   return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || false;
 }, test.limit.quick);

@@ -207,7 +207,8 @@ test.run('after Save it says saved', 0.2, function () {
 }, test.limit.quick);
 test.run('it requires spirit/node/api.js and no data.js, and the name the node stored is kept in the node branch\'s card', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
-  N = ((w.win.spirit.client || {}).node || {}).data;
+  // goal/G49.23: the card read from the node branch the element requires (its data), never from the store by a short name.
+  N = w.nodeApi.data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('a name changed in the card, from elsewhere, redraws the field', 0.2, async function () {

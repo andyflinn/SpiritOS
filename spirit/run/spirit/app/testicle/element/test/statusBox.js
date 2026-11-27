@@ -41,6 +41,7 @@ const idle = function (ms) {
 };
 // The page's hands: mount the box alone, record every pair of rows and every busy icon it shows, in order, and whether the
 // monitor the stream fills ever held a doing text.
+// The monitor read at the testicle data.js's path, spirit.app.testicle.data (goal/G49.23: the store hands out no family by name).
 // While a row reads anything it records how the number heading it is drawn: the row's first element, its width against its
 // own em, its alignment, its text and whether it can be seen; each way it was drawn kept once, however often it shows.
 const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, nums: [], numsSeen: {},' +
@@ -54,7 +55,7 @@ const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, n
   '       var k = JSON.stringify(s); if (!window.zz.numsSeen[k]) { window.zz.numsSeen[k] = true; window.zz.nums.push(s); } });' +
   '     var g = i ? String(i.innerText || i.textContent || "").trim() : ""; if (g && g !== window.zz.icons[window.zz.icons.length - 1]) window.zz.icons.push(g);' +
   '     window.zz.mode = m ? String(m.innerText || m.textContent || "").trim() : "";' +
-  '     try { var mo = window.spirit.client["spirit.app.testicle"].data.monitor.get(); if (mo && mo.doing) window.zz.doing = true; } catch (e) {} };' +
+  '     try { var mo = window.spirit.app.testicle.data.monitor.get(); if (mo && mo.doing) window.zz.doing = true; } catch (e) {} };' +
   '   note(); new MutationObserver(note).observe(b, { subtree: true, childList: true, characterData: true }); setInterval(note, 200); return true; },' +
   '}; return true; }())';
 // What testicle's database says is owed, read only: suites marked needs running (a suite counted once, however many of its
@@ -281,7 +282,7 @@ const fileOf = function (f) { return String(f).slice(String(f).lastIndexOf('/') 
 test.run('the stream carries the test red for the most scripts and the script with the most reds, as the database counts them', 0.4, async function () {
   if (!W.ok) return false;
   let got = null, L = null;
-  const ok = await H.until(function () { return ev('(function () { try { return JSON.stringify(window.spirit.client["spirit.app.testicle"].data.monitor.get().leaders || null); } catch (e) { return null; } }())').then(function (t) {
+  const ok = await H.until(function () { return ev('(function () { try { return JSON.stringify(window.spirit.app.testicle.data.monitor.get().leaders || null); } catch (e) { return null; } }())').then(function (t) {
     got = t ? JSON.parse(t) : null; L = leadersInDb();
     return !!got && !!L && !!got.test && !!got.script && L.tests.some(function (x) { return x.suite === got.test.suite && x.test === got.test.test && Number(x.n) === Number(got.test.n); }) && L.scripts.some(function (x) { return x.script === got.script.script && Number(x.n) === Number(got.script.n); });
   }); }, H.WAIT);
@@ -373,7 +374,7 @@ const RED_BOX = '(function () { var b = document.getElementById("zzA"); if (!b) 
   ' var r = box.getBoundingClientRect(); var sb = box.parentElement && box.parentElement !== b ? box.parentElement : b; var sr = sb.getBoundingClientRect(), sc = getComputedStyle(sb);' +
   ' var inner = sr.right - parseFloat(sc.paddingRight) - parseFloat(sc.borderRightWidth); return JSON.stringify({ n: Number(String(hit.textContent).trim()), right: r.right, barRight: inner, px: parseFloat(getComputedStyle(hit).fontSize), barPx: parseFloat(getComputedStyle(b).fontSize), w: r.width, boxPx: parseFloat(getComputedStyle(box).fontSize) }); }())';
 const redBox = function () { return ev(RED_BOX).then(function (t) { return t ? JSON.parse(t) : null; }); };
-const streamedReds = function () { return ev('(function () { try { var m = window.spirit.client["spirit.app.testicle"].data.monitor.get(); return m && typeof m.reds === "number" ? m.reds : null; } catch (e) { return null; } }())'); };
+const streamedReds = function () { return ev('(function () { try { var m = window.spirit.app.testicle.data.monitor.get(); return m && typeof m.reds === "number" ? m.reds : null; } catch (e) { return null; } }())'); };
 test.run('the stream carries the number of reds, as testicle\'s database counts its current failed rows', 0.4, async function () {
   if (!W.ok) return false;
   await idle(120000);
@@ -428,7 +429,7 @@ test.run('a page loaded anew while nothing changes is sent suites owed and class
   if (!up) return false;
   await ev(HANDS); await ev('window.zz.mount()');
   let got = null;
-  await H.until(function () { return ev('(function () { try { var o = window.spirit.client["spirit.app.testicle"].data.monitor.get().owed; return o ? JSON.stringify(o) : null; } catch (e) { return null; } }())').then(function (t) { got = t ? JSON.parse(t) : null; return !!got; }); }, H.WAIT);
+  await H.until(function () { return ev('(function () { try { var o = window.spirit.app.testicle.data.monitor.get().owed; return o ? JSON.stringify(o) : null; } catch (e) { return null; } }())').then(function (t) { got = t ? JSON.parse(t) : null; return !!got; }); }, H.WAIT);
   const o = owedInDb();
   return (!!got && !!o && got.suites === o.suites && got.classifications === o.classifications) || false;
 }, test.limit.long);

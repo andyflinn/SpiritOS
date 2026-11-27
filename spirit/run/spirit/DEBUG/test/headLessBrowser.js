@@ -101,27 +101,8 @@ test.run('window.spiritMount says mounted, holds the box, and its destroy is the
   return el.calls.destroyed === 1 || false;
 }, test.limit.quick);
 
-// an app: activateApp, mounted into the box with an api as the face gives one
-test.run('an app that calls spirit.shell.activateApp is mounted', 0.2, async function () {
-  if (!page) return false;
-  app = await mountIn(page.body, function (sp, calls) {
-    sp.shell.activateApp({ mount: function (box, api) { calls.mounted.push({ box: box, api: api }); }, render: function () { calls.rendered += 1; } });
-  });
-  return !!app.report || false;
-}, test.limit.quick);
-test.run('an app is mounted into the box with an api, rendered, and said mounted', 0.2, function () {
-  if (!app || !app.report) return false;
-  const m = app.calls.mounted[0];
-  return (app.calls.mounted.length === 1 && m.box === app.box && !!m.api && app.calls.rendered === 1 && app.report.state === 'mounted') || false;
-}, test.limit.quick);
-test.run('the app\'s api asks a verb of the spirit object\'s branch, and refuses a verb that is not there', 0.2, async function () {
-  if (!app || !app.calls.mounted.length) return false;
-  const api = app.calls.mounted[0].api;
-  if (typeof api.verb !== 'function') return false;
-  const yes = await api.verb('thing.hello', { word: 'hi' });
-  const no = await api.verb('thing.nothing', {});
-  return (yes.status === 200 && yes.body.said === 'hi' && no.status === 400 && no.body.code === 'no-such-verb') || false;
-}, test.limit.quick);
+// AN OLD APP, THROUGH activateApp, IS GONE (goal/G49.23, cw's 5458d7c39; Andy, of spirit.shell's hand-made members: "that sounds
+// like spirit/fuckingGarbage/ to me...."): the debug page mounts elements alone, so its three old-app checks went with it.
 
 // a file that places nothing: it fails and says where it looked
 test.run('a file that hands back no element fails, and names the file it required', 0.2, async function () {

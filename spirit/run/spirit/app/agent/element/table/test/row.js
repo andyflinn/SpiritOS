@@ -92,6 +92,8 @@ function world() {
     // ITS ROWS ON THE BRANCH, AS THE LOADER HANDS AN OLD-SHAPE BRANCH BACK (goal/G49.23, box v22 Part 1: an api.js answer
     // carries what its data.js put out, as data): the real data.js's, once it has run.
     if (table === 'data') return w.agentRows;
+    // An old-shape branch has no client (goal/G49.23): the element reads its client before its data.
+    if (table === 'client') return undefined;
     return function (args) {
       w.calls.push({ table: table, args: args });
       const a = w.answer ? w.answer(table, args) : { id: 'KNEW' };
@@ -124,11 +126,11 @@ test.run('the shared element runs on a window of its own, over the real store, s
   // kept as spirit.nodeFacts.key; the row element requires the agent branch's interface (spirit/app/agent/api.js), which brings
   // its data.js; the stand-in require below runs that data.js through the real one, which in node reads it from its own
   // disk. The agent family's data.js (spirit/app/agent/data.js) keeps the tables' branches, <node>/spirit.app.agent/<table>, and answers them through
-  // the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+  // what it put out, its reads (w.agentRows; goal/G49.23: the store hands out no family by name), the family named by the app's id (goal/G49.19).
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
-  rowPath = function (table, id) { return D['spirit.app.agent'].data.branch(table) + '/' + id; };
+  rowPath = function (table, id) { return w.agentRows.branch(table) + '/' + id; };
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/spirit.app.agent/' + table; };
   // The node's bundles (spirit.bundle, the one dictionary of bundles; goal/G49.21, was auth.bundle {op}): get answers a bundle
   // the node has, refuses one it has not; each ask kept, with its verb as call.
@@ -248,7 +250,7 @@ test.run('with the row not in its branch, the editor asks provider for a get by 
 }, test.limit.quick);
 test.run('the editor puts the answer at the provider row\'s path under the node\'s agent branch, where the stream writes it', 0.2, function () {
   if (!ed) return false;
-  return D['spirit.app.agent'].data.row('provider', 'KR') && D['spirit.app.agent'].data.row('provider', 'KR').label === 'Row one' ? true : false;
+  return w.agentRows.row('provider', 'KR') && w.agentRows.row('provider', 'KR').label === 'Row one' ? true : false;
 }, test.limit.quick);
 test.run('the editor\'s title row says Add while the row is new', 0.2, function () {
   if (!ed) return false;
@@ -360,7 +362,7 @@ test.run('changing the label saves the whole row at once, every field and its ic
 }, test.limit.quick);
 test.run('the editor draws nothing it typed into the row: the row changes only by the server\'s stream', 0.2, function () {
   if (!ed) return false;
-  return D['spirit.app.agent'].data.row('provider', 'KR').label === 'From the stream' ? true : false;
+  return w.agentRows.row('provider', 'KR').label === 'From the stream' ? true : false;
 }, test.limit.quick);
 test.run('a tick changed saves the whole row too, with the label as typed', 0.2, async function () {
   if (!ed) return false;
@@ -436,7 +438,7 @@ test.run('the editor asks provider for a get by its id, though the branch holds 
 }, test.limit.quick);
 test.run('the whole row then goes where the stream writes it, with its fields shown', 0.2, function () {
   if (!ed2) return false;
-  return D['spirit.app.agent'].data.row('provider', 'KS') && D['spirit.app.agent'].data.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example'
+  return w.agentRows.row('provider', 'KS') && w.agentRows.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example'
     ? true : false;
 }, test.limit.quick);
 test.run('the editor says Change when opened from the list', 0.2, function () {
@@ -470,7 +472,7 @@ const offered = function (s) {
     .map(function (e) { return e.key; }).sort();
 };
 // What a row shows in the dropdown: its columns' values (from, else field), as the list draws its cells.
-const cellsOf = function (s, key) { const r = D['spirit.app.agent'].data.row('model', key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
+const cellsOf = function (s, key) { const r = w.agentRows.row('model', key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
 const narrowed = async function (models) {
   w.calls.length = 0;
   const before = w.searches.length;

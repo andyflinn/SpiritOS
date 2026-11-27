@@ -234,14 +234,15 @@ function deskWorld(goal, items) {
       required.push(rel);
       const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
       // What each real file put out, kept and handed back (goal/G49.23: no spirit.required): the store as the store's answer, a
-      // data.js's reads as its api.js answer's data, as the loader hands an old-shape branch back.
+      // data.js's reads as its api.js answer's data, as the loader hands an old-shape branch back, with no client, which an
+      // element reads first (goal/G49.23).
       if (run && !ran[run]) { ran[run] = true; ran[run] = PAGE_LOAD.runAsPage(path.join(RUN, run), win); }
       if (rel === 'spirit/client/script.js') return Promise.resolve(ran[run]);
       // A branch by its api.js path (goal/G49.6: never by a name): every verb of it reaches the recorder as <branch>.<verb>, an
       // app's branch named by its id, its folder's path in dots (goal/G49.19: spirit.app.desk.items.search).
       const b = /^spirit\/(app\/)?([^/]+)\/api\.js$/.exec(String(rel));
       const bn = b ? (b[1] ? SPIRIT.dottedPath('spirit/app/' + b[2]) : b[2]) : '';
-      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { if (rest === 'data') return run && ran[run] !== true ? ran[run] : null; return rest === 'then' ? undefined : function (args) { return api.verb(bn + '.' + String(rest), args); }; } }));
+      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { if (rest === 'data') return run && ran[run] !== true ? ran[run] : null; if (rest === 'client') return undefined; return rest === 'then' ? undefined : function (args) { return api.verb(bn + '.' + String(rest), args); }; } }));
       // A part by its path, handed back from STOOD (goal/G49.23: the page keeps what the require hands back); anything else an object.
       const keys = rel.replace(/\.js$/, '').split('/'); if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
       const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, STOOD);
@@ -266,6 +267,8 @@ function deskWorld(goal, items) {
   STORE.homeNode(PAGE_NODE_KEY);
   // The real row element, handed as requireScript's answer (goal/G49.23), and the page as it put itself out.
   STOOD.spirit.element.row = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js'), win);
+  // The real app header too (goal/G49.23: the page draws with what the require hands back, and an empty object there has no create).
+  STOOD.spirit.element.appHeader = { appHeader: PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'appHeader', 'appHeader', 'script.js'), win) };
   const page = PAGE_LOAD.runAsPage(FILE, win, raw);
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win, stood: STOOD };
   w.mount = async function () {
@@ -274,7 +277,8 @@ function deskWorld(goal, items) {
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, named by its own current row
     // (goal/G49.8: "the \"current\" selection is just another streamed item"); the page reads it from there, never from a
     // search answer.
-    const K = ((STORE || {})[ID] || {}).data;
+    // Its reads are what the desk's data.js put out, as it ran (goal/G49.23: the store hands out no family by name).
+    const K = ran['spirit/app/desk/data.js'] !== true ? ran['spirit/app/desk/data.js'] : null;
     if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); K.published({ change: 1, current: goal.id }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {

@@ -74,7 +74,8 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = global.window.spirit.element || {};
-  F = ((global.window.spirit.client || {}).fs || {}).data;
+  // goal/G49.23: the file tree read from the fs branch's client, never from the store by a short name.
+  F = fsFamily.client;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.requireScript).
   loaded = required.slice();
@@ -113,7 +114,7 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
   if (l) o = l.o;
   return !!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('it is a view of the fs branch\'s file tree in spirit.client.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
+test.run('it is a view of the fs branch\'s file tree at its client\'s branch, in path order, filled as it is drawn', 0.2, function () {
   if (!l) return false;
   return typeof F.branch === 'string' && F.branch !== '' && !!o.data && typeof o.data.whole === 'function' && o.data.path === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
 }, test.limit.quick);

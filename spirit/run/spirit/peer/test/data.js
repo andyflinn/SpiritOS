@@ -22,6 +22,9 @@ const FILE = path.join(RUN, SUBJECT);
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
+// The nodes a family keeps rows for (goal/G49.23: the store hands no family, and so no cache, out by name): read off every
+// branch it holds, <node>/<family>/<branch>.
+const nodesOf = function (D, fam) { const out = []; D.allBranches().forEach(function (p) { const s = p.split('/'); if (s[1] === fam && out.indexOf(s[0]) < 0) out.push(s[0]); }); return out; };
 // Two nodes' public keys, base64 with a + and a / in them, as a node's key is.
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const OTHER = 'Zy+x/WvU9876543210zyxwvutsrqponmlkjihgfedcb=';
@@ -41,10 +44,12 @@ function world() {
   const add = D.addTranslator;
   D.addTranslator = function (t) { translators.push(t); return add(t); };
   win.spirit.requireScript(SUBJECT);
-  const F = D['peer'];
-  return { win: win, D: D, F: F, X: F && F.data, translators: translators,
+  // goal/G49.23: the store hands no family out by name; the reads stand at the branch's path, spirit.peer.data, and its rows
+  // are the store's under the family spirit.peer.
+  const X = win.spirit.peer && win.spirit.peer.data;
+  return { win: win, D: D, X: X, translators: translators,
     job: function (job, from) { D.takeJob(job, from || SENDER); },
-    nodes: function () { return Object.keys((F && F.cache) || {}); } };
+    nodes: function () { return nodesOf(D, 'spirit.peer'); } };
 }
 
 // The same on a page: spirit.isBrowser() true and the page's node known (spirit.nodeFacts.key, as node.card answered it), so
@@ -58,20 +63,22 @@ function pageWorld() {
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.client;
-  const F = D['peer'];
-  return { D: D, X: F && F.data, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return Object.keys((F && F.cache) || {}); } };
+  // goal/G49.23: the reads at the branch's path, the rows under the family spirit.peer.
+  const X = win.spirit.peer && win.spirit.peer.data;
+  return { D: D, X: X, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return nodesOf(D, 'spirit.peer'); } };
 }
 
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands at spirit.client.peer.data', 0.2, async function () {
+test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands at spirit.peer.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
   // By its path, as a client loads it (goal/G49.6): bound from the api.js on this disc, its companion data.js with it.
   try { await S.requireScript('spirit/peer/api.js'); } catch (e) { threw = e; }
-  const X = S.client && S.client['peer'] && S.client['peer'].data;
+  // goal/G49.23: an old-shape data.js stands at its folder's path, spirit.peer.data; the store hands no family out by name.
+  const X = S.peer && S.peer.data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
 test.run('run beside spirit.client, it makes its branch there', 0.2, function () {

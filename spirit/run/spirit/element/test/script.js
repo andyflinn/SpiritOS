@@ -200,9 +200,10 @@ test.after(stopAll);
     written = await until(function () { return Promise.resolve((function () { try { return JSON.parse(fs.readFileSync(stateFile('hearing'), 'utf8')).active === true; } catch (e) { return false; } }())); }, 5000);
     return (written) ? true : false;
   }, test.limit.slow);
+  // goal/G49.23: the app rows read from the app branch's client, spirit.app.client, never from the store by a short name.
   test.run('the stream brings active to the row without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
-    rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())'); }, 5000);
+    rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())'); }, 5000);
     return (rowActive) ? true : false;
   }, test.limit.slow);
   test.run('the button follows and says Deactivate', 0.2, async function () {
@@ -212,8 +213,8 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('a search seated over it does not lose active', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.api.searchApp({ q: "" }).then(function (got) { spirit.client.seatRows(spirit.client.app.data.branch, got.items); return true; })');
-    return (await chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())') === true) ? true : false;
+    await chrome.evaluate('spirit.app.api.searchApp({ q: "" }).then(function (got) { spirit.client.seatRows(spirit.app.client.branch, got.items); return true; })');
+    return (await chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())') === true) ? true : false;
   }, test.limit.quick);
 
   // Andy: "the detail panel needs to open on top of the whole container", and the form he drew for it.
@@ -341,7 +342,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('the stream brings the new label to the row', 0.2, async function () {
     if (!W1.up) return false;
-    inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.label === "Renamed"; }())'); }, 5000);
+    inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.label === "Renamed"; }())'); }, 5000);
     return (inRow) ? true : false;
   }, test.limit.slow);
   test.run('the title bar and the rows of the panel say the new label', 0.2, async function () {
@@ -354,7 +355,7 @@ test.after(stopAll);
     await chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     await until(function () { return Promise.resolve(stateOf().label === monitorLabel); }, 5000);
-    await until(function () { return chrome.evaluate('(function () { var r = spirit.client.app.data.rows()["spirit.app.hearing"]; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
+    await until(function () { return chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
     return (!/Uptime|waiting/i.test(await chrome.evaluate('String((' + panel + ' || {}).innerText || "")'))) ? true : false;
   }, test.limit.slow);
   test.run('its x brings the list back', 0.2, async function () {
@@ -483,7 +484,7 @@ test.after(stopAll);
 
   // EVERY APP ACTIVE, planted and the tree's: what keeps a tile away below can only be shell.mount. Each app's row and key is its
   // id, spirit.app.<name>, its switch in spirit.statePath of its folder (goal/G49.17, goal/G49.19).
-  const rows = function () { return chrome.evaluate('(function () { var r = (spirit.client.app && spirit.client.app.data) ? spirit.client.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r["spirit.app." + k] ? { active: r["spirit.app." + k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
+  const rows = function () { return chrome.evaluate('(function () { var r = (spirit.app && spirit.app.client) ? spirit.app.client.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r["spirit.app." + k] ? { active: r["spirit.app." + k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
     keys = Object.keys(PLANT);

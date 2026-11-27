@@ -54,9 +54,10 @@ window.opened = function () {
   return Promise.resolve(spirit.startPage()).then(function () {
     // The node's desk is the stand-in: the page requires spirit/app/desk/api.js itself (goal/G43.27, requirement 23; goal/G49.6:
     // by its path, never by a name), and each verb answers its body, as a branch's does.
-    // Its rows, data, are what the real data.js put out, as the loader hands an old-shape branch back (goal/G49.23, box v22 Part 1).
+    // Its rows, data, are what the real data.js put out, as the loader hands an old-shape branch back (goal/G49.23, box v22 Part 1),
+    // with no client, which the element reads first.
     var rows = null;
-    var desk = new Proxy({}, { get: function (t, verb) { if (verb === 'data') return rows; return verb === 'then' ? undefined : function (args) { return api.verb('desk.' + String(verb), args).then(function (r) { return r.body; }); }; } });
+    var desk = new Proxy({}, { get: function (t, verb) { if (verb === 'data') return rows; if (verb === 'client') return undefined; return verb === 'then' ? undefined : function (args) { return api.verb('desk.' + String(verb), args).then(function (r) { return r.body; }); }; } });
     var real = spirit.requireScript;
     spirit.requireScript = function (p) { return p === 'spirit/app/desk/api.js' ? Promise.resolve(desk) : real.apply(this, arguments); };
     return Promise.resolve(real.call(spirit, 'spirit/app/desk/data.js')).then(function (d) { rows = d || null; return spirit.requireScript('spirit/app/desk/element/desk/desk.js'); });

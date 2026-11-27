@@ -38,7 +38,8 @@ function world() {
   D.homeNode(HOME);
   PAGE_LOAD.runAsPage(FILE, win);
   let n = 0;
-  return { D: D, C: ((D || {})['spirit.app.chat'] || {}).data,
+  // The family is the app's id (goal/G49.19); its reads at its data.js's path, where the page's loader places it (goal/G49.23: the store hands out no family by name).
+  return { win: win, D: D, C: (((win.spirit || {}).app || {}).chat || {}).data,
     // A line the server published, as the stream hands it: a job of module spirit.app.chat whose app holds the line.
     job: function (line, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.chat', data: {}, app: { line: line } }, HOME); } };
 }
@@ -47,7 +48,7 @@ const line = function (peer, sent, seq, at, text) { return { peer: peer, sent: s
 // What the tests make, for the tests after them.
 const X = { w: null, told: [], off: null };
 
-// ── the branch is the app's id (goal/G49.19): the store's ['spirit.app.chat'] ──
+// ── the branch is the app's id (goal/G49.19), its reads at spirit.app.chat.data ──
 test.run('it makes the spirit.app.chat branch in the store, its reads on its data', 0.2, function () {
   X.w = world();
   const w = X.w;
@@ -55,7 +56,8 @@ test.run('it makes the spirit.app.chat branch in the store, its reads on its dat
 }, test.limit.quick);
 test.run('it makes no chatClerver branch in the store', 0.2, function () {
   if (!X.w) return false;
-  return !(X.w.D && X.w.D.chatClerver) ? true : false;
+  // Nothing at the old name's path (goal/G49.23: the store hands out no family by name, so the page's spirit.app is where one would stand).
+  return !(X.w.D && X.w.D.chatClerver) && !((X.w.win.spirit || {}).app || {}).chatClerver ? true : false;
 }, test.limit.quick);
 
 // ── a line the server publishes is kept, as the stream hands it ──

@@ -202,7 +202,7 @@ function personWorld(person, relayRows) {
     // A PART WITH NO STAND-IN NEVER ARRIVES (goal/G49.9, box v5): the detail keeps only what a require hands back, and an empty
     // answer would be taken for the part itself (fieldInput's attach, the face form's offers); an answer still on its way leaves
     // it out, as a part the page has not loaded yet, and refuses nothing the detail asks without a catch.
-    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
+    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING); if (at === 'spirit/fuckingGarbage/factRow/script.js') return Promise.resolve({ factRow: win.spirit.shell.factRow }); /* goal/G49.23: factRow as its require's answer */
       const b = branchAt(families, p, w); return b ? Promise.resolve(b) : new Promise(function () {}); },
     readyPromise: Promise.resolve({}),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
@@ -297,7 +297,7 @@ function relayWorld(rows, relayStatus) {
       if (at === 'spirit/contact/script.js' && !w.client) w.client = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; },
         hear: function (fn) { const h = { onRelayEvent: fn }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } };
       // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
-      if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
+      if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING); if (at === 'spirit/fuckingGarbage/factRow/script.js') return Promise.resolve({ factRow: win.spirit.shell.factRow }); /* goal/G49.23: factRow as its require's answer */
       if (at === 'spirit/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
       const b = branchAt(families, at, w);
       return b ? Promise.resolve(b) : new Promise(function () {});
@@ -1411,5 +1411,5 @@ test.run('A person\'s label in the contact list is not bold and italic', 0.2, fu
 // spirit/fuckingGarbage/factRow/script.js, the contact detail requiring it by that path"), never off spirit.shell.
 test.run('the contact detail requires spirit/fuckingGarbage/factRow/script.js and reads no spirit.shell.factRow', 0.2, function () {
   const c = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-  return (/requireScript\(\s*['"]spirit\/fuckingGarbage\/factRow\/script\.js['"]/.test(c) && !/spirit\.shell\.factRow/.test(c)) || false;
+  return (/(?:requireScript|keepAnswer)\(\s*['"]spirit\/fuckingGarbage\/factRow\/script\.js['"]/.test(c) && !/spirit\.shell\.factRow/.test(c)) || false;
 }, test.limit.quick);

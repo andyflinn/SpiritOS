@@ -292,8 +292,9 @@ if (withData.length) {
   // EVERY BRANCH IS NAMED AS ITS FOLDER (goal/G43.31; Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
   // motherfucking <name> in spirit/app/<name>....", and "make sure, IN THIS ITEM that family names MATCH folder names").
   test.run('its data.js makes the branch its folder is named', 0.4, function () {
-    // The name the wire knows it by, an app's its id (goal/G49.19: makeFamily('spirit.app.desk')).
-    return overAll(withData, function (b) { return b.made === b.family; });
+    // The name the wire knows it by, an app's its id (goal/G49.19: makeFamily('spirit.app.desk')); a trunk branch's its path too
+    // since goal/G49.23 (b313ce7eb: makeFamily('spirit.config')), so the family is named by the folder's path in dots.
+    return overAll(withData, function (b) { return b.made === SPIRIT.dottedPath(b.dir); });
   }, test.limit.quick);
   // Andy (goal/G47.1): "every api.js requires it's companion data.js, and is the only script to require that data.js".
   const apiAndData = withData.filter(function (b) { return !!b.api; });
@@ -310,8 +311,20 @@ if (withData.length) {
       return (!!mod && !mod.threw && (mod.cache === undefined || (mod.cache && typeof mod.cache === 'object'))) ? true : false;
     });
   }, test.limit.quick);
-  function familyOf(b) { try { return b.made ? require(DATA)[b.made] : null; } catch (e) { return null; } }
-  test.run('in node it stands at spirit.client under its branch, its data and its cache, for clients to ask', 0.4, function () {
+  // goal/G49.23: the store hands no family out by name. Its data is what the data.js exports, placed at its path on the spirit
+  // object (spirit.config.data), the reads handed out onto it; its cache is the store's, under the family it made, which the
+  // handle it hands out names in each branch's whole path (<node>/<family>/<branch>).
+  function familyOf(b) {
+    try {
+      if (!b.made) return null;
+      const reads = SPIRIT.requireScript(b.data);
+      let at = SPIRIT; b.data.replace(/\.js$/, '').split('/').slice(1).forEach(function (k) { at = at && at[k]; });
+      const h = reads && typeof reads.handle === 'function' ? reads.handle('x') : null;
+      const filed = !!h && String(h.path).split('/')[1] === b.made;
+      return { data: at === reads ? reads : null, cache: filed ? h : null };
+    } catch (e) { return null; }
+  }
+  test.run('in node its data stands at its path, and its cache in the store under its branch, for clients to ask', 0.4, function () {
     return overAll(withData, function (b) {
       const f = familyOf(b);
       return (!!f && !!f.data && typeof f.data === 'object' && !!f.cache && typeof f.cache === 'object') ? true : false;
@@ -2886,7 +2899,8 @@ if (!GIVEN.length) {
   // script.js and client/script.js) names, for each argument, a type script by its path, spirit/type/... or an app's own
   // <app>/type/... (goal/G49.20), never a word of its own like 'text?'.
   test.run('every argument of every branch\'s verbs is a type script by its path', 0.4, function () {
-    const files = productCode().filter(function (f) { return /\/script\.js$/.test(f) && shFs.existsSync(shPath.join(SH.run, f.replace(/script\.js$/, 'client/script.js'))); });
+    // goal/G49.23: the store is spirit/client/script.js, beside the spirit object, spirit/script.js, which is no branch and has no verbs.
+    const files = productCode().filter(function (f) { return /\/script\.js$/.test(f) && f !== 'spirit/script.js' && shFs.existsSync(shPath.join(SH.run, f.replace(/script\.js$/, 'client/script.js'))); });
     if (files.length < 3) return false;
     return files.every(function (f) {
       let m = null;

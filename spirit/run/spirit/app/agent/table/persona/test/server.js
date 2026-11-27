@@ -180,7 +180,8 @@ test.run('the page files place spirit.app.agent.element.table.persona.elementTab
     made.required.push(String(p));
     // The store, run below as the page's loader runs it, handed as the answer (goal/G49.23): a data.js keeps it so.
     if (p === 'spirit/client/script.js') return Promise.resolve(STORE);
-    if (p === 'spirit/app/agent/api.js' && !made.agentData) { made.agentData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
+    // Run as the page's loader runs it, so it stands at its path, spirit.app.agent.data (goal/G49.23: the store hands out no family by name).
+    if (p === 'spirit/app/agent/api.js' && !made.agentData) { made.agentData = true; PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
     // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
     // function... or fail/throw"): the shared table and row elements, the page files' own answers once they ran, and an
@@ -256,7 +257,8 @@ test.run('the provider is not mandatory, as the job\'s is not', 0.2, function ()
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), which only its api.js requires; it files the rows under the
-// node that served them, and is read through the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+// node that served them, and is read at its path, spirit.app.agent.data, the family named by the app's id (goal/G49.19; goal/G49.23: the store hands out no
+// family by name).
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
@@ -266,7 +268,7 @@ test.run('the persona page requires the agent interface, and the persona branch 
   if (!X.made) return false;
   if (X.made.required.slice(X.made.from).indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = STORE;
-  const AD = X.AD = ((STORE || {})['spirit.app.agent'] || {}).data;
+  const AD = X.AD = (((global.window.spirit || {}).app || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/spirit.app.agent/persona';
   return !!AD && typeof AD.branch === 'function' && AD.branch('persona') === X.BRANCH ? true : false;
 }, test.limit.quick);

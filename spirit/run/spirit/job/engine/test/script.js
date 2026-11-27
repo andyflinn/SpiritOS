@@ -854,7 +854,8 @@ function mountPart() {
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
     fs.writeFileSync(path.join(dir, 'data.js'), [
       '(function family() {',
-      "  var D = typeof window !== 'undefined' ? window.spirit.client : require('../../data/script.js');",
+      // goal/G49.23: in node the store by its path, spirit/client/script.js, through the spirit object.
+      "  var D = typeof window !== 'undefined' ? window.spirit.client : require('../../script.js').requireScript('spirit/client/script.js');",
       "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(family); return; }",
       "  D.makeFamily('" + appId(name) + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
@@ -875,7 +876,8 @@ function mountPart() {
     // data.js on this node (appServer.js, familyApi), and its translator says so by a file. Named by its own script, as a server is.
     const follow = path.join(run, 'spirit', 'app', NAME);
     fs.writeFileSync(path.join(follow, 'followerRows.js'), [
-      "const D = require('../../data/script.js');",
+      // goal/G49.23: the store is spirit/client/script.js, required by its path through the spirit object.
+      "const D = require('../../script.js').requireScript('spirit/client/script.js');",
       "D.addTranslator({ onJob: function (job) { if (job && job.app) require('fs').writeFileSync(process.env.ROW_SEEN, JSON.stringify(job.app)); } });",
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(follow, 'follower.js'), [
@@ -1245,10 +1247,11 @@ function mountPart() {
     return (!!same && same.v === NAME) || false;
   }, test.limit.quick);
   // The store at its place since goal/G49.23, spirit.client (no spirit.required).
-  // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.client.<family>, and
-  // what the planted data.js marked.
+  // A process requires the family's api.js alone, and says whether its data.js then stands at its path, spirit.app.<name>.data (a
+  // client of the new shape at spirit.app.<name>.client; goal/G49.23: the store hands no family out by name), and what the planted
+  // data.js marked.
   const inNode = function (family) {
-    const r = spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.client && global.spirit.client[" + JSON.stringify(appId(family)) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+    const r = spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.app && global.spirit.app[" + JSON.stringify(family) + "] && (global.spirit.app[" + JSON.stringify(family) + "].client || global.spirit.app[" + JSON.stringify(family) + "].data)), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
     return parsed(String(r.stdout || '').trim()) || {};
   };
   test.run('in a process, requiring a tree app\'s api.js loads its data.js', 0.2, function () {

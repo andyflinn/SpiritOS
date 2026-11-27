@@ -118,7 +118,8 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     // spirit.app.api, the store at spirit.client).
     var made = R.made = [];
     var f = S.element.search; var real = f.create;
-    f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
+    // goal/G49.23: a search is handed a handle on its branch (<client>.handle(branch)), no path; the branch's whole path is the handle's.
+    f.create = function (host, o) { var x = o || {}; var at = x.data && typeof x.data === 'object' && typeof x.data.path === 'string' ? x.data.path : ''; made.push({ data: at, host: host }); return real.apply(this, arguments); };
     return S.requireScript('spirit/element/search/' + name + '/script.js').then(function () { return VIA_LIST[name] ? S.requireScript('spirit/element/search/' + name + '/list/script.js') : null; })
       // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list/script.js: "opts.grants the grants table, required"):
       // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).

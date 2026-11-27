@@ -29,12 +29,12 @@ const W = {};
 let n = 0;
 // A row as the stream hands it: a job of module spirit.app.testicle whose app is testicle's publish (testicle.js).
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.testicle', data: {}, app: app }, from || HOME_KEY); };
-// The family is the app's id (goal/G49.19): the store's ['spirit.app.testicle'], its rows under <node>/spirit.app.testicle/.
+// The family is the app's id (goal/G49.19), its rows under <node>/spirit.app.testicle/; its reads at spirit.app.testicle.data (goal/G49.23).
 const FAMILY = 'spirit.app.testicle';
 const at = function (table, key, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/' + FAMILY + '/' + table + '/' + key); };
 const suiteRow = function (script, suite, more) { return Object.assign({ key: script + '|' + suite, script: script, suite: suite, test: false, status: 'green', deleted: false, outcome: 'green', changed: 1 }, more || {}); };
 
-test.run('in a window, beside the real store, it stands at the store\'s [\'spirit.app.testicle\'].data', 0.2, function () {
+test.run('in a window, beside the real store, it stands at its path, spirit.app.testicle.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -48,7 +48,9 @@ test.run('in a window, beside the real store, it stands at the store\'s [\'spiri
     W.D.homeNode(HOME_KEY);
     PAGE_LOAD.runAsPage(FILE, win);
   } catch (e) { return false; }
-  W.T = ((W.D || {})[FAMILY] || {}).data;
+  // At the data.js's path, where the page's loader places it (goal/G49.23: the store hands out no family by name).
+  const T = (((win.spirit || {}).app || {}).testicle || {}).data;
+  W.T = T && typeof T.keep === 'function' ? T : null;
   return !!W.T || false;
 }, test.limit.quick);
 test.run('its tables are script, suite and testicle', 0.2, function () {
@@ -209,13 +211,11 @@ test.run('a row from another node is kept under that node', 0.2, function () {
 }, test.limit.quick);
 
 // ── in node, loaded by its api.js, the one script that requires it (goal/G47.1) ──
-test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at the store\'s [\'spirit.app.testicle\'].data', 0.2, async function () {
+test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at its path, spirit.app.testicle.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { require(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js')); } catch (e) { return false; }
-  // The store as spirit.requireScript hands it back (goal/G49.23: no spirit.required).
-  let D = null;
-  try { D = await Promise.resolve(s.requireScript('spirit/client/script.js')); } catch (e) { return false; }
-  const T = D && D[FAMILY] && D[FAMILY].data;
+  // Its data.js where the loader placed it (goal/G49.23: the store hands out no family by name).
+  const T = s.app && s.app.testicle && s.app.testicle.data;
   return (!!T && typeof T.keep === 'function' && !!T.monitor) || false;
 }, test.limit.quick);

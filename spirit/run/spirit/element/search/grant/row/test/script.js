@@ -14,7 +14,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
 const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
@@ -46,8 +45,9 @@ function grantsTable(o) {
   return t;
 }
 // As spirit/element/search/grant/grantsPanel/script.js, in the Grants app, configures the node's grants (goal/G41.28): the grant branch's client's branch and its watch (goal/G49.21).
-const NODE = grantsTable({ get branch() { return ((global.window.spirit.client || {}).grant || {}).data ? global.window.spirit.client.grant.data.branch : ''; }, key: 'key', label: 'label',
-  watch: function (fn) { return global.window.spirit.client.grant.data.watch(fn); } });
+// goal/G49.23: the grant branch's client stands at its path, spirit.grant.client, never on the store by a short name.
+const NODE = grantsTable({ get branch() { return ((global.window.spirit.grant || {}).client || {}).branch || ''; }, key: 'key', label: 'label',
+  watch: function (fn) { return global.window.spirit.grant.client.watch(fn); } });
 // A second table, its branch a whole spirit.client path of the home node, its watch that branch's.
 const AGENT = grantsTable({ get branch() { return global.window.spirit.client.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
   watch: function (fn) { const v = global.window.spirit.client.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
@@ -80,10 +80,14 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   DATA.homeNode(NODE_KEY);
   // The grant branch's client, run from its path as its branch brings it (goal/G49.21): the Grants app requires
   // spirit/grant/script.js as it loads (spirit/element/search/grant/grantsPanel/script.js), and that script requires its client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'grant', 'client', 'script.js'), 'utf8'), { filename: 'spirit/grant/client/script.js' });
-  A = ((global.window.spirit.client || {}).grant || {}).data;
+  // goal/G49.23: run as the page's loader runs it, what the client puts out is the grant branch's client, placed at spirit.grant.client;
+  // its family is named by its branch's path, spirit.grant.
+  // The client files into the data set requireScript('spirit/client/script.js') hands back, the store this window ran above.
+  const pageAsk = global.window.spirit.requireScript;
+  global.window.spirit.requireScript = function (p) { return p === 'spirit/client/script.js' ? Promise.resolve(DATA) : pageAsk(p); };
+  try { A = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'grant', 'client', 'script.js')); } finally { global.window.spirit.requireScript = pageAsk; }
   // The direct writes below are the grant client's own view of the home node, as it files them.
-  V = DATA.viewAt(null, 'grant');
+  V = DATA.viewAt(null, 'spirit.grant');
   const made = {};
   global.window.spirit.requireScript = function (p) { required.push(String(p)); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);

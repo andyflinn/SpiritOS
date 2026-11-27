@@ -48,15 +48,15 @@ function plantFamilies() {
   fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
     "const D = require('../../script.js').requireScript('spirit/client/script.js');",
-    "D.makeFamily('" + FAMILY_ID + "', function () {",
+    // goal/G49.23: the store hands no family out by name; its reads are put out on what the file exports, as a client's are.
+    "module.exports = D.handOut({}, D.makeFamily('" + FAMILY_ID + "', function () {",
     "  const HOME = D.viewAt(null, '" + FAMILY_ID + "');",
     "  D.addTranslator({ onJob: function (job) {",
     "    if (!(job && job.module === '" + FAMILY_ID + "' && job.app && job.app.item && job.app.item.id)) return;",
     "    D.viewAt(job.fromNode || null, '" + FAMILY_ID + "').set('rows/' + job.app.item.id, job.app.item);",
     "  } });",
     "  return { item: function (id) { return id ? HOME.get('rows/' + id) || null : null; } };",
-    "});",
-    "module.exports = {};",
+    "}));",
   ].join('\n') + '\n');
   fs.writeFileSync(path.join(at(SHED_FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(SHED_FAMILY), 'data.js'), head + [
@@ -234,7 +234,9 @@ function start(streamOpts, publisherOpts) {
 // What the client's cache holds, asked of the family's data.js, which alone names its branches (goal/G41.28; Andy:
 // "the client manager should keep that cache"): the store's <family>.data, attached by appServer to the process's spirit.
 // goal/G49.23: the store as spirit.requireScript hands it back (no spirit.required; the store places nothing itself).
-const kept = function () { const D = fake.requireScript('spirit/client/script.js'); return (D && (D[FAMILY_ID] || {}).data) || null; };
+// goal/G49.23: the reads the translator put out, as spirit.requireScript hands it back by its run path (the store hands no family
+// out by name).
+const kept = function () { const K = fake.requireScript(TRANSLATOR); return (K && typeof K.item === 'function') ? K : null; };
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
 const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 
@@ -659,7 +661,8 @@ function stateCachePart() {
     // The follower: a server of spirit/app/ following a stream with its cache on. Its translator says by a file what came
     // back; once read back, it saves its caches (saveCaches) and says which files it wrote.
     fs.writeFileSync(path.join(app, 'rows.js'), [
-      "const D = require('../../data/script.js');",
+      // goal/G49.23: the store is spirit/client/script.js, required by its path through the spirit object.
+      "const D = require('../../script.js').requireScript('spirit/client/script.js');",
       "D.addTranslator({ onJob: function (job) { if (job && job.app) require('fs').writeFileSync(process.env.ROW_SEEN, JSON.stringify(job.app)); } });",
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(app, NAME + '.js'), [

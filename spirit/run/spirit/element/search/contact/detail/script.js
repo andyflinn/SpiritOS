@@ -32,6 +32,9 @@
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/label/script.js');
+  // ITS FACT ROWS FROM spirit/fuckingGarbage/factRow/script.js (goal/G49.23, box v21: "factRow to spirit/fuckingGarbage/factRow/script.js,
+  // the contact detail requiring it by that path"), no longer off spirit.shell.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fuckingGarbage/factRow/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/contact/script.js');
   function contacts() { var b = ANSWER['spirit/contact/script.js']; return (b && b.client) || null; }
@@ -241,7 +244,7 @@ function cdRender() {
   //
   // NO COUNTERS (goal/G43.14; Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!"): unanswered inbound
   // and the two rates went, even for a row that still carries them.
-  var facts = spirit.shell.factRow([
+  var facts = ANSWER['spirit/fuckingGarbage/factRow/script.js'].factRow([
     ['Public Handle', cdPerson.publicLabel || '(none)'],
     ['My Label', cdPerson.myLabel || '(none)'],
     ['Storage', spirit.formatBytes(cdPerson.bytesHeld || 0)],
@@ -898,7 +901,7 @@ function ndReportHtml() {
   // which with one browser across several relays is a per-relay answer.
   if (!ndBadge.owned && ndBadge.claimed) {
     var c = ndBadge.roll || {};
-    return ndPanel('relay', 'ℹ️', 'What this relay says', spirit.shell.factRow([
+    return ndPanel('relay', 'ℹ️', 'What this relay says', ANSWER['spirit/fuckingGarbage/factRow/script.js'].factRow([
       ['Owner', c.owner || '(unknown)'],
       ['You', c.myLabel || '(unknown)'],
     ]));
@@ -939,7 +942,7 @@ function ndReportHtml() {
     ['Connected', report.present == null ? '(unknown)' : report.present],
   ];
   return ndPanel('relay', 'ℹ️', 'What this relay says',
-    spirit.shell.factRow(facts.concat(ndGovernorFacts(report))));
+    ANSWER['spirit/fuckingGarbage/factRow/script.js'].factRow(facts.concat(ndGovernorFacts(report))));
 }
 
 // ── THE MONITOR'S TWO PANELS, AS ROWS (cycle 1) ─────────────────────
@@ -1419,12 +1422,12 @@ function ndAllocationHtml() {
   // DISC IN GB (goal/G30.15; Andy: "disc should be measured in GB, not MB"); the relay keeps MB.
   var gb = function (mb) { return mb === undefined || mb === null ? 'not known' : (Math.round(Number(mb) / 1024 * 100) / 100) + ' GB'; };
   return ndPanel('allocation', 'ℹ️', 'Memory and disc',
-    spirit.shell.factRow([
+    ANSWER['spirit/fuckingGarbage/factRow/script.js'].factRow([
       ['Memory set', ram + ' MB'], ['Memory running', run.ramLimitMB + ' MB'],
       ['The box can give', (room.ramMaxMB !== undefined ? room.ramMaxMB + ' MB' : 'not known')],
       ['The relay at rest', (run.atRestMB || 0) + ' MB'], ['Members served now', run.members === undefined || run.members === null ? 'no limit' : run.members],
     ]) +
-    spirit.shell.factRow([
+    ANSWER['spirit/fuckingGarbage/factRow/script.js'].factRow([
       ['Disc set', gb(disc)], ['Disc running', gb(run.discLimitMB)],
       ['The box can give', gb(room.discMaxMB)],
       ['The roll uses', (roll.discUsedMB || 0) + ' MB'],

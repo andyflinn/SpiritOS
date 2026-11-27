@@ -771,7 +771,8 @@ test.run('the request settles once every grant is answered, so the button is pla
 test.run('grantsPanel.nodeGrants\'s branch is a handle on the grant client\'s branch, keyed by key, labelled by label', 0.2, function () {
   if (!GP) return false;
   g = GP.nodeGrants;
-  A = ((w.win.spirit.client || {}).grant || {}).data;
+  // goal/G49.23: the grant branch's client, at its path spirit.grant.client, never the store by a short name.
+  A = (w.win.spirit.grant || {}).client;
   return !!g && !!A && !!g.branch && typeof g.branch.whole === 'function' && g.branch.path === A.branch && g.key === 'key' && g.label === 'label' ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel.nodeGrants has search, grant, revoke and watch, and no stream of its own', 0.2, function () {
@@ -824,7 +825,7 @@ test.run('the revoke of nodeGrants asks spirit.grant.delete with the key and the
 // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's job spirit.grant hands (goal/G49.21) comes
 // back through watch.
 let heard, off;
-test.run('the watch of nodeGrants hears a grant in spirit.client.grant as <key>\\n<path> with its row, once revoked none', 0.2, function () {
+test.run('the watch of nodeGrants hears a grant in the grant branch\'s client as <key>\\n<path> with its row, once revoked none', 0.2, function () {
   if (!g || !A) return false;
   D = w.win.spirit.client;
   heard = [];
@@ -862,7 +863,7 @@ test.run('Grants\' data source has moved into grantsPanel, which asks spirit.gra
 test.run('Grants\' data source has moved into grantsPanel, which asks spirit.grant.delete', 0.2, function () {
   return /'spirit\/grant\/script\.js',\s*'delete'/.test(panel) ? true : false;
 }, test.limit.quick);
-test.run('grantsPanel holds the grant cache it reads, spirit.client.grant', 0.2, function () {
+test.run('grantsPanel holds the grant cache it reads, the grant branch\'s client', 0.2, function () {
   const holds = /\bdata\.grant\b|require(?:Script)?\s*\(\s*['"]spirit\/grant\/script\.js['"]/.test(panel);
   return holds ? true : false;
 }, test.limit.quick);

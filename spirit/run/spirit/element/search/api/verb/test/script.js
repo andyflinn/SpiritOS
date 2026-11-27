@@ -152,7 +152,8 @@ test.run('it requires spirit/node/api.js and no data.js, and its list is a view 
   mine = made.create(node('div'), {});
   await settle();
   m = w.lists[w.lists.length - 1];
-  N = ((win.spirit.client || {}).node || {}).data;
+  // goal/G49.23: the verbs read from the node branch the element requires, its data (spirit.node.data), never from the store by a short name.
+  N = ((win.spirit.node) || {}).data;
   return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!m.opts.data && typeof m.opts.data.whole === 'function' && m.opts.data.path === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s and never DEBUG', 0.2, function () {

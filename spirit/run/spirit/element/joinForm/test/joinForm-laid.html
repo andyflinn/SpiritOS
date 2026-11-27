@@ -15,15 +15,14 @@
 // the browser makes of them, measured. Opened by ./script.js at /DEBUG/spirit/element/joinForm/test/joinForm-laid.html.
 window.laid = function () {
   var made = [];
-  return spirit.requireScript('spirit/element/rowForm/script.js').catch(function () { return null; }).then(function () {
-    var R = (((spirit.required || {}).spirit || {}).element || {}).rowForm;
+  // goal/G49.23: no spirit.required; each element as spirit.requireScript hands it back.
+  return spirit.requireScript('spirit/element/rowForm/script.js').catch(function () { return null; }).then(function (R) {
     if (R && typeof R.create === 'function') {
       var real = R.create;
       R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };
     }
     return spirit.requireScript('spirit/element/joinForm/script.js');
-  }).catch(function () { return null; }).then(function () {
-    var J = (((spirit.required || {}).spirit || {}).element || {}).joinForm;
+  }).catch(function () { return null; }).then(function (J) {
     var out = { made: !!J && typeof J.mount === 'function' };
     if (!out.made) return JSON.stringify(out);
     // Each relay with the key of its row, as contact names a relay (goal/G49.11, box v9: "names the relay by its row's public key").

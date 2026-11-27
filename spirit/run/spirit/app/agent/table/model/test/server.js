@@ -207,8 +207,8 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     busyButton: { attach: function (button, opts) { const a = { button: button, opts: opts || {}, answers: [] }; made.busy.push(a); button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); }); return button; } },
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
-    // branch's data.js names it (the store's ['spirit.app.agent'].data.branch, goal/G41.28, G49.19); the search element its stand-in above (goal/G49.23).
-    agentDetail: { search: function (host, o2, more) { const AD2 = ((STORE || {})['spirit.app.agent'] || {}).data; const s3 = STAND.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    // branch's data.js names it (spirit.app.agent.data.branch, goal/G41.28, G49.19, G49.23); the search element its stand-in above (goal/G49.23).
+    agentDetail: { search: function (host, o2, more) { const AD2 = (((global.window.spirit || {}).app || {}).agent || {}).data; const s3 = STAND.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   });
@@ -401,7 +401,8 @@ test.run('the provider is picked from a search of the provider table', 0.2, func
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), which only its api.js requires (goal/G47.1); it files the rows under the
-// node that served them, and is read through the store's ['spirit.app.agent'].data, the family named by the app's id (goal/G49.19).
+// node that served them, and is read at its path, spirit.app.agent.data, the family named by the app's id (goal/G49.19; goal/G49.23: the store hands out no
+// family by name).
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
@@ -410,7 +411,7 @@ test.run('its page files require no data script', 0.2, function () {
 test.run('the page files require spirit/app/agent/api.js, and its model branch is the home node\'s spirit.app.agent/model branch', 0.2, function () {
   if (!X.made || X.made.required.indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = STORE;
-  const AD = X.AD = ((STORE || {})['spirit.app.agent'] || {}).data;
+  const AD = X.AD = (((global.window.spirit || {}).app || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/spirit.app.agent/model';
   return !!AD && typeof AD.branch === 'function' && AD.branch('model') === X.BRANCH ? true : false;
 }, test.limit.quick);
