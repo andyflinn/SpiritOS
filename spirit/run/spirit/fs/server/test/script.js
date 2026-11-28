@@ -466,7 +466,7 @@ const AS = { node: null, relay: null, homes: [], plain: '' };
 // folder or a file right in it), or at or under one of the branch and app folders.
 function outside(p) { return p !== 'spirit' && p.indexOf('spirit/') !== 0; }
 // Q12, Andy: "As a relay the cache must carry all branches and apps, EXCEPT app servers.": nothing at or under an app server's folder.
-function underServer(p) { return appDirs().some(function (d) { return !oneShot(d) && (p === d || p.indexOf(d + '/') === 0); }); }
+function underServer(p) { return appDirs().some(function (d) { return appServer(d) && (p === d || p.indexOf(d + '/') === 0); }); }
 function relayHolds(p) {
   if (outside(p)) return true;
   if (underServer(p)) return false;
@@ -515,7 +515,7 @@ test.run('as a relay, the tree holds every path at or under each trunk branch an
 }, test.limit.quick);
 test.run('as a relay, the tree holds nothing at or under an app server\'s folder', 0.2, function () {
   if (!AS.node || !AS.relay) return false;
-  const servers = appDirs().filter(function (d) { return !oneShot(d); });
+  const servers = appDirs().filter(function (d) { return appServer(d); });
   if (servers.length < 3) return false;
   return Object.keys(AS.relay).every(function (p) { return !underServer(p); }) || false;
 }, test.limit.quick);
@@ -543,11 +543,14 @@ function manifestNodeMount(dir) {
   }
   return false;
 }
+// An app server: an app with a standing server on the node, its manifest's node mount (cw's reading, G49.25: "agent, backup,
+// chat, desk, testicle"); a shell-only app has no server at all, and is carried.
+function appServer(dir) { return manifestNodeMount(dir); }
 function oneShot(dir) { return !manifestNodeMount(dir) && !!AS.node[dir + '/api.js'] && !!AS.node[dir + '/data.js']; }
 function appDirs() { return Object.keys(AS.node || {}).filter(function (p) { return AS.node[p].kind === 'folder' && AS.node[p].app; }); }
 test.run('as a relay, an app server is marked neither an app nor a branch', 0.2, function () {
   if (!AS.node || !AS.relay) return false;
-  const servers = appDirs().filter(function (p) { return !oneShot(p); });
+  const servers = appDirs().filter(function (p) { return appServer(p); });
   if (servers.length < 3) return false;
   return servers.every(function (p) { const r = AS.relay[p]; return !r || (!r.app && !r.branch); }) || false;
 }, test.limit.quick);
