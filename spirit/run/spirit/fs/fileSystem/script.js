@@ -96,6 +96,9 @@ const UNSERVABLE_FILES = ['spirit/fs/fileSystem/script.js', 'spirit/fs/server/sc
 // spirit/app/<name>/server/": the node's, the relay's and the server processes' code, and each app's server-only files.
 const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/', 'spirit/server/'].map(function (p) { return p.toLowerCase(); });
 const APP_SERVER_FOLDER = /^spirit\/app\/[^/]+\/server\//;
+// A TRUNK BRANCH'S NODE WORK IS THE NODE'S CODE TOO (goal/G49.25, Q5: "a branch's node work lives at spirit/<branch>/server/
+// script.js"): never served, as the node's own server folder and each app's are.
+const BRANCH_SERVER_FOLDER = /^spirit\/[^/]+\/server\//;
 
 // Path-only, caller-independent by design: nothing server-side can verify
 // which app is really asking, only whether the path itself is allowed.
@@ -171,7 +174,7 @@ function fileServable(filePath) {
   if (canonical === null) return false;
   if (UNSERVABLE_FILES.indexOf(canonical) !== -1) return false;
   if (UNSERVABLE_FOLDERS.some(function (f) { return canonical.indexOf(f) === 0; })) return false;
-  if (APP_SERVER_FOLDER.test(canonical)) return false;
+  if (APP_SERVER_FOLDER.test(canonical) || BRANCH_SERVER_FOLDER.test(canonical)) return false;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
   // AT ANY DEPTH, not only the node's own: a node's spirit/state/ (NODE_STATE), and an old tree's relay-state/ with its
   // keys, are refused wherever they sit, because a top-level-only check once served a nested identity's private key

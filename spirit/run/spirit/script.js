@@ -962,6 +962,10 @@
   self.VERSION = VERSION;
   self.DEFAULT_SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
   self.debugLog = debug;
+  // THIS PROCESS IS A RELAY (goal/G49.25, box v10: "new global, boolean value spirit.IS_RELAY is set to false inside
+  // spirit/script.js"; "spirit.server.relay sets spirit.IS_RELAY to true imediately after spirit/script.js is loaded, before
+  // spirit.fs is used"): false in every node, app server, console and page; the relay's own server turns it true.
+  self.IS_RELAY = false;
 
   // ── THE ONE STREAM OF THIS VM: spirit.eventStream.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
   // Andy: "two verbs on events - publish - subscribe". The node's events branch is its one dispatcher; this is its

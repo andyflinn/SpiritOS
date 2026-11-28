@@ -489,7 +489,68 @@ function writeEnvironment(rootDir, port) {
 // own run path, /spirit/script.js, /spirit/shell/boot/script.js and so on (goal/G49.13; Andy: "YOU FUCKING FIX THE
 // CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
 
+// ── HOW BOTH SERVERS LOAD THE BRANCHES (goal/G49.25) ─────────────────
+//
+// Andy, the box v10: "serveCommon will load the spirit.fs branch explicitly, then load all trunk branches, using the fs-cache";
+// "the existing logic is used to identify both old and new branches and apps"; and "WHY WOULD THE MOTHERFUCKING SERVER LOAD
+// MOTHERFUCKING BRANCHES EXPLICITLY????". Both the node and the relay boot through these two, a relay with spirit.IS_RELAY true
+// (the fs cache then keeps branch and app folders only, spirit/fs/server/script.js).
+//
+//   loadFs(rootDir, jobs)  spirit.fs first, by name: the branch, then its watcher started, which fills the fs cache the scan
+//                          reads. jobs is the node's job table, null on a relay (it keeps none). Answers the watcher's job.
+//   loadBranches(o)        every trunk branch the fs cache marks, spirit/<name> with the new branch mark or the old api one,
+//                          spirit.fs first: its node work, spirit/<name>/server/script.js's verbs(o.node) (Q5, Andy: "WHY THE FUCK
+//                          WOULD IT NOT???"), mounted by o.mount(name, folder, verbs). A new-shape branch is named by its path,
+//                          spirit.<name>, and its verbs pass o.check(name, branch, verbs), its own script.js's arguments; an old-
+//                          shape one keeps its own word, <name>, unchecked, as before. A branch with no node work is mounted with
+//                          none, so its interface is still found by its folder. Answers a promise of the names mounted.
+//     o: { rootDir, node, mount(name, folder, verbs), check(name, branch, verbs), root }; root is the trunk's own verbs, mounted
+//     first under spirit (Andy: "spirit is always loaded"). A relay hands no node and no mount.
+function loadFs(rootDir, jobs) {
+  spirit.requireScript('spirit/fs/script.js');
+  return spirit.requireScript('spirit/fs/server/script.js').start(rootDir, jobs || null);
+}
+function trunkBranches() {
+  const files = spirit.requireScript('spirit/fs/dataset/script.js').files();
+  return Object.keys(files).filter(function (p) {
+    const row = files[p];
+    return /^spirit\/[^/]+$/.test(p) && !!row && row.kind === 'folder' && (row.branch === true || row.api === true);
+  }).sort(function (a, b) { return a === 'spirit/fs' ? -1 : b === 'spirit/fs' ? 1 : (a < b ? -1 : (a > b ? 1 : 0)); }).map(function (p) {
+    return { dir: p, isNew: files[p].branch === true };
+  });
+}
+function loadBranches(opts) {
+  const o = opts || {};
+  // THE TRUNK ITSELF FIRST (Andy: "spirit is always loaded"): its verbs are its server's own, handed in as o.root, mounted under
+  // spirit at the trunk's folder and checked by spirit/script.js's (spirit.verbs).
+  if (o.root && typeof o.mount === 'function') {
+    o.mount('spirit', path.join(o.rootDir, 'spirit'), typeof o.check === 'function' ? o.check('spirit', { verbs: spirit.verbs }, o.root) : o.root);
+  }
+  return Promise.all(trunkBranches().map(function (t) {
+    const word = t.dir.slice(t.dir.lastIndexOf('/') + 1);
+    const name = t.isNew ? spirit.dottedPath(t.dir) : word;
+    // The folder arrives whole from the fs cache (goal/G49.23, Q7: "a path that arrives whole at run time may be held in a
+    // name"); its node work and its script are the two files every branch names the same.
+    const workPath = t.dir + '/server/script.js';
+    const scriptPath = t.dir + '/script.js';
+    return Promise.resolve().then(function () {
+      const work = fs.existsSync(path.join(o.rootDir, workPath)) ? spirit.requireScript(workPath) : null;
+      const declared = work && typeof work.verbs === 'function' && o.node ? work.verbs(o.node) : {};
+      return Promise.resolve(t.isNew ? spirit.requireScript(scriptPath) : null).then(function (branch) {
+        const verbs = t.isNew && typeof o.check === 'function' ? o.check(name, branch, declared) : declared;
+        if (typeof o.mount === 'function') o.mount(name, path.join(o.rootDir, t.dir), verbs);
+        return name;
+      });
+    }).then(null, function (e) {
+      console.error('the ' + name + ' branch could not be bound: ' + ((e && e.message) || e));
+      return null;
+    });
+  })).then(function (names) { return names.filter(Boolean); });
+}
+
 module.exports = {
+  loadFs: loadFs,
+  loadBranches: loadBranches,
   writeEnvironment: writeEnvironment,
   ensureFirstRun: ensureFirstRun,
   firstDescription: firstDescription,

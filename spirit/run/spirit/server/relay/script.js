@@ -21,6 +21,9 @@
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../../script.js');
+// THIS PROCESS IS A RELAY (goal/G49.25, box v10: "spirit.server.relay sets spirit.IS_RELAY to true imediately after
+// spirit/script.js is loaded, before spirit.fs is used").
+spirit.IS_RELAY = true;
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -383,6 +386,14 @@ spirit.requireScript('spirit/relayAuth/script.js').nameIdentity(ROOT_DIR, 'relay
 // FIRST-RUN DEFAULTS (goal/G30.7): a first description and a first public label, by the node's own rule (serveCommon).
 try { spirit.requireScript('spirit/server/serveCommon/script.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
 catch (e) { /* a caption must never be the reason a relay will not boot */ }
+
+// THE BRANCHES, AS THE NODE LOADS THEM (goal/G49.25, box v10: "the both relay and node boot: serveCommon will load the spirit.fs
+// branch explicitly, then load all trunk branches, using the fs-cache"; Andy: "the relay fucking loads them all, that fucking
+// happens when you fucking move the shit to serveCommon"): spirit.fs first, its cache holding branch and app folders only, since
+// spirit.IS_RELAY is true here (a relay keeps no job table, so nothing of it is published); then every trunk branch it marks. A
+// branch's node work answers nothing on a relay, whose verbs are its processor's, so no node is handed in and nothing is mounted.
+common.loadFs(ROOT_DIR, null);
+common.loadBranches({ rootDir: ROOT_DIR });
 
 // handleDeviceOffer (POST /spirit/relay/device) STOOD HERE, removed by
 // goal/G16.2 with the device enrolment.

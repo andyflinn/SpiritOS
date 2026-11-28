@@ -57,6 +57,17 @@ function folderFlags(dir, has, read) {
 function sameFlags(a, row) {
   return a.api === (row.api === true) && a.branch === (row.branch === true) && a.app === (row.app === true) && a.live === (row.live === true);
 }
+// ON A RELAY, BRANCH AND APP FOLDERS ONLY (goal/G49.25, box v10: "if spirit.IS_RELAY, the fs cache will cache branch and app folders
+// only."; "the existing logic is used to identify both old and new branches and apps"): a row is kept when it is a folder with the
+// old branch mark (api), the new one (branch) or the app mark, by the same filters as on a node. Every other path stays on the disc,
+// where the marks are worked out from (a relay's RAM is the most expensive thing it has). OUTSIDE spirit/ EVERYTHING (Andy, v12:
+// "it will still cache everything outside of run://spirit/"): a path that is not spirit/ itself or under it is kept whole, as on
+// a node.
+function kept(p, held) {
+  if (!spirit.IS_RELAY) return true;
+  if (p !== 'spirit' && String(p).indexOf('spirit/') !== 0) return true;
+  return !!held && held.kind === 'folder' && (held.api === true || held.branch === true || held.app === true);
+}
 
 // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
 // it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete
@@ -99,24 +110,37 @@ function start(rootDir, jobs) {
   Array.from(seed.keys()).sort().forEach(function (p) {
     const held = seed.get(p);
     if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }, read));
-    fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
+    if (kept(p, held)) fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
   });
   spirit.requireScript('spirit/client/script.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
-  const has = function (q) { return !!tree.file(q); };
+  // Whether the tree holds a path: the kept rows on a node, the disc on a relay, which keeps no file rows.
+  const has = spirit.IS_RELAY ? function (q) { return fs.existsSync(path.join(rootDir, q)); } : function (q) { return !!tree.file(q); };
   // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
-  const job = jobs.ownJob('spirit.fs');
+  // A RELAY KEEPS NO JOB TABLE (goal/G49.25): there the cache is fed and nothing is published; job is a plain row to stop by.
+  const job = jobs ? jobs.ownJob('spirit.fs') : { id: 'spirit.fs' };
   const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
   const ignored = function (full) {
     const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
     if (!rel || rel.indexOf('..') === 0) return false;
     return rel.split('/').some(function (part) { return part === '.git'; });
   };
-  const watcher = spirit.requireScript('spirit/fs/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
+  // ON A RELAY NO STARTUP REPORT (goal/G49.25): chokidar reports every path it finds as it starts, which a node answers with nothing,
+  // each already held; a relay holds no row for most of them under spirit/, and would work every one out again from the disc, in
+  // the moments its first requests come. The seed has them already.
+  const watcher = spirit.requireScript('spirit/fs/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: spirit.IS_RELAY, persistent: true });
   // Each command goes into spirit.required.spirit.data.fs first, then up the stream, so what a page is handed is what the node holds.
-  const send = function (command) { fsWrite(command); jobs.updateJob(job.id, { data: { command: command } }); };
-  // A folder whose flags turned is sent again as a createDirectory with its new row.
+  const send = function (command) { fsWrite(command); if (jobs) jobs.updateJob(job.id, { data: { command: command } }); };
+  // A folder whose flags turned is sent again as a createDirectory with its new row. On a relay a folder that gained a mark
+  // comes in as a new row, and one that lost its last goes (kept above).
   const reflag = function (dir) {
     const row = tree.file(dir);
+    if (spirit.IS_RELAY) {
+      const flags = folderFlags(dir, has, read);
+      const now = Object.assign(row ? Object.assign({}, row) : statOf(path.join(rootDir, dir), 'folder'), flags);
+      if (kept(dir, now) && (!row || !sameFlags(flags, row))) send(commandOf('createDirectory', dir, new Date().toISOString(), now));
+      else if (!kept(dir, now) && row) send(commandOf('deleteDirectory', dir, new Date().toISOString(), null));
+      return;
+    }
     if (!row || row.kind !== 'folder') return;
     const flags = folderFlags(dir, has, read);
     if (!sameFlags(flags, row)) send(commandOf('createDirectory', dir, new Date().toISOString(), Object.assign({}, row, flags)));
@@ -133,9 +157,12 @@ function start(rootDir, jobs) {
       held = heldOf(rel, full, kind);
       if (kind === 'folder') Object.assign(held, folderFlags(rel, has, read));
     } else if (op === 'deleteFile' || op === 'deleteDirectory') {
-      if (!tree.file(rel)) return;
+      if (!tree.file(rel)) held = undefined;
     } else held = heldOf(rel, full, 'file'); // a change: the new stat (a file never seen is made by it)
-    send(commandOf(op, rel, new Date().toISOString(), held));
+    // On a relay only a kept row is sent, and only a held row is deleted; on a node every path is, as before.
+    const sendable = op === 'deleteFile' || op === 'deleteDirectory' ? held !== undefined : kept(rel, held);
+    if (!sendable && !spirit.IS_RELAY) return;
+    if (sendable) send(commandOf(op, rel, new Date().toISOString(), held));
     // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): a file made or gone inside a folder works the folder's flags out
     // again, and its parent's (client/script.js is a level down); a changed file changes no flag of its own folder's.
     const cut = rel.lastIndexOf('/');
@@ -182,7 +209,8 @@ function start(rootDir, jobs) {
     if (err && GONE_CODES.indexOf(err.code) !== -1 && err.path && !fs.existsSync(err.path)) return;
     // 'failed', not 'error': only a terminal status can be deleted, and a watcher that died left a row in Jobs that
     // deleteJob refused forever, with no way to clear it short of restarting the server.
-    jobs.updateJob(job.id, { status: 'failed', logMessage: String(err) });
+    if (jobs) jobs.updateJob(job.id, { status: 'failed', logMessage: String(err) });
+    else console.error('the fs cache\'s watcher failed: ' + String(err));
   });
 
   job._stop = function () {
@@ -193,4 +221,90 @@ function start(rootDir, jobs) {
   return job;
 }
 
-module.exports = { start: start };
+// THE spirit.fs BRANCH'S NODE WORK (goal/G49.25, Q5; Andy: "WHY THE FUCK WOULD IT NOT???" to "Does a branch's node work live at
+// spirit/<branch>/server/script.js, handing its verbs' answers to the scan"): verbs(node) -> { <verb>: { reply, handler } }, the
+// answers the node server held until this item, moved whole. serveCommon's scan mounts them under spirit.fs, each call checked by
+// spirit/fs/script.js first. node is what the node server hands every branch (spirit/server/node/script.js, branchNode). A relay
+// answers none of them here: its file verbs are its processor's.
+//
+// THE GATE IS NOT IN HERE, and that is the point of this branch. Every one of these goes through fileSystem.js, which asks
+// fileWritable or fileServable about the path.
+function verbs(node) {
+  if (spirit.IS_RELAY) return {};
+  const readJsonBody = node.readJsonBody;
+  const bodyRefused = node.bodyRefused;
+  function writeFsResult(res, result) {
+    if (result.ok) {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (result.reason === 'forbidden') {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Forbidden');
+      return;
+    }
+    if (result.reason === 'file-not-found') {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
+      return;
+    }
+    // A path the file system will not take (goal/G41.30): the caller's, so a 400.
+    if (result.reason === 'bad-path') {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Bad request: the file system refused this path');
+      return;
+    }
+    res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Internal error');
+  }
+  // fs.save AND fs.load HAVE NO SIZE LIMIT (goal/G33.10, Andy: "i want fs to be hard-coded owner only, with no size
+  // limits on it's loadFile and saveFile...."). The owner's alone (apiDoor, apiAuth), so the packet's bound is not theirs.
+  const FS_UNBOUNDED = { max: Infinity };
+  return {
+    // The node's files by path (puppets/G2). spirit.fs.stat stays the "get".
+    'search': { reply: node.LIST, handler: node.proxyVerb(function (b) { return node.nodeSearches.fsSearch(b); }) },
+    'stat': { reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: function (req, res) {
+      return readJsonBody(req).then(function (body) {
+        const stats = fileSystem.statFile(String((body && body.path) || ''));
+        if (!stats) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Not found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(stats));
+      }).catch(function (e) { bodyRefused(req, res, e); });
+    } },
+    // THE READ AS A VERB (goal/G14.8): a file's text by path, through loadFile, so fileServable decides as it does for the
+    // static route; 404 by name when there is none. Andy, 2026-10-10: "i'm more inclined to deny URL fetch, and allow
+    // loadFile, it's much narrower."
+    'load': { reply: { path: '', text: '' }, handler: function (req, res) {
+      return readJsonBody(req, FS_UNBOUNDED).then(function (body) {
+        const filePath = String((body && body.path) || '');
+        const text = fileSystem.loadFile(filePath);
+        if (text === null) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Not found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ path: filePath, text: text }));
+      }).catch(function (e) { bodyRefused(req, res, e); });
+    } },
+    // No annotations and no annotate: ANNOTATIONS ARE THE NODE'S ONLY (goal/G43.20). The two writes answer 204, no body.
+    'save': { reply: {}, handler: function (req, res) {
+      readJsonBody(req, FS_UNBOUNDED).then(function (body) {
+        writeFsResult(res, fileSystem.saveFile(body.path, body.content));
+      }).catch(function (e) { bodyRefused(req, res, e); });
+    } },
+    'delete': { reply: {}, handler: function (req, res) {
+      readJsonBody(req).then(function (body) {
+        writeFsResult(res, fileSystem.deleteFile(body.path));
+      }).catch(function (e) { bodyRefused(req, res, e); });
+    } },
+    // LOCAL: this node's own disk.
+  };
+}
+
+module.exports = { start: start, verbs: verbs };

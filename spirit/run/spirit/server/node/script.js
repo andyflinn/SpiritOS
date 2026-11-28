@@ -10,9 +10,7 @@ require('../../script.js');
 // active (intrinsic, or active in spirit/state/<name>/node.json; goal/G43.12), as "node spirit/server/script.js --app <script>".
 
 const http = require('http');
-// For the proxy's outbound calls (handleGenericProxy) — with no 300-second
-// cut of its own, which Node's fetch has.
-const https = require('https');
+// The proxy's outbound calls (net.fetch) are the net branch's own since goal/G49.25: spirit/net/server/script.js.
 const path = require('path');
 
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
@@ -117,9 +115,9 @@ const arrivals = spirit.requireScript('spirit/peer/arrivals/script.js').createAr
 
 
 const jobs = spirit.requireScript('spirit/job/engine/script.js').installJobs(port);
-// THE FS CACHE'S WRITER, THE FILE WATCHER, IS THE fs BRANCH'S (goal/G49.15, box v16: "the watcher lands in spirit/fs/server/script.js
-// and is required by the node."), its job in this node's job table.
-spirit.requireScript('spirit/fs/server/script.js').start(ROOT_DIR, jobs);
+// THE spirit.fs BRANCH FIRST, BY NAME (goal/G49.25, box v10: "serveCommon will load the spirit.fs branch explicitly"): its watcher, the
+// fs cache's writer (goal/G49.15), started with its job in this node's job table; every other branch is found in that cache below.
+common.loadFs(ROOT_DIR, jobs);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /spirit after a relay, contact or
 // peer verb has answered (below), the moment the node knows.
@@ -187,12 +185,15 @@ const loopbackVerbs = (function nodeBranches() {
   const folders = Object.create(null);  // branch -> the folder it was mounted with, where its api.js is (goal/G32.3)
   // mount(branch, dir, declarations): a module hands its verbs bare, {stat: {request, reply, handler}}, and its folder; the
   // node gives them the branch's name (Andy, 2026-10-20: "a module shouldn't know who mounted it").
+  // A BRANCH WITH NO NODE WORK IS STILL A BRANCH (goal/G49.25): mounted with no verbs, it stands in the tree, empty, so the scan's
+  // every trunk branch is found there.
   function mount(branch, dir, declarations) {
     const ns = String(branch || '');
+    shapes[ns] = shapes[ns] || {};
     Object.keys(declarations || {}).forEach(function (v) {
       const d = declarations[v];
       answer[ns + '.' + v] = d.handler;
-      (shapes[ns] = shapes[ns] || {})[v] = { request: d.request, reply: d.reply };
+      shapes[ns][v] = { request: d.request, reply: d.reply };
     });
     if (dir) folders[ns] = String(dir);
   }
@@ -440,135 +441,8 @@ function serveGet(pathname, res) {
 
 // THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/eventEngine/script.js, the events family's subscribe.
 
-function handleCreateJob(req, res) {
-  readJsonBody(req).then((body) => {
-    // The script's manifest decides: a one-shot, or a user-operated server
-    // (processes/G1.3, jobs.startJob). The request is unchanged.
-    let job = null;
-    // No opt-in to cleaning up (goal/G29.16): every transient job removes itself when it ends, unless it failed.
-    // ITS ARGS A JSON LIST IN A STRING (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
-    let args = [];
-    try { args = body.args ? JSON.parse(String(body.args)) : []; } catch (e) { args = null; }
-    if (!Array.isArray(args) || !args.every(function (x) { return typeof x === 'string'; })) { res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'bad-request', error: 'args is a JSON list of strings' })); return; }
-    try { job = jobs.startJob(body.command, args, { type: body.type }); }
-    catch (e) {
-      // A process this node does not include is refused by name (slim/G1.3).
-      if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process' || e.refusal === 'already-running')) {
-        const known = spirit.requireScript('spirit/error/script.js').byCode(e.refusal);
-        res.writeHead(known.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: false, code: e.refusal, error: known.text, process: e.process }));
-        return;
-      }
-      throw e;
-    }
-    res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(job));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-// job.update's handler (handleJobUpdate) STOOD HERE: it is event.publish now (spirit/eventEngine/script.js), the one path
-// to publish (Andy, 2026-10-25: "ONE path for everybody to publish events").
-
-// The id is a field, beside the verb. This one took no
-// body at all before, so it gains a read it did not have — and readJsonBody
-// is memoised on the request, so the door's own peek already paid for it.
-function handleCancelJob(req, res) {
-  return readJsonBody(req).then((body) => {
-    cancelJobById(res, String((body && body.id) || ''));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-function cancelJobById(res, id) {
-  const job = jobs.cancelJob(id);
-  if (!job) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
-    return;
-  }
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(job));
-}
-
-// The fifth jobs verb, and the one my own route scan missed: it was
-// `DELETE /api/job/<id>`, matched by a regexp INSIDE a method guard, so
-// a scan looking for `pathname === '/api/...'` never saw it. Found by
-// grepping the callers instead of the routes — which is the better
-// direction, because a route with no caller is dead and a caller with no
-// route is broken.
-function handleDeleteJob(req, res) {
-  return readJsonBody(req).then((body) => {
-    deleteJobById(res, String((body && body.id) || ''));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-function deleteJobById(res, id) {
-  const deleted = jobs.deleteJob(id);
-  if (!deleted) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found, or job is not yet in a terminal state');
-    return;
-  }
-  res.writeHead(204);
-  res.end();
-}
-
-// ── THE TWO READS, NOW VERBS ─────────────────────────────────────────
-//
-// Both took their path off a query string and answered GET. Under the
-// one door they read it from the body like everything else.
-//
-// THE GATE IS UNTOUCHED, which is what stage 3 exists to show. Both still
-// go through fileSystem.js, which still asks fileServable — the fold
-// moved where the path comes FROM and changed nothing about what may be
-// reached with it. serverSurface's encoded-traversal checks are the proof
-// and they are not edited.
-function handleFsStat(req, res) {
-  return readJsonBody(req).then((body) => {
-    const stats = fileSystem.statFile(String((body && body.path) || ''));
-    if (!stats) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(stats));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-
-function writeFsResult(res, result) {
-  if (result.ok) {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-  if (result.reason === 'forbidden') {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden');
-    return;
-  }
-  // Five branches stood here for the two app-building routes until
-  // 2026-09-13 (decision 0008). Two of them --
-  // 'app-entry-script-protected' and 'app-manifest-protected' -- were
-  // ALREADY dead: those checks moved behind fileWritable when it became
-  // a shared predicate, and saveFile has answered every refusal with
-  // plain 'forbidden' ever since. They were known dead (writableRoots.js
-  // says so in a comment) and left anyway, which is how a handler grows
-  // branches nothing can reach.
-  if (result.reason === 'file-not-found') {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
-    return;
-  }
-  // A path the file system will not take (goal/G41.30): the caller's, so a 400.
-  if (result.reason === 'bad-path') {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Bad request: the file system refused this path');
-    return;
-  }
-  res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Internal error');
-}
+// THE JOB, FS AND NET HANDLERS STOOD HERE until goal/G49.25: each is its branch's own node work now, spirit/job/server/script.js,
+// spirit/fs/server/script.js and spirit/net/server/script.js.
 
 // A BODY THAT WAS NOT READ, SAID FOR WHAT IT IS (goal/G33.10). Andy saw "not saved: Invalid JSON body" for a save that
 // was only too large: every catch here named one fault for two. A body refused for its size is 413 and says so, with
@@ -578,174 +452,6 @@ function bodyRefused(req, res, e, json) {
   const text = big ? 'Body too large: ' + common.bodyBytes(req) + ' of ' + spirit.requireScript('spirit/limits/script.js').BODY_MAX : 'Invalid JSON body';
   res.writeHead(big ? 413 : 400, { 'Content-Type': (json ? 'application/json' : 'text/plain') + '; charset=utf-8' });
   res.end(json ? JSON.stringify({ ok: false, code: big ? 'too-big' : 'bad-request', error: text }) : text);
-}
-
-// fs.save AND fs.load HAVE NO SIZE LIMIT (goal/G33.10, Andy: "i want fs to be hard-coded owner only, with no size
-// limits on it's loadFile and saveFile...."). The owner's alone (apiDoor, apiAuth), so the packet's bound is not theirs.
-const FS_UNBOUNDED = { max: Infinity };
-function handleFsSave(req, res) {
-  readJsonBody(req, FS_UNBOUNDED).then((body) => {
-    writeFsResult(res, fileSystem.saveFile(body.path, body.content));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-// THE READ AS A VERB (goal/G14.8): a file's text by path, through loadFile,
-// so fileServable decides as it does for the static route; 404 by name
-// when there is none. Andy, 2026-10-10, choosing it over the url fetch for
-// the local agent: "i'm more inclined to deny URL fetch, and allow
-// loadFile, it's much narrower."
-function handleFsLoad(req, res) {
-  return readJsonBody(req, FS_UNBOUNDED).then((body) => {
-    const filePath = String((body && body.path) || '');
-    const text = fileSystem.loadFile(filePath);
-    if (text === null) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ path: filePath, text: text }));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-// handleFsSaveAppScript and handleFsSaveAppManifest stood here until
-// 2026-09-13 (decision 0008); the unconditional refusal of an app's own
-// script and manifest that they were the exception to went on 2026-10-10
-// (goal/G14.8, fileSystem.js fileWritable).
-
-function handleFsDelete(req, res) {
-  readJsonBody(req).then((body) => {
-    writeFsResult(res, fileSystem.deleteFile(body.path));
-  }).catch((e) => bodyRefused(req, res, e));
-}
-
-
-// NO SECRETS AND NO ALLOW LIST HERE (goal/G29.20). envSecrets.js (the env-variable key fill) and proxyList.js (the
-// owner's list and its gate, spirit/state/proxy.json) are gone with the proxy verbs. Andy, 2026-10-18: "remove all the
-// env logic and allow-list crap from it at well"; secrets will live in a later module that manages API keys and
-// secrets in a general fashion, the node being the owner.
-// net.fetch never reaches this machine (goal/G29.20).
-const netFence = spirit.requireScript('spirit/netFence/script.js');
-
-// Generic outbound-request proxy — knows nothing about any specific
-// service, unlike the two hardcoded handlers this originally replaced (the
-// LM Studio ones went, and every LM Studio process with them, under
-// goal/G29.20). A browser fetch() straight to another site is blocked by
-// CORS whenever that site sends no Access-Control-Allow-Origin header;
-// server-to-server requests aren't subject to CORS at all. The caller supplies the target
-// url/method/headers/body/timeout and owns all response-shape parsing —
-// this just forwards and relays back whatever the target actually
-// returned, or a synthesized {error} on timeout/unreachable.
-// ── THE PROXY (2026-09-22; the gate and the keys went with goal/G29.20) ───
-//
-// design/proxy/THE-PROXY.md ruled a gate (the owner's list) and keys from that list; both are gone, with every
-// placeholder fill (goal/G29.20). What stands of it:
-//
-//   NO WAIT OF ITS OWN. Andy: "wait times are not the proxies concern."
-//   The caller's timeoutMs is honoured when given; when not, the proxy
-//   waits as long as the far end takes. This used Node's fetch, whose own
-//   300-second limit dropped the first Grok review at high reasoning; it is
-//   http/https.request now, which imposes none — the same shape as
-//   relayRequest.js, and the same two requires counted by oneDoor.js.
-//
-// No size limit either: "size limits would break the proxy facility real
-// quick." The answer is relayed whole, as before.
-//
-// ── AND IT STILL HAS NO NUMBER, BUT IT NO LONGER HOLDS (goal/G16.6) ───
-//
-// The review of 2026-10-10 found the other end of his 2026-09-22 ruling:
-// reading the reply WHOLE with no bound means a page past this door names
-// any URL and whatever that host chooses to stream lands in the node's
-// RAM entire, which is one request taking the node down. A first build
-// answered that with a cap of 32 MiB. Andy ruled the cap out and named
-// the better fix, 2026-10-11: "agreed. no number at all."
-//
-// SO IT HOLDS NOTHING. The outside reply is handed to the asker as it
-// arrives — unread, undecoded, never collected — and a body of any size
-// costs this node one socket's buffer rather than its length in RAM.
-// There is nothing left for a limit to protect, which is why his
-// 2026-09-22 words stand unqualified: "size limits would break the proxy
-// facility real quick."
-//
-// The status and the content type cross with it, because the caller owns
-// all response-shape parsing (the comment above) and a reply relabelled
-// application/json by this door was a lie whenever it was not.
-
-function handleGenericProxy(req, res) {
-  readJsonBody(req).then((body) => {
-    if (!body.url) {
-      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: 'url is required' }));
-      return;
-    }
-
-    let target = null;
-    try { target = new URL(body.url); } catch (err) { target = null; }
-    if (!target || (target.protocol !== 'https:' && target.protocol !== 'http:')) {
-      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: 'url must be http or https' }));
-      return;
-    }
-    // Whatever host the outbound request will actually reach, checked
-    // against this machine below. No secret goes into the headers here
-    // (goal/G29.20): they go as the caller gave them.
-    const targetHost = target.hostname.toLowerCase();
-    // NEVER THIS MACHINE (goal/G29.20; Andy, 2026-10-18: "fetch will not be able to reach ports on this machine, and
-    // agents may use it."). A target written as an address is refused here, before anything is sent; a name is
-    // checked on the address it resolves to, at connect (netFence.lookup below).
-    if (netFence.isThisMachine(targetHost)) {
-      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: false, code: 'this-machine', error: 'net.fetch does not reach this machine: ' + targetHost }));
-      return;
-    }
-    const method = String(body.method || 'GET').toUpperCase();
-
-    // The caller's headers as given: no placeholder is filled and no list gates them (goal/G29.20).
-    const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
-
-    const payload = body.body !== undefined ? JSON.stringify(body.body) : null;
-    if (payload !== null) headers['Content-Length'] = Buffer.byteLength(payload);
-
-    let answered = false;
-    function answer(status, text) {
-      if (answered) return;
-      answered = true;
-      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(text);
-    }
-
-    const lib = target.protocol === 'https:' ? https : http;
-    const out = lib.request(target, { method: method, headers: headers, lookup: netFence.lookup }, (reply) => {
-      // STRAIGHT THROUGH, HOLDING NOTHING (goal/G16.6, his "no number at
-      // all"). The reply is piped to the asker as it arrives, so this door
-      // never has the body in hand and there is no size for it to refuse.
-      if (answered) { reply.resume(); return; }
-      answered = true;
-      const type = String(reply.headers['content-type'] || 'application/octet-stream');
-      res.writeHead(reply.statusCode, { 'Content-Type': type });
-      reply.pipe(res);
-      // A BREAK MID-BODY CANNOT BE SAID IN THE BODY. The head is already
-      // written and bytes are already the caller's, so the only honest
-      // report left is ending the response — the caller sees a short read,
-      // which is what happened.
-      reply.on('error', () => { try { res.end(); } catch (e) { /* gone */ } });
-    });
-    // The caller's own patience, when it names one. None otherwise.
-    if (typeof body.timeoutMs === 'number' && body.timeoutMs > 0) {
-      out.setTimeout(body.timeoutMs, () => {
-        answer(502, JSON.stringify({ error: 'proxy request timed out' }));
-        out.destroy();
-      });
-    }
-    out.on('error', (err) => {
-      // A name that resolved to this machine (goal/G29.20): refused by name, as an address is above.
-      if (err && err.code === 'this-machine') { answer(403, JSON.stringify({ ok: false, code: 'this-machine', error: err.message })); return; }
-      answer(502, JSON.stringify({ error: 'proxy target unreachable' }));
-    });
-    // A caller that gives up takes the call down with it.
-    req.on('close', () => { if (!answered) out.destroy(); });
-    out.end(payload === null ? undefined : payload);
-  }).catch((e) => bodyRefused(req, res, e));
 }
 
 // server.listen below has no host argument, so Node binds to all network
@@ -1641,13 +1347,9 @@ catch (e) {
   //
   // Inside the personal-node branch on purpose: a relay claims nothing,
   // because a relay does not serve this door.
-  // THE SHAPES BELOW ARE WRITTEN BY HAND FROM EACH HANDLER (goal/G10.5, point 4 of the box): a prototype
-  // cannot say which keys are optional, so a verb's file in spirit/<namespace>/ carries that in words.
-  loopbackVerbs.mount('net', path.join(__dirname, '..', '..', 'net'), {
-    // The target's own body and status come back, whatever they are.
-    'fetch': { request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {}, handler: handleGenericProxy },
-    // WIRE: it reaches the internet, so being offline fails it.
-  });
+  // THE SHAPES ARE WRITTEN BY HAND FROM EACH HANDLER (goal/G10.5, point 4 of the box): a prototype cannot say which keys are
+  // optional, so a verb's file in spirit/<namespace>/ carries that in words. Each branch's handlers are its own since goal/G49.25,
+  // in spirit/<branch>/server/script.js; what this node hands them is branchNode, below.
 
   // THE PROXY VERBS WENT WITH goal/G29.20 (proxy.search, get, allow, remove, close, open): the owner's list they kept
   // is gone. proxyVerb stays: it is the plain body-in, answer-out wrapper every group below uses.
@@ -1746,43 +1448,6 @@ catch (e) {
     };
   }
   const JOB = { id: '', kind: '', type: '', status: '' };
-  const GRANT = { key: '', label: '', path: '' };
-  // THE AUTH TABLES, A BRANCH EACH (goal/G49.21, box v24; Andy: "the table verbs imply move to the tables and become
-  // spirit.<table>.<verb>"; "i would hope that your table interfaces show some orthogonality"): spirit.grant, spirit.bundle and
-  // spirit.branch, each with search, get, add and delete, every call checked by its branch's own script before its handler, as
-  // spirit.job's are. The handlers are spirit/grant/auth/script.js's; the bundle and branch tables take one operation per verb.
-  // "the peer and relabel verbs go. die. perish." Local (wire: false).
-  const withOp = function (op, work) { return function (b) { return work(Object.assign({}, b, { op: op })); }; };
-  // Each branch's script required by its path written out whole, its promise in the row (the general rule: a requireScript is
-  // handed one full path as one string).
-  const tableBranches = [
-    ['spirit.grant', spirit.requireScript('spirit/grant/script.js'), 'grant', {
-      search: { reply: LIST, work: apiAuth.search },
-      get: { reply: { allowed: false }, work: apiAuth.query },
-      add: { reply: GRANT, work: apiAuth.grant },
-      delete: { reply: { revoked: true }, work: apiAuth.revoke },
-    }],
-    ['spirit.bundle', spirit.requireScript('spirit/bundle/script.js'), 'bundle', {
-      search: { reply: LIST, work: withOp('search', apiAuth.bundle) },
-      get: { reply: {}, work: withOp('get', apiAuth.bundle) },
-      add: { reply: {}, work: withOp('add', apiAuth.bundle) },
-      delete: { reply: {}, work: withOp('delete', apiAuth.bundle) },
-    }],
-    ['spirit.branch', spirit.requireScript('spirit/branch/script.js'), 'branch', {
-      search: { reply: LIST, work: withOp('search', apiAuth.branch) },
-      get: { reply: {}, work: withOp('get', apiAuth.branch) },
-      add: { reply: {}, work: withOp('add', apiAuth.branch) },
-      delete: { reply: {}, work: withOp('delete', apiAuth.branch) },
-    }],
-  ];
-  tableBranches.forEach(function (t) {
-    Promise.resolve(t[1]).then(function (BRANCH) {
-      const checkedBy = checkedByBranch(t[0], BRANCH);
-      const verbs = {};
-      Object.keys(t[3]).forEach(function (v) { verbs[v] = { request: BRANCH.verbs[v], reply: t[3][v].reply, handler: checkedBy(v, authVerb(t[3][v].work)) }; });
-      loopbackVerbs.mount(t[0], path.join(__dirname, '..', '..', t[2]), verbs);
-    }, function (e) { console.error('the ' + t[0] + ' branch could not be bound: ' + ((e && e.message) || e)); });
-  });
   // A NEW-SHAPE BRANCH'S CALLS, CHECKED BY ITS OWN SCRIPT (goal/G49.15, box v23: "the node must use this same script as
   // require to validate incoming requests."): checkedByBranch(name, branch)(verb, handler) checks a call's arguments with
   // spirit.checkArgs against branch.verbs[verb] before the handler runs, and refuses 400 with the check's code. spirit.fs's
@@ -1810,25 +1475,6 @@ catch (e) {
       };
     };
   }
-  // THE spirit.job BRANCH, BY ITS OWN SCRIPT (goal/G49.19, box: "move spirit/job to the new format"; the shape spirit.fs took
-  // in goal/G49.15): mounted under its path's name, spirit.job, each verb's arguments from spirit/job/script.js and every call
-  // checked against them before its handler.
-  Promise.resolve(spirit.requireScript('spirit/job/script.js')).then(function (JOB_BRANCH) {
-  const checkedBy = checkedByBranch('spirit.job', JOB_BRANCH);
-  loopbackVerbs.mount('spirit.job', path.join(__dirname, '..', '..', 'job'), {
-    'search': { request: JOB_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return nodeSearches.jobsSearch(b); })) },
-    'get': { request: JOB_BRANCH.verbs.get, reply: { ok: true, key: '', job: JOB }, handler: checkedBy('get', proxyVerb(function (b) { return nodeSearches.jobsGet(b); })) },
-    'create': { request: JOB_BRANCH.verbs.create, reply: JOB, handler: checkedBy('create', handleCreateJob) },
-    'cancel': { request: JOB_BRANCH.verbs.cancel, reply: JOB, handler: checkedBy('cancel', handleCancelJob) },
-    // 204, no body.
-    'delete': { request: JOB_BRANCH.verbs.delete, reply: {}, handler: checkedBy('delete', handleDeleteJob) },
-    // THE LOCAL WAY TO A SERVER PROCESS (the jobs api verb) STOOD HERE until goal/G30.6. Andy, 2026-10-20: "jobs is
-    // for launching and tracking appServer processes and other local (transient) processes, it is NOT meant to be
-    // some kind of api-hub." A server process is called on /spirit by its verb, through the flat apiDoor.
-    // LOCAL: a job is this machine's, whether or not anything is reachable.
-  });
-  }, function (e) { console.error('the spirit.job branch could not be bound: ' + ((e && e.message) || e)); });
-
   // THE EVENTS FAMILY (goal/G40.6): the node's one dispatcher, owner only like fs. subscribe is a stream (its handler
   // keeps the response open); publish is a process's state or object on its own job, where job.update stood.
   // Since goal/G49.23 (box v22 Part 2) these two are the spirit branch's, mounted with the node's verbs below.
@@ -1837,56 +1483,9 @@ catch (e) {
     'publish': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: events.handlePublish },
   };
 
-  // ── THE CONFIG FAMILY, EMPTY (goal/G30.20) ─────────────────────────────
-  //
-  // Its two verbs, config.searchModules and config.setModules, went with the include list they read and set (slim/G1.3):
-  // where a module runs is its manifest's runs, nothing else. Andy: "keep the config family for later use."
-  loopbackVerbs.mount('config', path.join(__dirname, '..', '..', 'config'), {});
-
-  // THE app FAMILY (goal/G43.2; Andy, box: "the "app" api-family will sit nicely beside all other families"): its verbs,
-  // "just a search string", over the plugins in its folder (spirit/app/manager/script.js). A face with no star may call it (Andy, box).
-  // THE spirit.app BRANCH, BY ITS OWN SCRIPT (goal/G49.20, box v31: "spirit/app/api.js --> spirit/app/script.js"; Andy, of the
-  // verbs' names on the wire, app.search to spirit.app.search and its three siblings: "yes, and this applies to ALL migrated/
-  // migrating branches"): mounted under its path's name, spirit.app, each verb's arguments from spirit/app/script.js and every
-  // call checked against them before its handler, as spirit.job's are.
+  // THE app FAMILY'S TABLE (goal/G43.2), the plugins in its folder (spirit/app/manager/script.js), handed to the spirit.app branch's
+  // node work (spirit/app/server/script.js). The config family, empty since goal/G30.20, is mounted as every trunk branch is.
   const appFamily = spirit.requireScript('spirit/app/manager/script.js').createApp({ rootDir: ROOT_DIR, jobs: jobs });
-  Promise.resolve(spirit.requireScript('spirit/app/script.js')).then(function (APP_BRANCH) {
-  const checkedBy = checkedByBranch('spirit.app', APP_BRANCH);
-  loopbackVerbs.mount('spirit.app', path.join(__dirname, '..', '..', 'app'), {
-    'search': { request: APP_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return appFamily.search(b); })) },
-    // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/faceHome/script.js.
-    'active': { request: APP_BRANCH.verbs.active, reply: {}, handler: checkedBy('active', proxyVerb(function (b) { return appFamily.active(b); })) },
-    'label': { request: APP_BRANCH.verbs.label, reply: {}, handler: checkedBy('label', proxyVerb(function (b) { return appFamily.label(b); })) },
-    'icon': { request: APP_BRANCH.verbs.icon, reply: {}, handler: checkedBy('icon', proxyVerb(function (b) { return appFamily.icon(b); })) },
-  });
-  }, function (e) { console.error('the spirit.app branch could not be bound: ' + ((e && e.message) || e)); });
-
-  // THE GATE IS NOT IN HERE, and that is the point of this namespace.
-  // Every one of these goes through fileSystem.js, which asks
-  // fileWritable or fileServable about the path — so folding the route
-  // moved where a path COMES FROM and changed nothing about what may be
-  // reached with it. serverSurface's traversal checks are untouched and
-  // still red-green the same way.
-  // THE spirit.fs BRANCH, BY ITS OWN SCRIPT (goal/G49.15, box v23: "the node must use this same script as require to validate
-  // incoming requests."; Andy: "THE NAME ON THE MOTHERCUKING WIRE IS \"spirit.fs\""): mounted under its path's name,
-  // spirit.fs; each verb's arguments are spirit/fs/script.js's, and every call is checked with spirit.checkArgs against them
-  // before its handler runs, refused 400 with the check's code. The handlers are the node's own (fs needs no server part).
-  // Bound by spirit.requireScript, which answers the branch once it is bound; the mount waits for it.
-  Promise.resolve(spirit.requireScript('spirit/fs/script.js')).then(function (FS_BRANCH) {
-  const checkedBy = checkedByBranch('spirit.fs', FS_BRANCH);
-  loopbackVerbs.mount('spirit.fs', path.join(__dirname, '..', '..', 'fs'), {
-    // The node's files by path (puppets/G2). spirit.fs.stat stays the "get".
-    'search': { request: FS_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return nodeSearches.fsSearch(b); })) },
-    'stat': { request: FS_BRANCH.verbs.stat, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: checkedBy('stat', handleFsStat) },
-    // The file's text (goal/G14.8), the same read as the static route.
-    'load': { request: FS_BRANCH.verbs.load, reply: { path: '', text: '' }, handler: checkedBy('load', handleFsLoad) },
-    // No annotations and no annotate: ANNOTATIONS ARE THE NODE'S ONLY (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY."), so no caller reads or writes a sidecar.
-    // The two writes answer 204, no body.
-    'save': { request: FS_BRANCH.verbs.save, reply: {}, handler: checkedBy('save', handleFsSave) },
-    'delete': { request: FS_BRANCH.verbs.delete, reply: {}, handler: checkedBy('delete', handleFsDelete) },
-    // LOCAL: this node's own disk.
-  });
-  }, function (e) { console.error('the spirit.fs branch could not be bound: ' + ((e && e.message) || e)); });
 
   // THE `device` NAMESPACE STOOD HERE and was removed by goal/G16.2 with
   // the device enrolment (Andy: "device WILL be KILLED. that's a decision.").
@@ -1912,7 +1511,9 @@ catch (e) {
   // they are spirit.card, ... spirit.publish, spirit.subscribe; node.* and event.* are gone"): mounted under its path's name,
   // spirit, its folder spirit/ where its <verb>.json stand, each verb's arguments from spirit/script.js (spirit.verbs) and every
   // call checked against them before its handler, which does what it did before.
-  loopbackVerbs.mount('spirit', path.join(__dirname, '..', '..'), checkedVerbs('spirit', { verbs: spirit.verbs }, Object.assign(SPIRIT_STREAM_VERBS, {
+  // THE TRUNK'S OWN NODE WORK IS THIS SERVER'S (goal/G49.25; Andy: "spirit is always loaded"): spirit's server folder is
+  // spirit/server/, so its verbs stay here, handed to serveCommon, which mounts them first, before the scan.
+  const rootVerbs = Object.assign(SPIRIT_STREAM_VERBS, {
     'card': { request: {}, reply: { ok: true, name: '', description: '', publicKey: '', descriptionMax: 0 }, handler: function (rq, rs) { hub.handleNodeCard(rq, rs); } },
     // THE NODE'S OWN DEBUG (desk/G2.5), shaped like relay.debug: {debug: {}} reads,
     // {debug: {on}} sets; both answer the state that resulted. "node.debug: yes."
@@ -1942,149 +1543,39 @@ catch (e) {
         rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));
       }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
-  })));
-
-  // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)
-  //
-  // { to, verb, body }: the page names the puppet and the verb it would
-  // call locally ("It's a remote control"); peerOwnerPost signs, sends and
-  // waits for the one answer with that command's hash. WIRE, because the
-  // puppet can be unreachable.
-  loopbackVerbs.mount('owner', path.join(__dirname, '..', '..', 'owner'), {
-    // WHAT HIS BOXES CARRY, grouped by box, on demand (G10). Andy: "that
-    // must be visible-on-demand in a UI", and over-committed is a warning.
-    // owner.boxes is gone: a list is a search (puppets/G2, boxes.js).
-    'boxSearch': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) {
-      const r = boxes ? boxes.search(b && b.q) : { items: [], more: false };
-      return { ok: true, status: 200, items: r.items, more: r.more };
-    }) },
-    'boxGet': { request: { key: '' }, reply: { ok: true, key: '', box: {} }, handler: proxyVerb(function (b) {
-      const key = String((b && b.key) || '');
-      if (!key) return { ok: false, status: 400, error: 'key required' };
-      const box = boxes ? boxes.get(key) : null;
-      if (!box) return { ok: false, status: 404, error: 'no such box' };
-      return spirit.requireScript('spirit/limits/script.js').boundedGet({ ok: true, status: 200, key: key, box: box });
-    }) },
-    // The puppet's answer as it came, its hash beside it.
-    'command': { request: { to: '', command: '', body: {} }, reply: { hash: '' }, handler: function (rq, rs) {
-      readJsonBody(rq).then(function (body) {
-        if (!peerOwnerPost) {
-          rs.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
-          rs.end(JSON.stringify({ ok: false, error: 'this node is not connected to a relay' }));
-          return null;
-        }
-        return peerOwnerPost(body && body.to, body && body.command, body && body.body).then(function (said) {
-          const answer = said || { ok: false, status: 503, error: 'peer not reachable' };
-          rs.writeHead(answer.ok === false && answer.status ? answer.status : 200,
-            { 'Content-Type': 'application/json; charset=utf-8' });
-          rs.end(JSON.stringify(answer));
-        });
-      }).catch(function (e) { bodyRefused(rq, rs, e, true); });
-    } },
   });
 
-  // ── STAGE 4c — contact (2026-09-15) ────────────────────────────────
+  // ── WHAT THIS NODE HANDS EVERY BRANCH'S NODE WORK (goal/G49.25, Q5) ──
   //
-  //   Andy: "The user sees it as contact: which is kind of what i
-  //   prefer."
-  //
-  // THIS NODE'S OWN ADDRESS BOOK. Every verb here reads or writes the one
-  // table on this machine, so the group is marked local (`wire: false`);
-  // contact.search's network tier (goal/G30.19) is the one part that asks
-  // the relays. `contact.*` is what this node has decided to keep.
-  //
-  // FOUR VERBS WHERE THERE WAS ONE ROUTE AND AN `action` FIELD. That
-  // field was a verb inside a body, under a route that was also a verb,
-  // and hub.js dispatched it by hand beside a dispatch the door already
-  // does. The if-chain is gone: an unknown verb is now refused by a
-  // table that knows every verb this node answers.
-  const STANDING = { publicKey: '', keep: false, blocked: false };
-  // THE spirit.contact BRANCH, BY ITS OWN SCRIPT (goal/G49.22, box v16: "spirit/contact/api.js --> spirit/contact/script.js";
-  // "all verb names are adjusted using the same ... pattern as was using in spirit/app/ or spirit/fs/ or spirit/job/", "all verbs
-  // do the ... same shit they did before"): mounted under its path's name, spirit.contact, each verb's arguments from
-  // spirit/contact/script.js and every call checked against them before its handler. The branch as spirit.requireScript hands it
-  // back (goal/G49.23; goal/G49.9: never read at its place), the mount waiting for it, as spirit.job's does.
-  Promise.resolve(spirit.requireScript('spirit/contact/script.js')).then(function (CONTACT_BRANCH) {
-  loopbackVerbs.mount('spirit.contact', path.join(__dirname, '..', '..', 'contact'), checkedVerbs('spirit.contact', CONTACT_BRANCH, {
-    // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
-    // (puppets/G2); the network search it starts asks the relays.
-    'search': { request: { q: '', keep: false, mine: false, relay: false, seated: false, blocked: false }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
-    // A RELAY ROW TOO (goal/G49.11, box v9: "a semi-duplicate of contact.get. will merge with contact.get"): for a relay row it
-    // adds the one thing relay.get had more, that relay's last stream report, which the router holds in memory.
-    'get': { request: { key: '' }, reply: { ok: true, key: '', person: {}, relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b, { router: peerRouter }); }) },
-    'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
-    'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
-    'accept': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); } },
-    'label': { request: { publicKey: '', myLabel: '' }, reply: { publicKey: '', myLabel: '', caption: '' }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); } },
-    // goal/G47.4, box v33: "contact.faceable {key, faceable}", "contact.own goes".
-    'faceable': { request: { key: '', faceable: false }, reply: { key: '', faceable: false }, handler: function (rq, rs) { hub.handleFaceable(rq, rs, readJsonBody); } },
-    // THE RELAY ROW'S VERBS (goal/G49.11, box v9: the node's relay branch goes, each verb "moves to the contact branch"). Each
-    // names the relay by its row's public key, as every contact verb names its row; add alone takes the url, since the relay is
-    // no row until its card answers. The work is hub.js's as before, reached by the url the row holds.
-    'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
-    // The relay's own claim, posted: the node then marks the relay its own and opens the stream to the new seat (handleClaim).
-    'claim': { request: { key: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
-      readJsonBody(rq).then(function (got) {
-        const body = relayBody(got);
-        if (!body.url) {
-          rs.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-          rs.end(JSON.stringify({ ok: false, error: 'no relay on this node under that key' }));
-          return;
-        }
-        hub.handleClaim(rq, rs, function () { return Promise.resolve(body); }, {
-          router: peerRouter,
-          probe: spirit.requireScript('spirit/hub/script.js').relayKeyAsk(peerRouter),
-        });
-      }).catch(function (e) { bodyRefused(rq, rs, e, true); });
-    } },
-    // A face name asked of the relay (goal/G30.1); its signed answer is kept on the row.
-    'face': { request: { key: '', name: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: onRelayRow(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
-    // Joining the relay by email, then by the mailed code (goal/G30.2): "becomes contact.join, only works for relay-rows", so
-    // the relay is added first.
-    'join': { request: { key: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: onRelayRow(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.requireScript('spirit/hub/script.js').relayKeyAsk(peerRouter) }); }) },
-    // Giving up this node's seat (goal/G40.10): the relay's removePeer posted, then the seat and the face cleared; the row stays.
-    'leave': { request: { key: '' }, reply: { ok: true, key: '' }, handler: onRelayRow(function (b) { return hub.relayLeave({ key: b.url }, { router: peerRouter }); }) },
-    // A relay's row is taken off the list first, with remove's refusals (goal/G49.11): hub.js's forget, handed the router.
-    'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget', { router: peerRouter }); } },
-  }));
-  }, function (e) { console.error('the spirit.contact branch could not be bound: ' + ((e && e.message) || e)); });
-
-  // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────
-  //
-  // ANYBODY WHO IS NOT THIS NODE. Uniformly wire, and every one of these
-  // fails the same way when the box is offline — which is the whole
-  // reason the flag is on the namespace.
-  //
-  //   peer.post     the only thing on this node that reaches router.post
-  //   peer.acquire  a human confirmed one of those keys
-  //
-  // (peer.list, peer.find and peer.search are gone: who is out there is
-  // contact.search, its network tier asking the relays.)
-  //
-  // WHY THESE ARE NOT `contact.*` even though a person doing them is
-  // doing contact work: `contact.*` edits the book on this disk and
-  // cannot be unreachable. These two ask a RELAY. Grouping by what the
-  // user calls it would have put a 502 and a file write in one namespace
-  // and made the wire flag a lie for half of it.
-  //
-  // `peer.acquire` is the seam between the two: it asks the relay whether
-  // that key is really there, and only then writes a row. It is wire
-  // because the asking can fail, and the write never happens when it
-  // does.
-  //
-  // peerRouter is handed in rather than reached for (and presence with it,
-  // since goal/G19.14 inside it): it is built in the boot block above and hub.js must not hold state it
-  // cannot see created. That is not pedantry — /api/hub/invite was given
-  // a name out of scope on 2026-09-13 and the first real mint killed the
-  // node with every suite green.
-  loopbackVerbs.mount('peer', path.join(__dirname, '..', '..', 'peer'), {
-    'post': { request: { to: '', text: '', via: '', patienceMs: 0, kind: '' }, reply: { ok: true, status: 0, hash: '', from: '', text: '', sig: '', receipt: false }, handler: function (rq, rs) {
-      hub.handlePost(rq, rs, readJsonBody, { router: peerRouter });
-    } },
-    'acquire': { request: { publicKey: '', publicLabel: '', url: '' }, reply: { publicKey: '', publicLabel: '', keep: false }, handler: function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); } },
-    // peer.search STOOD HERE: the network search is tier two of contact.search now (goal/G30.19, Andy: "interface
-    // change/reduction approved.").
-  });
+  // Each trunk branch's handlers stand in its own spirit/<branch>/server/script.js since this item (Andy: "WHY WOULD THE
+  // MOTHERFUCKING SERVER LOAD MOTHERFUCKING BRANCHES EXPLICITLY????"), and serveCommon finds them in the fs cache. What they work
+  // with is built above, so it is handed over here: the router, the boxes and the puppet sender are made once the node is up, so
+  // each is a function asked at every call, as the handlers asked them when they stood here.
+  const branchNode = {
+    rootDir: ROOT_DIR,
+    port: port,
+    jobs: jobs,
+    hub: hub,
+    apiAuth: apiAuth,
+    appFamily: appFamily,
+    nodeSearches: nodeSearches,
+    router: function () { return peerRouter; },
+    boxes: function () { return boxes; },
+    ownerPost: function () { return peerOwnerPost; },
+    readJsonBody: readJsonBody,
+    bodyRefused: bodyRefused,
+    proxyVerb: proxyVerb,
+    authVerb: authVerb,
+    relayBody: relayBody,
+    onRelayRow: onRelayRow,
+    LIST: LIST,
+    JOB: JOB,
+  };
+  // THE BRANCHES LOAD THEMSELVES (goal/G49.25, box v10: "serveCommon will load the spirit.fs branch explicitly, then load all trunk
+  // branches, using the fs-cache"; "the existing logic is used to identify both old and new branches and apps"): the trunk's own
+  // verbs first (Andy: "spirit is always loaded"), then every spirit/<name> the fs cache marks, old shape or new, each mounted by
+  // its name and, when new, checked by its own script; the door below looks every call up in what was mounted.
+  common.loadBranches({ rootDir: ROOT_DIR, node: branchNode, mount: loopbackVerbs.mount, check: checkedVerbs, root: rootVerbs });
 }
 
 // ── A RELAY THAT KNOWS IT IS GOING SAYS SO ───────────────────────────
