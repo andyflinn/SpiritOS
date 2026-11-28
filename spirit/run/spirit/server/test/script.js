@@ -279,3 +279,11 @@ test.run('the relay branch hands out exactly the 23 verbs of the box (Q13; faceF
 test.run('no member-verb list: no product script names MEMBER_VERBS', 0.4, function () {
   return productHits(['-w', 'MEMBER_VERBS']).length === 0 || false;
 }, test.limit.slow);
+// THE PRESENCE MOVES (Andy, G49.25: "move ... spirit.presenceNode to spirit.contact.nodePresence"; "so presence belongs in
+// relay.presence ?", answered yes; "cw, box it like that."): each stands at its new path, nothing at its old one, and no product
+// script requires the old path.
+[['spirit/presence/script.js', 'spirit/relay/presence/script.js'], ['spirit/presenceNode/script.js', 'spirit/contact/nodePresence/script.js']].forEach(function (m) {
+  test.run(m[0] + ' moved to ' + m[1] + ', and nothing requires the old path', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
+  }, test.limit.slow);
+});

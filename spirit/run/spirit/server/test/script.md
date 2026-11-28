@@ -33,3 +33,5 @@ box names them.
 Box v20: no product script serves or calls /face/call, /face/file, /face/stream or /face/api; the server still answers
 Caddy at GET /face/allowed; the relay branch hands out exactly the 23 verbs of box v24 (Q13), faceFile gone; no
 product script names MEMBER_VERBS. The member bundle at join and leave is asserted once the relay runs at the one door.
+
+The presence moves: spirit/presence/script.js to spirit/relay/presence/script.js, spirit/presenceNode/script.js to spirit/contact/nodePresence/script.js; nothing at the old paths, no product script requires them.
