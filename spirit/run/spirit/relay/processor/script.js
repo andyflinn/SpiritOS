@@ -2249,7 +2249,7 @@ function createRelay(rootDir, deps) {
   function asCalled(plain, named) {
     var parsed = null;
     try { parsed = JSON.parse(String(plain || '')); } catch (e) { return null; }
-    var m = parsed && typeof parsed.call === 'string' ? /^spirit\.relay\.((?:FS\.)?[A-Za-z]+)$/.exec(parsed.call) : null;
+    var m = parsed && typeof parsed.call === 'string' ? /^spirit\.relay\.([A-Za-z]+)$/.exec(parsed.call) : null;
     if (!m || parsed.call !== named || Object.keys(parsed).some(function (k) { return k !== 'call' && k !== 'args'; })) return null;
     var args = parsed.args && typeof parsed.args === 'object' && !Array.isArray(parsed.args) ? parsed.args : {};
     var verb = m[1];
@@ -2592,19 +2592,11 @@ function createRelay(rootDir, deps) {
       ? { ok: false, status: 403, code: 'not-granted', error: 'that verb is not open to you on this relay' }
       : { ok: false, status: 404, error: 'no such peer' };
   }
-  var selfFamily = null;
-  function relaySelfFamily() {
-    if (!selfFamily) {
-      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && v.indexOf('FS.') !== 0; }) }).verbs; }
-      catch (e) { selfFamily = {}; }
-    }
-    return selfFamily;
-  }
-  function answerFs(name, args) {
-    var family = relaySelfFamily();
-    if (!Object.prototype.hasOwnProperty.call(family, name)) return { ok: false, status: 404, error: 'no such verb' };
-    try { return family[name].handler(args || {}); }
-    catch (e) { return { ok: false, status: e && e.refusal ? 400 : 500, error: (e && e.refusal) || 'the folder could not be read' }; }
+  // A VERB'S DESCRIPTION, its file in relaySelf/ beside this one, read by the relay for its api answer; no verb reads that folder for
+  // a caller (goal/G49.25, Andy: "THER's NO LONGER ANY FUCKING FS. verbs on spirit.relay").
+  function verbFile(v) {
+    try { var o = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', '..', 'relaySelf', v + '.json'), 'utf8')); return o && typeof o === 'object' ? o : {}; }
+    catch (e) { return {}; }
   }
 
   // ── THE RELAY'S API, FOR EVERY MEMBER (goal/G30.5) ────────────────────
@@ -2613,25 +2605,18 @@ function createRelay(rootDir, deps) {
   //   as the node's api ("why would i do that, if not to give the relay-api the same shape as the nodes api?").
   //
   // The body 'api' answers { relay: { <verb>: { description, request, reply } } }, cut to what the caller holds: a
-  // member the member bundle's own verbs, the owner every verb and the FS verbs. Each entry is read from the verb's file in
-  // relaySelf/; a file declares no reply, so reply is {}. FS itself stays the owner's (the gate below).
+  // member the member bundle's own verbs, the owner every verb. Each entry is read from the verb's file in relaySelf/; a file
+  // declares no reply, so reply is {}.
   function relayApi(owner) {
-    var family = relaySelfFamily();
     var out = {};
-    RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && v.indexOf('FS.') !== 0 && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
-      var read = answerFs('FS.loadJsonValue', { path: v + '.json' });
-      var file = read && read.value && typeof read.value === 'object' ? read.value : {};
+    RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
+      var file = verbFile(v);
       out[v] = {
         description: typeof file.description === 'string' ? file.description : '',
         request: file.request && typeof file.request === 'object' ? file.request : {},
         reply: file.reply && typeof file.reply === 'object' ? file.reply : {},
       };
     });
-    if (owner) {
-      Object.keys(family).filter(function (n) { return n.indexOf('FS.') === 0; }).forEach(function (n) {
-        out[n] = { description: family[n].description || '', request: family[n].request || {}, reply: family[n].reply || {} };
-      });
-    }
     return { relay: out };
   }
 
@@ -2645,11 +2630,9 @@ function createRelay(rootDir, deps) {
     if (body === 'api') return sendSelfAnswer(hash, who, relayApi(owner));
 
     // THE GATE comes first (goal/G30.3; goal/G49.25, grants only): a verb the caller does not hold is refused before any verb
-    // below can see it. FS.* is in no bundle, the owner's alone (goal/G30.4), answered from the folder.
+    // below can see it.
     var only = body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 ? Object.keys(body)[0] : '';
-    var isFs = only.indexOf('FS.') === 0;
     if (only && !granted(who, only)) return sendSelfAnswer(hash, who, notGranted());
-    if (isFs) return sendSelfAnswer(hash, who, answerFs(only, body[only]));
     // Set by the search branch: a roll walk to run before anything is sent.
     var searching = null;
 

@@ -826,7 +826,7 @@ function createHub(rootDir) {
     const body = p && p.app === 'relay' && p.body && typeof p.body === 'object' && !Array.isArray(p.body) ? p.body : null;
     if (!body || Object.keys(body).length !== 1) return null;
     const verb = Object.keys(body)[0];
-    if (!/^(FS\.)?[A-Za-z]+$/.test(verb)) return null;
+    if (!/^[A-Za-z]+$/.test(verb)) return null;
     const v = body[verb];
     const args = verb === 'card' ? (typeof v === 'string' ? { card: v } : {}) : (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
     return systemCall(verb, args);
