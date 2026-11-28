@@ -66,11 +66,10 @@ The general tests of `spirit.js` stand in `spirit/run/spirit/test/` beside `spir
 each judges every module in `spirit/` and below. `script-sibling-general.js` holds the rules read from a script's file,
 each part the test it was (branchRules, titleRules, noFuckingGarbage, searchRules, testReachRules).
 
-**The tools of `spirit/run/spirit/test/`** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will
-be where run://spirit/app/test/ finds it's main tools."*): `testReport.js`, `testModule.js` and `headLessChrome.js` are
-tools, not tests and no modules. `testModule.js` lists none of them, the garbage rule does not
-judge them as tests named after no module, and their own tests stay in `spirit/run/spirit/test/test/`. Every product
-test requires them from there.
+**The tools of the test system** (goal/G43.32, Q2; goal/G49.27, Andy: *"each tool is spirit/testicle/<name>/script.js, its test
+beside it"*): `spirit/testicle/testReport/`, `testModule/`, `headLessChrome/` and `scriptClassify/` are tools, not tests and no
+modules. `testModule` lists none of them, the garbage rule does not judge them as tests named after no module, and each
+has its own test at `spirit/testicle/<name>/test/script.js`. Every product test requires them from there.
 
 ## Every module in reach is judged
 

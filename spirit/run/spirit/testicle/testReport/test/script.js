@@ -37,8 +37,8 @@ const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testReport/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testReport'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/testicle/testReport/test/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/testicle/testReport/test'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 
 // THE PLANTED SUITES, each a file of the scratch tree, its tests through test.run.
