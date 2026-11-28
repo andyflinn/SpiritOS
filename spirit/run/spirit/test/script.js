@@ -979,7 +979,7 @@ test.run('in a process, requiring spirit.js gives spirit.client, the cache', 0.2
 
 // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
 // The module rules are in script-sibling-general.js (its generalRules part) since goal/G47.1, box v94, 2; their own test,
-// a module whose first require is not spirit.js goes red, is that file's: spirit/test/test/script-sibling-general.js.
+// a module whose first require is not spirit.js goes red, is that rule module's: spirit/testicle/general/any/generalRules/test/script.js.
 
 // ── 9. NO API UP FRONT, ON A REAL PAGE (goal/G43.27) ──────────
 // Andy: "MAKE SURE spirit.js doesn't load every fucking api upfront!!!!!!!!!!!!!!", and (G41.3) "lazy-load, is a
