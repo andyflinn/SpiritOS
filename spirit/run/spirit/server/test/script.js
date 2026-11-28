@@ -269,9 +269,9 @@ test.run('the server still answers Caddy at GET /face/allowed', 0.4, function ()
 // faceAnswer and faceFeed; a face's browser faceCall, faceFile, faceEvents (its live stream), faceState, faceLogin and faceLogout;
 // and its own, as today's signed packet, card, claim, face, search, rename, removePeer, invite, revoke, config, debug, monitor,
 // relayLabel and api." The names are his decision, so they are written here; the branch hands out these and no other.
-const RELAY_VERBS = ['post', 'reply', 'stream', 'faceAnswer', 'faceFeed', 'faceCall', 'faceFile', 'faceEvents', 'faceState', 'faceLogin', 'faceLogout',
+const RELAY_VERBS = ['post', 'reply', 'stream', 'faceAnswer', 'faceFeed', 'faceCall', 'faceEvents', 'faceState', 'faceLogin', 'faceLogout',
   'card', 'claim', 'face', 'search', 'rename', 'removePeer', 'invite', 'revoke', 'config', 'debug', 'monitor', 'relayLabel', 'api'];
-test.run('the relay branch hands out exactly the 24 verbs of the box (Q13): post, reply, stream, faceAnswer, faceFeed, faceCall, faceFile, faceEvents, faceState, faceLogin, faceLogout, card, claim, face, search, rename, removePeer, invite, revoke, config, debug, monitor, relayLabel and api', 0.4, function () {
+test.run('the relay branch hands out exactly the 23 verbs of the box (Q13; faceFile gone, Andy: "if nothing uses it, faceFile goes."): post, reply, stream, faceAnswer, faceFeed, faceCall, faceEvents, faceState, faceLogin, faceLogout, card, claim, face, search, rename, removePeer, invite, revoke, config, debug, monitor, relayLabel and api', 0.4, function () {
   let b = null; try { b = require(path.join(RUN, 'spirit', 'relay', 'script.js')); } catch (e) { b = null; }
   const v = Object.keys((b && b.verbs) || {}).sort();
   return (v.length === RELAY_VERBS.length && RELAY_VERBS.slice().sort().every(function (n, i) { return v[i] === n; })) || false;
