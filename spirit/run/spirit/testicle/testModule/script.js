@@ -27,9 +27,8 @@ const S = require(path.join(RUN, 'spirit', 'script.js'));
 // one list, goal/G43.25).
 const SKIP = ['state', 'app-state', '.git'];
 const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
-// THE TOOLS OF spirit/test/ (goal/G43.32, Q2; Andy: "We need special rules for run://spirit/test/  it will be where
-// run://spirit/app/test/ finds it's main tools."): tools, not tests, and no module either; their own tests stay in
-// spirit/test/test/.
+// THE TOOLS OF THE TEST SYSTEM (goal/G43.32, Q2; goal/G49.27, Andy: "each tool is spirit/testicle/<name>/script.js, its test
+// beside it"): tools, not tests, and no module either; their own tests stand at spirit/testicle/<name>/test/script.js.
 const TOOLS = ['spirit/testicle/testReport/script.js', 'spirit/testicle/testModule/script.js', 'spirit/testicle/headLessChrome/script.js'];
 // THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1: "spirit/testicle/scriptClassify/script.js is a \"special\" general test under its
 // own name, with its suite row, always automatically executed by the server"): testicle's server runs them itself, so they

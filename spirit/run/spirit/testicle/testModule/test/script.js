@@ -17,8 +17,8 @@ const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testModule/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testModule'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/testicle/testModule/test/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/testicle/testModule/test'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { testsFor } = SPIRIT.requireScript('spirit/testicle/testModule/script.js');
 
 // The general tests in spirit/test/, beside spirit/script.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
@@ -163,6 +163,6 @@ test.run('none of the three tools is handed to a general test as a module', 0.2,
   const asModule = all().filter(function (e) { return TOOLS.indexOf(e.file) !== -1; });
   return (all().length > 0 && !asModule.length) || false;
 }, test.limit.quick);
-test.run('the own tests of the tools in spirit/test/test/ are listed', 0.2, function () {
+test.run('the own tests of the tools in spirit/testicle/ are listed', 0.2, function () {
   return (all().some(function (e) { return e.test === 'spirit/testicle/testModule/test/script.js'; }) && all().some(function (e) { return e.test === 'spirit/testicle/testReport/test/script.js'; })) || false;
 }, test.limit.quick);

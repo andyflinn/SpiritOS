@@ -815,14 +815,6 @@ function processNamers() {
 // scan leaves those two out.
 const OLD_TEST = 'spirit/run/' + 'test/';
 const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + 'test\\/');
-// The files of run://test/ on 2026-11-10, by their place inside it; test/testReport-verifier.js and .md were folded into
-// test/testReport.js and .md since (goal/G45.1: one test file per script); spirit-child-generalRules.js was folded into this
-// file since (goal/G47.1).
-const MOVED = ['TEST_SYSTEM.md', 'headLessChrome.js', 'testModule.js', 'testReport.js',
-  // The general tests that moved here are three kinds since goal/G47.1, box v94, 2.
-  'script-sibling-general.js', 'script-sibling-general.md', 'script-sibling-node.js', 'script-sibling-node.md',
-  'script-sibling-browser.js', 'script-sibling-browser.md',
-  'test/testModule.js', 'test/testModule.md', 'test/testReport.js', 'test/testReport.md'];
 // The tools of run://spirit/test/: tools, not tests (Q2).
 const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
 const SELF = ['script-sibling-general.js', 'script-sibling-general.md', 'script-sibling-node.js', 'script-sibling-node.md', 'script-sibling-browser.js', 'script-sibling-browser.md'];
@@ -1262,10 +1254,6 @@ function every() {
   test.run('run://test/ holds no tracked file', 0.4, function () {
     const left = gitIn(RUN, ['ls-files', '--', 'test/']);
     return !left.length || false;
-  }, test.limit.quick);
-  test.run('run://spirit/test/ holds all the moved files, test/test/ included', 0.4, function () {
-    const missing = MOVED.filter(function (f) { return !fs.existsSync(path.join(RUN, 'spirit', 'test', f)); });
-    return !missing.length || false;
   }, test.limit.quick);
   // nothing under spirit/run/ names run://test/
   test.run('the files are read, tests and documents included', 0.2, function () {
