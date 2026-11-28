@@ -60,7 +60,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
   window.spirit.requireScript = function (p) {
     required.push(p);
     if (p === 'spirit/contact/script.js') { if (!contactData) { contactData = true; BRANCHES.contact.client = PAGE_LOAD.runAsPage(path.join(JS, '..', '..', 'spirit', 'contact', 'client', 'script.js')); } return Promise.resolve(BRANCHES.contact); }
-    if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
+    if (p === 'spirit/peer/script.js') return Promise.resolve(BRANCHES.peer);
     // THE DATA SET IS requireScript's ANSWER TOO (goal/G49.23): the contact client (spirit/contact/client/script.js) files into
     // what spirit/client/script.js hands back, the store this window ran below; the row reads the contact branch's client (goal/G49.23,
     // box v22 Part 1), what that client put out, on the branch its require answers.

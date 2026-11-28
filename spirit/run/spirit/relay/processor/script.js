@@ -10,7 +10,7 @@ const invites = spirit.requireScript('spirit/relay/invites/script.js');
 // the relay enforces, or the pre-check is a lie.
 const limits = spirit.requireScript('spirit/limits/script.js');
 // The peer search's one ranker, on the probability modules (goal/G29.17), shared with the node.
-const peerRank = spirit.requireScript('spirit/peerRank/script.js');
+const peerRank = spirit.requireScript('spirit/relay/peerRank/script.js');
 const presence = spirit.requireScript('spirit/relay/presence/script.js');
 const routerTable = spirit.requireScript('spirit/router/script.js');
 const relayStatus = spirit.requireScript('spirit/relayStatus/script.js');

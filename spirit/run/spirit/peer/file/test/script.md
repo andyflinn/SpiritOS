@@ -1,4 +1,4 @@
-# spirit/peerFile/script.js — its own test
+# spirit/peer/file/script.js — its own test
 
 One peer, one file, named by the peer's WHOLE public key, so that "which file is this peer's" has one answer in the
 tree. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). Pure, in process.

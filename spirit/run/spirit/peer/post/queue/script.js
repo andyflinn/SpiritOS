@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../../script.js');
 
-// spirit/run/spirit/postQueue/script.js
+// spirit/run/spirit/peer/post/queue/script.js
 // WHICH REQUEST GOES NEXT, and nothing else. No sockets, no timers, no
 // promises — a decision structure peerPost drives.
 //

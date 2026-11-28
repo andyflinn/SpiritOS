@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/peerRank/script.js
+// spirit/run/spirit/relay/peerRank/script.js
 // THE PEER SEARCH'S ONE RANKER, ON THE PROBABILITY MODULES (goal/G29.17).
 //
 //   The item's box: "Each relay ranks its members with the probability modules and answers a capped list. The node

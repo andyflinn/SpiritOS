@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/postQueue/test/script.js
-// The tests of spirit/postQueue/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/peer/post/queue/test/script.js
+// The tests of spirit/peer/post/queue/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // createQueue(opts): which request goes next, and nothing else; a decision structure peerPost drives. No sockets, no
 // timers: each test makes a queue on a planted clock and moves the clock by hand.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const Q = S.requireScript('spirit/postQueue/script.js');
+const Q = S.requireScript('spirit/peer/post/queue/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A queue on a planted clock: clock.t is now.

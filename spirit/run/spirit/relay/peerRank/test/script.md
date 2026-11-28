@@ -1,4 +1,4 @@
-# spirit/peerRank/script.js — its own test
+# spirit/relay/peerRank/script.js — its own test
 
 The peer search's one ranker, on the probability modules (goal/G29.17): *"Each relay ranks its members with the
 probability modules and answers a capped list. The node merges the relays' answers with the same modules."* So one name

@@ -156,7 +156,7 @@
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
         var ask = { publicKey: el.key, publicLabel: String(el.row.publicLabel || '') };
-        return spirit.readyPromise.then(function () { return keepAnswer('spirit/peer/api.js'); }).then(function (s) { return s.acquire(ask); });
+        return spirit.readyPromise.then(function () { return keepAnswer('spirit/peer/script.js'); }).then(function (s) { return s.acquire(ask); });
       } },
     ];
     function offered(v) { return v.relay === true ? relayActions : bookOf(v) ? bookActions : strangerActions; }

@@ -41,8 +41,8 @@ const seal = spirit.requireScript('spirit/seal/script.js');
 // a node that fires freely is refused; one that queues turns a refusal
 // into latency, which is `reach over speed`. The rules live next door
 // because they are decidable without a socket and therefore testable
-// without one — see postQueue.js and spirit/postQueue/test/script.js.
-const postQueue = spirit.requireScript('spirit/postQueue/script.js');
+// without one — see postQueue.js and spirit/peer/post/queue/test/script.js.
+const postQueue = spirit.requireScript('spirit/peer/post/queue/script.js');
 // THE HELD STREAM TO EACH RELAY, a part of this door (goal/G19.14). Andy:
 // "can peerPost require('presenceNode') as one of its components". Built
 // by holdStreams below and reached by nobody else; oneDoorStacks.js holds

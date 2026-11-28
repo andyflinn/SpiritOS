@@ -78,7 +78,7 @@ function learnPresence(rootDir, toKey, answer) {
   try { shadow(rootDir).note(toKey, { present: present }); }
   catch (e) { /* a cache that will not take a row is not a reason to fail the post */ }
 }
-const peerFile = require('../../script.js').requireScript('spirit/peerFile/script.js');
+const peerFile = require('../../script.js').requireScript('spirit/peer/file/script.js');
 // What this node says about itself — the same two fields a stranger is
 // answered with, so the screen that edits them and the wire that sends
 // them cannot drift.

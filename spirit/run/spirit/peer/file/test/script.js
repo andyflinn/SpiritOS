@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/peerFile/test/script.js
-// The tests of spirit/peerFile/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/peer/file/test/script.js
+// The tests of spirit/peer/file/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // One peer, one file, named by the peer's WHOLE public key: injective, reversible and Windows-safe (lowercase hex of
 // the key's bytes), with the prefix peerfile- that one .gitignore line keeps out of git. Pure, in process.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const P = S.requireScript('spirit/peerFile/script.js');
+const P = S.requireScript('spirit/peer/file/script.js');
 
 // Two Ed25519 keys in base64 SPKI share their whole first 16 characters, and these two differ only in case.
 const K1 = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=';

@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/peerRank/test/script.js
-// The tests of spirit/peerRank/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/relay/peerRank/test/script.js
+// The tests of spirit/relay/peerRank/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // The peer search's one ranker, on the probability modules (goal/G29.17): rank(rows, q, slots), and ranker(q, slots)
 // fed in slices (goal/G41.30). Pure: rows in, rows out, in process.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const P = S.requireScript('spirit/peerRank/script.js');
+const P = S.requireScript('spirit/relay/peerRank/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function labels(r) { return ((r && r.rows) || []).map(function (x) { return x.publicLabel; }); }

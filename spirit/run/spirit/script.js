@@ -1228,7 +1228,7 @@
           if (o.kind) args.kind = o.kind;
           // PATIENCE RIDES TOO (goal/G2.6): the node holds a busy post and retries it with backoff for this long.
           if (Number(o.patienceMs) > 0) args.patienceMs = Number(o.patienceMs);
-          post('peer.post', args).then(function (res) {
+          post('spirit.peer.post', args).then(function (res) {
             var b = res.body;
             if (res.status !== 200 || !b || b.ok !== true || !b.hash) { finish({ ok: false, code: 'not-posted', error: (b && b.error) || ('the node answered ' + res.status) }); return; }
             want = b.hash;
@@ -1270,7 +1270,7 @@
       var made = P.encode(app, body);
       if (!made || !made.ok) return whole ? { ok: false, body: null, card: null, from: '', error: (made && made.error) || 'the ask could not be encoded' }
         : { ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' };
-      return post('peer.post', { to: String(peer), text: made.text }).then(function (r) {
+      return post('spirit.peer.post', { to: String(peer), text: made.text }).then(function (r) {
         var said = (r && r.body) || {};
         var text = typeof said.text === 'string' ? said.text : '';
         var decoded = text ? P.decode(text) : null;
@@ -1279,7 +1279,7 @@
           var yes = !got || got.ok === undefined || !!got.ok;
           return { ok: r.status === 200 && !!said.ok && yes, status: r.status, body: got, card: said.card || null, from: said.from || '', error: said.error || '' };
         }
-        if (r.status !== 200 || !said.ok) return { ok: false, code: 'not-posted', error: said.error || ('peer.post answered ' + r.status) };
+        if (r.status !== 200 || !said.ok) return { ok: false, code: 'not-posted', error: said.error || ('spirit.peer.post answered ' + r.status) };
         return got;
       });
     }, function (e) {

@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/peer/test/api.js
-// The tests of spirit/peer/api.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
+// spirit/run/spirit/peer/test/script.js
+// The tests of spirit/peer/script.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // The peer family: packets to peers, and acquiring one (goal/G32.1).
 // The interface is run as spirit.js runs the text api {family} answers (loadInterface: the text, with module and exports
@@ -14,7 +14,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'api.js');
+const FILE = path.join(__dirname, '..', 'script.js');
 require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
 
@@ -59,9 +59,9 @@ test.run('api.js loads as spirit.js runs it on a page: its text run with module,
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('it asks for its companion data.js, spirit/peer/data.js, and for nothing else', 0.2, function () {
+test.run('it asks for its companion data.js, spirit/peer/client/script.js, and for nothing else', 0.2, function () {
   if (!W.asked) return false;
-  return W.asked.length === 1 && W.asked[0] === 'spirit/peer/data.js' ? true : false;
+  return W.asked.length === 1 && W.asked[0] === 'spirit/peer/client/script.js' ? true : false;
 }, test.limit.quick);
 test.run('the peer branch\'s node work, spirit/peer/server/script.js, hands the node a table of verbs', 0.2, function () {
   try { W.mounted = mounted(); } catch (e) { return false; }

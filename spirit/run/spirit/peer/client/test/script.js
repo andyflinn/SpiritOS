@@ -1,23 +1,23 @@
 'use strict';
 
-// spirit/run/spirit/peer/test/data.js
-// The tests of spirit/peer/data.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
+// spirit/run/spirit/peer/client/test/script.js
+// The tests of spirit/peer/client/script.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the peer family (goal/G41.28): nothing, the row an acquire files being the contact family's.
 // It runs as it does: in a window of its own beside the real spirit.client (spirit/client/script.js), which it writes into, the
 // stream's events handed in as spirit.client hands them (takeJob, takeRename), each from the node that served it. In node
-// it is loaded by its api.js (spirit/peer/api.js), the one script that requires it. The reads alone are read, never a
+// it is loaded by its api.js (spirit/peer/script.js), the one script that requires it. The reads alone are read, never a
 // branch.
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
-const SUBJECT = 'spirit/peer/data.js';
+const SUBJECT = 'spirit/peer/client/script.js';
 const FILE = path.join(RUN, SUBJECT);
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 
@@ -44,9 +44,9 @@ function world() {
   const add = D.addTranslator;
   D.addTranslator = function (t) { translators.push(t); return add(t); };
   win.spirit.requireScript(SUBJECT);
-  // goal/G49.23: the store hands no family out by name; the reads stand at the branch's path, spirit.peer.data, and its rows
+  // goal/G49.23: the store hands no family out by name; the reads stand at the branch's path, spirit.peer.client, and its rows
   // are the store's under the family spirit.peer.
-  const X = win.spirit.peer && win.spirit.peer.data;
+  const X = win.spirit.peer && win.spirit.peer.client;
   return { win: win, D: D, X: X, translators: translators,
     job: function (job, from) { D.takeJob(job, from || SENDER); },
     nodes: function () { return nodesOf(D, 'spirit.peer'); } };
@@ -64,21 +64,21 @@ function pageWorld() {
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.client;
   // goal/G49.23: the reads at the branch's path, the rows under the family spirit.peer.
-  const X = win.spirit.peer && win.spirit.peer.data;
+  const X = win.spirit.peer && win.spirit.peer.client;
   return { D: D, X: X, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return nodesOf(D, 'spirit.peer'); } };
 }
 
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands at spirit.peer.data', 0.2, async function () {
+test.run('in node, loaded by requiring its api.js, spirit/peer/script.js, it stands at spirit.peer.client', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
   // By its path, as a client loads it (goal/G49.6): bound from the api.js on this disc, its companion data.js with it.
-  try { await S.requireScript('spirit/peer/api.js'); } catch (e) { threw = e; }
-  // goal/G49.23: an old-shape data.js stands at its folder's path, spirit.peer.data; the store hands no family out by name.
-  const X = S.peer && S.peer.data;
+  try { await S.requireScript('spirit/peer/script.js'); } catch (e) { threw = e; }
+  // goal/G49.23, box v22 Part 1: a new-shape client stands at <branch path>.client, spirit.peer.client; goal/G49.26 made peer new-shape.
+  const X = S.peer && S.peer.client;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
 test.run('run beside spirit.client, it makes its branch there', 0.2, function () {

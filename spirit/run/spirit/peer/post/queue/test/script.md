@@ -1,4 +1,4 @@
-# spirit/postQueue/script.js — its own test
+# spirit/peer/post/queue/script.js — its own test
 
 `createQueue(opts)`: which request goes next, and nothing else; a decision structure peerPost drives (Andy: *"the node
 must not only queue, it also must have a hook for not-available responses, requeing with node-local timeout"*). Owed

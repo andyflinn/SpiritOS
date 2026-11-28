@@ -95,7 +95,7 @@ async function labRelay(lab, ownerKey) {
 // A post through the node's peer.post, the answer read off its reply (as a page reads it): its body, decoded.
 async function peerAsk(node, to, app, body, packet) {
   const made = packet.encode(app, body);
-  const r = await call(node.base, 'peer.post', { to: to, text: made.text });
+  const r = await call(node.base, 'spirit.peer.post', { to: to, text: made.text });
   const said = r.body || {};
   const back = typeof said.text === 'string' && said.text ? packet.decode(said.text) : null;
   return { ok: r.status === 200 && said.ok === true, body: back ? back.body : null, card: said.card || null, error: said.error || '' };

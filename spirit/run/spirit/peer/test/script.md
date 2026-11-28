@@ -1,7 +1,7 @@
-# spirit/peer/api.js — its own test
+# spirit/peer/script.js — its own test
 
 The peer family: packets to peers, and acquiring one. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The file is run as spirit.js runs the text `api {family}` answers (`loadInterface`: its text with
-`module` and `exports`, and on a page `window.spirit.requireScript`, which it asks for its companion `spirit/peer/data.js` and nothing else: goal/G47.1, Andy's rule *"every api.js requires it's companion data.js, and is the only script to require that data.js"*), every call checked by spirit.js's own check (`spirit.checkArgs`, its rules `spirit.ruleNames`).
+`module` and `exports`, and on a page `window.spirit.requireScript`, which it asks for its companion `spirit/peer/client/script.js` and nothing else: goal/G47.1, Andy's rule *"every api.js requires it's companion data.js, and is the only script to require that data.js"*), every call checked by spirit.js's own check (`spirit.checkArgs`, its rules `spirit.ruleNames`).
 The table the node mounts for the family is the one the branch's node work, `spirit/peer/server/script.js`, hands it (`verbs(node)`; goal/G49.25: the branches load themselves, where `spirit/server/node/script.js` held `loopbackVerbs.mount('peer', ...)`).
 
 - It runs with nothing but `module` and `exports`, and exports its table of verbs and nothing else: it names
