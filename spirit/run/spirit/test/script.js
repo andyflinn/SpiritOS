@@ -66,7 +66,8 @@ function answer(b) {
   return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + c }];
 }
 // It also serves the spirit branch's stream (event.subscribe before goal/G49.23): spirit.subscribe is a stream, as the real node's (a snapshot and then a job
-// update, for a page and for a server, which says X-Spirit-Reader: server and takes no packets); a peer.post is answered with its
+// update, for a page and for a server, which says X-Spirit-Reader: server and takes no packets); a spirit.peer.post (goal/G49.26,
+// box v8: peer new-shape, was peer.post) is answered with its
 // hash, and the peer's answer arrives on the stream as a packet carrying re, as a real node hands it.
 const packet = require(path.join(RUN, 'spirit', 'peer', 'packet', 'script.js'));
 function fakeNode() {
@@ -90,7 +91,7 @@ function fakeNode() {
         setTimeout(function () { res.write('event: job-updated\ndata: ' + JSON.stringify({ id: 'j1', status: 'done' }) + '\n\n'); }, 20);
         return;
       }
-      if (b.call === 'peer.post') {
+      if (b.call === 'spirit.peer.post') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, hash: 'h1' }));
         const reply = packet.encode('api', { said: 'answered by ' + b.args.to }, { re: 'h1' });
@@ -221,9 +222,9 @@ function page() {
       fetched.push({ url: url, body: init && init.body });
       if (url === '/spirit') {
         const b = JSON.parse(init.body);
-        // peer.post as the node answers it: the packet read out of its envelope, the peer's reply in one (goal/G43.24: a
+        // spirit.peer.post (goal/G49.26: was peer.post) as the node answers it: the packet read out of its envelope, the peer's reply in one (goal/G43.24: a
         // page's spirit.peerPost sends its body in the packet envelope, as a process's does).
-        if (isCall(b) && b.call === 'peer.post') {
+        if (isCall(b) && b.call === 'spirit.peer.post') {
           const P = require(path.join(RUN, 'spirit', 'peer', 'packet', 'script.js'));
           const inner = P.decode(String(b.args.text || '')).body;
           const reply = inner && inner.api ? { interface: DEMO } : { said: 'hello page peer' };
@@ -537,11 +538,11 @@ test.run('in a process, every spirit.subscribe says it is a server, so it takes 
   const subscribes = T.node.asked.filter(function (b) { return b.call === 'spirit.subscribe'; });
   return (subscribes.length > 0 && subscribes.every(function (b) { return b.reader === 'server'; })) || false;
 }, test.limit.quick);
-test.run('spirit.peerPost makes one post of peer.post and reads the answer off the node\'s events, through spirit.subscribe as a server', 0.2, function () {
+test.run('spirit.peerPost makes one post of spirit.peer.post and reads the answer off the node\'s events, through spirit.subscribe as a server', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
-  return (!!o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; })) || false;
+  return (!!o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'spirit.peer.post' && b.args && b.args.to === 'peerKey9'; })) || false;
 }, test.limit.quick);
 test.run('requireScript with a path, a key and how answers the peer\'s branch through spirit.peerPost, once for two callers, not its own', 0.2, function () {
   const o = O(); if (!o) return false;
@@ -838,12 +839,12 @@ test.run('on a page, an interface answers its member on window.spirit', 0.2, asy
   const pf = await T.wq.spirit.requireScript('spirit/zzDemo/api.js');
   return pf === T.wq.spirit.zzDemo.api || false;
 }, test.limit.quick);
-test.run('on a page, a require with a key answers the peer\'s branch through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
+test.run('on a page, a require with a key answers the peer\'s branch through the home node\'s spirit.peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const pp = await wq.spirit.requireScript('spirit/zzDemo/api.js', 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
-  return (wq.fetched.some(function (f) { return f.url === '/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.zzDemo.api) || false;
+  return (wq.fetched.some(function (f) { return f.url === '/spirit' && JSON.parse(f.body).call === 'spirit.peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.zzDemo.api) || false;
 }, test.limit.quick);
 
 // ── 7a. spirit.requireScript DE-DUPES, AS NODE'S require DOES (goal/G41.3) ──
@@ -1115,19 +1116,26 @@ test.run('on a real page, no branch\'s api is asked twice', 0.2, function () {
   return !twice.length || false;
 }, test.limit.quick);
 // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at
-// first use, and not again on the second call. Which family that is, the page decides as it loads (net, peer, owner or
-// config, the first it has not used; event went with spirit/event/, goal/G49.23 box v22 Part 2): its name is in the answer,
-// never the title.
-test.run('one of net, peer, owner and config is a branch the page has not used yet', 0.2, function () {
+// first use, and not again on the second call. Which family that is, the page decides as it loads: the first old-shape
+// branch the system's own mark finds in the tree (oldShapeBranches, below) that the page has neither called nor asked for,
+// and whose interface the node hands out (goal/G49.26: net, peer, owner and config, named here before, are new-shape or gone;
+// a new-shape branch's script.js runs on the page and its interface is never asked, spirit/script.js ownInterface). Its name
+// is in the answer, never the title.
+test.run('an old-shape branch of the tree, by the system\'s own mark, is a branch the page has not used yet', 0.2, async function () {
   if (!L.atLoad) return false;
-  L.fresh = ['net', 'peer', 'owner', 'config'].filter(function (f) { return !L.used.has(f) && L.asked.indexOf(f) === -1; })[0] || '';
+  for (const b of oldShapeBranches(walk(RUN, RUN, []))) {
+    if (L.asked.indexOf(b.name) !== -1 || L.verbCalls.some(function (c) { return String(c.call).indexOf(b.name + '.') === 0; })) continue;
+    const a = await door('api', { branch: b.name });
+    if (a && a.status === 200 && a.body && typeof a.body.interface === 'string') { L.fresh = b.name; L.freshPath = b.api; break; }
+  }
   return !!L.fresh || false;
-}, test.limit.quick);
+}, test.limit.slow);
 test.run('the branch the page has not used yet is bound on the page once it is required', 0.2, async function () {
   if (!L.fresh) return false;
-  const fresh = L.fresh;
   L.before = calls().length;
-  const reach = "Promise.resolve(window.spirit.requireScript('spirit/" + fresh + "/api.js')).then(function () { return !!(window.spirit[" + JSON.stringify(fresh) + "] && window.spirit[" + JSON.stringify(fresh) + "].api); }, function () { return false; })";
+  // Bound at its path's place on the spirit object (goal/G49.23), as the require answers it.
+  const at = JSON.stringify(L.freshPath.replace(/\.js$/, '').split('/').slice(1));
+  const reach = "Promise.resolve(window.spirit.requireScript(" + JSON.stringify(L.freshPath) + ")).then(function (b) { var o = window.spirit; " + at + ".forEach(function (k) { o = o && o[k]; }); return !!o && o === b; }, function () { return false; })";
   const first = await L.page.evaluate(reach);
   const second = await L.page.evaluate(reach);
   await H.sleep(1000);
@@ -1409,6 +1417,20 @@ function interfaces(run, files) {
   });
   return by;
 }
+// THE OLD-SHAPE BRANCHES OF A TREE, BY THE SYSTEM'S OWN MARK (goal/G49.26): every folder where a branch lives, a trunk folder
+// spirit/<name> (spirit/server/script.js, trunkBranches) or an app's spirit/app/<name> (spirit/script.js, interfaceName), that
+// the fs cache's old branch mark (spirit/fs/filter/api/script.js, api.js and data.js) marks; each with its api.js and the name
+// it is asked by, an app's its folder's path in dots, a trunk branch's its word (interfaceName).
+function oldShapeBranches(files) {
+  const mark = s.requireScript('spirit/fs/filter/api/script.js').api;
+  const held = new Set(files);
+  const has = function (p) { return held.has(p); };
+  const dirs = new Set();
+  files.forEach(function (f) { const parts = f.split('/'); for (let i = 1; i < parts.length; i++) dirs.add(parts.slice(0, i).join('/')); });
+  return Array.from(dirs).sort().filter(function (d) { return /^spirit\/(?:app\/)?[^/]+$/.test(d) && mark(d, has); }).map(function (d) {
+    return { dir: d, api: d + '/api.js', word: d.slice(d.lastIndexOf('/') + 1), name: /^spirit\/app\/[^/]+$/.test(d) ? s.dottedPath(d) : d.slice(d.lastIndexOf('/') + 1) };
+  });
+}
 function walk(dir, base, out) {
   (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []).forEach(function (e) {
     if (e.name === 'state' || e.name === '.git' || e.name === 'test') return;
@@ -1421,14 +1443,17 @@ function walk(dir, base, out) {
 // familyFinder: an api.js where a family is, no name twice (goal/G43.27)
 // the world
 const FF = {};
-// The node's relay branch is gone (goal/G49.11): peer stands in for it, a branch with no app folder of its name.
-// contact's interface is spirit/contact/script.js since goal/G49.22, no api.js: owner stands in for it (node did, until its
-// api.js went with spirit/node/, goal/G49.23 box v22 Part 2).
-test.run('ten or more branch names have an api.js in the tree, owner and peer among them', 0.2, function () {
+// goal/G49.26: owner went (goal/G49.24) and peer, net and config are new-shape (box v8, v17), so the tree's old-shape branches
+// are those the system's own mark finds (oldShapeBranches): each is found by its name, at its own api.js, and the finder finds
+// no other name but app's (spirit/app/script.js).
+test.run('every old-shape branch the system\'s own mark finds in the tree has its api.js found by its name, and no other name is found', 0.2, function () {
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
   const by = interfaces(RUN, files);
-  return (Object.keys(by).length >= 10 && !!by.owner && !!by.peer) || false;
+  const marked = oldShapeBranches(files);
+  const words = marked.map(function (b) { return b.word; });
+  return (marked.length > 0 && marked.every(function (b) { return !!by[b.word] && by[b.word].indexOf(b.api) !== -1; }) &&
+    Object.keys(by).every(function (k) { return k === 'app' || words.indexOf(k) !== -1; })) || false;
 }, test.limit.quick);
 test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;
@@ -1446,16 +1471,21 @@ test.run('a scratch node is up, on its own copy of the tree', 0.2, async functio
   if (!(node.up && node.root)) return false;
   const sRun = FF.sRun = path.join(node.root, 'spirit', 'run');
   const plant = function (rel, text) { const f = path.join(sRun, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
-  // Rule 3: the same name with an api.js one level deeper is a duplicate.
-  plant('spirit/app/peer/api.js', 'module.exports = { verbs: {} };\n');
+  // Rule 3: the same name with an api.js at another level is a duplicate. goal/G49.26: peer's api.js went (new-shape), so the
+  // name is the first app's old-shape branch the system's mark finds, its second api.js planted at spirit/<name>/.
+  const app = oldShapeBranches(walk(sRun, sRun, [])).filter(function (b) { return /^spirit\/app\//.test(b.dir); })[0];
+  if (!app) return false;
+  FF.dup = app.word;
+  plant('spirit/' + app.word + '/api.js', 'module.exports = { verbs: {} };\n');
   return true;
 }, test.limit.slow);
 // 3. a duplicate is seen
-test.run('the check sees the planted second peer/api.js, with both spirit/peer/ and spirit/app/peer/ there', 0.2, function () {
-  if (!FF.sRun) return false;
+test.run('the check sees a planted second api.js of an old-shape branch\'s name, with both spirit/<name>/ and spirit/app/<name>/ there', 0.2, function () {
+  if (!FF.sRun || !FF.dup) return false;
   const planted = interfaces(FF.sRun, walk(FF.sRun, FF.sRun, []));
   if (FF.node && FF.node.child) FF.node.child.kill();
-  return (!!planted.peer && planted.peer.length === 2) || false;
+  const two = planted[FF.dup] || [];
+  return (two.length === 2 && two.indexOf('spirit/' + FF.dup + '/api.js') !== -1 && two.indexOf('spirit/app/' + FF.dup + '/api.js') !== -1) || false;
 }, test.limit.quick);
 
 // The worlds above, freed once: by the last world before it takes a node of its own (the lab holds five, and these hold

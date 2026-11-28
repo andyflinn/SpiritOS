@@ -85,7 +85,7 @@ node at once (below).
 |---|---|---|
 | a component | required from the run root, its `module.exports` | got by `get` and run as a plain script, with no module box, so a file written for both node and a page takes its page branch and puts itself on the page (every shell element does; CodeMirror and its mode files too, goal/G41.7); a stylesheet is put on the page as a style; answers an empty object; `not-found` when it is not there |
 | an interface: `spirit/app/<name>/api.js` or `spirit/<name>/api.js` (`spirit.branchPath(name)`) | binds `spirit.<name>` from its node and answers it, asked once by any number of callers at once; `no-interface` for a family the node lacks, `no-node` with no port | the same |
-| an interface with `key` | the peer's family, through `spirit.peerPost` with `how`; held under the key, not on the instance | the peer's family, through the home node's `peer.post` |
+| an interface with `key` | the peer's family, through `spirit.peerPost` with `how`; held under the key, not on the instance | the peer's family, through the home node's `spirit.peer.post` |
 
 **`spirit.required.<path>`** (goal/G43.32; Andy: *"spirit.requireScript() both on the node, AND on the browser should simply
 install every script required, at the following point: spirit.required.<path.of.fucking.script>. - no name collisions -
@@ -120,8 +120,8 @@ Asks another node and waits for its answer.
   VM's own node.
 - **Answers** the peer's answer body; `{ ok: false, code: 'not-posted' }` at once for a post the node refused;
   `{ ok: false, code: 'no-answer' }` after `waitMs` of silence. It resolves, never rejects.
-- In node: one post of `peer.post`, and the answer read off the node's events (`event.subscribe`, a stream through
-  `post`), as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `peer.post`.
+- In node: one post of `spirit.peer.post` (goal/G49.26; was `peer.post`), and the answer read off the node's events (`event.subscribe`, a stream through
+  `post`), as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `spirit.peer.post`.
 - In a process, `spirit.eventStream.subscribe` opens the stream as a server too (goal/G43.3), so it takes none of the waiting
   lines of its node's owner.
 
@@ -317,8 +317,8 @@ The tree is read as it is. A second api.js is planted into a scratch node's copy
 
 ### Requirements
 
-- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second relay/api.js planted into the scratch copy is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./script-sibling-general.js (branchRules)` (goal/G43.32).
-- `spirit/app/contact/` is an app folder with no api.js; ten or more family names have an api.js in the tree, contact and relay among them.
+- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second api.js of an old-shape app branch's name, planted at `spirit/<name>/api.js` beside `spirit/app/<name>/api.js` in the scratch copy, is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./script-sibling-general.js (branchRules)` (goal/G43.32).
+- `spirit/app/contact/` is an app folder with no api.js; every old-shape branch the system's own mark (`spirit/fs/filter/api/script.js`) finds in the tree has its api.js found by its name, and no other name is found but app's (goal/G49.26: owner gone, peer, net and config new-shape). The branch the page has not used yet is the first such old-shape branch the page neither called nor asked for.
 - An app's family found where its api.js is is judged on each branch folder by `./script-sibling-general.js (branchRules)` (goal/G43.32).
 
 ### goal/G43.20: a family's path in a process
