@@ -1,17 +1,17 @@
 'use strict';
 
 // spirit/run/spirit/presence/test/script.js
-// The tests of spirit/presence/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// The tests of spirit/relay/presence/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // Who is connected to this relay, right now, in RAM: the connection is the presence. A sink is anything with write and
 // close, so each test plants sinks that record what they were told, and a planted clock.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const P = S.requireScript('spirit/presence/script.js');
+const P = S.requireScript('spirit/relay/presence/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A sink that records: what was written, whether it was closed.

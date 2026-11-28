@@ -1,4 +1,4 @@
-# spirit/presence/script.js — its own test
+# spirit/relay/presence/script.js — its own test
 
 `createRegistry(opts)` and `sayGoingAway(sinks, backInMs)`: who is connected to this relay, right now, in RAM. The
 connection is the presence; a sink is anything with `write` and `close`. Owed since the rule *"every production script

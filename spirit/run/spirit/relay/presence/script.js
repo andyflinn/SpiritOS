@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/presence/script.js
+// spirit/run/spirit/relay/presence/script.js
 // Who is connected to this relay, right now. In RAM, never written to
 // disk — presence is true only while a socket is open, and written down
 // it is a record of something that has stopped being true.

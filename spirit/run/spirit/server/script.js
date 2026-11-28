@@ -2245,7 +2245,7 @@ catch (e) {
     let told = 0;
     // The browser's EventSource honours `retry:` natively, so telling the
     // page costs no client code at all.
-    try { told += spirit.requireScript('spirit/presence/script.js').sayGoingAway(Array.from(pageStreams), 3000); }
+    try { told += spirit.requireScript('spirit/relay/presence/script.js').sayGoingAway(Array.from(pageStreams), 3000); }
     catch (e) { /* no page open */ }
     // The relay half of this goodbye — its members' streams —
     // is relayServer.js since cycle 0. Same sayGoingAway, same three seconds.

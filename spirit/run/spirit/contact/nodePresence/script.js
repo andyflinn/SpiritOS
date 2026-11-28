@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/presenceNode/script.js
+// spirit/run/spirit/contact/nodePresence/script.js
 // The personal node's half of presence: one held connection to every
 // relay it holds a row on, merged into one table, published to the shell
 // as a permanent job.
@@ -32,7 +32,7 @@ function doorUrl(relayUrl) {
 // opts: { rootDir, jobs, connectImpl, probeImpl, now }
 function createPresence(opts) {
   opts = opts || {};
-  const rootDir = opts.rootDir || path.join(__dirname, '..', '..');
+  const rootDir = opts.rootDir || path.join(__dirname, '..', '..', '..');
   const jobs = opts.jobs;
   const openStream = opts.connectImpl || sseClient.connect;
   // Establishes which key a relay answers with, and refuses it if that

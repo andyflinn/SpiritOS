@@ -47,7 +47,7 @@ const postQueue = spirit.requireScript('spirit/postQueue/script.js');
 // "can peerPost require('presenceNode') as one of its components". Built
 // by holdStreams below and reached by nobody else; oneDoorStacks.js holds
 // the line.
-const presenceNode = spirit.requireScript('spirit/presenceNode/script.js');
+const presenceNode = spirit.requireScript('spirit/contact/nodePresence/script.js');
 const spiritErrors = spirit.requireScript('spirit/error/script.js');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
 const arrivals = spirit.requireScript('spirit/peer/arrivals/script.js');

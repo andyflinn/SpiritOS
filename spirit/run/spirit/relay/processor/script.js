@@ -11,7 +11,7 @@ const invites = spirit.requireScript('spirit/invites/script.js');
 const limits = spirit.requireScript('spirit/limits/script.js');
 // The peer search's one ranker, on the probability modules (goal/G29.17), shared with the node.
 const peerRank = spirit.requireScript('spirit/peerRank/script.js');
-const presence = spirit.requireScript('spirit/presence/script.js');
+const presence = spirit.requireScript('spirit/relay/presence/script.js');
 const routerTable = spirit.requireScript('spirit/router/script.js');
 const relayStatus = spirit.requireScript('spirit/relayStatus/script.js');
 // The relay's data on disc (cycle 3): members and invites.

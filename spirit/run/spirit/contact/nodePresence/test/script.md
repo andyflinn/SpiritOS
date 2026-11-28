@@ -1,4 +1,4 @@
-# spirit/presenceNode/script.js — its own test
+# spirit/contact/nodePresence/script.js — its own test
 
 `createPresence(opts)` and `streamUrl(relayUrl, key)`: the personal node's half of presence, one held stream to every
 relay it holds a seat on, merged into one table and published as news of `spirit.contact`. Owed since the rule
