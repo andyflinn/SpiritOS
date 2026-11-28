@@ -41,5 +41,8 @@ module.exports = {
     faceLogout: {},
     card: PACKET, claim: PACKET, join: PACKET, joinConfirm: PACKET, face: PACKET, search: PACKET, rename: PACKET, removePeer: PACKET, invite: PACKET,
     revoke: PACKET, config: PACKET, debug: PACKET, monitor: PACKET, relayLabel: PACKET, api: PACKET,
+    // The owner's reads and writes of the relay's own folder, relaySelf/ (goal/G30.4), each by its name.
+    'FS.loadFile': PACKET, 'FS.saveFile': PACKET, 'FS.deleteFile': PACKET, 'FS.statFile': PACKET, 'FS.fileExists': PACKET, 'FS.path': PACKET,
+    'FS.loadJsonValue': PACKET, 'FS.saveJsonValue': PACKET, 'FS.search': PACKET,
   },
 };

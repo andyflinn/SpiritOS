@@ -2249,7 +2249,7 @@ function createRelay(rootDir, deps) {
   function asCalled(plain, named) {
     var parsed = null;
     try { parsed = JSON.parse(String(plain || '')); } catch (e) { return null; }
-    var m = parsed && typeof parsed.call === 'string' ? /^spirit\.relay\.([A-Za-z]+)$/.exec(parsed.call) : null;
+    var m = parsed && typeof parsed.call === 'string' ? /^spirit\.relay\.((?:FS\.)?[A-Za-z]+)$/.exec(parsed.call) : null;
     if (!m || parsed.call !== named || Object.keys(parsed).some(function (k) { return k !== 'call' && k !== 'args'; })) return null;
     var args = parsed.args && typeof parsed.args === 'object' && !Array.isArray(parsed.args) ? parsed.args : {};
     var verb = m[1];
@@ -2595,7 +2595,7 @@ function createRelay(rootDir, deps) {
   var selfFamily = null;
   function relaySelfFamily() {
     if (!selfFamily) {
-      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1; }) }).verbs; }
+      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && v.indexOf('FS.') !== 0; }) }).verbs; }
       catch (e) { selfFamily = {}; }
     }
     return selfFamily;
@@ -2618,7 +2618,7 @@ function createRelay(rootDir, deps) {
   function relayApi(owner) {
     var family = relaySelfFamily();
     var out = {};
-    RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
+    RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && v.indexOf('FS.') !== 0 && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
       var read = answerFs('FS.loadJsonValue', { path: v + '.json' });
       var file = read && read.value && typeof read.value === 'object' ? read.value : {};
       out[v] = {

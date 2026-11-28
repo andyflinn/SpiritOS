@@ -16,7 +16,10 @@
 // (Q11, Andy: "same as today."), its answer sealed back on the member's stream.
 require('../../script.js');
 
-const OWN = ['card', 'claim', 'join', 'joinConfirm', 'face', 'search', 'rename', 'removePeer', 'invite', 'revoke', 'config', 'debug', 'monitor', 'relayLabel', 'api'];
+// AND THE OWNER'S READS OF ITS FOLDER (goal/G30.4: relaySelf/ through introSpector's FS verbs; Andy: "EVERY relay verb is in a
+// node-branch"): FS.loadFile and the rest, each by its own name, spirit.relay.FS.loadFile, in no member's bundle.
+const FS_VERBS = ['FS.loadFile', 'FS.saveFile', 'FS.deleteFile', 'FS.statFile', 'FS.fileExists', 'FS.path', 'FS.loadJsonValue', 'FS.saveJsonValue', 'FS.search'];
+const OWN = ['card', 'claim', 'join', 'joinConfirm', 'face', 'search', 'rename', 'removePeer', 'invite', 'revoke', 'config', 'debug', 'monitor', 'relayLabel', 'api'].concat(FS_VERBS);
 // THE MEMBER BUNDLE (goal/G49.25, box v25: "The member verbs (card, face, removePeer, rename, search, and post, reply, stream, face
 // answer, face stream) sit in one bundle, granted to each key on the relay's member roll as it joins and revoked as it leaves. The
 // owner, by the relay's owner key, holds every verb"): the roll is the grant, a key holds the bundle while it is on it. The relay's

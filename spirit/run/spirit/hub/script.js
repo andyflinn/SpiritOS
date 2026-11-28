@@ -821,10 +821,12 @@ function createHub(rootDir) {
   function relayAsked(text) {
     let p = null;
     try { p = JSON.parse(String(text || '')); } catch (e) { return null; }
+    // The api ask is the word api (introSpector's), every other a verb and its arguments.
+    if (p && p.app === 'relay' && p.body === 'api') return systemCall('api', {});
     const body = p && p.app === 'relay' && p.body && typeof p.body === 'object' && !Array.isArray(p.body) ? p.body : null;
     if (!body || Object.keys(body).length !== 1) return null;
     const verb = Object.keys(body)[0];
-    if (!/^[A-Za-z]+$/.test(verb)) return null;
+    if (!/^(FS\.)?[A-Za-z]+$/.test(verb)) return null;
     const v = body[verb];
     const args = verb === 'card' ? (typeof v === 'string' ? { card: v } : {}) : (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
     return systemCall(verb, args);
