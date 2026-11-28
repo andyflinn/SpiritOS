@@ -34,8 +34,11 @@ test.run('stat of a file there answers 200 with its size, mtimeMs and birthtimeM
   const size = fs.statSync(path.join(RUN, SUBJECT)).size;
   return (!!r && r.status === 200 && same(Object.keys(r.body).sort(), ['birthtimeMs', 'mtimeMs', 'size']) && r.body.size === size && typeof r.body.mtimeMs === 'number') || false;
 }, test.limit.quick);
-test.run('stat of a file not there answers 404 not-found', 0.2, function () {
-  return same(ask('stat', { path: 'spirit/fs/node/test/zzNoSuchFile.txt' }), { status: 404, body: { code: 'not-found' } }) || false;
+// Q18, Andy: "yes, it's no http failure when i ask a verb and it properly responds with an error that belongs to the api-protocol..."
+// (goal/G49.25): a missing file is the protocol's no, answered 200.
+test.run('stat of a file not there answers 200, ok false, code not-found', 0.2, function () {
+  const r = ask('stat', { path: 'spirit/fs/node/test/zzNoSuchFile.txt' });
+  return (!!r && r.status === 200 && !!r.body && r.body.ok === false && r.body.code === 'not-found') || false;
 }, test.limit.quick);
 test.run('load of a file there answers 200 with its path and text', 0.2, function () {
   const r = ask('load', { path: SUBJECT });

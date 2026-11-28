@@ -7,7 +7,7 @@ in a process of its own, since the file system is pinned to the run folder it st
 
 - `spirit.requireScript('spirit/fs/node/script.js')` hands back `{ answer }`; `answer(verb, args)` is `{ status, body }`,
   what the node's verb answers, or undefined for a verb it does not answer (`search` among them).
-- `stat`: 200 `{ size, mtimeMs, birthtimeMs }`, or 404 `not-found`. `load`: 200 `{ path, text }`, or 404 `not-found`
+- `stat`: 200 `{ size, mtimeMs, birthtimeMs }`, or, for a file not there, 200 `{ ok: false, code: not-found }` (Q18). `load`: 200 `{ path, text }`, or 404 `not-found`
   for a file not there, one never served, or no path.
 - `save` and `delete`: 204 `{}` when done (a delete of a file not there too); 403 `forbidden` for a root-level or core
   file; 400 `bad-path` for a name the disc will not take (a save onto a folder); 500 `failed` for any other failure

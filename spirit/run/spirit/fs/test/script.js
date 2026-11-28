@@ -130,9 +130,12 @@ test.run('with no node, the spirit.fs branch\'s delete removes the file from the
   const o = LOCAL.o; if (!o) return false;
   return (!!o.del && 'ok' in o.del && !fsNode.existsSync(path.join(LOCAL.root, 'media', 'zzLocal', 'hello.txt'))) || false;
 }, test.limit.quick);
-test.run('with no node, the spirit.fs branch\'s stat of a file that is not there is refused with status 404', 0.2, function () {
+// A MISSING FILE IS THE PROTOCOL'S NO, NOT AN HTTP FAILURE (goal/G49.25, Q18, Andy: "yes, it's no http failure when i ask a verb
+// and it properly responds with an error that belongs to the api-protocol..."): the answer is ok false, code not-found.
+test.run('with no node, the spirit.fs branch\'s stat of a file that is not there answers ok false, code not-found', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
-  return (!!o.missing && !!o.missing.no && o.missing.no.status === 404) || false;
+  const v = o.missing && o.missing.ok;
+  return (!!v && v.ok === false && v.code === 'not-found') || false;
 }, test.limit.quick);
 
 // ── THE fs BRANCH IN ITS NEW SHAPE (goal/G49.15, step 3, box v23; Andy: "go, upgrade the spirit.fs branch!") ──
