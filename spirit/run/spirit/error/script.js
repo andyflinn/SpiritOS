@@ -298,8 +298,7 @@ define('too-big-to-tunnel', {
 //
 // Catalogued although `client/` is outside the suite's scan — an error a
 // node hands back is a node's error wherever the sentence was composed,
-// and `hub.peerOwnerPost` returns this one unchanged (hub.js says
-// 'packet too long' only when encode gave no sentence).
+// and the hub returns this one unchanged.
 //
 // `fault: 'caller'`, `retry: 'no'`: the same packet will not fit next
 // time. The fix is to send less, or — for an owner command — to accept
@@ -371,14 +370,7 @@ define('bad-signature', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['bad post signature', 'bad claim signature', 'bad hint signature',
     'bad inner signature', 'bad receipt signature', 'bad stream signature',
-    'stream signature must be a header', 'bad command signature'],
-  // ONE CODE FOR ABSENT AND FOR WRONG, deliberately (puppets/G5). A command
-  // arriving at a puppet with no owner signature and one arriving with a
-  // forged signature are the SAME SECURITY EVENT, and two codes would tell a
-  // caller which of the two it managed — an oracle worth nothing to an honest
-  // sender and something to a dishonest one. `not-owner` was considered and
-  // reads truthfully, but its texts are about relay ownership and broadening
-  // it would make one code mean two boundaries.
+    'stream signature must be a header'],
 });
 // THE SENDER IS NOT ON THIS RELAY (goal/G19.1): never claimed here, or
 // evicted. It was 'no such identity'; Andy: the refusal names the sender,
@@ -409,11 +401,6 @@ define('no-such-relay', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such relay'],
   note: 'relay.get or relay.remove named a url that is not in this node\'s relay list: removed since the search that found it, or never added (puppets/G2).',
-});
-define('no-such-box', {
-  status: 404, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['no such box'],
-  note: 'owner.boxGet named a fingerprint no current report carries: its servers stopped reporting, or left servers.json (puppets/G2, G10).',
 });
 define('contact-not-in-book', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
@@ -460,42 +447,6 @@ define('unsealed-post', {
     'cipher key. Refused by the RECEIVER as well as the sender, because ' +
     'a sender-only check is bypassed by not being the sender. Not worth ' +
     'retrying as sent: fetch the card and seal to it.',
-});
-// ── WHAT A PUPPET SAYS TO A COMMAND IT WILL NOT RUN (puppets/G5) ─────
-//
-// THE SWITCH REFUSES THREE WAYS AND THEY ARE NOT ONE REFUSAL. A bad signature
-// is a security event; the two below are not, and collapsing them would make
-// one code mean "someone tried something" and "you are talking to the wrong
-// box" at once.
-//
-//   Andy, 2026-09-26: "the owner is never in puppet-mode, to that gate closes
-//   automatically."
-//
-// `not a puppet` IS THAT GATE, and it is the reason puppet -> owner is closed
-// by construction rather than by a check: a node with no owner established
-// takes no commands from anyone, so a forged command arriving at an OWNER is
-// not a command that failed a test. It is fault 'caller' because the caller
-// addressed the wrong box, and retry 'no' because a node does not acquire an
-// owner by being asked twice.
-define('not-a-puppet', {
-  status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['not a puppet'],
-  note: 'This node has no owner established, so it takes no owner commands at ' +
-    'all — absent means nobody. Nothing is ' +
-    'wrong with the command; it arrived somewhere that does not take them.',
-});
-
-// NOT A SECURITY REFUSAL EITHER, and deliberately separate from the signature
-// one: this says the arrival was never an owner command in the first place.
-// Plain chat decodes with no app exactly as a system packet does, so the
-// envelope and the app are asked separately — a hole caught in the receiver
-// rule before it shipped, and this code is where it stays caught.
-define('not-a-command', {
-  status: 400, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['not a command'],
-  note: 'The arrival is not an owner command: not a packet envelope at all, ' +
-    'or addressed to an app, or carrying no verb. A chat line from the owner ' +
-    'lands here rather than being dispatched.',
 });
 // RETRY 'after' SINCE THE RE-ASK (cycle-10/R13): a peer that rotated refuses
 // with this, and the sender now asks for its new card and posts again
@@ -634,29 +585,12 @@ define('not-owner', {
   // Two texts of the first-claim path left with it (goal/G16.8): no claim
   // makes an owner, so none is refused for lacking the token that did.
 });
-// ── THE OWNER DOOR INTO A PUPPET (puppets/G7) ─────────────────────
-//
-// Answers to a command its owner signed, sent back to the owner only.
-// A stranger gets nothing at all, so none of these tells anyone that a
-// node is a puppet (puppetMode.puppetDoor).
 define('rotate-not-saved', {
   status: 500, presence: NONE, retry: 'after', fault: 'node',
   texts: ['the new cipher key could not be saved'],
   note: 'A rotation refused before anything was published: a card naming a key ' +
     'that is not on disc would send every peer to seal to a key this node ' +
     'cannot open with after a restart (nodeCard.rotate).',
-});
-define('command-not-packed', {
-  status: 400, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['the command could not be packed'],
-  note: 'peerOwnerPost could not wrap the signed command as a packet, so nothing was sent.',
-});
-define('no-reply-from-puppet', {
-  status: 504, presence: NONE, retry: 'after', fault: 'target',
-  texts: ['the puppet did not answer in time'],
-  note: 'peerOwnerPost sent a signed command and no answer with its hash came back within ' +
-    'the wait. A reply arriving after that is dropped, never handed to whoever asks next ' +
-    '(ownerPost.js).',
 });
 define('no-such-verb', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
@@ -674,9 +608,9 @@ define('no-such-argument', {
 define('answer-too-large', {
   status: 413, presence: NONE, retry: 'no', fault: 'target',
   texts: ['answer too large for a packet'],
-  note: 'A puppet ran the verb and its answer cannot travel as one packet ' +
-    '(puppets/G1). Said by name with the verb and the size, instead of the owner ' +
-    'waiting out its wait for no-reply-from-puppet. The cure is a narrower question: ' +
+  note: 'A node ran the verb and its answer cannot travel as one packet ' +
+    '(puppets/G1). Said by name with the verb and the size, instead of the asker ' +
+    'waiting out its wait. The cure is a narrower question: ' +
     'a search, never a list.',
 });
 // ── THE LAST LEG: THE OWNER NODE'S HOP TO AN APP SERVER (appClient.js) ──

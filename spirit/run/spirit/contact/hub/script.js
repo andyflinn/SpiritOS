@@ -100,30 +100,8 @@ function labelRefusal(text) {
   return SPIRIT.normalizeString(text) ? labelProblem(text) : '';
 }
 
-// ── packet.js IS BACK, AND THE DELETION IT LOOKS LIKE UNDOING STANDS ──
-//
-// The note where `decorateWithPacket` STOOD, below, records that it was deleted as "the
-// last thing in the node that read an app envelope", under Andy's
-// *"nothing in node and relay should know about apps"*, and that it was
-// "the only reason hub.js required packet.js at all". That require is
-// here again, so the sentence that reconciles them belongs at the line
-// rather than in a commit nobody will find:
-//
-//   **THE NODE MAY BUILD A SYSTEM PACKET WITH THE FACTORY.**
-//   **IT MAY NOT DECODE AN APP'S ENVELOPE.**
-//
-// What was removed was the node PARSING an arriving app payload on
-// behalf of the shell — a layer above deciding what its traffic meant.
-// Composing a packet addressed to NO app is the node's own business, and
-// this file already did it by hand (`systemPayload`, used at the relay
-// search call below).
-//
-// So this replaces a second builder with the one factory rather than
-// reopening a closed question. Ruled by Andy, 2026-09-25: *"agreed. go."*
-//
-// The rule is assertable and wsl-claude holds it: `hub.js` may call
-// `packet.encode` and never `packet.decode`.
-const packet = require('../../script.js').requireScript('spirit/peer/packet/script.js');
+// NO packet.js HERE (goal/G49.24, box v18): its one caller, the puppet sender, went with the owner branch; the node builds its
+// relay calls by hand and never decodes an app's envelope.
 
 // isLoopbackHost, assertRelayUrl and relayRequest MOVED to
 // spirit/relayRequest/script.js on 2026-09-16 (assertRelayUrl on to relayUrl.js, below). They were the node's outbound socket
@@ -1624,114 +1602,6 @@ function createHub(rootDir) {
   }
   var PATIENCE_MAX_MS = 10 * 60 * 1000;
 
-  // ── peerOwnerPost — THE OWNER COMMANDS A PUPPET HE OWNS ──────────────
-  //
-  //   Andy, 2026-09-25: "so node only a peerProxy() function that proxies
-  //   the entire node api to manipulate the configuration, contactList
-  //   maybe even relayList for the app" — and, naming it: "the interface
-  //   might better be call peerOwnerPost()", "it's more true."
-  //
-  // NAMED FOR WHAT IT IS, NOT FOR WHAT IT DOES. `proxy` already means one
-  // thing here — the outbound web fetcher, `net.fetch` in
-  // server.js, marked `{ wire: true }` with "it reaches the
-  // internet, so being offline fails it", and `spirit/state/proxy.json`
-  // for which key may go to which website. That proxy points AT the
-  // internet; this one points at a puppet. `peerOwnerPost` names by
-  // family instead: it is `peerPost`, from the owner.
-  //
-  // ── AND THE COMMAND IS RULED, NOT ASSUMED ────────────────────────────
-  //
-  //   Andy, 2026-09-25: "The owner of the pupped can command anything,
-  //   others by default nothing."
-  //
-  // `design/principles/PUPPETS.md` G8. The line `nodeCard.js:13` records
-  // — a relay answers about itself and a node answers nothing — was
-  // already crossed by `nodeCard` itself, whose `:208` returns name,
-  // description, publicKey and sealKey for every node. So there was no
-  // line left to cross, only the question of commands, which is now
-  // answered.
-  //
-  // ── A SYSTEM PACKET, AND WHAT THAT DOES AND DOES NOT BUY ─────────────
-  //
-  // `packet.js:152-154`: "A system packet is now the one with NO app,
-  // which nothing claiming to be an app can forge."
-  //
-  // THAT IS ABOUT DISPATCH, NOT ABOUT SENDERS, and it must not be quoted
-  // as though it meant only an owner can send one (wsl-claude's
-  // correction, 2026-09-25). A hostile peer composes a no-app packet
-  // perfectly well. What it cannot do is be an app AND a system packet at
-  // once — so NO PUPPET CAN INTERCEPT OWNER TRAFFIC, which is the
-  // property this needs. Every app's reader filters on its own app name
-  // and therefore ignores this automatically.
-  //
-  // **THE OWNER-KEY COMPARISON AT THE RECEIVER IS THE WHOLE BOUNDARY.**
-  // Nothing here authenticates anybody; `peerPost` signs every post with
-  // this node's identity and the puppet decides whether that key is its
-  // master's.
-  //
-  // ── BUILT WITH THE FACTORY, packet.encode ────────────────────────────
-  //
-  // A first draft used `systemPayload`, the hand-built `{v, body}` with no
-  // `id`, no bound and no refusal. The command is built with
-  // `packet.encode('', …)` now: the note at the packet.js require, at the
-  // top of this file, says why that undoes nothing (Andy, 2026-09-25:
-  // *"agreed. go."*). `systemPayload` stays for the relay search alone.
-  //
-  // THE RECEIVER IS puppetMode.puppetDoor (puppets/G7), the owner door a
-  // puppet runs: it verifies the owner's signature before a command runs.
-  function peerOwnerPost(rootDir, router, relayUrl, toKey, verb, body) {
-    const named = String(verb || '');
-    if (!named) return Promise.resolve({ ok: false, status: 400, error: 'verb required' });
-    if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
-
-    // ── THE OWNER SIGNS THE COMMAND, AND THAT IS WHAT THE PUPPET CHECKS ──
-    //
-    //   Andy, 2026-09-26: "the puppet is uable to sign any request with the
-    //   owners signature. and that signature must exist before the puppet
-    //   routes the request to loopback." — "the second half counts." — "so we
-    //   must make sure in code, that the signature is verified in the pupped,
-    //   else request is refused."
-    //
-    // WHY THE TRANSPORT SIGNATURE WILL NOT DO. peerPost.js:756 signs every
-    // outgoing post with this node's identity key and no caller can withhold
-    // it, so a puppet posting through its own node gets it for free — and to a
-    // SIBLING puppet under the same owner, that node key IS the owner key. The
-    // forger never signs anything; the router signs for it.
-    //
-    // THE SHAPE IS forwardToMine's, ONE LAYER IN (relay.js:2711-2728): a
-    // signed string travels beside its signature and the receiver verifies
-    // rather than trusting the carrier. Here the signed string is `cmd` and it
-    // is carried verbatim, so the verifier signs over the same bytes without
-    // canonicalising anything.
-    //
-    // THE ID IS MINTED FIRST, because it is inside the signed message and
-    // `encode` would otherwise mint it afterwards — binding the signature to
-    // this envelope and no other.
-    const id = packet.randomId();
-    const cmd = JSON.stringify({ verb: named, body: body || {} });
-    const me = auth.loadIdentity(rootDir);
-    const sig = auth.sign(me.privateKey, auth.commandMessage(me.publicKey, toKey, id, cmd));
-    const made = packet.encode('', { cmd: cmd, sig: sig }, { id: id });
-    // A REFUSAL IS A VALUE, NOT A THROW, and the sentence is the
-    // factory's rather than a second wording of it. THE BOUND IS NOT
-    // CHECKED HERE: `encode` bounds what it builds, which is the whole
-    // reason for using it — an earlier draft carried its own length test
-    // because `systemPayload` bounds nothing, and that was the limit
-    // written down in a second place.
-    // THE FACTORY'S SENTENCE, NOT A SECOND ONE. An earlier draft wrapped
-    // this as "owner command too long: <the factory's words>" and read
-    // "too long: packet too long" — two statements of one refusal, which
-    // is the thing this file spent the day removing elsewhere. The
-    // composer refused; that is the answer.
-    if (!made || !made.ok) {
-      return Promise.resolve({ ok: false, status: 413, error: (made && made.error) || 'packet too long' });
-    }
-    // Through the one door. `serverSurface.js:848`: "peer.post is the only
-    // way onto the wire. A second caller is a second door, whether or not
-    // a route has been wired to it yet."
-    return sendPacket(router, relayUrl, toKey, made.text);
-  }
-
   // fromMemory STOOD HERE (R39, 0021): the shadow's strangers, ranked beside the book. Gone with goal/G40.11: the
   // search lists the kept and owned rows of the one table.
 
@@ -2134,16 +2004,13 @@ function createHub(rootDir) {
   }
 
   return {
-    // THE OWNER'S COMMAND PATH (PUPPETS.md G4); a puppet's owner door,
-    // puppetMode.puppetDoor, receives it.
-    peerOwnerPost: peerOwnerPost,
     handleClaim: handleClaim,
     // The transport. handleSend and handleInbox stood beside it while
     // there were two, listed together so that was visible; R8 deleted the
     // other one and this is what a node has.
     handlePost: handlePost,
-    // The one place that decides where a post goes, shared with
-    // ownerPost.js and puppetStream (server.js hands it) rather than decided twice.
+    // The one place that decides where a post goes, shared by every
+    // post rather than decided twice.
     chooseRoute: chooseRoute,
     handleStatus: handleStatus,
     relayRemove: relayRemove,

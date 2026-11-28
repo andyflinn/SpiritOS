@@ -35,7 +35,7 @@ require('../../script.js');
 //
 // The reply packet carrying a route is already signed by the owner node,
 // as every packet is, and the puppet takes it only from its owner's key
-// and only as the answer to its own question (ownerPost's rule). The route
+// and only as the answer to its own question (the rule every reply matcher keeps). The route
 // ALSO carries a signature of its own, because it travels on: the puppet
 // forwards it with each visitor's request, so the slot's owner can check,
 // without asking anyone, that the owner node sent this face to it.

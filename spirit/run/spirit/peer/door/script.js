@@ -9,8 +9,8 @@ require('../../script.js');
 //   the node's 'api' verb over peerPost). A NEW NODE VERB: changing it needs
 //   peer review and his yes again (CLAUDE.md, "You do not").
 //
-// An arrivals witness, as puppetDoor is: it reads packets
-// of app 'api' only, so app-less ones stay puppetDoor's. The body is 'api'
+// An arrivals witness: it reads packets
+// of app 'api' only. The body is 'api'
 // or {app: {verb: {args}}} (D10); the node's appClient answers it
 // (appClient.ask), and the answer goes back to the asker as a packet of app
 // 'api' that answers the ask's hash, flat, exactly as it came (D11).
@@ -133,7 +133,7 @@ function createApiDoor(opts) {
 
   function reply(message, answer, kind) {
     let made = o.encode('api', answer, { re: message.hash });
-    // Too big for a packet is said, never dropped, as puppetDoor does.
+    // Too big for a packet is said, never dropped.
     if (!made || !made.text) {
       made = o.encode('api', { ok: false, code: 'answer-too-large', error: 'answer too large for a packet' }, { re: message.hash });
       if (!made || !made.text) return Promise.resolve();

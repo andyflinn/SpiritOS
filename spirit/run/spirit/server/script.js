@@ -792,10 +792,6 @@ try {
 
 // `let presence` STOOD HERE. The node's held streams live inside peerRouter
 // since goal/G19.14 (peerPost.holdStreams): one door, and this file asks it.
-// Set once the router exists (see ownerPost.js); owner.command calls it.
-let peerOwnerPost = null;
-// The owner's view of his boxes (boxes.js, public-app-server/G10), in memory.
-let boxes = null;
 let peerRouter = null;
 
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
@@ -1387,8 +1383,7 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ error: 'no such verb: ' + verb }));
           return;
         }
-        // THE SAME TWO FAILURES AS THE PUPPET SHIM (puppetMode.puppetDoor), and the
-        // later one was never caught here either: a handler whose promise
+        // A HANDLER THAT FAILS IS ANSWERED, NEVER LEFT HANGING: the later failure was never caught here either: a handler whose promise
         // rejects left the caller hanging and, unhandled, stops the process on
         // Node 24 (wsl-claude). Answered 500 if nothing was sent yet.
         const failed = function () {
@@ -1741,32 +1736,12 @@ catch (e) {
   });
   jobs.startNodeServers(ROOT_DIR, appClient);
 
-  // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
-  //
-  // Silent on a node that is not a puppet (no spirit/state/owner.json naming
-  // another key), which is every node but a puppet. On a puppet, a command
-  // its owner signed runs through the same handlers the loopback door uses.
-  // puppetMode.puppetDoor says the rest.
-  // The node builds the answer as a system packet and never reads an
-  // app's. It is handed no decoder since goal/G16.5: arrivals.js reads the
-  // envelope once and every witness is given what it read.
   {
     const wire = spirit.requireScript('spirit/peer/packet/script.js');
-    arrivals.witness(spirit.requireScript('spirit/puppetMode/script.js').puppetDoor({
-      rootDir: ROOT_DIR,
-      call: function (verb, args) { return nodeDoor.call(verb, args); },
-      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
-      encode: wire.encode,
-      auth: spirit.requireScript('spirit/relayAuth/script.js'),
-      selfKey: function () {
-        return spirit.requireScript('spirit/relayAuth/script.js').loadIdentity(ROOT_DIR).publicKey;
-      },
-      log: function (line) { console.log(line); },
-    }));
 
     // ── THIS NODE'S FACE (goal/G30.13) ──────────────────────────────────
     //
-    // A request from the owner's face runs through the door the puppeteer uses above (nodeDoor.call), a file through
+    // A request from the owner's face runs through the node's door (nodeDoor.call), a file through
     // the browser's own GET (serveGet); faceStream carries what the loopback shell gets. faceHome.js says the rest.
     faceHome = spirit.requireScript('spirit/contact/faceHome/script.js').createFaceHome({
       call: function (verb, args) { return nodeDoor.call(verb, args); },
@@ -1790,22 +1765,6 @@ catch (e) {
       log: function (line) { console.log(line); },
     });
 
-    // ── THE STREAM TO THE MASTER (goal/G14.5) ─────────────────────────
-    //
-    // Andy, 2026-10-10: "inside the puppet, the publisher then publishes to the master as well", "just send all
-    // app Server events", "only while the master is live and reachable". The publisher is one point, the job
-    // record and its job-updated: on a puppet every server's published object also goes to the owner as a packet
-    // named published, serialized, over the route the owner door's sending end would choose. puppetStream.js says
-    // the rest; the master's shell routes the packet to onPublished (shell.js).
-    const puppetStream = spirit.requireScript('spirit/puppetStream/script.js').createPuppetStream({
-      puppet: spirit.requireScript('spirit/puppetMode/script.js').puppetIn(ROOT_DIR, function () {}),
-      route: function (to) { return hub.chooseRoute(peerRouter, to); },
-      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
-      encode: wire.encode,
-      log: function (line) { console.log(line); },
-    });
-    jobs.events.on('job-updated', puppetStream.onJob);
-
     // ── 'api': A KNOWN SENDER ASKS WHAT THIS NODE'S APPS OFFER ────────
     //
     // appPair/G1.3, a node verb with Andy's yes on it ("yes to all of wsl
@@ -1823,26 +1782,6 @@ catch (e) {
       log: function (line) { console.log(line); },
     }));
 
-    // ── peerOwnerPost: THE OWNER DOOR'S SENDING END (puppets/G4) ─────
-    //
-    // This node signing a command for one of its puppets and waiting for
-    // the one answer that carries that command's hash. ownerPost.js says
-    // which answers are taken. The route is hub's chooseRoute, the same
-    // choice every post makes.
-    const ownerPost = spirit.requireScript('spirit/ownerPost/script.js').createOwnerPost({
-      identity: function () { return spirit.requireScript('spirit/relayAuth/script.js').loadIdentity(ROOT_DIR); },
-      auth: spirit.requireScript('spirit/relayAuth/script.js'),
-      encode: wire.encode,
-      randomId: wire.randomId,
-      route: function (to) { return hub.chooseRoute(peerRouter, to); },
-      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
-    });
-    arrivals.witness(ownerPost.onArrival);
-
-    // HIS SERVERS' BOX REPORTS, kept in memory and summed per box (G10).
-    boxes = spirit.requireScript('spirit/fuckingGarbage/boxes.js').createBoxes({ rootDir: ROOT_DIR });
-    arrivals.witness(boxes.onArrival);
-    peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
 
   // THE STREAMS ARE THE DOOR'S (goal/G19.14): peerRouter builds and holds
@@ -2176,8 +2115,8 @@ catch (e) {
   //
   // Each trunk branch's handlers stand in its own spirit/<branch>/server/script.js since this item (Andy: "WHY WOULD THE
   // MOTHERFUCKING SERVER LOAD MOTHERFUCKING BRANCHES EXPLICITLY????"), and serveCommon finds them in the fs cache. What they work
-  // with is built above, so it is handed over here: the router, the boxes and the puppet sender are made once the node is up, so
-  // each is a function asked at every call, as the handlers asked them when they stood here.
+  // with is built above, so it is handed over here: the router is made once the node is up, so
+  // it is a function asked at every call, as the handlers asked them when they stood here.
   const branchNode = {
     rootDir: ROOT_DIR,
     port: port,
@@ -2187,8 +2126,6 @@ catch (e) {
     appFamily: appFamily,
     nodeSearches: nodeSearches,
     router: function () { return peerRouter; },
-    boxes: function () { return boxes; },
-    ownerPost: function () { return peerOwnerPost; },
     readJsonBody: readJsonBody,
     bodyRefused: bodyRefused,
     proxyVerb: proxyVerb,

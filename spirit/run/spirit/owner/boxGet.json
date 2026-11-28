@@ -1,6 +1,0 @@
-{
-  "description": "One box by its fingerprint (key): {ok, key, box: {fingerprint, boxLabel, boxTotalMB, allottedMB, servers: [{key, allottedMB, at}], warning}}; 404 when there is none.",
-  "request": {
-    "key": "spirit/type/string/description/script.js"
-  }
-}

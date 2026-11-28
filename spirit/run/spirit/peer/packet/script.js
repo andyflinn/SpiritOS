@@ -276,7 +276,7 @@ function packetEncode(app, body, opts) {
   // the only place that can refuse before anything is signed or sent. A
   // second check on the sender's node would be a second opinion about one
   // fact, and the first thing it would do is disagree with this one at
-  // some boundary. `hub.peerOwnerPost` already passes this error through
+  // some boundary. the hub already passes this error through
   // unchanged rather than wording it again.
   var sealedBytes = byteLength(JSON.stringify(text));
   if (sealedBytes > SEALED_LIMIT) {

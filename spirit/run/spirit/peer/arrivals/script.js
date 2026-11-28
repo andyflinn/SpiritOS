@@ -84,7 +84,7 @@ require('../../script.js');
 // NODE-AND-RELAY.md's rule is that the node reads the ENVELOPE and
 // nothing inside it. The rule held; the arithmetic did not. Six node
 // files each held a decoder — server.js handed `wire.decode` as a VALUE
-// to the api door, the puppet door, ownerPost and boxes, and each of them
+// to the api door and every other witness, and each of them
 // opened every delivered arrival itself — and three more parsed an
 // arrival's text by hand. So the envelope was opened up to five times per
 // packet, in five places that could drift, and the guard suite that was
@@ -109,9 +109,8 @@ var packet = spirit.requireScript('spirit/peer/packet/script.js');
 // before packets existed, the relay's own protocol word, junk — null,
 // which is the reader's cue that there is no envelope here rather than an
 // envelope that is empty.
-// `id` rides along because it is part of what an owner's command signs
-// (relayAuth.commandMessage, read by puppetMode.ownerCommandIn): a reader
-// that had to go back to the text for it would be a second decoder.
+// `id` rides along so a reader never goes back to the text for it, which
+// would be a second decoder.
 function envelopeOf(text) {
   if (!packet.isEnvelope(text)) return null;
   var decoded = packet.decode(text);
@@ -185,8 +184,8 @@ function createArrivals(opts) {
 
   // ── WITNESSES: THE NODE'S OWN LISTENERS, WHICH ARE NOT READERS ────────
   //
-  // The owner door, peerOwnerPost's reply matcher and the box reports
-  // (server.js) each need to see every arrival. They were subscribers,
+  // The node's own listeners, the api door among them (server.js), each
+  // need to see every arrival. They were subscribers,
   // and a subscriber that took a packet counted as its delivery, so every
   // arrival was marked taken within milliseconds with no page open, and
   // the backlog below never had anything to replay (wsl-claude measured
