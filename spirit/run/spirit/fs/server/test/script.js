@@ -523,3 +523,11 @@ test.run('as a relay, the tree marks spirit/relay as a branch', 0.2, function ()
   const r = AS.relay && AS.relay['spirit/relay'];
   return (!!r && r.branch === true) || false;
 }, test.limit.quick);
+// Andy, G49.25: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much weight." As a relay no folder
+// of the tree is marked an app, and no app folder (one the node marks an app) is marked a branch.
+test.run('as a relay, the tree marks no folder an app, and no app folder a branch', 0.2, function () {
+  if (!AS.node || !AS.relay) return false;
+  const apps = Object.keys(AS.node).filter(function (p) { return AS.node[p].kind === 'folder' && AS.node[p].app; });
+  if (apps.length < 3) return false;
+  return (Object.keys(AS.relay).every(function (p) { return !AS.relay[p].app; }) && apps.every(function (p) { return !AS.relay[p] || !AS.relay[p].branch; })) || false;
+}, test.limit.quick);

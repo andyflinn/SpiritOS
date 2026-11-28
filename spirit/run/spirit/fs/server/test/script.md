@@ -50,3 +50,5 @@ the node tree's own flags. As a relay: spirit/script.js is held; every path at o
 held; every path outside spirit/ is held (box v12: *"it will still cache everything outside of run://spirit/"*); nothing else is, not a file of a trunk folder that is neither, which the node's tree holds.
 
 spirit/relay, planted with the branch mark: as a node never marked a branch (box v16), as a relay marked one.
+
+As a relay no folder is marked an app, and no app folder a branch (Andy: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much weight.").
