@@ -176,17 +176,17 @@ function every() {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_PATH); }));
     return (all.length > 100 && !hits.length) || false;
-  }, test.limit.quick);
+  }, test.limit.slow, { why: 'it reads every tracked file of the tree' });
   test.run('no code reaches an element through spirit.elements', 0.4, function () {
     const all = E.elementFiles || [];
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_ELEMENT_HOME, true); }));
     return (all.length > 100 && !hits.length) || false;
-  }, test.limit.quick);
+  }, test.limit.slow, { why: 'it reads every tracked file of the tree' });
   test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
     const all = E.elementFiles || [];
     const stray = [].concat.apply([], all.map(strayElementReaches));
     return (all.length > 100 && !stray.length) || false;
-  }, test.limit.quick);
+  }, test.limit.slow, { why: 'it reads every tracked file of the tree' });
 }
 
 function oneFile() {
