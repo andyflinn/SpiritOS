@@ -82,20 +82,24 @@ function sameFlags(a, row) {
 // spirit/ and the files right in it, each home and everything under it, and OUTSIDE spirit/ EVERYTHING (Andy, v12: "it will still
 // cache everything outside of run://spirit/"). Every other path stays on the disc, where the marks are worked out from (a relay's
 // RAM is the most expensive thing it has). homeAt(dir): whether that folder is a home.
+// ALL BRANCHES AND APPS, EXCEPT APP SERVERS (Andy, Q12 of wsl's: "As a relay the cache must carry all branches and apps, EXCEPT app
+// servers."): an app server's folder, and everything under it, is no row on a relay, though its parent spirit/app is a home.
+// serverAt(dir): whether that folder is an app server's.
 function isHome(p, held) {
   return !!held && held.kind === 'folder' && ((/^spirit\/[^/]+$/.test(p) && (held.api === true || held.branch === true)) || held.app === true);
 }
-function kept(p, held, homeAt) {
+function kept(p, held, homeAt, serverAt) {
   if (!spirit.IS_RELAY) return true;
   const q = String(p);
   if (q === 'spirit' || q.indexOf('spirit/') !== 0) return true;
   if (/^spirit\/[^/]+$/.test(q) && !!held && held.kind === 'file') return true;
+  const server = typeof serverAt === 'function' ? serverAt : function () { return false; };
+  // Under an app server, nothing, whatever marks a folder inside it carries (the desk's own elements are old-shape apps).
+  const above = [];
+  for (let d = q, i = d.lastIndexOf('/'); i > 0; i = d.lastIndexOf('/')) { d = d.slice(0, i); above.push(d); }
+  if ((!!held && held.kind === 'folder' && server(q)) || above.some(server)) return false;
   if (isHome(q, held)) return true;
-  for (let d = q, i = d.lastIndexOf('/'); i > 0; i = d.lastIndexOf('/')) {
-    d = d.slice(0, i);
-    if (homeAt(d)) return true;
-  }
-  return false;
+  return above.some(homeAt);
 }
 
 // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
@@ -138,16 +142,20 @@ function start(rootDir, jobs) {
   const seedAt = new Date().toISOString();
   // In path order a folder comes before what is under it, so its flags, and whether it is a home, are known first.
   const homes = new Set();
+  const servers = new Set();
+  const seedHas = function (q) { return seed.has(q); };
   Array.from(seed.keys()).sort().forEach(function (p) {
     const held = seed.get(p);
-    if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }, read));
+    if (held.kind === 'folder') Object.assign(held, folderFlags(p, seedHas, read));
     if (isHome(p, held)) homes.add(p);
-    if (kept(p, held, function (d) { return homes.has(d); })) fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
+    if (spirit.IS_RELAY && held.kind === 'folder' && FLAG_APP(p, seedHas, read) && appServer(p, read)) servers.add(p);
+    if (kept(p, held, function (d) { return homes.has(d); }, function (d) { return servers.has(d); })) fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
   });
   spirit.requireScript('spirit/client/script.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
   // Whether the tree holds a path: the kept rows on a node, the disc on a relay, which keeps only some.
   const has = spirit.IS_RELAY ? function (q) { return fs.existsSync(path.join(rootDir, q)); } : function (q) { return !!tree.file(q); };
   const homeAt = function (d) { return isHome(d, tree.file(d)); };
+  const serverAt = function (d) { return spirit.IS_RELAY && FLAG_APP(d, has, read) && appServer(d, read); };
   // A FOLDER THAT TURNED A HOME ON A RELAY BRINGS WHAT IS UNDER IT, and one that stopped being one takes it (goal/G49.25): read
   // from the disc, as the seed was; a path still kept by another home stays.
   const under = function (dir) {
@@ -188,7 +196,7 @@ function start(rootDir, jobs) {
       const flags = folderFlags(dir, has, read);
       const now = Object.assign(row ? Object.assign({}, row) : statOf(path.join(rootDir, dir), 'folder'), flags);
       const wasHome = isHome(dir, row);
-      const keep = kept(dir, now, homeAt);
+      const keep = kept(dir, now, homeAt, serverAt);
       const at = new Date().toISOString();
       if (keep && (!row || !sameFlags(flags, row))) send(commandOf('createDirectory', dir, at, now));
       if (!wasHome && isHome(dir, now)) {
@@ -196,11 +204,12 @@ function start(rootDir, jobs) {
           if (tree.file(u.p)) return;
           const h = heldOf(u.p, path.join(rootDir, u.p), u.kind);
           if (u.kind === 'folder') Object.assign(h, folderFlags(u.p, has, read));
+          if (!kept(u.p, h, homeAt, serverAt)) return;
           send(commandOf(u.kind === 'folder' ? 'createDirectory' : 'createFile', u.p, at, h));
         });
       } else if (wasHome && !isHome(dir, now)) {
         Object.keys(tree.files()).filter(function (p) { return p.indexOf(dir + '/') === 0; }).sort().reverse().forEach(function (p) {
-          if (kept(p, tree.file(p), function (d) { return d !== dir && homeAt(d); })) return;
+          if (kept(p, tree.file(p), function (d) { return d !== dir && homeAt(d); }, serverAt)) return;
           send(commandOf(tree.file(p).kind === 'folder' ? 'deleteDirectory' : 'deleteFile', p, at, null));
         });
       }
@@ -226,7 +235,7 @@ function start(rootDir, jobs) {
       if (!tree.file(rel)) held = undefined;
     } else held = heldOf(rel, full, 'file'); // a change: the new stat (a file never seen is made by it)
     // On a relay only a kept row is sent, and only a held row is deleted; on a node every path is, as before.
-    const sendable = op === 'deleteFile' || op === 'deleteDirectory' ? held !== undefined : kept(rel, held, homeAt);
+    const sendable = op === 'deleteFile' || op === 'deleteDirectory' ? held !== undefined : kept(rel, held, homeAt, serverAt);
     if (!sendable && !spirit.IS_RELAY) return;
     if (sendable) send(commandOf(op, rel, new Date().toISOString(), held));
     // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): a file made or gone inside a folder works the folder's flags out
