@@ -651,4 +651,5 @@ function createPresence(opts) {
   };
 }
 
-module.exports = { createPresence: createPresence, streamUrl: streamUrl };
+// doorUrl(relayUrl): the relay's one door, where its stream is the call spirit.relay.stream (goal/G49.25).
+module.exports = { createPresence: createPresence, doorUrl: doorUrl };
