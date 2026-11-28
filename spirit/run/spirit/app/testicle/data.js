@@ -42,7 +42,11 @@
     function kept(table, row) {
       if (table !== 'testicle') return row;
       var last = function (p) { var s = String(p == null ? '' : p); return s.slice(s.lastIndexOf('/') + 1); };
-      return Object.assign({}, row, { scriptName: last(row.script), suiteName: last(row.suite) });
+      // A SCRIPT IN ITS OWN FOLDER IS NAMED BY THE FOLDER (goal/G49.27, box v4: "the script column in testicle's search shows the
+      // folder name of a <folder>/script.js"; Andy: "the script column in testicle search needs to display the foldername in
+      // <folder>/script.js"): spirit/contact/hub/script.js is hub, every other script its file name, as before.
+      var scriptShown = function (p) { var s = String(p == null ? '' : p); var parts = s.split('/'); return parts.length > 1 && parts[parts.length - 1] === 'script.js' ? parts[parts.length - 2] : last(s); };
+      return Object.assign({}, row, { scriptName: scriptShown(row.script), suiteName: last(row.suite) });
     }
     // EVERY SUITE, EACH ONCE, KEPT FROM THE STREAM (goal/G47.1, the box: "Every element of testicle's face updates itself in
     // response to the server stream"): the rows suite.search answers with no script, keyed |suite, are made again from the

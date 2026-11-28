@@ -31,6 +31,10 @@
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
   function nameOf(p) { var s = String(p == null ? '' : p); return s.slice(s.lastIndexOf('/') + 1); }
   function fileCell(p) { return '<span title="' + esc(p) + '">' + esc(nameOf(p)) + '</span>'; }
+  // A SCRIPT IN ITS OWN FOLDER SHOWS THE FOLDER (goal/G49.27, box v4: "the script column in testicle's search shows the folder name of
+  // a <folder>/script.js"): spirit/contact/hub/script.js shows hub, its full path in the tooltip; every other script its file name.
+  function scriptName(p) { var s = String(p == null ? '' : p); var parts = s.split('/'); return parts.length > 1 && parts[parts.length - 1] === 'script.js' ? parts[parts.length - 2] : nameOf(s); }
+  function scriptCell(p) { return '<span title="' + esc(p) + '">' + esc(scriptName(p)) + '</span>'; }
 
   var index = null;
   function create(row) {
@@ -46,7 +50,7 @@
         { name: 'verified', paint: function (v) { return ANSWER['spirit/app/testicle/words.js'].result(!!v.verified); } },
         { name: 'severity', paint: function (v) { return esc((Number(v.severity) || 0).toFixed(2)); } },
         { name: 'test', paint: function (v) { return esc(v.test); } },
-        { name: 'script', paint: function (v) { return fileCell(v.script); } },
+        { name: 'script', paint: function (v) { return scriptCell(v.script); } },
         { name: 'suite', paint: function (v) { return fileCell(v.suite); } },
       ],
       actions: [],
