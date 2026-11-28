@@ -56,6 +56,10 @@ const PROBE = [
   "test.run('it never answers', 0.2, function () { return new Promise(function () {}); }, 300);",
   "test.run('a security check', 0.8, function () { return false; }, 1000);",
   "test.run('it passes after a hang', 0.2, async function () { await new Promise(function (r) { setTimeout(r, 10); }); return true; }, 1000);",
+  // goal/G49.27, Q5 (Andy: "good idea!"): every check a second or less; one that needs more says why, or it is red.
+  "test.run('a longer limit with no why', 0.2, function () { return true; }, 5000);",
+  "test.run('a longer limit that says why', 0.2, function () { return true; }, 5000, { why: 'it waits on a planted node' });",
+  "test.run('no limit given and past a second', 0.2, async function () { await new Promise(function (r) { setTimeout(r, 1500); }); return true; }, undefined, { why: 'only its time decides it' });",
   "test.after(function () { fs.writeFileSync(require('path').join(__dirname, 'after.txt'), 'after ran'); });",
 ].join('\n');
 const TWICE = [
@@ -80,7 +84,7 @@ const STOPPED = [
   "const fs = require('fs');",
   "const path = require('path');",
   "const test = " + REPORTER_FROM(2) + ";",
-  "test.run('it waits to be stopped', 0.2, function () { fs.writeFileSync(path.join(__dirname, 'stopped-started.txt'), 'started'); return new Promise(function () {}); }, 60000);",
+  "test.run('it waits to be stopped', 0.2, function () { fs.writeFileSync(path.join(__dirname, 'stopped-started.txt'), 'started'); return new Promise(function () {}); }, 60000, { why: 'it waits until it is stopped' });",
   "test.after(function () { fs.writeFileSync(path.join(__dirname, 'stopped-after.txt'), 'after ran'); });",
 ].join('\n');
 const GENERAL = [
@@ -189,12 +193,12 @@ test.run('a fake node and a scratch tree with planted suites stand up', 0.2, asy
   W.node = await fakeNode();
   W.tree = scratchTree(W.node.port);
   return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'probe.js')) && W.node.port > 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it copies the tree and starts a fake node' });
 
 test.run('the probe suite runs to its end', 0.2, async function () {
   W.probe = await runSuite(W.tree.run, 'probe/test/probe.js');
   return /Test completed\./.test(W.probe.out) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a planted suite as a process' });
 
 // ── A TEST'S RESULT ──
 test.run('a body returning true passes, its title printed with ✅', 0.2, function () {
@@ -213,6 +217,20 @@ test.run('a body that rejects fails, its title printed with ❌', 0.2, function 
 }, test.limit.quick);
 test.run('a body past its time limit fails, its title printed with ❌', 0.2, function () {
   return failed('it never answers');
+}, test.limit.quick);
+// goal/G49.27, Q5 (Andy: "good idea!" to "Does every test check get a one-second limit now, so every slower check turns red until it
+// says why it needs more"; the box: "every check is timed alone ... a second or less; a check needing more says why beside it").
+test.run('test.limit.quick is one second', 0.4, function () {
+  return test.limit.quick === 1000;
+}, test.limit.quick);
+test.run('a check given a longer limit and no why fails, its title printed with ❌', 0.4, function () {
+  return failed('a longer limit with no why');
+}, test.limit.quick);
+test.run('a check given a longer limit and its why passes by its body', 0.4, function () {
+  return passed('a longer limit that says why');
+}, test.limit.quick);
+test.run('a check given no limit is held to one second', 0.4, function () {
+  return failed('no limit given and past a second');
 }, test.limit.quick);
 test.run('a module loading the spirit object after a report finds it global', 0.2, function () {
   return passed('the spirit object stays global after a report');
@@ -246,14 +264,14 @@ const stopProbe = async function (stop, file) {
 };
 test.run('a suite sent the stop message while a test runs runs its test.after and ends by itself within 10 seconds', 0.4, async function () {
   return (await stopProbe(function (kid) { kid.send({ stop: true }); }, 'stopped.js')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits up to 10 s for a stopped suite to end' });
 if (process.platform !== 'win32') {
   test.run('a suite sent SIGTERM while a test runs runs its test.after and ends by itself within 10 seconds', 0.4, async function () {
     return (await stopProbe(function (kid) { kid.kill('SIGTERM'); }, 'stopped.js')) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits up to 10 s for a stopped suite to end' });
 }
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
-  return (/✅:3\s+❌:5/.test(W.probe.out) && W.probe.code === 1) || false;
+  return (/✅:4\s+❌:7/.test(W.probe.out) && W.probe.code === 1) || false;
 }, test.limit.quick);
 
 // ── THE REPORT ──
@@ -261,7 +279,7 @@ test.run('each test is reported to spirit.app.testicle.testicle.set of the node 
   const titles = ['it passes', 'the spirit object stays global after a report', 'it fails with false', 'it throws', 'it rejects', 'it never answers', 'a security check', 'it passes after a hang'];
   const counts = titles.map(function (t) { return setOf(t).length; });
   return counts.every(function (n) { return n === 1; }) || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('a report carries the tested script and the suite, scoped to run://', 0.2, function () {
   const s = setOf('it passes')[0] || {};
   return (s.script === 'probe/probe.js' && s.suite === 'probe/test/probe.js') || false;
@@ -293,11 +311,11 @@ test.run('a crash and a hang are reported at 0.7', 0.2, function () {
 test.run('a general test runs with the file it judges', 0.2, async function () {
   W.general = await runSuite(W.tree.run, 'spirit/test/script-sibling-zzProbeRules.js', ['probe/probe.js']);
   return /Test completed\./.test(W.general.out) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a planted suite as a process' });
 test.run('a general test reports the file it judges as its script', 0.4, function () {
   const g = ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'spirit/test/script-sibling-zzProbeRules.js'; });
   return (g.length === 1 && g[0].script === 'probe/probe.js' && g[0].test === 'a general rule holds' && g[0].severity === 0.4) || false;
-}, test.limit.slow);
+}, test.limit.quick);
 
 // ── A SUITE'S SUCCESS (goal/G47.1, box v129: "the reporter reports a suite's success or failure for a script through the
 // new verb testicle.suite.success {script, suite, success}, a general test once per script, at the time it knows"; Andy:
@@ -310,7 +328,7 @@ test.run('a suite reports its success or failure for its script once, through sp
 test.run('a general test judging two scripts runs, handed both', 0.2, async function () {
   W.two = await runSuite(W.tree.run, 'spirit/test/script-sibling-zzProbeTwo.js', ['probe/probe.js', 'probe/twice.js']);
   return /Test completed\./.test(W.two.out) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a planted suite as a process' });
 test.run('a general test reports success once per script: the one that held true, the one that failed false', 0.4, function () {
   const got = successOf('spirit/test/script-sibling-zzProbeTwo.js');
   const a = got.filter(function (x) { return x.script === 'probe/probe.js'; }), b = got.filter(function (x) { return x.script === 'probe/twice.js'; });
@@ -329,17 +347,17 @@ test.run('the probe suite runs with one test named', 0.2, async function () {
   W.alone = await runSuite(W.tree.run, 'probe/test/probe.js', ['--test', 'it fails with false']);
   W.alone.sets = W.node.sets.slice(before);
   return /Test completed\./.test(W.alone.out) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a planted suite as a process' });
 test.run('one test named runs the sequence up to it, and no test after it', 0.2, function () {
   const ran = W.alone.sets.map(function (s) { return s.test; });
   return JSON.stringify(ran) === JSON.stringify(['it passes', 'the spirit object stays global after a report', 'it fails with false']) || false;
-}, test.limit.slow);
+}, test.limit.quick);
 
 // ── A TITLE TWICE, A SEVERITY OUT OF RANGE ──
 test.run('a suite that says a title twice runs', 0.2, async function () {
   W.twice = await runSuite(W.tree.run, 'probe/test/twice.js');
   return /Test completed\./.test(W.twice.out) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a planted suite as a process' });
 // TWO TESTS OF ONE TITLE FAIL THE SUITE, NOT A TEST (goal/G49.6; Andy: "that refusal has to be a suite level failure", "rule
 // one wins": every test is run and reported as it ends): both run, and the suite's success goes out false, duplicateTitles.
 test.run('a title said twice in a suite runs both times, and the suite reports success false as duplicateTitles', 0.2, function () {
@@ -366,7 +384,7 @@ test.run('a checkout with no node runs the probe suite', 0.2, async function () 
   W.quietTree = scratchTree(0);
   W.quiet = await runSuite(W.quietTree.run, 'probe/test/probe.js');
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it copies a second tree and runs a planted suite in it' });
 test.run('with no node a suite reports nowhere and still prints its lines', 0.2, function () {
   return (markIn(W.quiet.out, 'it passes') === '✅' && /Test completed\./.test(W.quiet.out)) || false;
 }, test.limit.quick);
@@ -417,7 +435,7 @@ test.run('a planted suite of 100 quick tests runs against a node that takes 60 m
   F.ended = {};
   String(r.out).split('\n').forEach(function (l) { const m = /^ENDED (\d+) (\d+)$/.exec(l.trim()); if (m) F.ended['flood ' + m[1]] = Number(m[2]); });
   return Object.keys(F.ended).length === 100 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a planted suite of 100 tests against a slow node' });
 test.run('every one of the 100 reports reaches the node within a second of its test ending', 0.4, function () {
   if (!F.ended || Object.keys(F.ended).length !== 100) return false;
   const late = Object.keys(F.ended).filter(function (t) { return !(F.node.landed[t] !== undefined && F.node.landed[t] - F.ended[t] < 1000); });

@@ -14,8 +14,9 @@
 // or failure."; its contract: ./test/script.md):
 //   test.run(title, severity, body, limit)     limit is test.limit.quick, .slow or .long (below). body() answers true to pass, false to fail; it
 //                                              may be async. A throw or a rejection fails it at 0.7; still running at its
-//                                              limit, it fails as a hang at 0.7.
-//   test.after(fn)                             run once every test has run, whatever they did.
+//                                              limit, it fails as a hang at 0.7. A limit past quick needs opts.why,
+//                                              its reason (test.run(..., test.limit.slow, { why: '...' })), or it fails.
+//   test.after(fn)                            run once every test has run, whatever they did.
 // The tests run one at a time in the order given. Each is reported by itself to testicle.testicle.set of the node of the
 // checkout it runs in (spirit.js reads that node's port from the checkout's spirit/state/environment.json; goal/G47.1:
 // "a checkout with no node running reports nowhere and still prints its lines"): {script, suite, test, verified,
@@ -187,7 +188,11 @@ function start() { if (!started) { started = true; ownImmediate(runAll); } }
 // a number of its own (spirit/testicle/general/any/titleRules/script.js judges it): quick for a test that asks and answers, slow for one that
 // starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
 // not a slow machine, so each is wide; change one here and every suite follows.
-test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
+// A SECOND OR LESS, OR IT SAYS WHY (goal/G49.27, Q5, Andy: "good idea!" to "Does every test check get a one-second limit now, so
+// every slower check turns red until it says why it needs more"; the box: "every check is timed alone ... a second or less; a check
+// needing more says why beside it"): quick is one second, and a test given none is held to it; a test given more than quick
+// names its reason in opts.why, or it fails whatever its body answers, its title as it is.
+test.limit = Object.freeze({ quick: 1000, slow: 60000, long: 300000 });
 // A TEST OF ANOTHER SCRIPT (goal/G47.1, box v94, 1: spirit/testicle/scriptClassify/script.js, given a list of scripts, reports each one's
 // "classifyable"): opts.script, scoped to run://, names the script that one result is reported for, in place of SCRIPT;
 // a title is then said once per script.
@@ -213,7 +218,8 @@ test.run = function (title, severity, body, limitMs, opts) {
   // opts.module: the rule module whose check this is (goal/G49.27, the box: "each red is shown the moment it happens, with its
   // module and its check"; the runners of spirit/testicle/run/ name it), said with a red on stderr as the red ends.
   const ruleModule = opts && typeof opts.module === 'string' ? opts.module : '';
-  queue.push({ title: title, severity: severity, body: body, limit: limitMs, script: own, module: ruleModule });
+  const why = opts && typeof opts.why === 'string' ? opts.why.trim() : '';
+  queue.push({ title: title, severity: severity, body: body, limit: limitMs, why: why, script: own, module: ruleModule });
   start();
   wake();
 };
@@ -256,11 +262,13 @@ function one(t) {
     t.resolve = resolve;
     current = t;
     // PAST ITS LIMIT IT HUNG, told apart from a throw (goal/G47.6, box point 1: "crashed or hung when no verdict was reached").
-    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true, hung: true }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
+    const limit = Number(t.limit) > 0 ? Number(t.limit) : test.limit.quick;
+    const unsaid = limit > test.limit.quick && !t.why;
+    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true, hung: true }); }, limit);
     let answered;
     try { answered = Promise.resolve(t.body()); } catch (e) { answered = Promise.reject(e); }
     answered.then(function (v) {
-      settle(t, { pass: v === true });
+      settle(t, { pass: v === true && !unsaid });
     }, function () { settle(t, { pass: false, crash: true }); });
   }).then(function () { current = null; });
 }

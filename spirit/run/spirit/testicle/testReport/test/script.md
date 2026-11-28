@@ -22,10 +22,12 @@ then said once per script, and the same title for two scripts is no repeat.
 `body()` returns `true` to pass and `false` to fail; it may be async. A test's one string is its title (goal/G47.1, Andy:
 *"A TEST ANSWERS SUCCESS OR FAILURE WITH IT's FUCKING TITLE STRING, THE FUCKING FAILURE STRING GETS DELETED FROM EVERY FUCKING
 TEST"*): anything a body returns but `true` is a fail, and its text is thrown away, printed and reported nowhere. `limit` is the
-test's time limit, one of the reporter's named limits, `test.limit.quick` (10 s, a test that asks and answers),
+test's time limit, one of the reporter's named limits, `test.limit.quick` (1 s, a test that asks and answers, and the limit of a test given none),
 `.slow` (60 s, one that starts a scratch node, a desk or a Chrome page) or `.long` (300 s, a whole world end to end);
 they sit in the reporter alone, so one change there moves every suite (Andy, 2026-11-11: *"i hope you have those as
-relatively central constants"*). A limit catches a hang, not a slow machine. `test.after(fn)` runs once every test has run, whatever
+relatively central constants"*). A limit catches a hang, not a slow machine. A test given more than quick says why in
+`opts.why`, or it fails whatever its body answers, its title as it is (goal/G49.27, Q5, Andy: *"good idea!"* to every
+check a second or less, a slower one red until it says why). `test.after(fn)` runs once every test has run, whatever
 they did. The tests run one at a time in the order given; the reporter prints the script as a heading where it changes,
 a line for each test, its title and its mark (✅ or ❌), reports each, then prints the completion line and ends the
 process, its exit code 1 when a test failed.
