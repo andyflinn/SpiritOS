@@ -285,6 +285,14 @@ function freeTree(x) {
 // owner written as a relay is installed (o.owner, an identity of relayAuth's; one is made when none is given), its face
 // domain (o.faceDomain, spirit/state/face.json), and relayServer.js started on a free port with its spirit object's DEBUG
 // on when o.debug, until it answers. Never a live relay.
+// A file node loads before the one server (-r), written into the lab tree's own state folder, which lab resets: what a scratch
+// relay's child did before requiring the old relay server itself.
+function relayPreload(run, name, code) {
+  const file = path.join(run, 'spirit', 'state', name);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '\'use strict\';\n' + code + '\n');
+  return file;
+}
 async function scratchRelay(o) {
   const opts = o || {};
   const lab = await LAB.handOut('relay');
@@ -297,8 +305,11 @@ async function scratchRelay(o) {
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   if (opts.faceDomain) fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
   const port = await freePort();
-  const code = 'require("./spirit/script.js").debugLog(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay/script.js"); require("./spirit/server/relay/script.js");';
-  const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
+  // THE ONE SERVER, STARTED AS A RELAY (goal/G49.25, box v16: "spirit/server/script.js is THE server, for node and relay alike";
+  // "spirit.server.relay goes."): node runs spirit/server/script.js --relay itself, since it starts a server only when it is the
+  // file node was started with; its DEBUG set first by a file node loads before it (-r), in the lab tree's state folder.
+  const pre = relayPreload(run, 'zzScratchRelay.js', 'require(require("path").resolve("spirit/script.js")).debugLog(' + (opts.debug ? 'true' : 'false') + ');');
+  const child = spawn(process.execPath, ['-r', pre, 'spirit/server/script.js', '--relay', '--port', String(port)], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, 30000);
@@ -326,9 +337,11 @@ async function scratchFaceRelay(o) {
   fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: domain }));
   const port = await freePort();
   // The child: relay.js's own createRelay, its mailer a stand-in that keeps the mail; then the real relayServer.js.
+  // Loaded before the one server starts as a relay (-r; goal/G49.25): the hook on createRelay, and once the server has made its
+  // relay, the seating below, a tick later.
   const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay/processor/script.js")); const made = R.createRelay; const mails = []; let box = null;' +
-    ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); if (process.send) process.send({ mail: m }); return Promise.resolve({ ok: true }); } })); return box; };' +
-    ' process.argv[1] = path.resolve("spirit/server/relay/script.js"); require("./spirit/server/relay/script.js");' +
+    ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); if (process.send) process.send({ mail: m }); return Promise.resolve({ ok: true }); } })); setImmediate(seat); return box; };' +
+    ' function seat() {' +
     ' const auth = require(path.resolve("spirit/relayAuth/script.js")); const store = require(path.resolve("spirit/relayStore/script.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
     ' const out = { relayKey: box.relayPublicKey(), members: {} };' +
     ' ' + JSON.stringify(names) + '.forEach(function (name) { const id = auth.generateIdentity(name); const mail = name + "@example.org";' +
@@ -340,8 +353,10 @@ async function scratchFaceRelay(o) {
     '  out.members[name] = { publicKey: id.publicKey, privateKey: id.privateKey, sid: box.faceLogin(name, token).session, host: name + "." + ' + JSON.stringify(domain) + ' }; });' +
     // A dishonest relay: it gives a member a face the member never asked for (setFace, below).
     ' process.on("message", function (m) { if (m && m.setFace) { store.members.setFace(m.setFace[0], m.setFace[1], m.setFace[2]); process.send({ faceSet: m.setFace[1] }); } });' +
-    ' process.send({ ready: out });';
-  let child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+    ' process.send({ ready: out }); }';
+  const pre = relayPreload(run, 'zzScratchFaceRelay.js', code);
+  const start = function () { return spawn(process.execPath, ['-r', pre, 'spirit/server/script.js', '--relay', '--port', String(port)], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) }); };
+  let child = start();
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const lines = [];
@@ -357,7 +372,7 @@ async function scratchFaceRelay(o) {
       await new Promise(function (resolve) { child.once('exit', resolve); child.kill(); });
       auth.writeOwner(run, key);
       ready = null;
-      child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+      child = start();
       lab.started(child.pid);
       child.on('message', hear);
       return until(function () { return ready ? fetch(base + '/').then(function (r) { return r.status > 0; }) : false; }, 30000);
