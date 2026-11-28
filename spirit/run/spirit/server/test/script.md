@@ -31,5 +31,5 @@ a route under /spirit/relay/; none names OWNER_VERBS. The member verbs passing t
 box names them.
 
 Box v20: no product script serves or calls /face/call, /face/file, /face/stream or /face/api; the server still answers
-Caddy at GET /face/allowed; the relay branch hands out card, face, removePeer, rename, search, post, reply and stream; no
+Caddy at GET /face/allowed; the relay branch hands out exactly the 24 verbs of box v24 (Q13); no
 product script names MEMBER_VERBS. The member bundle at join and leave is asserted once the relay runs at the one door.
