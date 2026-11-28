@@ -169,5 +169,5 @@ asks the disc for no file and lists no folder: no existsSync, no readdirSync (un
 ## The owner branch killed (goal/G49.24, box v18)
 
 Gone: spirit/owner/, spirit/ownerPost/, spirit/puppetStream/, spirit/fuckingGarbage/boxes.js, none required by a product script;
-no product script names peerOwnerPost, puppetDoor, ownerCommandIn or commandMessage. Stays: puppetMode's puppetIn, which reads
+no product script names peerOwnerPost, puppetDoor, ownerCommandIn or commandMessage. Gone too: spirit/puppetMode/ (Andy: "get rid of spirit.puppetMode, too."). Stays: relayAuth.loadOwner, which reads
 who owns a node from owner.json.

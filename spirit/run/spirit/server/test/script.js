@@ -1135,18 +1135,16 @@ test.run('spirit/fuckingGarbage/boxes.js is gone, and no product script names it
     return productHits(['-w', n]).length === 0 || false;
   }, test.limit.slow);
 });
-test.run('who owns a node stays: puppetMode hands out puppetIn, and it reads owner.json', 0.4, function () {
-  let P = null; try { P = S.requireScript('spirit/puppetMode/script.js'); } catch (e) { P = null; }
-  if (!P || typeof P.puppetIn !== 'function') return false;
+// puppetMode went too (Andy: "get rid of spirit.puppetMode, too."); who owns a node stays, read by relayAuth.loadOwner.
+test.run('spirit/puppetMode/ is gone, and no product script requires a file of it', 0.4, function () {
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'puppetMode')) && productHits(['-F', "'spirit/puppetMode/"]).length === 0) || false;
+}, test.limit.slow);
+test.run('who owns a node stays: relayAuth.loadOwner reads the key owner.json names', 0.4, function () {
   const t = H.scratchTree();
   try {
     const auth = S.requireScript('spirit/relayAuth/script.js');
     const owner = auth.generateIdentity('zzOwner');
-    const run = t.run;
-    auth.saveIdentity(run, auth.generateIdentity('zzPuppet'));
-    auth.writeOwner(run, owner.publicKey);
-    // puppetIn answers the reader; asked, it says whose this node is: { puppet, owner }.
-    const got = P.puppetIn(run, function () {})();
-    return (!!got && got.puppet === true && got.owner === owner.publicKey) || false;
+    auth.writeOwner(t.run, owner.publicKey);
+    return auth.loadOwner(t.run, function () {}) === owner.publicKey || false;
   } finally { H.freeTree(t); }
 }, test.limit.slow);
