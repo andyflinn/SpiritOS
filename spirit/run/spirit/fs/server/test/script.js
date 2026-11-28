@@ -431,3 +431,66 @@ test.run('shell mount true with no element/script.js: no app', 0.2, function () 
 test.run('a manifest with node mount true and node run true: no app', 0.2, function () { const r = flagOf('zzBoth'); return (!!r && r.app === false) || false; }, test.limit.quick);
 test.run('a manifest where none of shell mount, node mount and node run is true: no app', 0.2, function () { const r = flagOf('zzNone'); return (!!r && r.app === false) || false; }, test.limit.quick);
 test.run('a manifest.json that is no JSON: no app', 0.2, function () { const r = flagOf('zzBroken'); return (!!r && r.app === false) || false; }, test.limit.quick);
+
+// ── A RELAY'S CACHE (goal/G49.25, box v10: "if spirit.IS_RELAY, the fs cache will cache branch and app folders only"; Q6, "does
+// the cache hold only spirit/<branch>/ and spirit/app/<name>/ folders with what is under them", Andy: "spirit is always
+// loaded.") ── The watcher on this checkout's run folder, only read, twice: as a node (spirit.IS_RELAY false) and as a relay
+// (true, set before it starts). Which folders are branches and apps is the node's tree's own flags (api, branch, app), never
+// named here. As a relay the tree holds spirit/'s own files, each trunk branch spirit/<name>/ and each app folder with all
+// under them, and nothing else; as a node it holds a file of a trunk folder that is neither.
+function treeAs(relay) {
+  const src = [
+    "const dir = process.argv[1];",
+    "require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
+    relay ? "spirit.IS_RELAY = true;" : "",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
+    "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
+    "const job = W.start(dir, jobs);",
+    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
+    "const end = Date.now() + 40000;",
+    "(function tick() {",
+    "  if (!F.ready() && Date.now() < end) return setTimeout(tick, 200);",
+    "  const all = F.files(); const out = {};",
+    "  Object.keys(all).forEach(function (p) { const h = all[p]; out[p] = { kind: h.kind, api: h.api === true, branch: h.branch === true, app: h.app === true }; });",
+    // exit once the pipe has it all: a process.exit at once cuts a long write to a pipe
+    "  job._stop(); process.stdout.write('\\nTREE ' + JSON.stringify(out) + '\\n', function () { process.exit(0); });",
+    "})();",
+  ].join('\n');
+  const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000, maxBuffer: 1 << 28 });
+  const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('TREE ') === 0; })[0];
+  try { return line ? JSON.parse(line.slice(5)) : null; } catch (e) { return null; }
+}
+const AS = { node: null, relay: null, homes: [], plain: '' };
+// Whether p is spirit/'s own (the folder or a file right in it), or at or under one of the branch and app folders.
+function relayHolds(p) {
+  if (p === 'spirit' || /^spirit\/[^/]+$/.test(p) && AS.node[p] && AS.node[p].kind === 'file') return true;
+  return AS.homes.some(function (h) { return p === h || p.indexOf(h + '/') === 0; });
+}
+test.run('the watcher on the run folder hands its tree as a node and as a relay', 0.2, function () {
+  AS.node = treeAs(false);
+  AS.relay = treeAs(true);
+  if (!AS.node || !AS.relay) return false;
+  AS.homes = Object.keys(AS.node).filter(function (p) {
+    const h = AS.node[p];
+    return h.kind === 'folder' && ((/^spirit\/[^/]+$/.test(p) && (h.api || h.branch)) || h.app);
+  });
+  // A trunk folder that is no branch and no app, with a file in it: the first found.
+  const plainDir = Object.keys(AS.node).filter(function (p) { const h = AS.node[p]; return /^spirit\/[^/]+$/.test(p) && h.kind === 'folder' && !h.api && !h.branch && !h.app && !relayHolds(p); })
+    .filter(function (d) { return Object.keys(AS.node).some(function (q) { return q.indexOf(d + '/') === 0 && AS.node[q].kind === 'file'; }); })[0] || '';
+  AS.plain = plainDir ? Object.keys(AS.node).filter(function (q) { return q.indexOf(plainDir + '/') === 0 && AS.node[q].kind === 'file'; })[0] : '';
+  return (AS.homes.length > 5 && !!AS.plain) || false;
+}, test.limit.long);
+test.run('as a node, the tree holds a file of a trunk folder that is no branch and no app', 0.2, function () {
+  return (!!AS.node && !!AS.plain && !!AS.node[AS.plain]) || false;
+}, test.limit.quick);
+test.run('as a relay, the tree holds spirit/script.js: spirit is always loaded', 0.2, function () {
+  return (!!AS.relay && !!AS.relay['spirit/script.js']) || false;
+}, test.limit.quick);
+test.run('as a relay, the tree holds every path at or under each trunk branch and each app folder', 0.2, function () {
+  if (!AS.node || !AS.relay || !AS.homes.length) return false;
+  return Object.keys(AS.node).filter(function (p) { return relayHolds(p) && p !== 'spirit'; }).every(function (p) { return !!AS.relay[p]; }) || false;
+}, test.limit.quick);
+test.run('as a relay, the tree holds nothing else: not that file of a trunk folder that is no branch and no app', 0.2, function () {
+  if (!AS.node || !AS.relay || !AS.plain) return false;
+  return (!AS.relay[AS.plain] && Object.keys(AS.relay).every(relayHolds)) || false;
+}, test.limit.quick);

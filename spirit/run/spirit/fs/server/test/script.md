@@ -40,3 +40,11 @@ The tree is read as it is. The watcher runs in a child process on a scratch fold
 - **No file names spirit/run/node_modules.** That covers the .gitignore exception and the two installers.
 
 deskClient's use of the library is the chokidar part of `spirit/app/deskClient/server/test/server.md`; fileSystem.js's one list of vendored folders is the vendoredFolders part of `./fileSystem.md`.
+
+## A relay's cache (goal/G49.25)
+
+The box: *"if spirit.IS_RELAY, the fs cache will cache branch and app folders only"*; Q6, *"does the cache hold only
+spirit/<branch>/ and spirit/app/<name>/ folders with what is under them"*, Andy: *"spirit is always loaded."* The watcher on the
+run folder, as a node and as a relay (spirit.IS_RELAY true before it starts). Which folders are trunk branches and apps is
+the node tree's own flags. As a relay: spirit/script.js is held; every path at or under each trunk branch and app folder is
+held; nothing else is, not a file of a trunk folder that is neither, which the node's tree holds.
