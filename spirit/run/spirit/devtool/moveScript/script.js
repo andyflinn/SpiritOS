@@ -112,7 +112,16 @@ function relFrom(dir, target) {
 // ONE FILE'S TEXT FIXED for a set of moves (map old run path -> new). ownOld is the file's own old path (its relative
 // references resolve against where it stood), ownNew where it stands now.
 function fixText(text, ownOld, ownNew, map) {
-  let t = text;
+  // CODE INSIDE A STRING IS LEFT AS IT IS (goal/G49.27, wsl's find in the test system's move: testReport's test plants suites in a
+  // scratch tree as strings of code, whose '..' and __dirname pieces are relative to where they are planted, not to the test; the
+  // rewrite below broke five of its checks). A string literal holding require(, __dirname or module.exports is code: it is
+  // masked before the rewrite and put back after. A plain path string, require('../x.js')'s own '../x.js', holds none of them.
+  const kept = [];
+  let t = text.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g, function (lit) {
+    if (!/require\(|__dirname|module\.exports/.test(lit.slice(1, -1))) return lit;
+    kept.push(lit);
+    return '\u0000' + (kept.length - 1) + '\u0000';
+  });
   const oldDir = path.posix.dirname(ownOld), newDir = path.posix.dirname(ownNew);
   // 1. Relative references, resolved against where the file stood: './x.js', '../a/b.md', '../../script.js'.
   t = t.replace(/(^|[\s'"`(=,\[])((?:\.\.?\/)(?:[\w@.-]+\/)*[\w@.-]+\.(?:js|md|html|json|css))(?=$|[\s'"`),;:\]#?])/gm, function (all, pre, ref) {
@@ -153,7 +162,7 @@ function fixText(text, ownOld, ownNew, map) {
       t = t.replace(piecesRe, neu.split('/').map(function (p) { return "'" + p + "'"; }).join(', '));
     }
   });
-  return t;
+  return t.replace(/\u0000(\d+)\u0000/g, function (all, i) { return kept[Number(i)]; });
 }
 
 // ONE MOVE. Answers { moved: [[from, to]], edited: [files], unchanged: [dependents not touched] } or { refused: why }.
