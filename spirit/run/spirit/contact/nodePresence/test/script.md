@@ -1,18 +1,19 @@
 # spirit/contact/nodePresence/script.js — its own test
 
-`createPresence(opts)` and `streamUrl(relayUrl, key)`: the personal node's half of presence, one held stream to every
+`createPresence(opts)` and `doorUrl(relayUrl)`: the personal node's half of presence, one held stream to every
 relay it holds a seat on, merged into one table and published as news of `spirit.contact`. Owed since the rule
 *"every production script has its own test"* (goal/G47.1, box v72). In process, on a scratch folder with an identity
 and two seated relays; the stream, router, jobs and every hook are planted, and a stream is driven through the
 `onOpen`, `onEvent` and `onClose` its connect was handed.
 
-- Construction: refused without the router it posts from (half an interface). `streamUrl`: the stream door, the key
-  in the query, a trailing slash dropped.
-- `start`: one stream per seated relay, under this node's key; owns the `spirit.contact` job (goal/G43.20); with
-  nothing to ask, opens nothing. Each attempt signs afresh, in a header, for that relay's pinned key alone. The relay is
+- Construction: refused without the router it posts from (half an interface). `doorUrl`: the relay's one door, `/spirit`, a
+  trailing slash dropped; `streamUrl` and its stream door are gone (goal/G49.25, box v25).
+- `start`: one stream per seated relay, the call `spirit.relay.stream` at its one door, under this node's key; owns the `spirit.contact` job (goal/G43.20); with
+  nothing to ask, opens nothing. Each attempt signs afresh, in the call's arguments, for that relay's pinned key alone. The relay is
   pinned as its stream opens.
 - On open: the relay and this node are present, each a proof `{present, at}` (goal/G2.9); the card is handed over,
-  sealed to the relay's key (cycle 10, R20); the book is reconciled once by the relay's own search `*` (goal/G2.8), a
+  sealed to the relay's key (cycle 10, R20); the book is reconciled once by the relay's own search `*` (goal/G2.8), each
+  asked by its call, `spirit.relay.card` and `spirit.relay.search`, its name handed beside it (goal/G49.25, box v27), a
   named contact green, a named stranger learned not drawn, a refusing relay marking nobody; the open edge told to `onEdge`;
   the table published as `{ presence }` and nothing else.
 - Broadcasts: the relay broadcasts, the node filters (Andy, 2026-09-19). A contact present is green; a stranger is

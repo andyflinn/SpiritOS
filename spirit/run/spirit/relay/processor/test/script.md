@@ -27,7 +27,7 @@ stand-in; nothing is sent.
 - **A long search does not stop the relay** (goal/G41.30; the box: *"the server MUST not CRASH or HANG"*, *"Imitate
   that attacker!"*; Andy, of *"A long search query stalls the relay's event loop for seconds"*: *"fix this now. in this
   item"*). With 500 members seated and connected, one of them sends the longest search the wire carries, sealed to the
-  relay (about 16,600 characters; a longer one, as the report's 60,000, is refused 413 by the wire). While it is
+  relay, the call `spirit.relay.search` (goal/G49.25, box v27: one shape for every request to a relay) (about 16,600 characters; a longer one, as the report's 60,000, is refused 413 by the wire). While it is
   answered, a tick every 5 ms must never wait more than 250 ms, and the search is still answered.
 
 ## What its test must try to break
@@ -43,7 +43,7 @@ stand-in; nothing is sent.
 
 Andy: *"ALL, I had to, several times, refresh my new face, because it doesn't seem to auto-reconnect."*, and *"all, FIX IT, IN THIS ITEM, then we tag."* The face retries only once its stream ends (spirit/shell/boot/script.js, every 5 seconds), so the relay ends a face's stream when the home node's feed into it goes.
 
-On a real scratch relay (spirit/test/headLessChrome.js `scratchFaceRelay`), a member seated with a face, its node present and its face logged in; the face's stream (`GET /face/stream`, its `spirit_face` cookie, its own host) and the home node's feed (`POST /spirit/relay/face/stream`, signed for this relay and `stream`) over HTTP:
+On a real scratch relay (spirit/test/headLessChrome.js `scratchFaceRelay`), a member seated with a face, its node present and its face logged in; the face's stream (the call `spirit.relay.faceEvents` at the relay's one door, `POST /spirit`, its `spirit_face` cookie, its own host and Origin) and the home node's feed (`POST /spirit`, the call `spirit.relay.faceFeed` named in `X-Spirit-Call`, signed for this relay and `stream`) over HTTP (goal/G49.25: the old routes `GET /face/stream` and `POST /spirit/relay/face/stream` are gone):
 
 - The face opens its stream and the home node hears `face-open`; the feed's lines reach the face.
 - **A feed replaced by a newer one** goes, and the face's stream stays open: the newer feed still reaches it.

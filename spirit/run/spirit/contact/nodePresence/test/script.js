@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/presenceNode/test/script.js
+// spirit/run/spirit/contact/nodePresence/test/script.js
 // The tests of spirit/contact/nodePresence/script.js, and of no other module (spec: ./script.md). Its own test, owed since the
 // rule "every production script has its own test" (goal/G47.1, box v72).
 //
@@ -53,18 +53,22 @@ const FRIEND = 'friend-key';
 const STRANGER = 'stranger-key';
 const BOOK = { 'friend-key': true, 'friend2-key': true };
 
-// What the planted world saw.
+// What the planted world saw. A call of the relay's own, spirit.relay.<verb>, named beside its text too (goal/G49.25).
+function asked(x, verb) { return x.packet.call === 'spirit.relay.' + verb && !!x.packet.args && x.how.call === x.packet.call; }
 const W = { home: null, me: null, p: null, streams: {}, news: [], posts: [], seen: [], requests: [], replies: [], edges: [], relayEvents: [], ownerEvents: [], routes: [], faces: [], pins: [], clock: 5000, started: null };
 function plantedRouter() {
   return {
     onRequest: function (url, data) { W.requests.push({ url: url, data: data }); },
     onReply: function (data) { W.replies.push(data); },
-    post: function (url, key, packet) {
-      W.posts.push({ url: url, key: key, packet: JSON.parse(packet) });
-      const body = JSON.parse(packet).body || {};
+    // goal/G49.25, box v27 ("one shape for every request to a relay"): the relay's own verb is asked by its call, the text the
+    // same { call, args }, its name handed beside it (how.call); was a packet { app: 'relay', body: { <verb> } }.
+    post: function (url, key, packet, how) {
+      const p = JSON.parse(packet);
+      W.posts.push({ url: url, key: key, packet: p, how: how || {} });
+      const own = function (verb) { return p.call === 'spirit.relay.' + verb && !!p.args && (how || {}).call === p.call; };
       // The relay's own search: on relay A it names the friend and a stranger; relay B refuses the verb.
-      if (body.search && url === URL_A) return Promise.resolve({ text: JSON.stringify({ body: { ok: true, matches: [{ publicKey: 'friend2-key' }, { publicKey: STRANGER }] } }) });
-      if (body.search) return Promise.reject(new Error('unknown verb'));
+      if (own('search') && url === URL_A) return Promise.resolve({ text: JSON.stringify({ body: { ok: true, matches: [{ publicKey: 'friend2-key' }, { publicKey: STRANGER }] } }) });
+      if (own('search')) return Promise.reject(new Error('unknown verb'));
       return Promise.resolve({ text: '{}' });
     },
   };
@@ -88,7 +92,8 @@ function presence(extra) {
     onFaceClose: function (url) { W.faces.push(['close', url]); },
   }, extra || {}));
 }
-function stream(url) { return W.streams[PN.streamUrl(url, W.me && W.me.publicKey)]; }
+// A relay's stream, by the address it was opened at: the relay's one door (goal/G49.25, box v25; was streamUrl, the key in its query).
+function stream(url) { return W.streams[PN.doorUrl(url)]; }
 function event(url, name, data) { stream(url).opts.onEvent({ event: name, data: data }); }
 function dot(key) { const t = W.p.table(); return t[key] ? (t[key].present ? 'green' : 'red') : 'white'; }
 
@@ -97,9 +102,11 @@ test.run('createPresence refuses to be built without the router it posts from (h
   try { PN.createPresence({ rootDir: ownTemp('noRouter') }); return false; }
   catch (e) { return /router/.test(e.message) || false; }
 }, test.limit.quick);
-test.run('streamUrl is the relay\'s stream door with the key in its query, a trailing slash dropped', 0.2, function () {
-  const u = PN.streamUrl('https://r.example//', 'a+b/c');
-  return u === 'https://r.example/spirit/relay/stream?key=a%2Bb%2Fc' || false;
+// goal/G49.25, box v25 ("with only ONE, SINGLE door: /spirit"): the stream door /spirit/relay/stream?key= went with streamUrl; the
+// stream is the call spirit.relay.stream at the relay's one door, the key in its arguments.
+test.run('doorUrl is the relay\'s one door, /spirit, a trailing slash dropped, and streamUrl is gone', 0.2, function () {
+  const u = PN.doorUrl('https://r.example//');
+  return (u === 'https://r.example/spirit' && PN.streamUrl === undefined) || false;
 }, test.limit.quick);
 
 // ── the world ──
@@ -112,18 +119,25 @@ test.run('a scratch node with an identity, seated on two relays, is started', 0.
   W.started = await W.p.start(function () { return Promise.resolve({ status: 200, text: '{}' }); });
   return (!!W.me && short((W.started || []).slice().sort()) === short([URL_A, URL_B])) || false;
 }, test.limit.quick);
-test.run('start opens one stream to each seated relay, at its stream door, under this node\'s key', 0.2, function () {
+// goal/G49.25: at the relay's one door, the call spirit.relay.stream, the node's key in its arguments (was the stream door's query).
+test.run('start opens one stream to each seated relay, at its one door, the call spirit.relay.stream under this node\'s key', 0.2, function () {
   if (!W.started) return false;
-  return (!!stream(URL_A) && !!stream(URL_B) && Object.keys(W.streams).length === 2) || false;
+  const opened = [URL_A, URL_B].every(function (u) {
+    const s = stream(u);
+    const b = s && typeof s.opts.body === 'function' ? s.opts.body() : null;
+    return !!b && b.call === 'spirit.relay.stream' && !!b.args && b.args.key === W.me.publicKey;
+  });
+  return (opened && Object.keys(W.streams).length === 2) || false;
 }, test.limit.quick);
 test.run('start owns the spirit.contact job', 0.2, function () {
   if (!W.started) return false;
   return W.p.jobId() === 'spirit.contact' || false;
 }, test.limit.quick);
-test.run('each attempt is signed afresh, in a header, for that relay\'s pinned key alone', 0.2, function () {
+// goal/G49.25: the signature is in the call's arguments, never a header or the address.
+test.run('each attempt is signed afresh, in the call\'s arguments, for that relay\'s pinned key alone', 0.2, function () {
   if (!W.started) return false;
-  const h = stream(URL_A).opts.headers();
-  const sig = h['X-Spirit-Sig'];
+  const b = stream(URL_A).opts.body();
+  const sig = b && b.args && b.args.sig;
   const good = auth.verify(W.me.publicKey, auth.streamMessage(W.me.publicKey, KEY_RA), sig);
   const forB = auth.verify(W.me.publicKey, auth.streamMessage(W.me.publicKey, KEY_RB), sig);
   return (good === true && forB === false && stream(URL_A).opts.url.indexOf('Sig') === -1) || false;
@@ -146,12 +160,12 @@ test.run('on open, the relay itself and this node are present, each a proof that
   return (short(d[KEY_RA]) === short({ present: true, at: 5000 }) && short(d[W.me.publicKey]) === short({ present: true, at: 5000 })) || false;
 }, test.limit.quick);
 test.run('on open, the node hands the relay its card, sealed to the relay\'s key', 0.2, function () {
-  const cards = W.posts.filter(function (x) { return x.packet.app === 'relay' && x.packet.body && x.packet.body.card; });
+  const cards = W.posts.filter(function (x) { return asked(x, 'card') && !!x.packet.args.card; });
   return (cards.length === 2 && cards.some(function (x) { return x.url === URL_A && x.key === KEY_RA; })) || false;
 }, test.limit.quick);
 test.run('on open, the book is reconciled once with the relay\'s own search, and the contact it names is green', 0.2, function () {
-  const asks = W.posts.filter(function (x) { return x.packet.body && x.packet.body.search; });
-  return (asks.length === 2 && asks[0].packet.body.search.q === '*' && dot('friend2-key') === 'green') || false;
+  const asks = W.posts.filter(function (x) { return asked(x, 'search'); });
+  return (asks.length === 2 && asks[0].packet.args.q === '*' && dot('friend2-key') === 'green') || false;
 }, test.limit.quick);
 test.run('what the search names outside the book is learned, not drawn', 0.2, function () {
   const noted = W.seen.some(function (s) { return s.key === STRANGER; });
@@ -253,9 +267,9 @@ test.run('a relay-event and an owner-event are handed on, stamped with their rel
 }, test.limit.quick);
 test.run('handOverCardEverywhere hands the card to every open stream at once, answering how many', 0.2, function () {
   if (!W.p) return false;
-  const before = W.posts.filter(function (x) { return x.packet.body && x.packet.body.card; }).length;
+  const before = W.posts.filter(function (x) { return asked(x, 'card') && !!x.packet.args.card; }).length;
   const n = W.p.handOverCardEverywhere();
-  const after = W.posts.filter(function (x) { return x.packet.body && x.packet.body.card; }).length;
+  const after = W.posts.filter(function (x) { return asked(x, 'card') && !!x.packet.args.card; }).length;
   return (n === 2 && after === before + 2) || false;
 }, test.limit.quick);
 

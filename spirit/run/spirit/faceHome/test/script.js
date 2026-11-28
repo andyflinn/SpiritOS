@@ -41,6 +41,18 @@ const FACE = auth.generateIdentity('face');
 const MINE = 'https://my-face-is-here.example';
 const OTHER = 'https://a-relay-with-no-face-of-mine.example';
 
+// AN UPLOAD BY ITS CALL (goal/G49.25, Q10: the relay's one door, POST /spirit, the call named in X-Spirit-Call; the old addresses
+// /spirit/relay/face/answer?id= and /spirit/relay/face/stream are gone): spirit.relay.faceAnswer?id=<its id>, or
+// spirit.relay.faceFeed; an upload to any other address, or naming no call, is kept under a name no check reads.
+function uploadName(p, headers) {
+  const h = headers || {};
+  const call = String(h['x-spirit-call'] || '');
+  if (p !== '/spirit' || !call) return 'elsewhere: ' + p;
+  return call === 'spirit.relay.faceAnswer' ? call + '?id=' + String(h['x-spirit-id'] || '') : call;
+}
+const ANSWER = 'spirit.relay.faceAnswer?id=';
+const FEED = 'spirit.relay.faceFeed';
+
 // THE OPTIONS THE FIX NEEDS: faceSet(url), true when this node set a face on that relay, and faceOwned(url), the star
 // (server.js gives both from the relay's row; see the spec).
 function world(faceSet, faceOwned) {
@@ -53,7 +65,7 @@ function world(faceSet, faceOwned) {
     relayKey: function () { return 'RELAYKEY'; },
     upload: function (url, p, headers) {
       const u = { url: url, path: p, headers: headers, chunks: [], on: function () {}, once: function () {}, destroy: function () {}, write: function (c) { u.chunks.push(Buffer.from(c)); return true; }, end: function (c) { if (c) u.chunks.push(Buffer.from(c)); u.ended = true; } };
-      w.uploads[p] = u;
+      w.uploads[uploadName(p, headers)] = u;
       return u;
     },
     jobs: { listJobs: function () { return []; }, onEvent: function () {} },
@@ -76,7 +88,7 @@ async function send(w, url, request) {
   let thrown = null;
   try { w.home.request(url, { id: id, request: request }); } catch (e) { thrown = e; }
   await settle();
-  const u = w.uploads['/spirit/relay/face/answer?id=' + id];
+  const u = w.uploads[ANSWER + id];
   const a = { reached: w.calls.slice(calls), thrown: thrown, status: u ? Number(u.headers['x-spirit-status']) : 0, body: null };
   if (u) {
     const text = Buffer.concat(u.chunks).toString('utf8');
@@ -146,7 +158,7 @@ test.run('the keys asked by it are refused', 0.8, async function () {
 test.run('face-open from it starts no stream of this node\'s events', 0.8, function () {
   const w = lazy('w', noFaceWorld);
   let opened = null;
-  try { w.home.open(OTHER, ''); opened = !!w.uploads['/spirit/relay/face/stream']; } catch (e) { opened = null; }
+  try { w.home.open(OTHER, ''); opened = !!w.uploads[FEED]; } catch (e) { opened = null; }
   try { w.home.close(OTHER); } catch (e) { /* its own check is this one */ }
   return opened === false || false;
 }, test.limit.quick);
@@ -180,7 +192,7 @@ test.run('the keys are answered', 0.2, async function () {
 test.run('face-open starts the stream', 0.2, function () {
   const m = lazy('m', starredWorld);
   let streaming = false;
-  try { m.home.open(MINE, ''); streaming = !!m.uploads['/spirit/relay/face/stream']; } catch (e) { streaming = false; }
+  try { m.home.open(MINE, ''); streaming = !!m.uploads[FEED]; } catch (e) { streaming = false; }
   try { m.home.close(MINE); } catch (e) { /* the stream is the stand-in's */ }
   return streaming || false;
 }, test.limit.quick);
@@ -191,7 +203,7 @@ test.run('face-open starts the stream', 0.2, function () {
 test.run('a quiet face stream carries a beat each second: no gap of more than 1.5 s in 4 s', 0.8, async function () {
   const w = starredWorld();
   try { w.home.open(MINE, ''); } catch (e) { return false; }
-  const u = w.uploads['/spirit/relay/face/stream'];
+  const u = w.uploads[FEED];
   if (!u) return false;
   await settle();
   const times = [];
@@ -249,9 +261,9 @@ function streams(star) {
     serveFile: function () {}, saveFrom: function () { return { ok: true }; },
     identity: function () { return ME; },
     relayKey: function () { return 'RELAYKEY'; },
-    upload: function (url, p) {
-      const u = { url: url, path: p, chunks: [], on: function () {}, destroy: function () {}, once: function (e, fn) { if (e === 'drain') s.drains.push(fn); }, write: function (c) { u.chunks.push(String(c)); return !s.busy; }, end: function () {}, headers: {} };
-      if (p === '/spirit/relay/face/stream') s.ups[url] = u;
+    upload: function (url, p, headers) {
+      const u = { url: url, path: p, chunks: [], on: function () {}, destroy: function () {}, once: function (e, fn) { if (e === 'drain') s.drains.push(fn); }, write: function (c) { u.chunks.push(String(c)); return !s.busy; }, end: function () {}, headers: headers || {} };
+      if (uploadName(p, headers) === FEED) s.ups[url] = u;
       return u;
     },
     jobs: { listJobs: function () { return s.jobs; }, onEvent: function () {} },
@@ -439,7 +451,7 @@ test.run('when starred, a sealed peer.post to that relay carrying a face name re
 // own gets everything back, jobs, files, grants, puppets, under your login as it is now."; "so this button will put the star on relays and puppets. AND take it away."). spirit/test/
 // faceHome.js stands in for "did this node set a face" and "is this relay starred"; here nothing of the node is stood in.
 // A real scratch node joins real scratch relays by their mail, sets a face and logs in, and every call is what a page
-// sends: POST /face/call with its cookie, its Origin and json. Only the relay's mailer keeps its mail. A step that could
+// sends: spirit.relay.faceCall at the relay's one door, POST /spirit, with its cookie, its Origin and json (goal/G49.25). Only the relay's mailer keeps its mail. A step that could
 // not run is red, never skipped.
 // GOAL/G43.18, BOX V29, "A face is whole, or there is none" (Andy: "we remove ALL the star shit, like this,", "on the home
 // node, NO face is offered (faceForm hides itself) for a relay without star."): "The home node answers a face only from a
@@ -456,10 +468,12 @@ async function home(base, verb, args) {
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }
-// One POST as a page sends it, at the face's own host.
-function page(relay, name, p, body, sid) {
+// One call as a page sends it, at the face's own host: { call, args } at the relay's one door, POST /spirit (goal/G49.25, box v25;
+// spirit/script.js relayCall and faceCall; the old POST /face/api and /face/call are gone).
+function page(relay, name, call, args, sid) {
   return new Promise(function (resolve) {
-    const b = JSON.stringify(body);
+    const p = '/spirit';
+    const b = JSON.stringify({ call: call, args: args || {} });
     const host = name + '.relay.example';
     const headers = { Host: host, Origin: 'https://' + host, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) };
     if (sid) headers.Cookie = 'spirit_face=' + sid;
@@ -501,15 +515,15 @@ async function setFace(N, R, name) {
 // The face's login: the member's email, then the token the mail holds.
 async function logIn(R, name) {
   let state = null;
-  await until(function () { return page(R, name, '/face/api', { call: 'state', args: {} }).then(function (s) { state = s; return s.status === 200; }); }, 15000);
+  await until(function () { return page(R, name, 'spirit.relay.faceState', {}).then(function (s) { state = s; return s.status === 200; }); }, 15000);
   if (!state || state.status !== 200) return {};
   const from = R.mailed.length;
-  await page(R, name, '/face/api', { call: 'login', args: { text: MAIL } });
+  await page(R, name, 'spirit.relay.faceLogin', { text: MAIL });
   await until(function () { return R.mailed.length > from; }, 5000);
   const mail = R.mailed[from];
   const token = mail && String(mail.text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
   if (!token) return {};
-  const done = await page(R, name, '/face/api', { call: 'login', args: { text: token } });
+  const done = await page(R, name, 'spirit.relay.faceLogin', { text: token });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
   return sid ? { sid: sid } : {};
 }
@@ -530,7 +544,7 @@ const OWNER = { call: 'owner.command', args: { to: NOBODY, command: 'zzNothing' 
 const SAVED = 'spirit/app/zzStar/saved.txt';
 const JOB = { call: 'spirit.job.create', args: { command: process.execPath, args: JSON.stringify(['spirit/app/zzStar/zzStar.js', 'fromTheFace']) } };
 const SAVE = { call: 'spirit.fs.save', args: { path: SAVED, content: 'from the face' } };
-const face = function (req) { return page(S.R, 'harbour', '/face/call', req, S.L.sid); };
+const face = function (req) { return page(S.R, 'harbour', 'spirit.relay.faceCall', { request: req }, S.L.sid); };
 // 😏 as the row says it (goal/G47.4, box v33: "😏 is the row field faceable").
 const starOf = async function (key) { const a = await home(S.N.base, 'spirit.contact.get', { key: key }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
 // The relay's row by its key, spirit.contact.get (goal/G49.22): its relay part beside the person.
@@ -658,7 +672,7 @@ test.run('the star put back opens nothing, because the face is gone, not hidden'
 
 // GOAL/G41.33, ON THE REAL STREAM. "anything andy gets on his loopback screen, he can get on his face, if he "stars" any
 // relay"; "NO RESTRICTIONS AT ALL, except changing stars". Without the star there is no face (box v29, Q19). What a page
-// reads from /face/stream, with its cookie, unsealed as a page that cannot seal: a job, a bundle and the join steps.
+// reads from its stream, the call spirit.relay.faceEvents at POST /spirit (goal/G49.25; GET /face/stream is gone), with its cookie, unsealed as a page that cannot seal: a job, a bundle and the join steps.
 const hears = function (word) { return S.got.some(function (l) { return l.indexOf(word) !== -1; }); };
 const heardEvent = function (kind, id) { return S.got.some(function (l) { const v = parsed(l); return !!v && v.event === kind && (kind === 'job-deleted' ? v.data === id : !!v.data && v.data.id === id); }); };
 const streamUp = function () { return !!(S.LS && S.LS.sid && S.got); };
@@ -673,7 +687,7 @@ const runOne = async function () {
 };
 // A bundle added by the bundle branch's own verb (goal/G49.21, box v24: the bundle table "a new branch").
 const bundle = function (label) { return home(S.N.base, 'spirit.bundle.add', { label: label }); };
-const sface = function (req) { return page(S.S, 'stream', '/face/call', req, S.LS.sid); };
+const sface = function (req) { return page(S.S, 'stream', 'spirit.relay.faceCall', { request: req }, S.LS.sid); };
 
 test.run('a relay for the stream is joined and a face is set on it', 0.2, async function () {
   if (!S.me) return false;
@@ -702,12 +716,13 @@ test.run('the stream opens and carries the node\'s file tree', 0.2, async functi
   fs.writeFileSync(path.join(S.run, 'spirit/app/zzStream/zzStream.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
   S.got = [];
   let heldStream = '';
-  S.q = http.request({ host: '127.0.0.1', port: S.S.port, path: '/face/stream', method: 'GET', headers: { Host: 'stream.relay.example', Cookie: 'spirit_face=' + S.LS.sid } }, function (r) {
+  const opening = JSON.stringify({ call: 'spirit.relay.faceEvents', args: {} });
+  S.q = http.request({ host: '127.0.0.1', port: S.S.port, path: '/spirit', method: 'POST', headers: { Host: 'stream.relay.example', Origin: 'https://stream.relay.example', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(opening), Cookie: 'spirit_face=' + S.LS.sid } }, function (r) {
     r.setEncoding('utf8');
     r.on('data', function (d) { heldStream += d; const parts = heldStream.split('\n'); heldStream = parts.pop(); parts.filter(Boolean).forEach(function (l) { S.got.push(l); }); });
   });
   S.q.on('error', function () { /* the stream ends with the relay */ });
-  S.q.end();
+  S.q.end(opening);
   return (await until(function () { return hears('spirit.fs'); }, 8000)) || false;
 }, test.limit.slow);
 test.run('when starred, a job runs and is deleted at home', 0.2, async function () {
@@ -764,7 +779,7 @@ test.run('when starred, spirit.contact.face on the relay it is called through is
 }, test.limit.quick);
 test.run('the face has its new name on the relay', 0.2, async function () {
   if (!streamUp()) return false;
-  const moved = await until(function () { return page(S.S, 'renamed', '/face/api', { call: 'state', args: {} }).then(function (a) { return a.status === 200; }); }, 8000);
+  const moved = await until(function () { return page(S.S, 'renamed', 'spirit.relay.faceState', {}).then(function (a) { return a.status === 200; }); }, 8000);
   return !!moved || false;
 }, test.limit.quick);
 // The star off with the stream open: the face goes, so the next event stays home.
@@ -808,7 +823,7 @@ test.run('the face logs in there', 0.2, async function () {
 }, test.limit.quick);
 test.run('owner.command from that face is refused, because the relay\'s word opens nothing', 0.8, async function () {
   if (!S.L2 || !S.L2.sid) return false;
-  const a = await page(S.O, 'mine', '/face/call', OWNER, S.L2.sid);
+  const a = await page(S.O, 'mine', 'spirit.relay.faceCall', { request: OWNER }, S.L2.sid);
   return starRefused(a) || false;
 }, test.limit.quick);
 
@@ -832,7 +847,7 @@ test.run('the relay has made a face this node never asked for, and logged in to 
 function forgedRefused(q) {
   return async function () {
     if (!S.L3 || !S.L3.sid) return false;
-    const a = await page(S.D, 'forged', '/face/call', q, S.L3.sid);
+    const a = await page(S.D, 'forged', 'spirit.relay.faceCall', { request: q }, S.L3.sid);
     return (a.status === 403 && !!a.body && a.body.code === 'no-face-here') || false;
   };
 }
@@ -840,7 +855,7 @@ test.run('spirit.card through it is refused with no-face-here', 0.8, forgedRefus
 test.run('a star does not open it, because with no face of mine nothing opens', 0.8, async function () {
   if (!S.L3 || !S.L3.sid) return false;
   const on3 = await home(S.N.base, 'spirit.contact.faceable', { key: S.D.relayKey, faceable: true });
-  const a3 = await page(S.D, 'forged', '/face/call', JOB, S.L3.sid);
+  const a3 = await page(S.D, 'forged', 'spirit.relay.faceCall', { request: JOB }, S.L3.sid);
   return (on3.status === 200 && a3.status === 403 && !!a3.body && a3.body.code === 'no-face-here') || false;
 }, test.limit.quick);
 test.run('no job ran through any of this', 0.8, async function () {
@@ -861,9 +876,11 @@ test.run('no job ran through any of this', 0.8, async function () {
 const DOMAIN = 'localhost';
 const NAME = 'apps';
 const DRAWN_MS = 6000;
-function appsPage(relay, p, body) {
+// One call of the face's page at the relay's one door, POST /spirit (goal/G49.25: POST /face/api is gone).
+function appsPage(relay, call, args) {
   return new Promise(function (resolve) {
-    const b = JSON.stringify(body);
+    const p = '/spirit';
+    const b = JSON.stringify({ call: call, args: args || {} });
     const host = NAME + '.' + DOMAIN + ':' + relay.port;
     const q = http.request({ host: '127.0.0.1', port: relay.port, path: p, method: 'POST', headers: { Host: host, Origin: 'http://' + host, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) } }, function (r) {
       let text = ''; r.on('data', function (d) { text += d; });
@@ -884,13 +901,13 @@ async function faceOf(N, R) {
   let f = null;
   for (let i = 0; i < 10; i++) { f = await home(N.base, 'spirit.contact.face', { key: R.relayKey, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
-  await until(function () { return appsPage(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
+  await until(function () { return appsPage(R, 'spirit.relay.faceState', {}).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
-  await appsPage(R, '/face/api', { call: 'login', args: { text: MAIL } });
+  await appsPage(R, 'spirit.relay.faceLogin', { text: MAIL });
   await until(function () { return R.mailed.length > from; }, 5000);
   const token = R.mailed[from] && String(R.mailed[from].text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
   if (!token) return {};
-  const done = await appsPage(R, '/face/api', { call: 'login', args: { text: token } });
+  const done = await appsPage(R, 'spirit.relay.faceLogin', { text: token });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
   return sid ? { sid: sid } : {};
 }

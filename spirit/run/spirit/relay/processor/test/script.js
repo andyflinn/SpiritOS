@@ -199,7 +199,9 @@ test.run('the search thrown is at least 12000 characters, near 3/4 of the payloa
   // The longest sealed search the wire takes: from 3/4 of the payload down, until the relay takes the post.
   const sealedAsk = function (len) {
     const q = ('abcdefghij ').repeat(Math.ceil(len / 11)).slice(0, len);
-    const sealed = seal.seal(box.relaySealKey(), LS.asker.publicKey, relayKey, JSON.stringify({ v: 1, body: { search: { q: q } } }));
+    // goal/G49.25, box v27 ("one shape for every request to a relay"): the relay's own search is its call, spirit.relay.search,
+    // the text the same call { call, args } (was the ask { v: 1, body: { search } }).
+    const sealed = seal.seal(box.relaySealKey(), LS.asker.publicKey, relayKey, JSON.stringify({ call: 'spirit.relay.search', args: { q: q } }));
     return JSON.stringify(sealed);
   };
   let len = Math.floor(limits.PAYLOAD_MAX * 3 / 4); let text = sealedAsk(len);
@@ -214,7 +216,8 @@ test.run('the relay takes the search', 0.2, async function () {
   const tick = setInterval(function () { const t = Date.now(); gap = Math.max(gap, t - last); last = t; }, 5);
   const before = LS.heard.length;
   const t0 = Date.now();
-  LS.posted = box.routePost(asker.publicKey, relayKey, text, auth.sign(asker.privateKey, auth.postMessage(asker.publicKey, relayKey, text)));
+  // Asked by its verb's own call, named as the relay's server names it (goal/G49.25; spirit/relay/server/script.js posted).
+  LS.posted = box.routePost(asker.publicKey, relayKey, text, auth.sign(asker.privateKey, auth.postMessage(asker.publicKey, relayKey, text)), undefined, undefined, 'spirit.relay.search');
   const inPost = Date.now() - t0;
   for (let i = 0; i < 200 && !LS.answered; i++) { await new Promise(function (r) { setTimeout(r, 25); }); LS.answered = LS.heard.length > before; }
   clearInterval(tick);
@@ -240,11 +243,13 @@ test.run('the long search is answered', 0.2, function () {
 const http = require('http');
 const H = S.requireScript('spirit/test/headLessChrome.js');
 const F = { R: null, M: null, opened: [], face: null, one: null, two: null, again: null, three: null, opensNow: 0 };
-// The face's own stream, as its page opens it: GET /face/stream, its login cookie, on its own host.
+// The face's own stream, as its page opens it (spirit/shell/boot/script.js): the call spirit.relay.faceEvents at the relay's one
+// door, POST /spirit, its login cookie, on its own host, from its own page (goal/G49.25: GET /face/stream is gone).
 function openFace() {
   return new Promise(function (resolve) {
     const f = { lines: [], ended: false, status: 0 };
-    const req = http.get({ host: '127.0.0.1', port: F.R.port, path: '/face/stream', headers: { host: F.M.host, cookie: 'spirit_face=' + F.M.sid } }, function (res) {
+    const body = JSON.stringify({ call: 'spirit.relay.faceEvents', args: {} });
+    const req = http.request({ host: '127.0.0.1', port: F.R.port, path: '/spirit', method: 'POST', headers: { host: F.M.host, origin: 'https://' + F.M.host, 'content-type': 'application/json', 'content-length': Buffer.byteLength(body), cookie: 'spirit_face=' + F.M.sid } }, function (res) {
       f.status = res.statusCode;
       res.setEncoding('utf8');
       res.on('data', function (d) { f.lines.push(d); });
@@ -252,17 +257,19 @@ function openFace() {
       res.on('close', function () { f.ended = true; });
     });
     req.on('error', function () { f.ended = true; });
+    req.end(body);
     f.req = req;
     F.opened.push(f);
     // Its headers come with its first line, face-open answered or a refusal: the face is handed back at once.
     resolve(f);
   });
 }
-// The home node's long upload of the face's updates: POST /spirit/relay/face/stream, signed for this relay and 'stream'.
+// The home node's long upload of the face's updates, as spirit/faceHome/script.js sends it: the call spirit.relay.faceFeed named
+// in its header at the one door, POST /spirit, signed for this relay and 'stream' (goal/G49.25: /spirit/relay/face/stream is gone).
 function feed() {
   const R = F.R; const M = F.M;
-  const req = http.request({ host: '127.0.0.1', port: R.port, path: '/spirit/relay/face/stream', method: 'POST',
-    headers: { 'x-spirit-from': M.publicKey, 'x-spirit-sig': R.auth.sign(M.privateKey, R.auth.faceMessage(M.publicKey, R.relayKey, 'stream')), 'transfer-encoding': 'chunked' } });
+  const req = http.request({ host: '127.0.0.1', port: R.port, path: '/spirit', method: 'POST',
+    headers: { 'x-spirit-call': 'spirit.relay.faceFeed', 'x-spirit-from': M.publicKey, 'x-spirit-sig': R.auth.sign(M.privateKey, R.auth.faceMessage(M.publicKey, R.relayKey, 'stream')), 'transfer-encoding': 'chunked' } });
   req.on('error', function () { /* cut */ });
   req.flushHeaders();
   return req;

@@ -60,8 +60,8 @@ stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` s
 Once `./faceHome-star.js`, now a section of `./script.js`. The star, end to end (goal/G41.30; Andy: *"why does no test assert the fix?"*, *"wsl? do it."*).
 `spirit/faceHome/test/script.js` stands in for "did this node set a face" and "is this relay starred"; so the two lines of
 `spirit/server/script.js` that answer them were judged by nothing. Here nothing of the node is stood in: a real scratch node
-joins real scratch relays by their mail, sets a face and logs in, and every call is what a page sends, `POST /face/call`
-with its cookie, its Origin and json. Only the relay's mailer keeps its mail. A step that cannot run is red.
+joins real scratch relays by their mail, sets a face and logs in, and every call is what a page sends, `spirit.relay.faceCall` (its login, `faceState` and `faceLogin`) at the relay's one door,
+`POST /spirit` (goal/G49.25; `/face/call` and `/face/api` are gone), with its cookie, its Origin and json. Only the relay's mailer keeps its mail. A step that cannot run is red.
 
 goal/G43.18, box v29, *A face is whole, or there is none* (Andy: *"we remove ALL the star shit, like this,"*, *"on the home node, NO face is offered (faceForm hides itself) for a relay without star."*): *"The home node answers a face only from a starred relay, one check; a face it answers is a full face."*, *"A star taken off a relay that has a face takes that face away (Q21)."*, *"Starring is never asked from a face (contact.faceable)"*. The half face of G41.30 and G41.33 is gone: a refusal is judged by its 4xx alone, since v29 names no code.
 
@@ -90,7 +90,7 @@ The face on the owned relay is set before the owner mark goes in (the relay rest
 
 ### On the real stream
 
-What a page reads from `/face/stream`, with its cookie. The star goes on first, since a relay with no faceable mark gets no
+What a page reads from its stream, the call `spirit.relay.faceEvents` at `POST /spirit` (goal/G49.25; `GET /face/stream` is gone), with its cookie and Origin. The star goes on first, since a relay with no faceable mark gets no
 stream (Q19), and the stream opens with the node's file tree. Starred: the running job, the job deleted, the bundle and the join steps arrive. From the
 starred face, `contact.faceable` of another relay and of its own star are refused and change nothing; `relay.face` through it is
 not refused, and the face answers at its new name. The star off: the node holds no face on that relay any more. Relay events are judged in `spirit/faceHome/test/script.js`, on stand-ins.
