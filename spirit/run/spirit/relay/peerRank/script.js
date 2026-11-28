@@ -16,7 +16,7 @@ require('../../script.js');
 //   q      the words typed; '' or '*' is anyone, every row in the order given
 //   slots  how many come back at most; more when one was turned away
 
-var probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+var probabilityStringObjectMatch = spirit.requireScript('spirit/search/object/script.js').probabilityStringObjectMatch;
 var createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 
 // How many rows one relay answers (the graded search's 32, kept).

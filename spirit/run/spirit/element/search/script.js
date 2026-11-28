@@ -86,12 +86,12 @@
   // fieldInput's load is kept: a search made before it is in attaches its words to it once it is (below).
   var fieldInputIn = null;
   if (window.spirit && typeof window.spirit.requireScript === 'function') {
-    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js', 'spirit/element/icon/script.js',
+    ['spirit/search/string/script.js', 'spirit/search/object/script.js', 'spirit/listLimiter/script.js', 'spirit/element/icon/script.js',
       'spirit/element/fieldInput/script.js', 'spirit/limits/script.js'].forEach(function (p) { var got = keepAnswer(p); if (p === 'spirit/element/fieldInput/script.js') fieldInputIn = got; });
   }
   // The three ranking helpers, as their own spirit.requireScript calls hand them back (goal/G49.9).
   function P() {
-    var o = ANSWER['spirit/search/object.js'] || {};
+    var o = ANSWER['spirit/search/object/script.js'] || {};
     return { probabilityStringObjectMatch: o.probabilityStringObjectMatch, measureObject: o.measureObject, createProbabilityBucket: (ANSWER['spirit/listLimiter/script.js'] || {}).createProbabilityBucket };
   }
   // A VERB OF A BRANCH, REQUIRED BY ITS api.js PATH (goal/G43.24; goal/G49.6: never by a name): verb called on the branch

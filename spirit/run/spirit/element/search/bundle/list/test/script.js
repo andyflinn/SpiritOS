@@ -224,7 +224,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
   LIST = (function () {
     const win = { window: null, spirit: { element: {} }, console: console };
     // The search and what it ranks with, run in this world by their paths through the page stand-in (goal/G49.6).
-    const REAL = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'];
+    const REAL = ['spirit/search/string/script.js', 'spirit/search/object/script.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'];
     win.window = win;
     LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
     REAL.forEach(function (rel) { win.spirit.requireScript(rel); });

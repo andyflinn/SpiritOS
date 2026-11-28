@@ -147,6 +147,6 @@ function createProbabilityBucket(capacity) {
   };
 }
 
-// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as spirit/search/string.js: a page finds it at spirit.required.spirit.listLimiter.
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as spirit/search/string/script.js: a page finds it at spirit.required.spirit.listLimiter.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { createProbabilityBucket: createProbabilityBucket };
 }());

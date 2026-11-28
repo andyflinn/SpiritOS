@@ -1,10 +1,10 @@
 'use strict';
-if (typeof require === 'function') require('../script.js'); // node only: a page has the global spirit already, and no require
+if (typeof require === 'function') require('../../script.js'); // node only: a page has the global spirit already, and no require
 
 // ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
 (function () {
 
-// spirit/run/spirit/search/string.js
+// spirit/run/spirit/search/string/script.js
 // HOW LIKELY TWO STRINGS MEAN THE SAME THING, AS A PROBABILITY — goal/G18.2, the first of the probabilit* modules.
 //
 //   Andy, 2026-10-12 (goal/G18): "i have a strong dislike for the search system right now. what i want to do: add a set

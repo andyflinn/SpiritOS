@@ -36,8 +36,8 @@ require('../script.js');
 var fs = require('fs');
 var path = require('path');
 var limits = spirit.requireScript('spirit/limits/script.js');
-var probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
-var probabilityStringMatch = spirit.requireScript('spirit/search/string.js').probabilityStringMatch;
+var probabilityStringObjectMatch = spirit.requireScript('spirit/search/object/script.js').probabilityStringObjectMatch;
+var probabilityStringMatch = spirit.requireScript('spirit/search/string/script.js').probabilityStringMatch;
 var createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 // THE CONTENTS SEARCH'S BOUND (goal/G29.11, the box: "the node also reads text files up to 1 MB (larger ones are found by
 // name only)"): a file bigger than this is never read.

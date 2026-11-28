@@ -25,7 +25,7 @@ require('../../../script.js');
 // Any other op is refused. Every change is published as { agent: { table, row } } or { agent: { table, id, removed } }.
 const { generateIdentity } = spirit.requireScript('spirit/relayAuth/script.js');
 const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter/script.js');
-const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object.js');
+const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object/script.js');
 const limits = spirit.requireScript('spirit/limits/script.js');
 
 const KEYSET = ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey'];

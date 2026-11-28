@@ -94,8 +94,8 @@ function markup(k) {
 // fail/throw"): the real modules the search asks for as it runs, answered at once, as a second require is answered.
 global.window = { spirit: {} };
 LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, {
-  'spirit/search/string.js': LOADER.requireScript('spirit/search/string.js'),
-  'spirit/search/object.js': LOADER.requireScript('spirit/search/object.js'),
+  'spirit/search/string/script.js': LOADER.requireScript('spirit/search/string/script.js'),
+  'spirit/search/object/script.js': LOADER.requireScript('spirit/search/object/script.js'),
   'spirit/listLimiter/script.js': LOADER.requireScript('spirit/listLimiter/script.js'),
   'spirit/limits/script.js': LOADER.requireScript('spirit/limits/script.js'),
   // fieldInput, a page helper, stands in: it holds the words to their rule, which the page test judges, not this one.
@@ -1105,7 +1105,7 @@ test.run('without the all option the field shows the placeholder', 0.2, function
   PS.create(c9, { face: 'dropdown', placeholder: 'pick one' });
   return (/pick one/.test(c9.get('field').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('it requires spirit/search/string.js, spirit/search/object.js and spirit/listLimiter/script.js', 0.2, async function () {
+test.run('it requires spirit/search/string/script.js, spirit/search/object/script.js and spirit/listLimiter/script.js', 0.2, async function () {
   // it loads the spirit's probability files itself (rule/26; goal/G41.18)
   // Found by the shell's general rules on a bare page (spirit/test/script-sibling-browser.js): the Apps and Grants
   // lists threw "createProbabilityBucket is not a function", since only boot loaded these files. rule/26: every element
@@ -1133,7 +1133,7 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
   };
   PAGE_LOAD.runAsPage(FILE);
   await new Promise(function (r) { setTimeout(r, 300); });
-  NEED = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js'];
+  NEED = ['spirit/search/string/script.js', 'spirit/search/object/script.js', 'spirit/listLimiter/script.js'];
   return (NEED.every(function (n) { return asked10.indexOf(n) !== -1; })) ? true : false;
 }, test.limit.quick);
 test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze puts zed first', 0.2, function () {
@@ -1671,7 +1671,7 @@ async function tilesPart() {
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
   const test = LOADER.requireScript('spirit/test/testReport.js');
   const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
-  const match = LOADER.requireScript('spirit/search/object.js');
+  const match = LOADER.requireScript('spirit/search/object/script.js');
 
   // What the tests make, shared by the tests after them.
   let table, node, chrome, loaded, plain, nest, searching, nest2, best, expected, probe, missed, none, order, picked1,

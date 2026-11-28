@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/search/test/object.js
-// The tests of spirit/search/object.js, and of no other module (spec: ./probabilityStringObjectMatch.md).
+// spirit/run/spirit/search/object/test/script.js
+// The tests of spirit/search/object/script.js, and of no other module (spec: ./probabilityStringObjectMatch.md).
 // Its own test, owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // probabilityStringObjectMatch(string, object): how likely a string is what an object holds (goal/G18.3), a weighted sum
@@ -10,12 +10,12 @@
 
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
-const SUBJECT = 'spirit/search/object.js';
+const SUBJECT = 'spirit/search/object/script.js';
 const O = LOADER.requireScript(SUBJECT);
 const p = O.probabilityStringObjectMatch;
 
@@ -117,12 +117,12 @@ test.run('a key whose value is false is never matched', 0.2, function () {
 test.run('in a page, run as the loader runs it, it puts out measureObject and probabilityStringObjectMatch, matching through the string match spirit.requireScript hands it', 0.2, async function () {
   const asked = [];
   const stub = { probabilityStringMatch: function (a, b) { return a === b ? 1 : 0; } };
-  const ctx = vm.createContext({ spirit: { requireScript: function (p) { asked.push(p); return Promise.resolve(p === 'spirit/search/string.js' ? stub : {}); } } });
+  const ctx = vm.createContext({ spirit: { requireScript: function (p) { asked.push(p); return Promise.resolve(p === 'spirit/search/string/script.js' ? stub : {}); } } });
   ctx.window = ctx;
   const P = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx);
   if (!P || typeof P.probabilityStringObjectMatch !== 'function' || typeof P.measureObject !== 'function') return false;
   for (let i = 0; i < 5; i += 1) await Promise.resolve();
-  return (short(asked) === short(['spirit/search/string.js']) && near(P.probabilityStringObjectMatch('andy', { andy: 'andy' }), 1)) || false;
+  return (short(asked) === short(['spirit/search/string/script.js']) && near(P.probabilityStringObjectMatch('andy', { andy: 'andy' }), 1)) || false;
 }, test.limit.quick);
 test.run('the module answers measureObject and probabilityStringObjectMatch', 0.2, function () {
   return short(Object.keys(O).sort()) === short(['measureObject', 'probabilityStringObjectMatch']) || false;

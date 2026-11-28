@@ -85,7 +85,7 @@ const peerFile = require('../../script.js').requireScript('spirit/peer/file/scri
 const nodeCard = require('../../script.js').requireScript('spirit/nodeCard/script.js');
 const limits = require('../../script.js').requireScript('spirit/limits/script.js');
 // goal/G29.6: contact.search ranks with the probability modules.
-const probabilityStringObjectMatch = require('../../script.js').requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const probabilityStringObjectMatch = require('../../script.js').requireScript('spirit/search/object/script.js').probabilityStringObjectMatch;
 const createProbabilityBucket = require('../../script.js').requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 const MAX_SEARCHED_PEOPLE = 1000;
 // Every label checked at one point (Andy, 2026-10-03, goal/G4.16: "all

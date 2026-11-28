@@ -1,4 +1,4 @@
-# spirit/search/string.js — its own test
+# spirit/search/string/script.js — its own test
 
 How likely two strings mean the same thing, as a number from 0 to 1 (goal/G18.2, the first of the probabilit* modules),
 with proximity and case added by goal/G29.1 and the shorter token first by goal/G41.28. Owed since the rule *"every

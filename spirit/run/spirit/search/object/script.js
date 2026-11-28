@@ -3,7 +3,7 @@
 // ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
 (function () {
 
-// spirit/run/spirit/search/object.js
+// spirit/run/spirit/search/object/script.js
 // HOW LIKELY A STRING IS WHAT AN OBJECT HOLDS, AS A PROBABILITY — goal/G18.3, the second of the probabilit* modules.
 //
 //   Andy, 2026-10-12, the item: "1. the input must be valid string and object, empty string will return 0", "2. We
@@ -31,10 +31,10 @@
 // On a page, the string match as spirit.requireScript hands it back (goal/G49.23), kept once it has loaded; this file's own
 // load waits for it, being part of its tree.
 var stringMatch = typeof require === 'function'
-  ? require('../script.js').requireScript('spirit/search/string.js').probabilityStringMatch
+  ? require('../../script.js').requireScript('spirit/search/string/script.js').probabilityStringMatch
   : null;
 if (!stringMatch && typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') {
-  Promise.resolve(window.spirit.requireScript('spirit/search/string.js')).then(function (got) { stringMatch = got && got.probabilityStringMatch; }, function () { /* not loaded: a search answers nothing */ });
+  Promise.resolve(window.spirit.requireScript('spirit/search/string/script.js')).then(function (got) { stringMatch = got && got.probabilityStringMatch; }, function () { /* not loaded: a search answers nothing */ });
 }
 function probabilityStringMatch(a, b) {
   return stringMatch ? stringMatch(a, b) : 0;

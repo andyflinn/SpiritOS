@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/search/test/string.js
-// The tests of spirit/search/string.js, and of no other module (spec: ./probabilityStringMatch.md). Its own
+// spirit/run/spirit/search/string/test/script.js
+// The tests of spirit/search/string/script.js, and of no other module (spec: ./probabilityStringMatch.md). Its own
 // test, owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // probabilityStringMatch(A, B): how likely two strings mean the same thing, as a number from 0 to 1 (goal/G18.2), with
@@ -9,11 +9,11 @@
 
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const M = LOADER.requireScript('spirit/search/string.js');
+const M = LOADER.requireScript('spirit/search/string/script.js');
 const p = M.probabilityStringMatch;
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -125,7 +125,7 @@ test.run('in a page, run as the loader runs it, it puts out probabilityStringMat
   const ctx = vm.createContext({ spirit: {} });
   ctx.window = ctx;
   const before = Object.keys(ctx).sort();
-  const out = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage('spirit/search/string.js', ctx);
+  const out = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage('spirit/search/string/script.js', ctx);
   if (!out || typeof out.probabilityStringMatch !== 'function') return false;
   const works = out.probabilityStringMatch('andy', 'andy') === 1 && out.probabilityStringMatch(1, '1') === 0;
   return (works && short(Object.keys(ctx).sort()) === short(before)) || false;

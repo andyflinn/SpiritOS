@@ -28,7 +28,7 @@ require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const limits = spirit.requireScript('spirit/limits/script.js');
-const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object/script.js').probabilityStringObjectMatch;
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 
 const ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');

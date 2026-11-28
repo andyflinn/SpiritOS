@@ -505,7 +505,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
     const win = { window: null, spirit: S.requireScript('spirit/test/headLessChrome.js').pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
-    return ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'].map(function (rel) {
+    return ['spirit/search/string/script.js', 'spirit/search/object/script.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'].map(function (rel) {
       return PAGE_LOAD.runAsPage(path.join(RUN, rel), win);
     }).pop();
   }());

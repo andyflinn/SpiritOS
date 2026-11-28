@@ -177,8 +177,8 @@ function walked(walk, pairOf, room) {
 // into the bucket. at the end calls serialize, done."
 //
 // With no text every probability is 0 and the bucket keeps the walk's order.
-const probabilityStringMatch = spirit.requireScript('spirit/search/string.js').probabilityStringMatch;
-const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const probabilityStringMatch = spirit.requireScript('spirit/search/string/script.js').probabilityStringMatch;
+const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object/script.js').probabilityStringObjectMatch;
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 const MAX_SCANNED_ITEMS = 1000;
 function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
