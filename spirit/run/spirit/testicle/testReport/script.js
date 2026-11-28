@@ -265,9 +265,14 @@ function one(t) {
     const limit = Number(t.limit) > 0 ? Number(t.limit) : test.limit.quick;
     const unsaid = limit > test.limit.quick && !t.why;
     const timer = ownTimeout(function () { settle(t, { pass: false, crash: true, hung: true }); }, limit);
+    // A BODY THAT NEVER YIELDS IS TIMED WHEN IT ANSWERS (goal/G49.27, the file runner: checks of 14 to 31 s each passed under
+    // the one-second limit, the timer never getting its turn): an answer that comes past the limit is a hang all the same.
+    const began = Date.now();
+    const late = function () { return Date.now() - began > limit; };
     let answered;
     try { answered = Promise.resolve(t.body()); } catch (e) { answered = Promise.reject(e); }
     answered.then(function (v) {
+      if (late()) { settle(t, { pass: false, crash: true, hung: true }); return; }
       settle(t, { pass: v === true && !unsaid });
     }, function () { settle(t, { pass: false, crash: true }); });
   }).then(function () { current = null; });

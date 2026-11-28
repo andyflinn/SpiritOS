@@ -60,6 +60,8 @@ const PROBE = [
   "test.run('a longer limit with no why', 0.2, function () { return true; }, 5000);",
   "test.run('a longer limit that says why', 0.2, function () { return true; }, 5000, { why: 'it waits on a planted node' });",
   "test.run('no limit given and past a second', 0.2, async function () { await new Promise(function (r) { setTimeout(r, 1500); }); return true; }, undefined, { why: 'only its time decides it' });",
+  // A body that never yields cannot be stopped by a timer, so its time is judged when it answers (goal/G49.27, the file runner).
+  "test.run('a body that never yields and runs past its limit', 0.2, function () { const end = Date.now() + 1500; while (Date.now() < end) { /* busy */ } return true; }, 1000);",
   "test.after(function () { fs.writeFileSync(require('path').join(__dirname, 'after.txt'), 'after ran'); });",
 ].join('\n');
 const TWICE = [
@@ -229,6 +231,9 @@ test.run('a check given a longer limit and no why fails, its title printed with 
 test.run('a check given a longer limit and its why passes by its body', 0.4, function () {
   return passed('a longer limit that says why');
 }, test.limit.quick);
+test.run('a body that never yields and answers past its limit fails as a hang', 0.4, function () {
+  return failed('a body that never yields and runs past its limit');
+}, test.limit.quick);
 test.run('a check given no limit is held to one second', 0.4, function () {
   return failed('no limit given and past a second');
 }, test.limit.quick);
@@ -271,7 +276,7 @@ if (process.platform !== 'win32') {
   }, test.limit.slow, { why: 'it waits up to 10 s for a stopped suite to end' });
 }
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
-  return (/✅:4\s+❌:7/.test(W.probe.out) && W.probe.code === 1) || false;
+  return (/✅:4\s+❌:8/.test(W.probe.out) && W.probe.code === 1) || false;
 }, test.limit.quick);
 
 // ── THE REPORT ──
