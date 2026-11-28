@@ -891,12 +891,18 @@ function shapeBreaks(rel) {
 // module's own folder is legal." A package or a node built-in is not a path; a computed path cannot be read.
 // moduleRules(full) -> { early: false when it holds, true when it breaks; page: true for page code; bad: [require paths breaking the rule] }
 function moduleRules(full) {
-  const code = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
+  // A REQUIRE WRITTEN INSIDE A STRING IS NONE (goal/G49.27: the rule modules' own tests plant scripts as strings, and their
+  // require('fs') read as the test's own first require turned every such test red): the calls are found in the code with
+  // its comments and its strings' insides blanked (codeOf, as shapeBreaks reads it), each path read at the same offset.
+  const raw = fs.readFileSync(full, 'utf8');
+  const code = codeOf(raw);
+  const bare = codeOf(raw, true);
   const requires = [];
   // Plain requires only: spirit.requireScript(...) is the door the rule asks for, never a plain require.
-  const re = /(^|[^.\w$])require(?:Script)?\(\s*(['"])([^'"]+)\2\s*\)/g;
+  const re = /(^|[^.\w$])require(?:Script)?\(\s*(['"])([^'"]+)\2\s*\)/y;
+  const at = /(^|[^.\w$])require(?:Script)?\(\s*(['"])[^'"]*\2\s*\)/g;
   let m;
-  while ((m = re.exec(code))) requires.push({ at: m.index, path: m[3] });
+  while ((m = at.exec(bare))) { re.lastIndex = m.index; const lit = re.exec(code); if (lit) requires.push({ at: m.index, path: lit[3] }); }
   const own = path.basename(full, '.js');
   const isSpirit = path.resolve(full) === path.join(RUN, 'spirit', 'script.js');
   const first = requires[0];

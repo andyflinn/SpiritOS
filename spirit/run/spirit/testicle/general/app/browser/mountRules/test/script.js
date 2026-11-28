@@ -1,4 +1,5 @@
 'use strict';
+require('../../../../../../script.js');
 
 // spirit/run/spirit/testicle/general/app/browser/mountRules/test/script.js
 // The test of the app browser rule module, ../script.js, run through its runner spirit/test/app-child-browser.js (goal/G49.27,

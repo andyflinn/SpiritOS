@@ -1,4 +1,5 @@
 'use strict';
+const SPIRIT = require('../../../../../script.js');
 
 // spirit/run/spirit/testicle/general/any/branchRules/test/script.js
 // THE BRANCH RULES MODULE ON A TREE OF ITS OWN (goal/G49.27, step 2a; spec: ./script.md). The box: "Each module has its own
@@ -11,7 +12,6 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const RULE = SPIRIT.requireScript('spirit/testicle/general/any/branchRules/script.js');
 // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"), removed when the suite ends.

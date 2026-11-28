@@ -1,4 +1,5 @@
 'use strict';
+const SPIRIT = require('../../../../../../script.js');
 
 // spirit/run/spirit/testicle/general/app/any/appAppRules/test/script.js
 // THE APP APP MODULE ON A TREE OF ITS OWN (goal/G49.27, step 2b; spec: ./script.md). The box: "Each module has its own test ...
@@ -9,7 +10,6 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const RULE = SPIRIT.requireScript('spirit/testicle/general/app/any/appAppRules/script.js');
 // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"), removed when the suite ends.

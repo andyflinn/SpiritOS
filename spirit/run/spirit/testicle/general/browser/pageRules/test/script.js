@@ -1,4 +1,5 @@
 'use strict';
+const SPIRIT = require('../../../../../script.js');
 
 // spirit/run/spirit/testicle/general/browser/pageRules/test/script.js
 // The test of the page rules module, ../script.js, run through its runner spirit/test/script-sibling-browser.js (goal/G49.27,
@@ -12,7 +13,6 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const SUBJECT = path.join(RUN, 'spirit', 'test', 'script-sibling-browser.js');
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
