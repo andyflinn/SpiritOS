@@ -85,9 +85,3 @@ refused as a bad request (400).
 The box: *"a packet with a faked signature is refused by the relay with a refusal, not merely that the relay does not
 crash."* A post claiming to be from the relay's own owner, with a real signature by that owner over another text, is answered
 with a 4xx at /spirit/relay/post, /spirit/relay/reply, /spirit/relay/face/answer and /spirit/relay/face/stream.
-
-## The relay says it is one, first (goal/G49.25)
-
-The box: *"spirit.server.relay sets spirit.IS_RELAY to true imediately after spirit/script.js is loaded, before spirit.fs is
-used."* In the relay's code, comments left out, the statement right after its require of spirit/script.js is
-`spirit.IS_RELAY = true;`, and it sets the flag nowhere else.

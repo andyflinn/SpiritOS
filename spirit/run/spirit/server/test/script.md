@@ -14,3 +14,13 @@ by its mode: --node (the default), --relay or --app. Its test: `./script.js`. Th
 - It hands its modes to spirit/server/node/script.js, relay.js and app.js.
 
 Each start runs in a lab tree of its own, which it lets go once its check is done.
+
+## One server (goal/G49.25, box v16)
+
+spirit/server/script.js is the node and the relay; --app still goes to spirit/server/app/script.js. spirit/server/node/,
+relay/ and serveCommon/ hold no script.js. Launched with --relay it sets spirit.IS_RELAY true in the statement right after its
+require of spirit/script.js, and no other product script sets it true. Required by another script it starts nothing (the
+process ends by itself) and hands out every helper serveCommon handed out at f3e398ecb. It requires spirit/fs/script.js and
+mounts, by a written name, only spirit and spirit.fs. A scratch node with planted trunk branches serves spirit.zzLoaded (new
+shape) and spirit.zzOld (old shape) unnamed, no spirit.relay although spirit/relay carries the mark, and never a branch's
+server/ folder.

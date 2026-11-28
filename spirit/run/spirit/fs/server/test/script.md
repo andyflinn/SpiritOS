@@ -48,3 +48,5 @@ spirit/<branch>/ and spirit/app/<name>/ folders with what is under them"*, Andy:
 run folder, as a node and as a relay (spirit.IS_RELAY true before it starts). Which folders are trunk branches and apps is
 the node tree's own flags. As a relay: spirit/script.js is held; every path at or under each trunk branch and app folder is
 held; every path outside spirit/ is held (box v12: *"it will still cache everything outside of run://spirit/"*); nothing else is, not a file of a trunk folder that is neither, which the node's tree holds.
+
+spirit/relay, planted with the branch mark: as a node never marked a branch (box v16), as a relay marked one.

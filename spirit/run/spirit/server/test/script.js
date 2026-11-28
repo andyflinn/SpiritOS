@@ -96,8 +96,138 @@ test.run('no tracked file names an old path: none of the three moved core files,
 test.run('no file stands at an old path: neither the three core files nor the four node<Name>.js', 0.4, function () {
   return !OLD_FILES.some(function (f) { return fs.existsSync(path.join(RUN, f)); }) || false;
 }, test.limit.quick);
-test.run('spirit/server/script.js is the launcher: it hands its modes to spirit/server/node/script.js, relay.js and app.js', 0.4, function () {
-  let src = ''; try { src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8'); } catch (e) { return false; }
-  // Each mode is required by its full path (goal/G49.23: the three moved into spirit/server/<mode>/script.js).
-  return ['node', 'relay', 'app'].every(function (m) { return src.indexOf("requireScript('spirit/server/" + m + "/script.js')") !== -1; }) || false;
+// --app STAYS AS IT IS (goal/G49.25, box v16: "spirit.server.app remains what it is: the launcher's --app <script> starts one app
+// server, as today"); the node and the relay are the launcher itself ("spirit/server/script.js is THE server, for node and relay alike").
+test.run('spirit/server/script.js hands --app to spirit/server/app/script.js, and requires neither spirit/server/node/ nor spirit/server/relay/', 0.4, function () {
+  const src = serverCode();
+  return (src.indexOf("requireScript('spirit/server/app/script.js')") !== -1 && !/spirit\/server\/(node|relay)\//.test(src)) || false;
+}, test.limit.quick);
+
+// ── ONE SERVER (goal/G49.25, box v16) ──
+// "spirit/server/script.js is THE server, for node and relay alike: the actual node server, spirit/server/node/script.js, moves
+// into it."; "spirit.server.serveCommon goes: spirit/server/script.js takes ALL of its jobs"; "spirit.server.relay goes."
+function serverCode() {
+  let t = ''; try { t = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8'); } catch (e) { return ''; }
+  return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+}
+test.run('spirit/server/node/, spirit/server/relay/ and spirit/server/serveCommon/ hold no script.js: they went into spirit/server/script.js', 0.4, function () {
+  return ['node', 'relay', 'serveCommon'].every(function (d) { return !fs.existsSync(path.join(RUN, 'spirit', 'server', d, 'script.js')); }) || false;
+}, test.limit.quick);
+// "when spirit/server/script.js is launched with --relay, it sets spirit.IS_RELAY to true immediately after spirit/script.js is
+// loaded, before spirit.fs is used."
+test.run('launched with --relay, it sets spirit.IS_RELAY true in the statement right after it requires spirit/script.js', 0.4, function () {
+  const c = serverCode();
+  const m = /require\((['"])(\.\.\/script\.js|\.\.\/\.\.\/spirit\/script\.js)\1\);/.exec(c);
+  if (!m) return false;
+  const next = c.slice(m.index + m[0].length).replace(/^\s+/, '');
+  return /^if\s*\([^;{]*['"]--relay['"][^;{]*\)\s*\{?\s*spirit\.IS_RELAY\s*=\s*true\s*;/.test(next) || false;
+}, test.limit.quick);
+test.run('no product script but spirit/server/script.js sets spirit.IS_RELAY true', 0.4, function () {
+  const REPO = path.resolve(RUN, '..', '..');
+  let hits = '';
+  try { hits = execL('git', ['grep', '-l', '-E', 'IS_RELAY\\s*=\\s*true', '--', 'spirit/run/spirit/*.js', ':!spirit/run/spirit/**/test/**'], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = ''; }
+  const files = hits.split('\n').filter(Boolean);
+  return (files.length === 1 && files[0] === 'spirit/run/spirit/server/script.js') || false;
+}, test.limit.slow);
+// "spirit/server/script.js starts a server only when it is the file node was started with; required by another script (the peer
+// post, the relay request), it starts nothing and hands out its helpers." Its helpers are serveCommon's, every one it handed out
+// at the commit the box was written on (f3e398ecb), read from git, never listed here.
+const HELPERS = (function () {
+  let t = '';
+  try { t = execL('git', ['show', 'f3e398ecb:spirit/run/spirit/server/serveCommon/script.js'], { cwd: path.resolve(RUN, '..', '..'), encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { return []; }
+  const block = /module\.exports\s*=\s*\{([\s\S]*?)\};/.exec(t);
+  if (!block) return [];
+  return block[1].split('\n').map(function (l) { const k = /^\s*([A-Za-z_$][\w$]*)\s*:/.exec(l); return k ? k[1] : ''; }).filter(Boolean);
+}());
+const REQUIRED = { out: null };
+test.run('required by another script, spirit/server/script.js starts nothing: the process that requires it ends by itself', 0.4, function () {
+  const r = require('child_process').spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); process.stdout.write('\\nKEYS ' + JSON.stringify(Object.keys(s || {})) + '\\n');", path.join(RUN, 'spirit', 'server', 'script.js')], { cwd: RUN, encoding: 'utf8', timeout: 20000 });
+  const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('KEYS ') === 0; })[0];
+  try { REQUIRED.out = line ? JSON.parse(line.slice(5)) : null; } catch (e) { REQUIRED.out = null; }
+  return (r.status === 0 && r.signal === null && !!REQUIRED.out) || false;
+}, test.limit.slow);
+test.run('required, it hands out every helper serveCommon handed out', 0.4, function () {
+  return (HELPERS.length > 10 && !!REQUIRED.out && HELPERS.every(function (k) { return REQUIRED.out.indexOf(k) !== -1; })) || false;
+}, test.limit.quick);
+// "the server loads the spirit.fs branch explicitly, then loads all trunk branches, using the fs cache. spirit is always loaded."
+// Andy, of the node mounting branches by name: "WHY WOULD THE MOTHERFUCKING SERVER LOAD MOTHERFUCKING BRANCHES EXPLICITLY????"
+test.run('the server requires the spirit.fs branch by its path, spirit/fs/script.js', 0.4, function () {
+  return serverCode().indexOf("requireScript('spirit/fs/script.js')") !== -1 || false;
+}, test.limit.quick);
+test.run('the server mounts no branch by a name written in it but spirit and spirit.fs', 0.4, function () {
+  const c = serverCode();
+  if (!c) return false;
+  const named = []; const re = /\.mount\(\s*(['"])([^'"]*)\1/g; let m;
+  while ((m = re.exec(c))) named.push(m[2]);
+  // It mounts (the branches the cache holds); a server that mounts nothing has judged nothing here.
+  return (/\.mount\(/.test(c) && named.every(function (n) { return n === 'spirit' || n === 'spirit.fs'; })) || false;
+}, test.limit.quick);
+// A scratch node whose tree holds trunk branches nobody names: spirit/zzLoaded, new shape (script.js and client/script.js, the
+// mark of spirit/fs/filter/branch/script.js), spirit/zzOld, old shape (api.js and data.js, spirit/fs/filter/api/script.js's), and
+// spirit/relay with the new mark. Its api tree, asked as a page asks it, holds the first two beside spirit.fs, and not spirit.relay:
+// "the fs watcher, when !spirit.IS_RELAY, will never mark spirit.relay as a branch, and spirit.relay will not be exposed as such:
+// a node does not serve it". And "spirit/<branch>/server/ is never served, as spirit/server/ and each app's server/ are not."
+function clientOf(name) {
+  return "'use strict';\n// its client (goal/G49.25's test)\n(function family(given, out) {\n  var OUT = out || {};\n" +
+    "  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;\n" +
+    "  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : given;\n" +
+    "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }\n" +
+    "  D.handOut(OUT, D.makeFamily('" + name + "', function () { return {}; }));\n}());\n";
+}
+function plantBranches(run) {
+  const put = function (rel, text) { const f = path.join(run, rel); if (fs.existsSync(f)) return; fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
+  ['zzLoaded', 'relay'].forEach(function (b) {
+    put('spirit/' + b + '/script.js', "'use strict';\n// a planted trunk branch, new shape (goal/G49.25's test)\n" +
+      "if (typeof require === 'function') require('../script.js').requireScript('spirit/" + b + "/client/script.js'); else window.spirit.requireScript('spirit/" + b + "/client/script.js');\n" +
+      "module.exports = { verbs: { get: { id: 'spirit/type/number/integer/script.js' } } };\n");
+    put('spirit/' + b + '/client/script.js', clientOf('spirit.' + b));
+  });
+  put('spirit/zzLoaded/get.json', JSON.stringify({ description: 'One row by its number.', request: { id: 'spirit/type/number/integer/script.js' } }, null, 2) + '\n');
+  put('spirit/zzLoaded/server/script.js', "'use strict';\n// its node work (goal/G49.25's test): never served\nmodule.exports = {};\n");
+  put('spirit/zzOld/api.js', "'use strict';\n// a planted trunk branch, old shape (goal/G49.25's test)\n" +
+    "if (typeof require === 'function') require('../script.js').requireScript('spirit/zzOld/data.js'); else window.spirit.requireScript('spirit/zzOld/data.js');\n" +
+    "module.exports = { verbs: {} };\n");
+  put('spirit/zzOld/data.js', "'use strict';\n// its data (goal/G49.25's test)\n(function family(given, out) {\n  var OUT = out || {};\n" +
+    "  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;\n" +
+    "  var D = typeof require === 'function' ? require('../script.js').requireScript('spirit/client/script.js') : given;\n" +
+    "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }\n" +
+    "  D.handOut(OUT, D.makeFamily('spirit.zzOld'));\n}());\n");
+}
+const PLANTED = { node: null, tree: null };
+// An old-shape branch is named in the tree as the node names net, owner and peer today: by its folder alone, or by its path.
+function oldIn(t) { const b = t && (t['spirit.zzOld'] || t.zzOld); return b && typeof b === 'object' && b.ok !== false ? b : null; }
+function askNode(call, args) {
+  return fetch(PLANTED.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+    .then(function (r) { return r.json().then(function (b) { return b; }, function () { return null; }); }, function () { return null; });
+}
+function statusOf(rel) { return fetch(PLANTED.node.base + '/' + rel).then(function (r) { return r.status; }, function () { return 0; }); }
+test.run('a scratch node comes up on a tree with planted trunk branches: spirit/zzLoaded, spirit/zzOld and a marked spirit/relay', 0.4, async function () {
+  PLANTED.node = await H.scratchNode({ own: true, before: plantBranches });
+  L.kids.push({ kill: function () { try { PLANTED.node.release(); } catch (e) { /* the lab frees it */ } } });
+  if (!PLANTED.node || !PLANTED.node.up) return false;
+  const end = Date.now() + 30000;
+  while (Date.now() < end) {
+    const t = await askNode('api', {});
+    PLANTED.tree = t;
+    if (t && t['spirit.fs'] && t['spirit.zzLoaded'] && oldIn(t)) break;
+    await new Promise(function (r) { setTimeout(r, 500); });
+  }
+  return !!(PLANTED.tree && PLANTED.tree['spirit.fs']) || false;
+}, test.limit.long);
+test.run('its api tree holds spirit.zzLoaded, the new-shape branch no script names', 0.4, function () {
+  const t = PLANTED.tree || {};
+  return (!!t['spirit.zzLoaded'] && t['spirit.zzLoaded'].ok !== false) || false;
+}, test.limit.quick);
+test.run('its api tree holds spirit.zzOld, the old-shape branch no script names', 0.4, function () {
+  return !!oldIn(PLANTED.tree) || false;
+}, test.limit.quick);
+test.run('its api tree holds no spirit.relay: a node does not serve the relay branch', 0.4, function () {
+  const t = PLANTED.tree;
+  return (!!t && !!t['spirit.fs'] && !t['spirit.relay'] && !t.relay) || false;
+}, test.limit.quick);
+test.run('it serves spirit/zzLoaded/script.js, and never spirit/zzLoaded/server/script.js', 0.4, async function () {
+  if (!PLANTED.node || !PLANTED.node.up) return false;
+  const open = await statusOf('spirit/zzLoaded/script.js');
+  const hidden = await statusOf('spirit/zzLoaded/server/script.js');
+  return (open === 200 && hidden !== 200 && hidden !== 0) || false;
 }, test.limit.quick);

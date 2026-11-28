@@ -476,6 +476,8 @@ test.run('the watcher on the run folder hands its tree as a node and as a relay'
     const run = path.join(tree.root, 'spirit', 'run');
     fs.mkdirSync(path.join(run, 'zzOutside'), { recursive: true });
     fs.writeFileSync(path.join(run, 'zzOutside', 'kept.txt'), 'x');
+    // spirit/relay with the new branch mark, script.js and client/script.js, where it has none yet (box v16: "spirit/relay/script.js").
+    ['script.js', 'client/script.js'].forEach(function (n) { const p = path.join(run, 'spirit', 'relay', n); if (!fs.existsSync(p)) { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, "'use strict';\n"); } });
     AS.node = treeAs(run, false);
     AS.relay = treeAs(run, true);
   } finally { LABH.freeTree(tree); }
@@ -484,6 +486,8 @@ test.run('the watcher on the run folder hands its tree as a node and as a relay'
     const h = AS.node[p];
     return h.kind === 'folder' && ((/^spirit\/[^/]+$/.test(p) && (h.api || h.branch)) || h.app);
   });
+  // A relay's branch too: spirit/relay, which the node never marks (box v16).
+  if (AS.homes.indexOf('spirit/relay') === -1) AS.homes.push('spirit/relay');
   // A trunk folder that is no branch and no app, with a file in it: the first found.
   const plainDir = Object.keys(AS.node).filter(function (p) { const h = AS.node[p]; return /^spirit\/[^/]+$/.test(p) && h.kind === 'folder' && !h.api && !h.branch && !h.app && !relayHolds(p); })
     .filter(function (d) { return Object.keys(AS.node).some(function (q) { return q.indexOf(d + '/') === 0 && AS.node[q].kind === 'file'; }); })[0] || '';
@@ -508,4 +512,13 @@ test.run('as a relay, the tree holds every path at or under each trunk branch an
 test.run('as a relay, the tree holds nothing else: not that file of a trunk folder that is no branch and no app', 0.2, function () {
   if (!AS.node || !AS.relay || !AS.plain) return false;
   return (!AS.relay[AS.plain] && Object.keys(AS.relay).every(relayHolds)) || false;
+}, test.limit.quick);
+// "the fs watcher, when !spirit.IS_RELAY, will never mark spirit.relay as a branch" (box v16); a relay does, by the mark it has.
+test.run('as a node, the tree never marks spirit/relay as a branch, though it has the branch mark', 0.2, function () {
+  const r = AS.node && AS.node['spirit/relay'];
+  return (!!r && r.kind === 'folder' && !r.branch && !r.api) || false;
+}, test.limit.quick);
+test.run('as a relay, the tree marks spirit/relay as a branch', 0.2, function () {
+  const r = AS.relay && AS.relay['spirit/relay'];
+  return (!!r && r.branch === true) || false;
 }, test.limit.quick);
