@@ -465,8 +465,11 @@ const AS = { node: null, relay: null, homes: [], plain: '' };
 // Whether p is outside spirit/ (box v12: "it will still cache everything outside of run://spirit/"), spirit/'s own (the
 // folder or a file right in it), or at or under one of the branch and app folders.
 function outside(p) { return p !== 'spirit' && p.indexOf('spirit/') !== 0; }
+// Q12, Andy: "As a relay the cache must carry all branches and apps, EXCEPT app servers.": nothing at or under an app server's folder.
+function underServer(p) { return appDirs().some(function (d) { return !oneShot(d) && (p === d || p.indexOf(d + '/') === 0); }); }
 function relayHolds(p) {
   if (outside(p)) return true;
+  if (underServer(p)) return false;
   if (p === 'spirit' || /^spirit\/[^/]+$/.test(p) && AS.node[p] && AS.node[p].kind === 'file') return true;
   return AS.homes.some(function (h) { return p === h || p.indexOf(h + '/') === 0; });
 }
@@ -506,9 +509,15 @@ test.run('as a relay, the tree holds every path outside spirit/', 0.2, function 
   const out = Object.keys(AS.node).filter(outside);
   return (out.length > 0 && out.every(function (p) { return !!AS.relay[p]; })) || false;
 }, test.limit.quick);
-test.run('as a relay, the tree holds every path at or under each trunk branch and each app folder', 0.2, function () {
+test.run('as a relay, the tree holds every path at or under each trunk branch and each app folder, an app server\'s aside', 0.2, function () {
   if (!AS.node || !AS.relay || !AS.homes.length) return false;
   return Object.keys(AS.node).filter(function (p) { return relayHolds(p) && p !== 'spirit'; }).every(function (p) { return !!AS.relay[p]; }) || false;
+}, test.limit.quick);
+test.run('as a relay, the tree holds nothing at or under an app server\'s folder', 0.2, function () {
+  if (!AS.node || !AS.relay) return false;
+  const servers = appDirs().filter(function (d) { return !oneShot(d); });
+  if (servers.length < 3) return false;
+  return Object.keys(AS.relay).every(function (p) { return !underServer(p); }) || false;
 }, test.limit.quick);
 test.run('as a relay, the tree holds nothing else: not that file of a trunk folder that is no branch and no app', 0.2, function () {
   if (!AS.node || !AS.relay || !AS.plain) return false;
