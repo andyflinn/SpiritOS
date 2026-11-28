@@ -14,7 +14,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/fieldInput/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -46,7 +46,7 @@ test.run('fieldInput runs on a window of its own', 0.2, async function () {
   vm.createContext(win);
   // The subject and the type rules it asks for, run in this world by their paths through the page stand-in (goal/G49.6);
   // every path it asks is kept.
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win,
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win,
     real: function (p) { return p === SUBJECT || (p.indexOf('spirit/type/') === 0 && /\.js$/.test(p)); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { required.push(p); return pageRequire(p); };

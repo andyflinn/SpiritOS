@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const SUBJECT = 'spirit/type/object/manifest/script.js';
 const FILE = path.join(RUN, SUBJECT);
 

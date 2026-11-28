@@ -14,9 +14,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/job/elementRow.js';
@@ -49,7 +49,7 @@ function world() {
     if (W.held) return W.held.promise.then(function () { return answerOf(p); });
     return Promise.resolve(answerOf(p));
   };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
 }
 // The page's detail pane, handed on as it is.
 const detail = { look: function (t) { return { icon: '•', name: t }; } };

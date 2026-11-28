@@ -10,7 +10,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const U = S.requireScript('spirit/relayUrl/script.js');
 
 // What assertRelayUrl answers: the URL's href, or 'throws: <message>'.

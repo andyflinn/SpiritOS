@@ -17,7 +17,7 @@ const http = require('http');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
@@ -27,7 +27,7 @@ test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/faceHome')
 const auth = SPIRIT.requireScript('spirit/relayAuth/script.js');
 const seal = SPIRIT.requireScript('spirit/seal/script.js');
 const { createFaceHome } = SPIRIT.requireScript('spirit/contact/faceHome/script.js');
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const settle = async function () { for (let i = 0; i < 10; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -563,7 +563,7 @@ test.after(function () {
   try { if (S.q) S.q.destroy(); } catch (e) { /* gone */ }
   S.relays.forEach(function (r) { try { r.stop(); } catch (e) { /* gone */ } });
   try { if (S.N && S.N.child) S.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (S.N && S.N.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(S.N); } catch (e) { /* scratch */ }
+  try { if (S.N && S.N.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(S.N); } catch (e) { /* scratch */ }
   try { if (S.marks) fs.rmSync(S.marks, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
@@ -933,7 +933,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (A.R) A.R.stop(); } catch (e) { /* gone */ }
   try { if (A.N && A.N.child) A.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (A.N && A.N.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(A.N); } catch (e) { /* scratch */ }
+  try { if (A.N && A.N.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(A.N); } catch (e) { /* scratch */ }
 });
 
 // faceHome-starApps: a star shows every app on the face (goal/G41.33, Q9).

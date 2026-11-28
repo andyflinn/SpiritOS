@@ -11,7 +11,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const { createStreamSink } = S.requireScript('spirit/streamSink/script.js');
 
 // A held response, as the relay holds one: what was written, its head, whether it was destroyed or ended.

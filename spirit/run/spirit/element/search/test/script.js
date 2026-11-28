@@ -9,7 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..'), 'spirit', 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..'), 'spirit', 'testicle', 'testReport', 'script.js'));
 
 // EACH WORLD FREES THE ONE BEFORE IT (goal/G47.1, cw: "it makes four worlds, each on a lab node it frees only in test.after,
 // and the fourth waited forever for one of three"; "the test wants each world's node freed when that world is done"): lab
@@ -19,7 +19,7 @@ async function freeWorlds() { for (const free of WORLDS.splice(0)) { try { await
 
 const RUN = path.join(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const FILE = path.join(__dirname, '..', 'script.js');
@@ -93,7 +93,7 @@ function markup(k) {
 // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
 // fail/throw"): the real modules the search asks for as it runs, answered at once, as a second require is answered.
 global.window = { spirit: {} };
-LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, {
+LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit, {
   'spirit/search/string/script.js': LOADER.requireScript('spirit/search/string/script.js'),
   'spirit/search/object/script.js': LOADER.requireScript('spirit/search/object/script.js'),
   'spirit/listLimiter/script.js': LOADER.requireScript('spirit/listLimiter/script.js'),
@@ -1113,7 +1113,7 @@ test.run('it requires spirit/search/string/script.js, spirit/search/object/scrip
   // asked, as a page's fetches may: whatever order the files land in, the list must work once they are in.
   asked10 = [];
   global.window = { spirit: { element: {} } };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   wait = 60;
   global.window.spirit.requireScript = function (p) {
     const rel = String(p).replace(/^\/+/, '');
@@ -1181,8 +1181,8 @@ async function keptPart() {
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
-  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
   let node, chrome, made = '';
   const ok = function () { return made === 'made'; };
@@ -1373,7 +1373,7 @@ async function keptPart() {
     if (chrome && chrome.kid) chrome.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
   };
   test.after(free);
 }
@@ -1387,8 +1387,8 @@ async function bubblePart() {
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
-  const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+  const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
   const same =function (a, b) { return typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) <= 0.5; };
 
@@ -1528,7 +1528,7 @@ async function bubblePart() {
     if (page && page.kid) page.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
   };
   test.after(free);
 }
@@ -1545,8 +1545,8 @@ async function popupPart() {
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
-  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
   // What the tests make, shared by the tests after them.
   let node, chrome, made, a0, a1, b1, a2, l1;
@@ -1655,7 +1655,7 @@ async function popupPart() {
     try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
     try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
   };
   test.after(free);
 }
@@ -1669,8 +1669,8 @@ async function tilesPart() {
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
-  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
   const match = LOADER.requireScript('spirit/search/object/script.js');
 
   // What the tests make, shared by the tests after them.
@@ -2038,7 +2038,7 @@ async function tilesPart() {
     if (chrome && chrome.kid) chrome.kid.kill();
     if (node && node.child) node.child.kill();
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+    try { if (node && typeof node.release === 'function') await node.release(); else if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
   };
   test.after(free);
 }
@@ -2050,7 +2050,7 @@ async function tilesPart() {
 // node restarted under it: once the page's stream is back, the search asks once more by itself, nothing typed, and the row its
 // new answer brings is drawn beside the one it held.
 async function reconnectPart() {
-  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
   let node, chrome, made, asked0 = 0;
   test.run('a search on a scratch node\'s face page, asking through its own search and refreshed as its mounter does, draws its first answer', 0.2, async function () {
     await freeWorlds();

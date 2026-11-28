@@ -9,9 +9,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const SUBJECT = 'spirit/fuckingGarbage/joinLink/script.js';
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 let out = null;
 try {

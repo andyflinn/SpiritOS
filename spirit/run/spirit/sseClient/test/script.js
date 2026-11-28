@@ -12,7 +12,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const { connect } = S.requireScript('spirit/sseClient/script.js');
 
 const settle = function () { return new Promise(function (r) { setTimeout(r, 50); }); };

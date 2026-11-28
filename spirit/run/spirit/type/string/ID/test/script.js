@@ -11,7 +11,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/type/string/ID/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -49,7 +49,7 @@ test.run('its default is the node\'s own public key, once the node is known', 0.
 // check, and refuses a well-formed key nobody there has seen, naming publicKey. A lookup is no change (Q16, Andy: "yes." to
 // "Shall contact.get stay a read ... that answers not-known for a stranger"): contact.get takes that key and answers 404.
 // goal/G49.22: the branch's calls are spirit.contact.<verb> (were contact.<verb>).
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const N = {};
 async function call(verb, args) {
   try {

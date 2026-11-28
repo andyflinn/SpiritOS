@@ -12,7 +12,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const TOOL = path.join(RUN, 'spirit', 'devtool', 'moveScript', 'script.js');
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/devtool/moveScript/test'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });

@@ -3,13 +3,13 @@
 // TESTICLE'S OWN -general GENERAL TEST (goal/G47.1, box v143: "its general tests there: spirit/app/testicle/test/
 // testicle-sibling-general.js, testicle-sibling-node.js and testicle-sibling-browser.js, each with a dumb test or two; in debug
 // mode these are the only general tests testicle sees"). A -sibling- general test beside spirit/app/testicle/testicle.js: it
-// judges spirit/app/testicle/ and below (spirit/test/testModule.js). Its spec: ./testicle-sibling-general.md. A plain check on disc, one test a script.
+// judges spirit/app/testicle/ and below (spirit/testicle/testModule/script.js). Its spec: ./testicle-sibling-general.md. A plain check on disc, one test a script.
 // No argument, every script it judges; each argument, that one, its result reported for it.
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const SCOPE = 'spirit/app/testicle/';
 // A path as given, absolute or not, scoped to run://.
 function runRel(a) { const abs = path.isAbsolute(String(a)) ? String(a) : path.resolve(String(a)); const r = path.relative(RUN, abs).split(path.sep).join('/'); return (r && r.indexOf('..') !== 0 && fs.existsSync(abs)) ? r : String(a).split(path.sep).join('/').replace(/^spirit\/run\//, ''); }

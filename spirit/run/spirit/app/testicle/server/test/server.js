@@ -24,10 +24,10 @@ const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../../..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { freePort, until, sleep } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { freePort, until, sleep } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -144,7 +144,7 @@ function scratch() {
   const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
-  // testicle turned on there, as an owner turns a server on (spirit/test/headLessChrome.js scratchNode).
+  // testicle turned on there, as an owner turns a server on (spirit/testicle/headLessChrome/script.js scratchNode).
   const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
@@ -208,7 +208,7 @@ function empty(v) { return v === null || v === undefined || v === ''; }
 // THE SUITES THAT CONCERN A FILE, by the box: its own test/<name>.js, and the general tests whose run with no file
 // argument includes it, as the scratch tree's own testModule.js lists them, run as its own process.
 function concerning(run, name) {
-  const lines = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'testModule.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
+  const lines = execFileSync(process.execPath, [path.join(run, 'spirit', 'testicle', 'testModule', 'script.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
   const own = path.posix.join(path.posix.dirname(name), 'test', path.posix.basename(name));
   const out = [];
   if (fs.existsSync(path.join(run, own))) out.push(own);
@@ -217,13 +217,13 @@ function concerning(run, name) {
   lines.forEach(function (l) { const p = l.split(' '); if (p[1] === name && out.indexOf(p[0]) === -1 && /^spirit\/app\/testicle\//.test(p[0])) out.push(p[0]); });
   // Every product script has a suite row of the classifier too (box v94, 1: "a \"special\" general test under its own name,
   // with its suite row").
-  if (out.indexOf('spirit/test/scriptClassify.js') === -1) out.push('spirit/test/scriptClassify.js');
+  if (out.indexOf('spirit/testicle/scriptClassify/script.js') === -1) out.push('spirit/testicle/scriptClassify/script.js');
   return out.sort();
 }
 // The classifier's suite row is no test run: it is judged by classifying, never flagged "needs running".
-const notClassifier = function (r) { return r.suite !== 'spirit/test/scriptClassify.js'; };
+const notClassifier = function (r) { return r.suite !== 'spirit/testicle/scriptClassify/script.js'; };
 function judgedBy(run, suite) {
-  return execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'testModule.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+  return execFileSync(process.execPath, [path.join(run, 'spirit', 'testicle', 'testModule', 'script.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .map(function (l) { return l.split(' '); }).filter(function (p) { return p[0] === suite && p[1]; }).map(function (p) { return p[1]; });
 }
 function names(rows) { return rows.map(function (r) { return r.suite; }).sort(); }
@@ -286,7 +286,7 @@ test.run('a scratch node comes up', 0.2, async function () {
 // ── DEBUG MODE (goal/G47.1, box v143): "in it testicle operates as if run://spirit/app/testicle/ were ALL the testables of the
 // whole node", "its general tests there: spirit/app/testicle/test/testicle-sibling-general.js, testicle-sibling-node.js and
 // testicle-sibling-browser.js, each with a dumb test or two; in debug mode these are the only general tests testicle sees",
-// "the classifier (spirit/test/scriptClassify.js) is still used, but in debug mode only called with scripts in
+// "the classifier (spirit/testicle/scriptClassify/script.js) is still used, but in debug mode only called with scripts in
 // spirit/app/testicle/", "the planted scripts go to a .gitignored run://spirit/app/testicle/temp/". Andy: "that sounds to
 // my like an almost 10x speedup....".
 const DEBUG_GENERALS = ['general', 'node', 'browser'].map(function (k) { return 'spirit/app/testicle/test/testicle-sibling-' + k + '.js'; });
@@ -318,7 +318,7 @@ test.run('in debug mode, testicle runs only its own three sibling general suites
 }, test.limit.quick);
 test.run('in debug mode, the classifier judged only scripts under spirit/app/testicle/', 0.4, function () {
   if (!up()) return false;
-  const rows = (tables(DB).test || []).filter(function (r) { return r.suite === 'spirit/test/scriptClassify.js' && yes(r.current); });
+  const rows = (tables(DB).test || []).filter(function (r) { return r.suite === 'spirit/testicle/scriptClassify/script.js' && yes(r.current); });
   const out = rows.filter(function (r) { return !/^spirit\/app\/testicle\//.test(r.script); });
   return (rows.length > 0 && !out.length) || false;
 }, test.limit.quick);
@@ -408,7 +408,7 @@ test.run('the script table has the columns reClassify, browserOnly and nodeOnly'
 // ── goal/G47.1, box v79, 4: the verb preferences ──
 // "preferences {} answers them all; preferences {interactive: false} sets that one and answers them all. An unknown name
 // or a wrong type is refused." "For now it supports testicle.preferences.interactive (true by default)."
-const classifyRowAt = function (t, name) { return (t.test || []).filter(function (r) { return r.script === name && r.suite === 'spirit/test/scriptClassify.js' && r.test === 'it loads, so it can be classified' && yes(r.current); })[0] || null; };
+const classifyRowAt = function (t, name) { return (t.test || []).filter(function (r) { return r.script === name && r.suite === 'spirit/testicle/scriptClassify/script.js' && r.test === 'it loads, so it can be classified' && yes(r.current); })[0] || null; };
 const PREFS = function () { return path.join(s.run, 'spirit', 'state', 'app', 'testicle', 'data', 'preferences.json'); };
 const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let p0 = null;
@@ -845,7 +845,7 @@ test.run('with no suite, testicle.search searches that script\'s tests in any su
   if (!up()) return false;
   const anySuite = found(await call(N.base, 'spirit.app.testicle.testicle.search', { script: GF, text: '' }));
   // gamma's tests in any suite: its own test's, and the classifier's classifyable row beside it (box v94, 1).
-  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === GF; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || false;
+  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === GF; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/testicle/scriptClassify/script.js'; })) || false;
 }, test.limit.quick);
 test.run('with neither, testicle.search searches every current test', 0.2, async function () {
   if (!up()) return false;
@@ -1193,7 +1193,7 @@ test.run('a removed product file\'s suite rows are marked deleted', 0.2, functio
 let late = null;
 test.run('a result reported for a removed file is refused "no such file"', 0.2, async function () {
   if (!x1) return false;
-  late = await call(N.base, 'spirit.app.testicle.testicle.set', { script: Z + 'alpha.js', suite: 'spirit/test/scriptClassify.js', test: 'it loads, so it can be classified', verified: false, severity: 0.8 });
+  late = await call(N.base, 'spirit.app.testicle.testicle.set', { script: Z + 'alpha.js', suite: 'spirit/testicle/scriptClassify/script.js', test: 'it loads, so it can be classified', verified: false, severity: 0.8 });
   return (late.status !== 200 && /no such file/.test(late.text)) || false;
 }, test.limit.quick);
 test.run('every suite row of the removed file stays deleted', 0.2, async function () {
@@ -1579,7 +1579,7 @@ test.run('while the node is down, a script and its suite are added, one changed,
   fs.rmSync(path.join(s.run, Z + 'gamma.js'));
   // The classifier itself changed while the node was down (Andy: "ON STARTUP THAT IS. IT MUST FUCKING START FUCKING
   // CLASSIFYING IN ANY MODE, RIGHT AT STARTUP"): at the start every script is classified again.
-  append('spirit/test/scriptClassify.js', '// the classifier, changed while the node was down\n');
+  append('spirit/testicle/scriptClassify/script.js', '// the classifier, changed while the node was down\n');
   down = { laHash: changed.hash, at: Date.now() };
   return true;
 }, test.limit.quick);
@@ -1669,7 +1669,7 @@ test.run('interactive is set again, by preferences with interactive true', 0.2, 
 }, test.limit.long);
 // goal/G47.1, box v94, 1: the server classifies a second after the last change, interactive or not; so reClassify true is
 // read inside that quiet second, before the classifier clears it.
-const SC = 'spirit/test/scriptClassify.js';
+const SC = 'spirit/testicle/scriptClassify/script.js';
 const quietRow = async function (name, notHash) { let row = null; await until(function () { row = scriptRow(tables(DB), name); return Promise.resolve(!!row && yes(row.reClassify) && (notHash === undefined || row.hash !== notHash)); }, 900); return row; };
 test.run('in interactive mode, within a second of a script being written, it has its row, reClassify true, seen for the first time', 0.2, async function () {
   if (!up()) return false;
@@ -1895,7 +1895,7 @@ test.run('a script classified has no red classifyable row', 0.2, function () {
   const red = ['node', 'page', 'both', 'exit'].filter(function (k) { const r = classifyRow(zc, ZC[k]); return !zcCleared[k] || (!!r && no(r.verified)); });
   return red.length === 0 || false;
 }, test.limit.quick);
-test.run('each of the six scripts has a suite row of spirit/test/scriptClassify.js', 0.2, function () {
+test.run('each of the six scripts has a suite row of spirit/testicle/scriptClassify/script.js', 0.2, function () {
   if (!zc) return false;
   const none = Object.keys(ZC).filter(function (k) { return !suiteRow(zc, ZC[k], SC); });
   return none.length === 0 || false;
@@ -2075,7 +2075,7 @@ const generalRun = function (suite, files) {
   try { return execFileSync(process.execPath, [suite].concat(files), { cwd: s.run, encoding: 'utf8', timeout: 600000, maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); }
   catch (e) { return String((e && e.stdout) || '') + String((e && e.stderr) || ''); }
 };
-// A script red in the run's print: a red line (its title and ❌) under that script's heading (spirit/test/testReport.js).
+// A script red in the run's print: a red line (its title and ❌) under that script's heading (spirit/testicle/testReport/script.js).
 const redUnder = function (out, name) { let under = false; return String(out).split('\n').some(function (l) { if (!/[✅❌]\s*$/.test(l)) { under = l.indexOf(name) !== -1; return false; } return under && /❌\s*$/.test(l); }); };
 const namesBoth = function (out) { return { one: redUnder(out, 'zzlOne.js'), two: redUnder(out, 'zzlTwo.js') }; };
 let listed = false;
@@ -2422,7 +2422,7 @@ test.run('testicle.suite.success with success false is what turns zzSucc red', 0
 
 // ONE NODE AND ONE CHROME HANDED TO THE SUITES IT RUNS (goal/G47.1, Q10, wsl: "For testicle's 10 UI test files, shall each
 // stay its own file and share one node and one Chrome that testicle hands them (1) ...?" Andy: "i pick 10.1: \"one test per
-// file\"."). Two planted suites that open their pages as a UI test does (spirit/test/headLessChrome.js), each pressed, write
+// file\"."). Two planted suites that open their pages as a UI test does (spirit/testicle/headLessChrome/script.js), each pressed, write
 // down what they were handed (SPIRIT_MOUNT_BASE and SPIRIT_CHROME_PORT): a node that answers and a Chrome that answers, the
 // same for both.
 const ENVA = Z + 'zzEnvA.js', ENVAS = Z + 'test/zzEnvA.js', ENVB = Z + 'zzEnvB.js', ENVBS = Z + 'test/zzEnvB.js';
@@ -2469,7 +2469,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   if (!up()) return false;
   await call(N.base, 'spirit.app.testicle.preferences', { interactive: false });
   const rest = await idle(280000);
-  const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/test/scriptClassify.js'; });
+  const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/testicle/scriptClassify/script.js'; });
   const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
   return (!!rest && !suites.length) || false;
 }, test.limit.long);
@@ -2659,7 +2659,7 @@ function MICRO_GENERAL(body) {
   }, test.limit.quick);
   test.run('a suite with two tests of one title is red with the reason duplicate titles', 0.8, async function () {
     if (!reasonUp()) return false;
-    // until answers true or false, never what it found (spirit/test/headLessChrome.js): the row is read again once it has come.
+    // until answers true or false, never what it found (spirit/testicle/headLessChrome/script.js): the row is read again once it has come.
     await until(function () { const x = rowOf(DDUP); return Promise.resolve(!!x && no(x.test) && !!x.outcome); }, 280000);
     const r = rowOf(DDUP);
     return (!!r && r.outcome === 'red' && r.reason === 'duplicate titles') || false;

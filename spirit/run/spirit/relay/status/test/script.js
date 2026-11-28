@@ -10,7 +10,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const S = SPIRIT.requireScript('spirit/relay/status/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

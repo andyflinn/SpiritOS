@@ -14,13 +14,13 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/search/contact/detail/script.js';
 const FILE = path.join(RUN, SUBJECT);
 const SRC = fs.readFileSync(FILE, 'utf8');
 
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const settle = async function () {
   for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); });
@@ -215,7 +215,7 @@ function personWorld(person, relayRows) {
     create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
   };
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = recorder;
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
@@ -326,7 +326,7 @@ function relayWorld(rows, relayStatus) {
     create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
   };
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = recorder;
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
@@ -963,7 +963,7 @@ test.after(async function () {
   try { if (S.R) S.R.stop(); } catch (e) { /* gone */ }
   S.others.forEach(function (o) { try { o.stop(); } catch (e) { /* gone */ } });
   try { if (S.N && S.N.child) S.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (S.N && S.N.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(S.N); } catch (e) { /* scratch */ }
+  try { if (S.N && S.N.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(S.N); } catch (e) { /* scratch */ }
 });
 
 // a seat taken: the row says so, with no one asking

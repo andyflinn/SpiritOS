@@ -20,8 +20,8 @@ const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { sleep, until, findChrome, scratchNode, chromePage } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { sleep, until, findChrome, scratchNode, chromePage } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -291,7 +291,7 @@ const REPORTS = {};
 let world = false;
 test.after(async function () {
   if (W.page) { try { W.page.sock.close(); } catch (e) { /* gone */ } try { W.page.kid.kill(); } catch (e) { /* gone */ } try { fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
-  if (W.node && !W.node.shared) { try { W.node.child.kill(); } catch (e) { /* gone */ } await sleep(300); try { LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(W.node); } catch (e) { /* scratch */ } }
+  if (W.node && !W.node.shared) { try { W.node.child.kill(); } catch (e) { /* gone */ } await sleep(300); try { LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(W.node); } catch (e) { /* scratch */ } }
 });
 const W = {};
 test.run('there are searches to judge, a scratch node and a Chrome page', 0.2, async function () {

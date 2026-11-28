@@ -48,7 +48,7 @@ if (!STATE) {
 fs.mkdirSync(STATE, { recursive: true });
 // run://, the tree it keeps: three folders above this one.
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const TEST_MODULE = path.join(RUN, 'spirit', 'test', 'testModule.js');
+const TEST_MODULE = path.join(RUN, 'spirit', 'testicle', 'testModule', 'script.js');
 
 // THE TWO TABLES OF testicle.db (goal/G45.1's box), script and suite. A boolean is 0 or 1; changed is a numeric UTC timestamp.
 // NO TABLE MADE BEFORE IS MENDED: none is renamed, and no column is added, dropped or renamed (Andy, goal/G47.1: "old
@@ -256,7 +256,7 @@ let prefs = readPrefs();
 // Andy: "the testicle tests set the testicle server to \"debug\""): debug true in preferences.json, read once at start, never
 // set nor answered by a verb. In it a file outside spirit/app/testicle/ is not there (there) and never watched (ignored), so
 // testicle's scripts, its general suites and the classifier's scripts are only testicle's own; the classifier itself,
-// spirit/test/scriptClassify.js, is still used ("still used, but in debug mode only called with scripts in
+// spirit/testicle/scriptClassify/script.js, is still used ("still used, but in debug mode only called with scripts in
 // spirit/app/testicle/"). With no debug set, as on Andy's node and an agent's, the whole tree, as before.
 const DEBUG_SCOPE = 'spirit/app/testicle/';
 const DEBUG = (function () { try { return JSON.parse(fs.readFileSync(PREFS_FILE, 'utf8')).debug === true; } catch (e) { return false; } }());
@@ -283,16 +283,16 @@ function soon() {
   if (quiet) clearTimeout(quiet);
   quiet = setTimeout(function () { quiet = null; nextJob(); }, QUIET_MS);
 }
-// THE CLASSIFIER (goal/G47.1, box v94, 1): "spirit/test/scriptClassify.js is a \"special\" general test under its own name,
+// THE CLASSIFIER (goal/G47.1, box v94, 1): "spirit/testicle/scriptClassify/script.js is a \"special\" general test under its own name,
 // with its suite row, always automatically executed by the server", "the testicle server continues classifying until all
 // scripts are classified before moving to actual testing", "the server will classify scripts automatically, interactive
 // or not (auto)", "if after a classifying run more scripts have changed, another classifying run will start". One run takes
 // every script whose reClassify is set, as a list; nothing else runs while one is owed. "a script that cannot be classified
-// gets an error row in the testicle table: script the script, suite spirit/test/scriptClassify.js, test \"classifyable\",
+// gets an error row in the testicle table: script the script, suite spirit/testicle/scriptClassify/script.js, test \"classifyable\",
 // failed. That row prevents it from being tested in any other way: the runner starts no other suite for a script whose
 // classifyable row is red. No flag on the script row."
-const CLASSIFY = 'spirit/test/scriptClassify.js';
-// The classifier's one test title (spirit/test/scriptClassify.js), a plain sentence (goal/G47.1, Andy: "THE TITLE HAS TO BE
+const CLASSIFY = 'spirit/testicle/scriptClassify/script.js';
+// The classifier's one test title (spirit/testicle/scriptClassify/script.js), a plain sentence (goal/G47.1, Andy: "THE TITLE HAS TO BE
 // COMPREHENSIBLE FUCKING ENGLISH").
 const CLASSIFYABLE = 'it loads, so it can be classified';
 // "its severity is 0.8": what a run that never classified a script fails it with.
@@ -300,7 +300,7 @@ const CLASSIFY_SEVERITY = 0.8;
 // THE CLASSIFIER'S TOOL DOWN (goal/G47.6, box point 1: "The script is spared only when the test proves its tool never reached
 // it"): a classifying run that ends with TOOL_DOWN could get no scratch node or no Chrome, so the scripts it judged nothing
 // for stay unjudged and waiting (classifyEnded), and the next classifying run waits CLASSIFY_RETRY_MS, so a missing tool is
-// not booted again and again. The exit code is spirit/test/scriptClassify.js's TOOL_DOWN.
+// not booted again and again. The exit code is spirit/testicle/scriptClassify/script.js's TOOL_DOWN.
 const TOOL_DOWN = 3;
 const CLASSIFY_RETRY_MS = 60000;
 let classifyAfter = 0;
@@ -524,7 +524,7 @@ function nextJob() {
   // testicle hands them"): named to the run in SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN and SPIRIT_CHROME_PORT; a test that asks
   // for it (headLessChrome's scratchNode({ shared: true }), and every chromePage) takes them in place of booting its own. THE
   // CLASSIFIER TOO (goal/G49.8; Andy: "make it smaller! make it faster!", "do it."): it plants its scripts there and switches
-  // every app's server on (spirit/test/scriptClassify.js handedScratch), a one-script run 1.5 s in place of 5.8 s, every class
+  // every app's server on (spirit/testicle/scriptClassify/script.js handedScratch), a one-script run 1.5 s in place of 5.8 s, every class
   // the same. A job stopped or killed before its run has started ends there.
   const launch = function (extra) {
     if (done) return;
@@ -551,9 +551,9 @@ let worldBoot = null;
 // One run at a time, so no run still stands on the world let go.
 let treeChangedAt = 0;
 // The node and the Chrome are a test tool's, so they come as a process of it, never required (the box: "no production module
-// loads or requires any test file"): spirit/test/headLessChrome.js --world, which prints where they are and holds them until
+// loads or requires any test file"): spirit/testicle/headLessChrome/script.js --world, which prints where they are and holds them until
 // its input closes.
-const WORLD_TOOL = 'spirit/test/headLessChrome.js';
+const WORLD_TOOL = 'spirit/testicle/headLessChrome/script.js';
 function handWorld() {
   if (world && treeChangedAt >= world.since) dropWorld();
   if (world) return Promise.resolve(world);
@@ -1361,7 +1361,7 @@ appServer.serve({
       return Object.assign({}, prefs);
     },
   },
-  // goal/G47.1, box v94, 1: "spirit/test/scriptClassify.js will use a new verb testicle.script.classify (arguments: script,
+  // goal/G47.1, box v94, 1: "spirit/testicle/scriptClassify/script.js will use a new verb testicle.script.classify (arguments: script,
   // browserOnly and nodeOnly)", "testicle.script.classify is a new testicle verb, testicle's own interface, not the
   // node's". Sets the script row's two flags; both at once says nothing, and is refused. Its reClassify is cleared, unless
   // the classifying run under way started on other bytes of it: then the next run takes it again. Answers the script row.

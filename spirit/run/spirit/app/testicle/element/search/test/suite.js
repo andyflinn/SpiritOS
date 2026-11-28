@@ -16,10 +16,10 @@ const { spawn, execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../../../..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = S.requireScript('spirit/test/headLessChrome.js');
+const LABH = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = S.requireScript('spirit/test/testReport.js');
-const { freePort, until, sleep, chromePage, findChrome } = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const { freePort, until, sleep, chromePage, findChrome } = S.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
@@ -38,7 +38,7 @@ function scratch() {
   const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
-  // testicle turned on there, as an owner turns a server on (spirit/test/headLessChrome.js scratchNode).
+  // testicle turned on there, as an owner turns a server on (spirit/testicle/headLessChrome/script.js scratchNode).
   const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
@@ -68,7 +68,7 @@ async function boot(run) {
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 // A general test that judges alpha, as the scratch tree's own testModule.js lists it.
 function generalFor(run, name) {
-  return execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'testModule.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+  return execFileSync(process.execPath, [path.join(run, 'spirit', 'testicle', 'testModule', 'script.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .map(function (l) { return l.split(' '); }).filter(function (p) { return p[1] === name && /-sibling-|-child-/.test(p[0]); }).map(function (p) { return p[0]; })[0] || '';
 }
 function base(p) { return p.slice(p.lastIndexOf('/') + 1); }

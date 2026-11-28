@@ -10,8 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const FILE = path.join(__dirname, '..', 'chatPane.js');
 
 const near = function (a, b) { return typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) <= 2; };
@@ -24,7 +24,7 @@ test.after(function () {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
 });
 
 test.run('spirit/app/agent/element/chatPane.js exists', 0.2, function () {

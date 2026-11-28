@@ -13,9 +13,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'elementRow.js');
 const ROW = 'spirit/app/agent/element/table/row.js';
 
@@ -41,7 +41,7 @@ function world() {
     if (p === ROW && W.held) return W.held.promise;
     return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
   };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
 }
 // The page's detail pane: look(table) gives the title row its icon and name; each ask kept.
 const looks = [];

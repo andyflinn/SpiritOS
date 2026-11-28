@@ -5,7 +5,7 @@
 // name-formats"). Its contract: ./search-child-general.md. Its parts, each the test it was, every title kept, both read from
 // the files: folderRules, listRowsOwnTheirPanel. No argument, each part judges all it applies to; each argument, that one, reported for it.
 require('../../script.js');
-const test = require('../../test/testReport.js');
+const test = require('../../testicle/testReport/script.js');
 // A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
 const RUN_DIR = require('path').join(__dirname, '..', '..', '..');
 function runRel(a) {
@@ -38,7 +38,7 @@ const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -174,7 +174,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // The product test system's own reporter (goal/G40.13).
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
 const arg = String(ARGS[0] || '');
 const MODULE = 'spirit/element/search/script.js';

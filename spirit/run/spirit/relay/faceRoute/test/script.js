@@ -11,7 +11,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const F = S.requireScript('spirit/relay/faceRoute/script.js');
 const auth = S.requireScript('spirit/relayAuth/script.js');
 

@@ -21,7 +21,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
+const LABH = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/server/app/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -68,7 +68,7 @@ function plantFamilies() {
   ].join('\n') + '\n');
 }
 function removeFamilies() { [FAMILY, SHED_FAMILY].forEach(function (n) { try { fs.rmSync(path.join(RUN, 'spirit', 'app', n), { recursive: true, force: true }); } catch (e) { /* none */ } }); }
-const test = CHILD ? null : LOADER.requireScript('spirit/test/testReport.js');
+const test = CHILD ? null : LOADER.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends (by the parent; a child is handed its folder).
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
@@ -647,7 +647,7 @@ function stateCachePart() {
   const noTree = function () { return !id; };
   test.run('the sender\'s file name is its node id', 0.2, function () {
     putBackTheRealSpirit();
-    ({ until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js'));
+    ({ until, sleep } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js'));
     root = ownTemp('spirit-state-cache-');
     execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
       .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })

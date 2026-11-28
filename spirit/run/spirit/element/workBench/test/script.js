@@ -10,10 +10,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
 const FILE = path.join(__dirname, '..', 'script.js');
 
@@ -79,7 +79,7 @@ let loadError, W, mounted, tool, c1, wb, ids, want, at, prefixes, c1b, tagOf, bo
 // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
 test.run('it loads onto window.spirit at its own path, with a create', 0.2, function () {
   global.window = { spirit: { element: {} } };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   loadError = null;
   try { PAGE_LOAD.runAsPage(FILE); } catch (e) { loadError = e; }
   W = window.spirit.element.workBench;
@@ -257,7 +257,7 @@ test.run('a press after destroy does nothing and throws nothing', 0.2, function 
 // Andy: "workBench if, contained, needs to be restreicted by its container, be that the shell app itself or another
 // container." The stubs above have no layout, so this is asked of Chrome: ./workBench-contained.html, on a scratch node
 // with its DEBUG on, puts one workBench in each container, every pane given 5000 pixels of content.
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const ADDRESS = '/DEBUG/spirit/element/workBench/test/workBench-contained.html';
 // The scratch node, the Chrome page on it, and what it measured: m by container, and the strip of one tool and of forty.
 const CH = { m: {} };
@@ -365,5 +365,5 @@ test.after(function () {
   if (CH.page && CH.page.kid) CH.page.kid.kill();
   if (CH.node && CH.node.child) CH.node.child.kill();
   try { if (CH.page && CH.page.profile) fs.rmSync(CH.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (CH.node && CH.node.root) require(require('path').join(__dirname, "../../../test/headLessChrome.js")).freeTree(CH.node); } catch (e) { /* left */ }
+  try { if (CH.node && CH.node.root) require(require('path').join(__dirname, "../../../testicle/headLessChrome/script.js")).freeTree(CH.node); } catch (e) { /* left */ }
 });

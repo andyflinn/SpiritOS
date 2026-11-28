@@ -10,7 +10,7 @@ const http = require('http');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 
 const FILE = path.join(__dirname, '..', 'anthropic.js');
 const KEY = 'sk-ant-api03-test-0123456789';

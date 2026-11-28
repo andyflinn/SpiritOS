@@ -8,8 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const REL = 'spirit/app/testicle/element/scriptDetail.js';
 
 const W = {};
@@ -46,7 +46,7 @@ test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (W.node && W.node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(W.node); } catch (e) { /* left */ }
+  try { if (W.node && W.node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(W.node); } catch (e) { /* left */ }
 });
 
 test.run('mounted with no script, the script detail draws its empty box, an empty title, and asks nothing', 0.4, async function () {

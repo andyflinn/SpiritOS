@@ -13,9 +13,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 
 const FILE = path.join(__dirname, '..', 'tableElement.js');
 const AGENT = 'spirit/app/agent/api.js';
@@ -148,7 +148,7 @@ test.run('the shared element runs on a window of its own, over the real store, s
     if (p === 'spirit/client/script.js') return Promise.resolve(D);
     return Promise.resolve(Object.prototype.hasOwnProperty.call(STANDS, p) ? STANDS[p] : {});
   };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   load(FILE);
   // The element requires the agent family's api.js as it runs, and with it its data.js, once the element's tree has loaded.
   await settle();

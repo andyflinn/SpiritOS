@@ -14,9 +14,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'row.js');
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -33,7 +33,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   required = []; specs = []; indexes = []; buttons = []; runs = [];
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }, element: {} } };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or

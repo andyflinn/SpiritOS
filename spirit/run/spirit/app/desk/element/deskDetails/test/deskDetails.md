@@ -99,7 +99,7 @@ vertically"*.
 ### Opened on an item, in a real browser (goal/G41.22)
 
 The page above has no layout, so what fills and what scrolls is asked of Chrome: `./deskDetails-opened.html`, opened at
-`/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`),
+`/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html` on a scratch node with its DEBUG on (`spirit/testicle/headLessChrome/script.js`),
 opens the panel in the home page's app area (`#app-container` > `#app-header`, `#app-content`, under `/shell.css`) on
 an item with 200 chat lines and a long box. The desk is a stand-in that answers the reads.
 

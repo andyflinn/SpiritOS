@@ -10,7 +10,7 @@
 // next one reads; the writes of each step sit in the body of the test that judges them.
 
 const path = require('path');
-const test = require(path.join(path.resolve(__dirname, '..', '..', '..'), 'spirit', 'test', 'testReport.js'));
+const test = require(path.join(path.resolve(__dirname, '..', '..', '..'), 'spirit', 'testicle', 'testReport', 'script.js'));
 
 const D = require(path.join(__dirname, '..', 'script.js'));
 
@@ -309,10 +309,10 @@ function pageCopy() {
   win.window = win;
   // THE PAGE'S LOADER, STOOD IN FOR (goal/G49.8, point 1): spirit.requireScript runs a file of the tree in this page once and
   // answers what it placed, as the page's own loader does; nothing is loaded that the page does not ask for itself.
-  // goal/G49.23: the helper's stand-in (spirit/test/headLessChrome.js pageSpirit), each file in a module box as the page's
+  // goal/G49.23: the helper's stand-in (spirit/testicle/headLessChrome/script.js pageSpirit), each file in a module box as the page's
   // loader runs it, placed at its path on the spirit object (no spirit.required); the store is what it hands back.
   vm.createContext(win);
-  require(path.join(path.resolve(__dirname, '..', '..', '..'), 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js')
+  require(path.join(path.resolve(__dirname, '..', '..', '..'), 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js')
     .pageSpirit(win.spirit, null, { window: win, real: function () { return true; } });
   let store = null;
   win.spirit.requireScript('spirit/client/script.js').then(function (d) { store = d; });
@@ -620,14 +620,14 @@ function inNode() {
   return out;
 }
 // In a page's window, as a page runs them: both files in a module box as the page's loader runs them, with no require
-// (goal/G49.23: spirit/test/headLessChrome.js pageSpirit; the store is what spirit.requireScript hands back, no spirit.required).
+// (goal/G49.23: spirit/testicle/headLessChrome/script.js pageSpirit; the store is what spirit.requireScript hands back, no spirit.required).
 function inPage() {
   const win = { console: { log: function () {}, error: function () {}, warn: function () {} }, setTimeout: setTimeout, clearTimeout: clearTimeout, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math, Date: Date, Error: Error, Promise: Promise };
   win.window = win; win.spirit = {};
   vm.createContext(win);
   try {
     const rel = function (f) { return path.relative(RUN, f).split(path.sep).join('/'); };
-    S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [rel(DATA), rel(DESK)] });
+    S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: [rel(DATA), rel(DESK)] });
     let store = null;
     let desk = null;
     win.spirit.requireScript(rel(DATA)).then(function (d) { store = d; });
@@ -704,7 +704,7 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
 // The tests of goal/G43.7 (spec: ./script.md). Andy, the box: "we rename it spirit/client/script.js and it IS the the spirit.required.spirit.data
 // object", "ALL "clientCacheManager.js" files will be converted to "data.js" files with the SAME pattern." Every check is per
 // family, so the count of what is owed falls as each family moves.
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
@@ -762,7 +762,7 @@ test.after(function () {
   if (F.page && F.page.kid) F.page.kid.kill();
   if (F.node && F.node.child) F.node.child.kill();
   try { if (F.page && F.page.profile) fs.rmSync(F.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (F.node && F.node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(F.node); } catch (e) { /* left */ }
+  try { if (F.node && F.node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(F.node); } catch (e) { /* left */ }
 });
 
 // the box: "de-clutter": the first level of spirit holds no <name>Data

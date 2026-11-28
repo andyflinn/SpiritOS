@@ -1,25 +1,25 @@
 'use strict';
 
-// spirit/run/spirit/test/test/testModule.js
-// THE GENERAL RULES JUDGE THE PRODUCT MODULES (goal/G43.23, item 4; spec: ./testModule.md). The box: "the general rules
+// spirit/run/spirit/testicle/testModule/test/script.js
+// THE GENERAL RULES JUDGE THE PRODUCT MODULES (goal/G43.23, item 4; spec: ./script.md). The box: "the general rules
 // judge no module: testModule.js looks for ./spirit.js."
 //
-// testsFor() of ../testModule.js, on this tree as it stands, read only: the general rule tests of spirit/test/
+// testsFor() of ../script.js, on this tree as it stands, read only: the general rule tests of spirit/test/
 // folder (spirit-<child|sibling>-<general|node|browser>.js, named after spirit.js, which is at spirit/script.js since goal/G43.18) are
 // handed a module under spirit/run/spirit/ as the file they judge, on the module's blast radius and on the whole list.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder/script.js').tempFolder;
+const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testModule/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testModule'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const { testsFor } = SPIRIT.requireScript('spirit/test/testModule.js');
+const { testsFor } = SPIRIT.requireScript('spirit/testicle/testModule/script.js');
 
 // The general tests in spirit/test/, beside spirit/script.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
 // "there will be, from now on only 3 types of general tests, at any level of the tree: <file>-<child | sibling>-general.js,
@@ -117,7 +117,7 @@ test.run('spirit/test/script-sibling-browser.js judges modules on the whole list
 
 // THE BRANCH RULES JUDGE A SCRIPT'S BRANCH FROM THE SCRIPT (goal/G47.1, box v94, 2: they are a part of
 // script-sibling-general.js, which is one entry per module like every general test): no entry is a branch folder.
-const { branchesOf } = SPIRIT.requireScript('spirit/test/testModule.js');
+const { branchesOf } = SPIRIT.requireScript('spirit/testicle/testModule/script.js');
 test.run('no general test is handed a branch folder, on the whole list', 0.2, function () {
   const dirs = branchesOf(RUN).map(function (b) { return b.dir; });
   const folders = all().filter(function (e) { return e.file && dirs.indexOf(e.file) !== -1; });
@@ -143,15 +143,15 @@ test.run('a -child- test beside a folder holding script.js judges nothing outsid
   const files = all().filter(function (e) { return e.test === 'spirit/test/app-child-general.js'; }).map(function (e) { return e.file; });
   return (files.length > 0 && files.every(function (f) { return f === 'spirit/app/manager/script.js' || f.indexOf('spirit/app/') === 0; })) || false;
 }, test.limit.quick);
-// THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1): testicle runs spirit/test/scriptClassify.js itself; it is no test here.
-test.run('spirit/test/scriptClassify.js, the classifier, is listed as no test and handed no module', 0.2, function () {
-  const listed = all().filter(function (e) { return e.test === 'spirit/test/scriptClassify.js' || e.file === 'spirit/test/scriptClassify.js'; });
+// THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1): testicle runs spirit/testicle/scriptClassify/script.js itself; it is no test here.
+test.run('spirit/testicle/scriptClassify/script.js, the classifier, is listed as no test and handed no module', 0.2, function () {
+  const listed = all().filter(function (e) { return e.test === 'spirit/testicle/scriptClassify/script.js' || e.file === 'spirit/testicle/scriptClassify/script.js'; });
   return (all().length > 0 && !listed.length) || false;
 }, test.limit.quick);
 
 // THE TOOLS OF spirit/test/ (goal/G43.32, Q2): tools, not tests, and judged as no module; their own tests are listed.
 // spirit/test/'s tools are not tests
-const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
+const TOOLS = ['spirit/testicle/testReport/script.js', 'spirit/testicle/testModule/script.js', 'spirit/testicle/headLessChrome/script.js'];
 test.run('the three tools are in spirit/test/', 0.2, function () {
   return TOOLS.every(function (t) { return fs.existsSync(path.join(RUN, t)); }) || false;
 }, test.limit.quick);
@@ -164,5 +164,5 @@ test.run('none of the three tools is handed to a general test as a module', 0.2,
   return (all().length > 0 && !asModule.length) || false;
 }, test.limit.quick);
 test.run('the own tests of the tools in spirit/test/test/ are listed', 0.2, function () {
-  return (all().some(function (e) { return e.test === 'spirit/test/test/testModule.js'; }) && all().some(function (e) { return e.test === 'spirit/test/test/testReport.js'; })) || false;
+  return (all().some(function (e) { return e.test === 'spirit/testicle/testModule/test/script.js'; }) && all().some(function (e) { return e.test === 'spirit/testicle/testReport/test/script.js'; })) || false;
 }, test.limit.quick);

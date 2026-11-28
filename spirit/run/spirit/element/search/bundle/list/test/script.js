@@ -13,10 +13,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'bundle', 'list', 'script.js');
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -47,7 +47,7 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
     'spirit/element/search/bundle/row/script.js': function (E) { global.window.spirit.requireScript('spirit/bundle/script.js'); ((E.search = E.search || {}).bundle = E.search.bundle || {}).row = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client.
   // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
@@ -226,7 +226,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
     // The search and what it ranks with, run in this world by their paths through the page stand-in (goal/G49.6).
     const REAL = ['spirit/search/string/script.js', 'spirit/search/object/script.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'];
     win.window = win;
-    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
+    LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
     REAL.forEach(function (rel) { win.spirit.requireScript(rel); });
     return (win.spirit.element || {}).search;
   }());

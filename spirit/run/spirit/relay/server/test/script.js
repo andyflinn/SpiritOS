@@ -13,10 +13,10 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const http = require('http');
 const net = require('net');
-const { sleep, scratchRelay, scratchFaceRelay, scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const { sleep, scratchRelay, scratchFaceRelay, scratchNode } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const limits = LOADER.requireScript('spirit/limits/script.js');
 
 // The relay's code since goal/G49.25: its node work (this module) and the one server it runs in, as --relay.
@@ -236,7 +236,7 @@ test.run('the face\'s own page still reaches spirit.relay.faceState', 0.2, async
 // appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at
 // the api. Imitate that attacker", and "the server MUST not CRASH or HANG"; Andy, on the gap: "The relay's door is not
 // tested yet: there is no scratch relay helper. - close this gap, dammit!". The node's doors are
-// garbage.js; this section is the relay's, on a scratch relay of its own (spirit/test/headLessChrome.js
+// garbage.js; this section is the relay's, on a scratch relay of its own (spirit/testicle/headLessChrome/script.js
 // scratchRelay), never a live one. Everything goes raw over a bare socket, as an attacker sends it.
 
 const ASK_MS = 10000;
@@ -799,7 +799,7 @@ test.after(function () {
   if (FP.R) { try { FP.R.stop(); } catch (e) { /* gone */ } }
   if (G.relay) {
     try { if (G.relay.child) G.relay.child.kill(); } catch (e) { /* gone */ }
-    if (G.relay.root) try { LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(G.relay); } catch (e) { /* scratch */ }
+    if (G.relay.root) try { LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(G.relay); } catch (e) { /* scratch */ }
   }
   if (BA.R) { try { BA.R.stop(); } catch (e) { /* gone */ } }
 });

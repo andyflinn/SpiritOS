@@ -9,8 +9,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { scratchNode, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, until } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
 // put aside, and a server module required after that finds no global spirit.
 const { faceRefuses } = SPIRIT.requireScript('spirit/contact/faceHome/script.js');
@@ -91,7 +91,7 @@ test.run('the scratch node comes up', 0.2, async function () {
 test.after(function () {
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // IT GIVES THE NODE ITS API (Andy, box: "sit nicely beside all other families").

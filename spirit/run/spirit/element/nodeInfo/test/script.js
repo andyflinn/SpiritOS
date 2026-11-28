@@ -16,8 +16,8 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const LABH = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/nodeInfo/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -134,7 +134,7 @@ function world(o) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs; it,
   // a branch's companion data.js and the subject run in this window by their paths, through the page stand-in (goal/G49.6).
   win.spirit = win.spirit || {};
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   win.spirit.requireScript('spirit/client/script.js');
   const S = win.spirit;
   Object.assign(S, page.spirit);
@@ -181,7 +181,7 @@ function world(o) {
     return Promise.resolve({});
   };
   const recorder = S.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S, null, { window: win, real: REAL });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(S, null, { window: win, real: REAL });
   const pageRequire = S.requireScript;
   S.requireScript = recorder;
   if (SRC) pageRequire(SUBJECT);
@@ -486,7 +486,7 @@ function formsPart() {
   const path = require('path');
   const vm = require('vm');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
   const EL = path.join(RUN, 'spirit', 'element');
 
   const settle = async function () { for (let i = 0; i < 40; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -541,7 +541,7 @@ function formsPart() {
     // page stand-in (goal/G49.6).
     const REAL2 = function (p) { return REAL(p) || p === 'spirit/element/joinForm/script.js' || p === 'spirit/element/faceForm/script.js'; };
     win.spirit = win.spirit || {};
-    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL2 });
+    LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: REAL2 });
     win.spirit.requireScript('spirit/client/script.js');
     const S = win.spirit;
     // goal/G43.32: every element stands at its path, spirit.element.<name> (goal/G49.23), the stand-ins with them.
@@ -566,7 +566,7 @@ function formsPart() {
     S.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
     // The two forms are the real files, run on this window as a page runs them; every other part a stand-in.
     const real = { 'spirit/element/joinForm/script.js': 1, 'spirit/element/faceForm/script.js': 1 };
-    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S, null, { window: win, real: REAL2 });
+    LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(S, null, { window: win, real: REAL2 });
     const pageRequire = S.requireScript;
     S.requireScript = function (p) {
       if (real[p]) { delete real[p]; return pageRequire(p); }
@@ -648,7 +648,7 @@ function partsPart() {
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
   function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 
@@ -688,8 +688,8 @@ function rotatePart() {
   const path = require('path');
   const { spawn } = require('child_process');
   const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-  const test = LOADER.requireScript('spirit/test/testReport.js');
-  const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+  const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
   function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }

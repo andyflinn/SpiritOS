@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/test/test/testReport.js
-// The tests of spirit/test/testReport.js, the product test system's reporter, and of no other module (spec:
-// ./testReport.md; goal/G47.2). The box: "Every test inside every suite has its unique (within the suite) title. Every test
+// spirit/run/spirit/testicle/testReport/test/script.js
+// The tests of spirit/testicle/testReport/script.js, the product test system's reporter, and of no other module (spec:
+// ./script.md; goal/G47.2). The box: "Every test inside every suite has its unique (within the suite) title. Every test
 // supplies its severity and reports itself to testicle, with the appropriate severity if the test hangs or crashes, else
 // with the default severity. Every test holds on one single string, the title, which is supplied with the report, success
 // or failure." Its report carries "the tested filename, scoped to run://", "the suite filename, scoped to run://", "the test
@@ -22,7 +22,7 @@
 // node, then prints the completion line and ends the process, its exit code 1 when any test failed.
 //
 // HOW IT IS TRIED: a scratch run tree under the system's temporary folder holds a copy of this tree's spirit/ (its state
-// and test folders left out) and of spirit/test/testReport.js, with planted suites that use it. Its environment.json names
+// and test folders left out) and of spirit/testicle/testReport/script.js, with planted suites that use it. Its environment.json names
 // the port of a fake node this test stands up, which answers api {family: testicle} with testicle's real api.js and keeps
 // every testicle.testicle.set it is sent. Neither Andy's node nor an agent's is touched.
 
@@ -30,19 +30,19 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder/script.js').tempFolder;
+const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testReport/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testReport'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 
 // THE PLANTED SUITES, each a file of the scratch tree, its tests through test.run.
-const REPORTER_FROM = function (depth) { return "require(require('path').join(__dirname, " + new Array(depth + 1).join("'..', ") + "'spirit', 'test', 'testReport.js'))"; };
+const REPORTER_FROM = function (depth) { return "require(require('path').join(__dirname, " + new Array(depth + 1).join("'..', ") + "'spirit', 'testicle', 'testReport', 'script.js'))"; };
 const PROBE = [
   "'use strict';",
   "const fs = require('fs');",
@@ -111,7 +111,7 @@ function scratchTree(port) {
     });
   }(path.join(RUN, 'spirit'), path.join(run, 'spirit')));
   fs.mkdirSync(path.join(run, 'spirit', 'test'), { recursive: true });
-  fs.copyFileSync(path.join(RUN, 'spirit', 'test', 'testReport.js'), path.join(run, 'spirit', 'test', 'testReport.js'));
+  fs.copyFileSync(path.join(RUN, 'spirit', 'testicle', 'testReport', 'script.js'), path.join(run, 'spirit', 'testicle', 'testReport', 'script.js'));
   if (port) {
     fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
     fs.writeFileSync(path.join(run, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));

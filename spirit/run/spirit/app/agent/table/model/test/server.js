@@ -12,10 +12,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
 // OBJECT. PERIOD!"; box v4: "spirit/app/agent/table/model/server.js { table }"): asked in a process of its own, spirit.requireScript answers an
 // object holding table, each a function.
@@ -238,8 +238,8 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     if (p === AGENT) return Promise.resolve(made.family);
     return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file is placed at its path as it runs.
-  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  // A page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so each file is placed at its path as it runs.
+  SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js is loaded by its api.js, through the stand-in above.

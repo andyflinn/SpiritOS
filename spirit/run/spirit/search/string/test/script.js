@@ -12,7 +12,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const M = LOADER.requireScript('spirit/search/string/script.js');
 const p = M.probabilityStringMatch;
 
@@ -125,7 +125,7 @@ test.run('in a page, run as the loader runs it, it puts out probabilityStringMat
   const ctx = vm.createContext({ spirit: {} });
   ctx.window = ctx;
   const before = Object.keys(ctx).sort();
-  const out = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage('spirit/search/string/script.js', ctx);
+  const out = LOADER.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage('spirit/search/string/script.js', ctx);
   if (!out || typeof out.probabilityStringMatch !== 'function') return false;
   const works = out.probabilityStringMatch('andy', 'andy') === 1 && out.probabilityStringMatch(1, '1') === 0;
   return (works && short(Object.keys(ctx).sort()) === short(before)) || false;

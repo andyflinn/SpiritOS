@@ -3,7 +3,7 @@
 Testicle's own -node general test (goal/G47.1, box v143: *"its general tests there: spirit/app/testicle/test/testicle-sibling-general.js,
 testicle-sibling-node.js and testicle-sibling-browser.js, each with a dumb test or two; in debug mode these are the only general
 tests testicle sees"*). A `-sibling-` general test beside `spirit/app/testicle/testicle.js`: it judges `spirit/app/testicle/`
-and below (`spirit/test/testModule.js`).
+and below (`spirit/testicle/testModule/script.js`).
 
     node spirit/app/testicle/test/testicle-sibling-node.js [<script> ...]
 

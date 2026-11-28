@@ -13,10 +13,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 // IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
 // OBJECT. PERIOD!"; box v4: "spirit/app/agent/table/provider/server.js { table }"): asked in a process of its own, spirit.requireScript answers an
 // object holding table, each a function.
@@ -420,8 +420,8 @@ test.run('the provider\'s elementTable and elementRow are placed on the spirit o
     // object for anything else they ask (the agent branch's api.js).
     return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file is placed at its path as it runs.
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  // goal/G43.32: a page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so each file is placed at its path as it runs.
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/client/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js comes with its api.js, and the stand-in require above runs the real file for it.
@@ -539,14 +539,14 @@ test.run('another table\'s rows, another module\'s, and a row with no id write n
 // scratch node with its DEBUG on, and opens its Model field.
 // ── /spirit/app/agent/table/provider/test/server-picker.html: the provider's Model field, opened ──
 const ADDRESS = '/DEBUG/spirit/app/agent/table/provider/test/server-picker.html';
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const PK = { pdir: '', db: null, node: null, page: null, m: null, mine: [], theirs: '' };
 test.after(function () {
   const page = PK.page, node = PK.node;
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
   try { if (PK.pdir) fs.rmSync(PK.pdir, { recursive: true, force: true }); } catch (e) { /* left */ }
 });
 test.run('the page server-picker.html draws the provider\'s detail with the real elements in Chrome, on a scratch node with its DEBUG on', 0.2, async function () {

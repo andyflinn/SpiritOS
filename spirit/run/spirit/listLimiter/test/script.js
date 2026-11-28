@@ -15,7 +15,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const B = S.requireScript('spirit/listLimiter/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -188,7 +188,7 @@ test.run('in a page, run as the loader runs it, it puts out createProbabilityBuc
   const ctx = vm.createContext({ spirit: {} });
   ctx.window = ctx;
   const before = Object.keys(ctx).sort();
-  const out = S.requireScript('spirit/test/headLessChrome.js').runAsPage('spirit/listLimiter/script.js', ctx);
+  const out = S.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage('spirit/listLimiter/script.js', ctx);
   if (!out || typeof out.createProbabilityBucket !== 'function') return false;
   const b = out.createProbabilityBucket(1000);
   b.seatFor(0.2, 'a'); b.seatFor(0.5, 'b');

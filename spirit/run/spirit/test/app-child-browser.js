@@ -20,8 +20,8 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const { until, findChrome, scratchNode, chromePage } = H;
 
 const ARGV = process.argv.slice(2);
@@ -91,7 +91,7 @@ async function world() {
   }
   if (silent.length) { W.fail = true; return; }
   // ONE CHROME FOR THE WHOLE RUN (box v144: "run on one node and one Chrome for the whole run"): a fresh page of it per script,
-  // so one that hangs is closed alone (spirit/test/headLessChrome.js sharedChrome; chromePage opens a page of it).
+  // so one that hangs is closed alone (spirit/testicle/headLessChrome/script.js sharedChrome; chromePage opens a page of it).
   if (W.chrome) {
     if (W.chrome.error) { W.fail = true; return; }
     process.env.SPIRIT_CHROME_PORT = String(W.chrome.port);

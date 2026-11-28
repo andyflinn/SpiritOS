@@ -35,7 +35,7 @@ armingButton). Its root keeps what it holds inside (overflow clip).
 - **The press is the mounter's**: the button unwired, a press changes nothing in the form.
 
 Asked of a real browser, since widths, wrapping and places are layout: `./rowForm-laid.html`, opened at
-`/DEBUG/spirit/element/rowForm/test/rowForm-laid.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), forms in
+`/DEBUG/spirit/element/rowForm/test/rowForm-laid.html` on a scratch node with its DEBUG on (`spirit/testicle/headLessChrome/script.js`), forms in
 containers of 600px and 260px, and a probabilitySearch beside them.
 
 ## What its test must try to break

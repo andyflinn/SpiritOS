@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/test/headLessChrome.js
-// The test of spirit/test/headLessChrome.js, and of no other module (spec: ./headLessChrome.md): its scratch nodes and
+// spirit/run/spirit/testicle/headLessChrome/test/script.js
+// The test of spirit/testicle/headLessChrome/script.js, and of no other module (spec: ./script.md): its scratch nodes and
 // relays as goal/G47.3 redraws them, lab nodes in repo://lab/node/ (box: "the move: headLessChrome.js scratchNode hands out
 // a reset lab node instead of a fresh copy"). Each hand-out is asked from a child process of its own, as a test asks it,
 // and what it hands out is judged from outside: its tree, its state, its lock, its repo.
@@ -9,12 +9,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const LAB_NODES = path.join(REPO, 'lab', 'node');
-const HELPER = path.join(RUN, 'spirit', 'test', 'headLessChrome.js');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const HELPER = path.join(RUN, 'spirit', 'testicle', 'headLessChrome', 'script.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const under = function (p, dir) { const rel = path.relative(dir, String(p || '')); return !!p && !!rel && rel.indexOf('..') !== 0 && !path.isAbsolute(rel); };
@@ -25,7 +25,7 @@ const tempCopies = function () { try { return fs.readdirSync(os.tmpdir()).filter
 function ask(what, holdMs, plant, from) {
   // from: the run root of another tree to ask from (its own headLessChrome.js, run inside it); the checkout's by default.
   const fromRun = from || RUN;
-  const code = 'const H = require(' + JSON.stringify(path.join(fromRun, 'spirit', 'test', 'headLessChrome.js')) + ');' +
+  const code = 'const H = require(' + JSON.stringify(path.join(fromRun, 'spirit', 'testicle', 'headLessChrome', 'script.js')) + ');' +
     '(async function () { const n = await H.' + (what === 'relay' ? 'scratchRelay({ debug: true })' : 'scratchNode()') + ';' +
     ' const run = n.run || (n.root ? require("path").join(n.root, "spirit", "run") : "");' +
     (plant ? ' try { require("fs").mkdirSync(require("path").join(run, "spirit", "state"), { recursive: true }); require("fs").writeFileSync(require("path").join(run, "spirit", "state", ' + JSON.stringify(plant) + '), "left by a test"); } catch (e) {}' : '') +
@@ -134,7 +134,7 @@ test.run('lab holds six personal nodes, personal1 to personal6, and its two rela
 // NO TEST OF WAITING FOR A LAB NODE (goal/G47.1; Andy: "this should fucking b cleaned up, this is exactly the kind of shit that
 // keeps bringing stupid bucks back!", "get rid of shit like tat."): the check that a seventh ask waits held the old design,
 // tests holding nodes side by side and waiting for each other, against one run per tree and the lab as a stack. Gone.
-// THE HELPERS A TEST'S OWN WORLD USES (goal/G47.3, the build; ./headLessChrome.md): scratchTree takes one lab node and
+// THE HELPERS A TEST'S OWN WORLD USES (goal/G47.3, the build; ./script.md): scratchTree takes one lab node and
 // no more, startNodeOn starts a node only on a tree lab handed out, freeTree frees a node and deletes nothing.
 function inChild(code, ms) {
   const kid = spawn(process.execPath, ['-e', 'const H = require(' + JSON.stringify(HELPER) + ');' + code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });

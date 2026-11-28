@@ -14,8 +14,8 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.resolve(RUN, '..', '..');
-const test = S.requireScript('spirit/test/testReport.js');
-const LABH = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const LABH = S.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const TESTALL = 'spirit/app/testicle/testAll.js';
 const GREEN = 'spirit/zzAll/green.js', GREENS = 'spirit/zzAll/test/green.js';

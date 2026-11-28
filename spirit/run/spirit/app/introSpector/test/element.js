@@ -11,8 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const APP = path.join(RUN, 'spirit', 'app', 'introSpector');
 
 function json(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -27,7 +27,7 @@ test.after(function () {
   try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // the box: "same icons, shell:mount only", "both apps will be intrinsic", no api.js and no data.js

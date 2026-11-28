@@ -13,10 +13,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
 const JS = path.join(__dirname, '..', '..', '..', '..');
 function load(file) { PAGE_LOAD.runAsPage(file); }
@@ -36,7 +36,7 @@ let L = null, F = null, dataSubscribed = 0, pane = null, o = null, CD = null, el
 
 test.run('the contacts list runs on a window of its own, with its row element and the data set real', 0.2, function () {
   global.window = { spirit: {} };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   global.spirit = window.spirit;
   window.spirit.readyPromise = Promise.resolve({
     // goal/G49.22: the contact branch in the new shape, spirit.contact.<verb>.
@@ -78,7 +78,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   });
   // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
   // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   // A branch's api.js (spirit.requireScript('spirit/contact/script.js')): its real companion data.js runs once, attaching itself to
   // the data set loaded below, as the real api.js requires it (goal/G47.1).
   const ran = {};

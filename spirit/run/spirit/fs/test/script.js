@@ -9,7 +9,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // THE BRANCH AS A CLIENT HAS IT (goal/G49.6; Andy: clients load their api.js from their own node's disc): bound by
 // spirit.requireScript from the api.js on this disc, no node asked; it carries the file's own names, names() among them.
 let api = null;
@@ -199,7 +199,7 @@ test.run('the node requires spirit/fs/script.js', 0.2, function () {
   return (body.indexOf("requireScript('spirit/fs/script.js')") !== -1 && c.indexOf('common.loadFs(ROOT_DIR, jobs);') !== -1) || false;
 }, test.limit.quick);
 const NODE = { n: null };
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 test.after(async function () { try { if (NODE.n && NODE.n.release) await NODE.n.release(); } catch (e) { /* gone */ } });
 function askNode(call, args) {
   return fetch(NODE.n.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })

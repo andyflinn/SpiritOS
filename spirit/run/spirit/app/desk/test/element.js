@@ -13,9 +13,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'element.js');
 const DESK = 'spirit/app/desk/element/desk/desk.js';
 
@@ -42,7 +42,7 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
     if (p === DESK) { if (!W.page) { W.page = { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } }; placeAsLoader(DESK, W.page); } return Promise.resolve(W.page); }
     return Promise.resolve({});
   };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   W.up = true;
   return true;
 }, test.limit.quick);

@@ -36,7 +36,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
-const test = require(path.join(__dirname, 'testReport.js'));
+const test = require(path.join(__dirname, '..', 'testicle', 'testReport', 'script.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 // The face's tag-run scripts, spirit.js's FACE list as spirit.js writes it.
@@ -60,7 +60,7 @@ const GIVEN = ARGS.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGS
 // a Chrome, paid again for every script.
 async function batch() {
   {
-    const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+    const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
     const mounted = function (name) {
       try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', name, name + '.js')); } catch (e) { return false; }
     };
@@ -156,7 +156,7 @@ function pageScript(file) {
   return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && SERVABLE.fileServable(f);
 }
 const SERVABLE = SPIRIT.requireScript('spirit/fs/fileSystem/script.js');
-// A NODE-ONLY SCRIPT, AS THE CLASSIFIER TELLS ONE (spirit/test/scriptClassify.js LACKS_NODE, goal/G47.1 box v94): its page load
+// A NODE-ONLY SCRIPT, AS THE CLASSIFIER TELLS ONE (spirit/testicle/scriptClassify/script.js LACKS_NODE, goal/G47.1 box v94): its page load
 // failed for want of node's own names or modules.
 const LACKS_NODE = /answered 404|\b(require|process|module|exports|__dirname|__filename|Buffer|global) is not defined\b|Cannot find module|\bfs\b.*not defined/;
 const WAIT = 20000;
@@ -455,12 +455,12 @@ const WATCH = String.raw`(function () {
 // a rule that found nothing to judge on this page says so, and counts as neither green nor red. It is judged where it
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
-// The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
-const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+// The scratch node and headless Chrome, shared with any test that opens a page (spirit/testicle/headLessChrome/script.js).
+const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 // GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
-// recorded under its own module (spirit/test/testReport.js). This run records one line per file, named by its address.
+// recorded under its own module (spirit/testicle/testReport/script.js). This run records one line per file, named by its address.
 // EVERY FILE THAT PAINTS AN ICON LOADS THE ICON ELEMENT (goal/G41.23; Q1, Andy: "plus the intrinsic apps, plus the
 // icons app. all apps that use icons."; "wsl, Go" on: a second rule reads the code, so that it misses none). A bare mount
 // draws no data, so most icons are seen only here. AN ICON STANDS ALONE (Andy: "isn't a glyph inside flowing text just
@@ -696,7 +696,7 @@ function every() {
 
   // The page modules in its reach, and the one scratch node they are judged on.
   test.run('testModule.js gives it files to judge', 0.2, function () {
-    const reach = SPIRIT.requireScript('spirit/test/testModule.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/script-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
+    const reach = SPIRIT.requireScript('spirit/testicle/testModule/script.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/script-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
     // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
     E.files2 = reach.filter(pageScript);
     return E.files2.length > 0 || false;
@@ -751,7 +751,7 @@ function every() {
     return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
 
-  // Each page module in a run of its own, so each is recorded under its own module (spirit/test/testReport.js).
+  // Each page module in a run of its own, so each is recorded under its own module (spirit/testicle/testReport/script.js).
   test.run('its page is green', 0.4, async function () {
     if (!nodeUp()) return false;
     if (!E.files2 || !E.files2.length) return false;
@@ -1290,7 +1290,7 @@ function oneFile(P) {
     test.run('what it watches redraws it, proved in its own test', 0.4, function () {
       const p = OWN_PROOF[ownRel];
       const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
-      // Its pass as the report says it: the check's title, then the pass mark (spirit/test/testReport.js, ICON.SUCCESS).
+      // Its pass as the report says it: the check's title, then the pass mark (spirit/testicle/testReport/script.js, ICON.SUCCESS).
       return said.split('\n').some(function (l) { return l.indexOf(p.check + ' \u2705') !== -1; }) || false;
     }, test.limit.long);
   }
@@ -1395,7 +1395,7 @@ function pageAfter(P) {
     // ITS OWN NODE FREED, NEVER DELETED (goal/G47.1: a lab node's root removed here was rebuilt by the next test); a shared
     // node and a shared Chrome are their run's, which ends them; a page of the shared Chrome closes alone (kill, above).
     if (node && !node.shared) {
-      try { if (typeof node.release === 'function') await node.release(); else SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* freed when this process ends */ }
+      try { if (typeof node.release === 'function') await node.release(); else SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* freed when this process ends */ }
     }
     // Its own Chrome's profile, once that Chrome has ended (its watcher deletes it too, should a file still be held).
     if (page && page.profile) { if (page.kid && page.kid.exitCode === null && page.kid.signalCode === null && page.kid.once) await new Promise(function (r) { page.kid.once('exit', r); }); try { fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* its watcher takes it */ } }

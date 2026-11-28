@@ -11,7 +11,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 // IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
 // OBJECT. PERIOD!"; box v4: "spirit/app/desk/cacheRules.js { rules }"): asked in a process of its own, spirit.requireScript answers an
 // object holding rules, each a function.

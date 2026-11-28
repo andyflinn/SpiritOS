@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/test/testModule.js
+// spirit/run/spirit/testicle/testModule/script.js
 // WHICH PRODUCT TESTS TO RUN (goal/G40.6). Andy: "one file in [the run tree's test folder] testModule(path-name.js) can auto execute
 // the bast-radius tests for that one file, and then should be easy for desk or deskClient of ... to automate the
 // testing of files named in an item...", and "test module must find all /test/files.js in the run tree."
@@ -21,7 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const RUN = path.join(__dirname, '..', '..');
+const RUN = path.join(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 // Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
 // one list, goal/G43.25).
@@ -30,11 +30,11 @@ const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDO
 // THE TOOLS OF spirit/test/ (goal/G43.32, Q2; Andy: "We need special rules for run://spirit/test/  it will be where
 // run://spirit/app/test/ finds it's main tools."): tools, not tests, and no module either; their own tests stay in
 // spirit/test/test/.
-const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
-// THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1: "spirit/test/scriptClassify.js is a \"special\" general test under its
+const TOOLS = ['spirit/testicle/testReport/script.js', 'spirit/testicle/testModule/script.js', 'spirit/testicle/headLessChrome/script.js'];
+// THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1: "spirit/testicle/scriptClassify/script.js is a \"special\" general test under its
 // own name, with its suite row, always automatically executed by the server"): testicle's server runs them itself, so they
 // are no test listed here, and they are named after no module.
-const SPECIAL = ['spirit/test/scriptClassify.js'];
+const SPECIAL = ['spirit/testicle/scriptClassify/script.js'];
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 
@@ -148,7 +148,7 @@ function testsFor(file, opts) {
     const g = generalOf(t, has);
     if (!g) return;
     // The branch rules judge a script's branch from the script itself since goal/G47.1, box v94, 2 (their part of
-    // ./script-sibling-general.js): every general test is one entry per module, none per branch folder.
+    // ../../test/script-sibling-general.js): every general test is one entry per module, none per branch folder.
     judged.filter(g.judges).forEach(function (m) { add(t, m); });
   });
   return out;

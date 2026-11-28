@@ -12,10 +12,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
 // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
 // stands at its place (a folder's script.js at its folder's name), a stand-in or a real file loaded; nothing there is refused.
@@ -46,7 +46,7 @@ test.run('the grant selector runs on a window of its own', 0.2, async function (
     if (p === LIST) return Promise.resolve(listStand);
     return placedAnswer(p);
   } } };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   global.spirit = global.window.spirit;
   PAGE_LOAD.runAsPage(FILE);
   await settle();

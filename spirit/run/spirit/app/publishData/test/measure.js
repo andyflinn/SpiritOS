@@ -10,7 +10,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'measure.js');
 const LAB_NODES = path.resolve(RUN, '..', '..', 'lab', 'node');
 

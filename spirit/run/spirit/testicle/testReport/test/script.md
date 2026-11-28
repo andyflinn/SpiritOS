@@ -1,7 +1,7 @@
-# spirit/test/testReport.js
+# spirit/testicle/testReport/script.js
 
 The product test system's reporter: every suite in `spirit/run` says its tests through it, and it reports each one to
-testicle (goal/G47.2). Its one test is `./testReport.js`.
+testicle (goal/G47.2). Its one test is `./script.js`.
 
 The box (goal/G47.2): *"Every test inside every suite has its unique (within the suite) title. Every test supplies its
 severity and reports itself to testicle, with the appropriate severity if the test hangs or crashes, else with the default
@@ -15,7 +15,7 @@ default (0.2), general rule violation (0.4), crash/hang (0.7), security (0.8)"*.
     test.run(title, severity, body, limit, opts)
     test.after(fn)
 
-`opts.script` (optional; goal/G47.1, box v94, 1, for `spirit/test/scriptClassify.js`, which judges a list of scripts in
+`opts.script` (optional; goal/G47.1, box v94, 1, for `spirit/testicle/scriptClassify/script.js`, which judges a list of scripts in
 one run) names the script, scoped to `run://`, that one result is reported for, in place of the suite's own; a title is
 then said once per script, and the same title for two scripts is no repeat.
 
@@ -56,7 +56,7 @@ process, its exit code 1 when a test failed.
 
 ## How it is tried
 
-A scratch run tree under the system's temporary folder holds a copy of `spirit/` and of `../testReport.js`, planted suites
+A scratch run tree under the system's temporary folder holds a copy of `spirit/` and of `../script.js`, planted suites
 using it, and an `environment.json` naming a fake node this test stands up: it answers `api {family: testicle}` with
 testicle's real `api.js` and keeps every `testicle.testicle.set`. A second scratch tree has no `environment.json`. No live
 node is touched.

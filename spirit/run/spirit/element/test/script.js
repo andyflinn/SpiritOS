@@ -17,9 +17,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const LABH = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 // One test.run per test (goal/G47.2): the three parts below run one after the other, each its own scratch node and Chrome,
 // each stopped when the next part's world starts, and all of them again at the end (test.after).
@@ -685,7 +685,7 @@ test.after(stopAll);
   const os = require('os');
   const { spawn, execSync } = require('child_process');
   const REPO = path.resolve(RUN, '..', '..');
-  const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/test/headLessChrome.js');
+  const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
   function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
   async function call(base, verb, args) {

@@ -13,10 +13,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/rotateKey/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -123,7 +123,7 @@ function world(answer) {
     },
   };
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT, 'spirit/element/armingButton/script.js'] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT, 'spirit/element/armingButton/script.js'] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = recorder;
   if (SRC) pageRequire(SUBJECT);

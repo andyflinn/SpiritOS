@@ -21,7 +21,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
 const RUN = path.join(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = require(path.join(RUN, 'spirit', 'testicle', 'testReport', 'script.js'));
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder/script.js').tempFolder;
@@ -986,7 +986,7 @@ test.run('in a process, requiring spirit.js gives spirit.client, the cache', 0.2
 // tree....". A real page (headless Chrome) of a scratch node, the home page loaded as a user opens it, every call to the
 // node's door counted. Never a live node.
 // 9. no api up front, on a real page
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = require(path.join(RUN, 'spirit', 'testicle', 'headLessChrome', 'script.js'));
 const L = {};
 // Every call to the node's door, as the page sends it: { call, args }.
 function calls() {

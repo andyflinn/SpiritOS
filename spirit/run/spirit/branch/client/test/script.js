@@ -14,7 +14,7 @@ const LOADER = require('../../../script.js');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/branch/client/script.js';
 
@@ -32,7 +32,7 @@ function world(page) {
   win.window = win;
   win.spirit = page ? { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } } : {};
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.client;

@@ -13,8 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until } = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until } = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const FILE = path.join(__dirname, '..', 'api.js');
 // The branch is the app's id, its folder's path in dots (goal/G49.19): spirit.app.icons, its calls spirit.app.icons.<verb>.
 const ID = 'spirit.app.icons';
@@ -29,7 +29,7 @@ test.after(function () {
   try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 const call = async function (name, args) {
   const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });

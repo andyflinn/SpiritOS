@@ -16,9 +16,9 @@ const { execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.join(RUN, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 async function until(fn, ms) { const end = Date.now() + ms; while (Date.now() < end) { try { if (await fn()) return true; } catch (e) { /* not yet */ } await sleep(250); } return false; }
@@ -62,7 +62,7 @@ async function startNode(run) {
 }
 // A relay whose process has its spirit object switched on (debug) before the relay loads: a scratch relay has no owner
 // to send its DEBUG verb. THE ONE SERVER, STARTED AS A RELAY (goal/G49.25, box v16: "spirit/server/script.js is THE server, for
-// node and relay alike"; spirit/server/relay/script.js is gone): the lab's scratchRelay (spirit/test/headLessChrome.js) starts it
+// node and relay alike"; spirit/server/relay/script.js is gone): the lab's scratchRelay (spirit/testicle/headLessChrome/script.js) starts it
 // with --relay, its DEBUG set first by o.debug, in a lab tree of its own.
 async function startRelay(run, debug) {
   const r = await LABH.scratchRelay({ debug: !!debug });

@@ -19,8 +19,8 @@ const fs = require('fs');
 const { spawn, spawnSync } = require('child_process');
 
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const TEST_MODULE = 'spirit/test/testModule.js';
-const WORLD_TOOL = 'spirit/test/headLessChrome.js';
+const TEST_MODULE = 'spirit/testicle/testModule/script.js';
+const WORLD_TOOL = 'spirit/testicle/headLessChrome/script.js';
 // As testicle's own limits: a suite past its job limit is killed, and the world given up on past the time a scratch node takes.
 const SUITE_LIMIT_MS = 120 * 60 * 1000;
 const WORLD_WAIT_MS = 120000;

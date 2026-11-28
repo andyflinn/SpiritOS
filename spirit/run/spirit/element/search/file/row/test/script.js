@@ -12,10 +12,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file', 'row', 'script.js');
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -23,7 +23,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let asked, required, loaded, D, E, F, el, hosts, page, node, put, del, row;
 const cmd = function (c) { return { id: 'spirit.fs', data: { command: c } }; };
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 function cellsOf(x) { const c = {}; (x.cells() || []).forEach(function (k) { c[k.name] = k.html; }); return c; }
 // True when there is no file tree on the page or no row element registered.
 function noRow() { return !F || typeof F.file !== 'function' || !E.search.file.row || typeof E.search.file.row.create !== 'function'; }
@@ -60,7 +60,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // loaded already in this process (the test reporter loads it), and then a later require of it hands back its cached copy
   // and fills nothing here, so the row fell back to "2048 B".
   (function () { const real = require(path.join(RUN, 'spirit', 'script.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   // goal/G49.23: the store places nothing itself; run as the page's loader runs it, it stands at spirit.client, and is what it hands back.
   D = PAGE_LOAD.runAsPage('spirit/client/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
@@ -261,7 +261,7 @@ test.after(function () {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
 });
 test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words page', 0.2, async function () {
   const chrome = H.findChrome();

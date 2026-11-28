@@ -6,14 +6,14 @@
 // run as testicle runs it, handed a list of scripts: six real elements and one planted script that never ends, a file of
 // its own beside them for the run (a git-ignored file never reaches the node the general test takes). What it
 // starts is counted from outside, among its own processes; its time is taken from its start to its end; what reaches
-// testicle is read from the testicle of the node it reports to (spirit/test/testReport.js, reportToTesticle).
+// testicle is read from the testicle of the node it reports to (spirit/testicle/testReport/script.js, reportToTesticle).
 const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const SUBJECT = path.join(RUN, 'spirit', 'test', 'script-sibling-browser.js');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -126,7 +126,7 @@ test.run('every element after the hung script is judged, and its results stand i
   return after.length === 0 || false;
 }, test.limit.quick);
 test.run('the hung script is judged red', 0.4, function () {
-  // A red line (its title and ❌) under the hung script's heading (spirit/test/testReport.js).
+  // A red line (its title and ❌) under the hung script's heading (spirit/testicle/testReport/script.js).
   let under = false;
   return W.out.split('\n').some(function (l) { if (!/[✅❌]\s*$/.test(l)) { under = l.indexOf('zzBrowserHang') !== -1; return false; } return under && /❌\s*$/.test(l); });
 }, test.limit.quick);

@@ -17,8 +17,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = S.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const APP = path.join(RUN, 'spirit', 'app', 'icons');
@@ -46,7 +46,7 @@ function code(src) {
 function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } }
 function json(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 
-// The runs of an app's script on the scratch node: spirit/test/headLessChrome.js's, the one watch the tests share.
+// The runs of an app's script on the scratch node: spirit/testicle/headLessChrome/script.js's, the one watch the tests share.
 function iconsProcesses(root, name) { return appRuns(root, name || 'icons'); }
 
 // icons: the Icons app, a face and an api, run by the node per request, with no process of its own (goal/G43.19).
@@ -60,7 +60,7 @@ test.after(function () {
   }
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // the box: "a face-only app get's api.js, data.js, node<Name>.js, browser<Name>.js" (Q5, Q6)

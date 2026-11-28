@@ -15,7 +15,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SP = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SP.requireScript('spirit/test/testReport.js');
+const test = SP.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
 const tempFolder = SP.requireScript('spirit/tempFolder/script.js').tempFolder;

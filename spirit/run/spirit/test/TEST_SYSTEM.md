@@ -60,7 +60,7 @@ level of the tree: <file>-<child | sibling>-general.js, <file>-<child | sibling>
 process all scripts listed in the arguments that fit"*; *"node only scripts are tested by -general AND -node general tests.
 browser only scripts are tested by -general and -browser general tests. if a script is NOT browser only AND NOT node only,
 it will be tested by all 3 categories."* A script's class is testicle's (its script row's browserOnly and nodeOnly, set
-by `spirit/test/scriptClassify.js`, a special general test under its own name, `testModule.js`'s `SPECIAL`).
+by `spirit/testicle/scriptClassify/script.js`, a special general test under its own name, `testModule.js`'s `SPECIAL`).
 
 The general tests of `spirit.js` stand in `spirit/run/spirit/test/` beside `spirit/run/spirit/script.js` (goal/G43.32):
 each judges every module in `spirit/` and below. `script-sibling-general.js` holds the rules read from a script's file,
@@ -83,11 +83,11 @@ rules do for a script that places no element.
 
 `testModule.js` names them; it runs none.
 
-- `node spirit/run/spirit/test/testModule.js <file>`: the blast radius of one changed module. Its own test, every test under
+- `node spirit/run/spirit/testicle/testModule/script.js <file>`: the blast radius of one changed module. Its own test, every test under
   `./<name>/` (its components), and the own tests of the modules on its line upward (`../`, `../../`, up to the run
   root), never a sibling branch. General tests judge the changed file and the files below it. A module deep in the
   tree runs few tests; one near the root runs nearly all.
-- `node spirit/run/spirit/test/testModule.js`: every test file in any `test/` folder of the run tree, and each general test
+- `node spirit/run/spirit/testicle/testModule/script.js`: every test file in any `test/` folder of the run tree, and each general test
   once per module it judges.
 
 An item that names one file therefore gets the right tests without listing them.
@@ -96,7 +96,7 @@ An item that names one file therefore gets the right tests without listing them.
 
 - The harness (`node spirit/test/runAll.js`) reaches the run tree through `testModule.js` and runs each entry as its
   own suite, a general test with its file as the argument. No test of the run tree runs twice.
-- Every test reports through `spirit/run/spirit/test/testReport.js`, the product tree's own reporter (goal/G40.13), which
+- Every test reports through `spirit/run/spirit/testicle/testReport/script.js`, the product tree's own reporter (goal/G40.13), which
   prints the lines of the old one (`spirit/test/testSupport.js`) without requiring anything of `spirit/test/`, so the
   verifier records it as it records any suite.
 - **One call per test** (goal/G47.2; Andy: *"Every test inside every suite has its unique (within the suite) title. Every
@@ -105,5 +105,5 @@ An item that names one file therefore gets the right tests without listing them.
   (a crash or a hang is 0.7, set by the reporter), its time limit one of the reporter's named limits, `test.limit.quick`, `.slow` or `.long`. The body
   answers `true` or `false`, nothing else (below, *A test has one string: its title*). Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
   reported by itself to `testicle.testicle.set` of the node of the checkout it runs in, and the suite's success for each script it judged to `testicle.suite.success` once it is through with that script (none for a run with `--test`; testicle never sums a suite's result from its test rows); `--test <title>` runs the tests up
-  to that one. The titleRules part of `script-sibling-general.js` holds every suite to it. Its contract: `./test/testReport.md`.
+  to that one. The titleRules part of `script-sibling-general.js` holds every suite to it. Its contract: `../testicle/testReport/test/script.md`.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.

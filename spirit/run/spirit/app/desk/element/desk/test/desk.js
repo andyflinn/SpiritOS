@@ -14,9 +14,9 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'desk.js');
 // The desk is known by its id, its folder's path in dots (goal/G49.19): its key, its family, and its calls, spirit.app.desk.<verb>.
 const ID = 'spirit.app.desk';
@@ -24,7 +24,7 @@ const ID = 'spirit.app.desk';
 
 // What each step makes, for the tests after it, in order; every scratch node and Chrome page is stopped by test.after.
 const W = {};
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 // A scratch node and its page, stopped; called as a section ends and again by test.after.
 function stop(x) {
   if (!x || x.stopped) return;
@@ -33,7 +33,7 @@ function stop(x) {
   if (page && page.kid) page.kid.kill();
   if (node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
 }
 // A scratch node with a Chrome page on it (debug: its DEBUG on): x.node, x.page; true when both are there, else false.
 async function bootPage(x, debug) {
@@ -253,8 +253,8 @@ function deskWorld(goal, items) {
     // the desk's publishes through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
     readyPromise: Promise.resolve({}),
     callOutcome: function (p) { return p; } };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each element is placed at its path as it runs.
-  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  // A page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so each element is placed at its path as it runs.
+  SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
   win.spirit.requireScript('spirit/client/script.js');

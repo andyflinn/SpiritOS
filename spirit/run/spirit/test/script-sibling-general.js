@@ -10,7 +10,7 @@
 // will process all scripts listed in the arguments that fit": no argument, each part judges all it applies to; each
 // argument, each part judges that one, its results reported for it (testReport's test.forScript).
 require('../script.js');
-const test = require('./testReport.js');
+const test = require('../testicle/testReport/script.js');
 // A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
 const RUN_DIR = require('path').join(__dirname, '..', '..');
 const SPIRIT = require(require('path').join(RUN_DIR, 'spirit', 'script.js'));
@@ -60,9 +60,9 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
-const { branchesOf } = SPIRIT.requireScript('spirit/test/testModule.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
+const { branchesOf } = SPIRIT.requireScript('spirit/testicle/testModule/script.js');
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 
 const ASK_MS = 8000;
@@ -599,7 +599,7 @@ test.after(async function () {
   else if (N.node) {
     try { if (N.node.child) N.node.child.kill(); } catch (e) { /* gone */ }
     await H.sleep(300);
-    try { if (N.node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(N.node); } catch (e) { /* scratch */ }
+    try { if (N.node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(N.node); } catch (e) { /* scratch */ }
   }
 });
 }
@@ -635,11 +635,11 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 
-// The tools of spirit/test/ are no suites (spirit/test/testModule.js TOOLS).
-const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
+// The tools of spirit/test/ are no suites (spirit/testicle/testModule/script.js TOOLS).
+const TOOLS = ['spirit/testicle/testReport/script.js', 'spirit/testicle/testModule/script.js', 'spirit/testicle/headLessChrome/script.js'];
 
 // ── READING A SUITE'S CODE ──────────────────────────────────────────────────────────────────────────────────────────────
 // The code with its comments blanked out, strings and regular expressions kept, every offset where it was.
@@ -892,14 +892,14 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13).
-const test = require(path.join(__dirname, 'testReport.js'));
+const test = require(path.join(__dirname, '..', 'testicle', 'testReport', 'script.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 const arg = String(ARGS[0] || '');
 // The tools of spirit/test/ are testModule.js's one list, and TEST_SYSTEM.md is their document.
 // The special general tests (testModule.js's SPECIAL, goal/G47.1, box v94, 1) are kept too, each with its .md.
-const TM = require(path.join(__dirname, 'testModule.js'));
+const TM = require(path.join(__dirname, '..', 'testicle', 'testModule', 'script.js'));
 const SPIRIT_TEST_KEEPS = TM.TOOLS.concat(['spirit/test/TEST_SYSTEM.md'], TM.SPECIAL || [], (TM.SPECIAL || []).map(function (f) { return f.replace(/\.js$/, '.md'); }));
 
 function inTestFolder(rel) { return /(^|\/)test\/[^/]+$/.test(rel) && !VENDORED_FOLDERS.holds(rel); }
@@ -1072,7 +1072,7 @@ function searchRules(ARGS) {
 const fs = require('fs');
 const path = require('path');
 // The product test system's own reporter (goal/G40.13).
-const test = require(path.join(__dirname, 'testReport.js'));
+const test = require(path.join(__dirname, '..', 'testicle', 'testReport', 'script.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
@@ -1119,7 +1119,7 @@ let reach = null;
 test.run('there is a module to judge', 0.2, function () {
   if (arg && !full) return false;
   if (full) { reach = [path.relative(RUN, full).split(path.sep).join('/')]; return true; }
-  reach = SPIRIT.requireScript('spirit/test/testModule.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/script-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
+  reach = SPIRIT.requireScript('spirit/testicle/testModule/script.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/script-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
   return reach.length > 0 || false;
 }, test.limit.quick);
 // <file>: its searches match the whole row.
@@ -1151,7 +1151,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13).
-const test = require(path.join(__dirname, 'testReport.js'));
+const test = require(path.join(__dirname, '..', 'testicle', 'testReport', 'script.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
@@ -1274,7 +1274,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
-const test = require(path.join(__dirname, 'testReport.js'));
+const test = require(path.join(__dirname, '..', 'testicle', 'testReport', 'script.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
@@ -1303,7 +1303,7 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // a switch (agent.js), a server or a helper is not.
 // AN ELEMENT SCRIPT, BY ITS PLACE AND ITS EXPORTS (goal/G49.23: the loader places a script's module.exports, goal/G49.9): a
 // script under spirit/element/, or an app's element.js or under its element/, whose module.exports has a create. Its exports
-// are what it sets when it runs as the page's loader runs it (spirit/test/headLessChrome.js runAsPage), in a bare world of its
+// are what it sets when it runs as the page's loader runs it (spirit/testicle/headLessChrome/script.js runAsPage), in a bare world of its
 // own whose spirit answers no require; a script that throws there has none.
 const ELEMENT_PLACE = /^spirit\/(?:element\/|app\/.+\/element(?:\/|\.js$))/;
 function exportsCreate(f) {
@@ -1316,7 +1316,7 @@ function exportsCreate(f) {
   vm.createContext(w);
   // The helper by its path, here: the parts run where the file's own const H does not reach (goal/G49.23: it threw 'H is not
   // defined', so no script was ever taken for an element and every element check judged none).
-  try { const e = SPIRIT.requireScript('spirit/test/headLessChrome.js').runAsPage(f, w); return !!e && typeof e.create === 'function'; } catch (e) { return false; }
+  try { const e = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage(f, w); return !!e && typeof e.create === 'function'; } catch (e) { return false; }
 }
 function isElementScript(rel) { const f = String(rel || ''); return /\.js$/.test(f) && ELEMENT_PLACE.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)) && exportsCreate(f); }
 function kindOf(file) { return isElementScript(file) ? 'element' : ''; }
@@ -1548,12 +1548,12 @@ const WATCH = String.raw`(function () {
 // a rule that found nothing to judge on this page says so, and counts as neither green nor red. It is judged where it
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
-// The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
-const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+// The scratch node and headless Chrome, shared with any test that opens a page (spirit/testicle/headLessChrome/script.js).
+const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 // GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
-// recorded under its own module (spirit/test/testReport.js). This run records one line per file, named by its address.
+// recorded under its own module (spirit/testicle/testReport/script.js). This run records one line per file, named by its address.
 // EVERY FILE THAT PAINTS AN ICON LOADS THE ICON ELEMENT (goal/G41.23; Q1, Andy: "plus the intrinsic apps, plus the
 // icons app. all apps that use icons."; "wsl, Go" on: a second rule reads the code, so that it misses none). A bare mount
 // draws no data, so most icons are seen only here. AN ICON STANDS ALONE (Andy: "isn't a glyph inside flowing text just
@@ -1889,18 +1889,18 @@ function strayElementReaches(rel) {
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system
 // that pollutes global name-spaces.", "go on this"; judged in oneFile below). It took the place of requireOnNode, which
-// nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
+// nothing called. Never loaded, as the classifier never loads them (spirit/testicle/scriptClassify/script.js): the node and the relay
 // themselves.
 const NODE_NEVER_LOADED = ['spirit/server/script.js', 'spirit/server/relay/script.js'];
 // The one door to a temp folder, and its own test (judged in oneFile below); and the lab's own test, which reads the system
 // temp folder's top to find that no copy of the tree was made there ("no copy of the tree is made for the lab node in the
 // temp folder"): it builds no temp path.
-const TEMP_DOOR = ['spirit/tempFolder/script.js', 'spirit/tempFolder/test/script.js', 'spirit/test/test/headLessChrome.js'];
+const TEMP_DOOR = ['spirit/tempFolder/script.js', 'spirit/tempFolder/test/script.js', 'spirit/testicle/headLessChrome/test/script.js'];
 // The scratch run a script is loaded in: the one testicle hands (SPIRIT_MOUNT_RUN), else a tree of lab's with no node on it,
 // taken for this one load and freed right after (handed a list, the rule runs this part once a script, so a tree kept here
 // would be one more lab node each script, and the lab's six are gone by the seventh). The script as judged, the working copy,
 // is put there first.
-const NG_LAB = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const NG_LAB = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 // Told from the exit handler, so a script that ends its process while it loads (a server handed no state) is judged on what
 // it added before it ended; written synchronously, as an exit handler must.
 const NODE_GLOBALS_PROBE = 'const path = require("path"); const fs = require("fs"); const g0 = Object.getOwnPropertyNames(globalThis), p0 = Object.getOwnPropertyNames(process); let err = "";' +
@@ -2071,7 +2071,7 @@ function every() {
   }, test.limit.quick);
   // run://spirit/test/'s tools are not tests
   test.run('testModule.js lists tests', 0.2, function () {
-    const moduleAt = [path.join(RUN, 'spirit', 'test', 'testModule.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
+    const moduleAt = [path.join(RUN, 'spirit', 'testicle', 'testModule', 'script.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
     E.listed = moduleAt ? require(moduleAt).testsFor('').map(function (t) { return t.test; }) : [];
     return E.listed.length > 0 || false;
   }, test.limit.quick);
@@ -2151,7 +2151,7 @@ function every() {
     if (E.node) {
       try { E.node.child.kill(); } catch (e) { /* gone */ }
       await sleep(300);
-      try { SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(E.node); } catch (e) { /* scratch */ }
+      try { SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(E.node); } catch (e) { /* scratch */ }
     }
   });
 }

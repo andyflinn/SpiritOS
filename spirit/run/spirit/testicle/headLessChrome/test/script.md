@@ -1,7 +1,7 @@
-# spirit/test/headLessChrome.js
+# spirit/testicle/headLessChrome/script.js
 
 The test helpers: a Chrome page driven over its debugging port, and the scratch nodes and relays tests run on. Its own
-test: `./headLessChrome.js`. This spec holds what goal/G47.3 requires of the nodes and relays it hands out.
+test: `./script.js`. This spec holds what goal/G47.3 requires of the nodes and relays it hands out.
 
 ## Requirements (goal/G47.3, "Redraw the lab environment")
 
@@ -46,4 +46,4 @@ the nodes `repo://lab/node/<name>/`, their locks `<name>.lock` (the holder's pid
 `<name>.pid`; a reset removes even a file whose name passes Windows' old path limit.
 
 The layout of `repo://lab/` itself (labMaster moved there, the old test folder's leftovers gone, `.gitignore`, no test starting
-`spirit/server/script.js` itself) is judged by `../script-sibling-general.js` over the whole repository.
+`spirit/server/script.js` itself) is judged by `../../../test/script-sibling-general.js` over the whole repository.

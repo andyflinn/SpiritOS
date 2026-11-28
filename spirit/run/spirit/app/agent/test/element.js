@@ -11,9 +11,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'element.js');
@@ -140,8 +140,8 @@ function load(w) {
   global.window.spirit.nodeFacts = { key: 'KEY+AGENT/APP==' };
   w.store.homeNode(global.window.spirit.nodeFacts.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app is placed at its path as it runs.
-  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  // A page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so the app is placed at its path as it runs.
+  SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   // The app's own answer, what it set as module.exports (goal/G49.9).
   return PAGE_LOAD.runAsPage(FILE);
 }
@@ -444,7 +444,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
 // draws, its centre's tabs and the boxes of its list panes, in a real Chrome on a scratch node. Andy: "THE TEST TEST
 // EVERYTHING!". What they share from that file comes with them, in this block.
 {
-  const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+  const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
   const { until, sleep, chromePage, findChrome } = LABH;
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
   function scratch() {
@@ -473,8 +473,8 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..','..','..','..');
-  const test = SPIRIT.requireScript('spirit/test/testReport.js');
-  const { scratchNode, chromePage, findChrome, sleep, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+  const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+  const { scratchNode, chromePage, findChrome, sleep, until } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
   const ICON = { provider: '🧪', model: '🧬', persona: '🧙', job: '🧰' };
@@ -775,7 +775,7 @@ async function tabOpens(kind, row) {
   const path = require('path');
   const vm = require('vm');
   const RUN = path.resolve(__dirname, '../../../..');
-  const test = SPIRIT.requireScript('spirit/test/testReport.js');
+  const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
   const FILE = path.join(__dirname, '..', 'element.js');
   const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -952,8 +952,8 @@ async function tabOpens(kind, row) {
       },
     };
     win.spirit.readyPromise = Promise.resolve(win.spirit);
-    // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file is placed at its path as it runs.
-    SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+    // A page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so each file is placed at its path as it runs.
+    SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
     vm.createContext(win);
     loaded['spirit/client/script.js'] = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit/client/script.js'), win);
     // Its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.

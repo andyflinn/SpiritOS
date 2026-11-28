@@ -9,7 +9,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
@@ -30,7 +30,7 @@ test.run('spirit/run/spirit/app/desk/element/desk/desk.json is not core, because
 test.run('spirit/run/spirit/relay/processor/script.js is core, as a file of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/relay/processor/script.js') === true) ? true : false; }, test.limit.quick);
 test.run('spirit/run/spirit/server/relay/test/script.js is core, as a test tool in spirit/test/, one of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/server/relay/test/script.js') === true) ? true : false; }, test.limit.quick);
 test.run('spirit/run/spirit/element/search/contact/script.js is core, as a file of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/element/search/contact/script.js') === true) ? true : false; }, test.limit.quick);
-test.run('spirit/run/spirit/test/testReport.js is core, as a test tool in spirit/test/, one of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/test/testReport.js') === true) ? true : false; }, test.limit.quick);
+test.run('spirit/run/spirit/testicle/testReport/script.js is core, as a test tool in spirit/test/, one of the core folders', 0.2, function () { return (core.isCore('spirit/run/spirit/testicle/testReport/script.js') === true) ? true : false; }, test.limit.quick);
 // goal/G41.30, the review's H5: what the page loads on every boot.
 test.run('spirit/run/spirit/element/codeMirror/lib/codemirror.js is core, because it is loaded on every boot', 0.2, function () { return (core.isCore('spirit/run/spirit/element/codeMirror/lib/codemirror.js') === true) ? true : false; }, test.limit.quick);
 test.run('spirit/run/spirit/element/codeMirror/lib/codemirror.css is core, because it is loaded on every boot', 0.2, function () { return (core.isCore('spirit/run/spirit/element/codeMirror/lib/codemirror.css') === true) ? true : false; }, test.limit.quick);

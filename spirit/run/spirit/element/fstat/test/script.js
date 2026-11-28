@@ -13,9 +13,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // EVERY FILE OF THE TREE BY ITS PATH (goal/G49.6; Andy: "make every single test use spirit.requireScript() to load product
 // files"): spirit.js alone by node's require, being the loader; each other file through it, answered at once in node.
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/fstat/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -84,7 +84,7 @@ function world(o) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // fstat.js is loaded by its path through the page's spirit.requireScript (goal/G49.6; spirit/test/headLessChrome.js
+  // fstat.js is loaded by its path through the page's spirit.requireScript (goal/G49.6; spirit/testicle/headLessChrome/script.js
   // pageSpirit), run in this world, and placed at its path.
   H.pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT).then(null, function (e) { w.error = e; });

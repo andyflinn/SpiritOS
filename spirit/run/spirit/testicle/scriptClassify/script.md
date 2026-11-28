@@ -1,10 +1,10 @@
-# spirit/test/scriptClassify.js
+# spirit/testicle/scriptClassify/script.js
 
 The classifier (goal/G47.1, box v94, 1): a "special" general test under its own name, which testicle's server runs by
 itself. It is named after no module, so `testModule.js` lists it in `SPECIAL`, not as a test, and the garbage rule keeps it
 and this file.
 
-    node spirit/test/scriptClassify.js [<script> ...]
+    node spirit/testicle/scriptClassify/script.js [<script> ...]
 
 ## Requirements
 
@@ -44,7 +44,7 @@ and this file.
 - *"the classify failing: not classifyable. No Chrome: tough luck"*: no scratch node, or no Chrome, fails every script of
   the run.
 
-## testicle's side (spirit/app/testicle/testicle.js; its test, ../app/testicle/test/testicle.md)
+## testicle's side (spirit/app/testicle/testicle.js; its test, ../../app/testicle/test/testicle.md)
 
 - *"the testicle server continues classifying until all scripts are classified before moving to actual testing"*,
   *"interactive or not (auto)"*: while any script row has reClassify set, the runner's next job is this suite, given every

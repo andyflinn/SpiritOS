@@ -9,8 +9,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { scratchNode } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const SUBJECT = path.join(RUN, 'spirit', 'bundle', 'script.js');
 const TABLE = 'spirit.bundle';
 
@@ -42,7 +42,7 @@ const W = { node: null, tree: null };
 test.after(function () {
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 test.run('a scratch node comes up, and its api is read', 0.2, async function () {
   W.node = await scratchNode();

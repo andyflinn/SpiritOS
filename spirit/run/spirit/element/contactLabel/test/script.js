@@ -10,10 +10,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
 const FILE = path.join(__dirname, '..', 'script.js');
 
@@ -38,7 +38,7 @@ const asked = [];
 const captions = { KB: 'Bert' };
 let labelAnswer = null; let labelRefuse = null;
 global.window = { spirit: {} };
-LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
 global.spirit = window.spirit;
 // What readyPromise answers holds no branch (goal/G49.6); the contact branch is answered by its api.js path.
 window.spirit.readyPromise = Promise.resolve({});

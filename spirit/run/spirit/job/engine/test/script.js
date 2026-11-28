@@ -18,9 +18,9 @@ const { spawn, execSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
 // OBJECT. PERIOD!"; box v4: "spirit/job/engine/script.js { installJobs }"): asked in a process of its own, spirit.requireScript answers an
 // object holding installJobs, each a function.
@@ -38,7 +38,7 @@ const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/job/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/job'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const { scratchNode, sleep, until } = H;
 // AN APP IS KNOWN BY ITS ID, ITS FOLDER'S PATH IN DOTS (goal/G49.19): spirit/app/zzserve is spirit.app.zzserve, its key, its
 // branch in the api tree and the head of its calls.
@@ -968,7 +968,7 @@ function mountPart() {
 
   test.run('a scratch node comes up for the throwaway app', 0.2, async function () {
     ({ answer } = SPIRIT.requireScript('spirit/peer/door/script.js'));
-    ({ freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/test/headLessChrome.js'));
+    ({ freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js'));
     s = scratch();
     ranHelper = path.join(s.root, 'helper-ran.txt');
     ranElsewhere = path.join(s.root, 'elsewhere-ran.txt');

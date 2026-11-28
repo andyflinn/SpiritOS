@@ -30,7 +30,7 @@ It carries a class of its own, by which the shell's other elements are seen to p
   is added to the page, and 800 icons of new glyphs draw in under 300 ms (the icon list draws some 800).
 
 Asked of a real browser, since a square that follows the font size is layout: `./icon-sized.html`, opened at
-`/DEBUG/spirit/element/icon/test/icon-sized.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`).
+`/DEBUG/spirit/element/icon/test/icon-sized.html` on a scratch node with its DEBUG on (`spirit/testicle/headLessChrome/script.js`).
 
 ## Its users
 

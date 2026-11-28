@@ -14,11 +14,11 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
+const LABH = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
-const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }

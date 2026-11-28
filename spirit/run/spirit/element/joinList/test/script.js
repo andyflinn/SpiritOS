@@ -15,7 +15,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/joinList/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -62,7 +62,7 @@ function world(join) {
     },
   };
   // joinSteps, the real one, and the subject: run in this window by their paths, through the page stand-in (goal/G49.6).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps/script.js', SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps/script.js', SUBJECT] });
   if (SRC) win.spirit.requireScript(SUBJECT);
   w.win = win;
   // goal/G49.23: placed on the spirit object itself, spirit.element.joinList.

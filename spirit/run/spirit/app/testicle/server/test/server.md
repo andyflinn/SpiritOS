@@ -71,7 +71,7 @@ The box, in Andy's words where he gave them:
   lists run; run of kappa answers within 2.5 s with none of its rows yet; then all four rows come, with their results;
   run of lambda given its second test makes rows for the first and second, none for the third; run of mu makes mu's row,
   passing.
-  The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/test/test/testReport.js`).
+  The branch and the stream are judged in the face test; the reporter's call in its own test (`spirit/testicle/testReport/test/script.js`).
   - *"test.search will only return \"current\" test rows for the script/suite combination supplied ... no script in the
     search query searches tests for any script; the same for suite"*: `{items, more}`, the current rows only, one per
     test; with no script, that suite's for any script; with no suite, that script's in any suite; with neither, all.
@@ -106,14 +106,14 @@ The box, in Andy's words where he gave them:
   on every script row. *"a script seen for the first time starts with reClassify true"*, browserOnly and nodeOnly false;
   *"when the server (always) processes file changes, and the hash of the
   script changes, \"reClassify\" must be set to \"true\""*. Only classification sets it false (below).
-- **Classification** (goal/G47.1, box v94, 1; the classifier's own contract: `spirit/test/scriptClassify.md`):
+- **Classification** (goal/G47.1, box v94, 1; the classifier's own contract: `spirit/testicle/scriptClassify/script.md`):
   - the verb `script.classify {script, browserOnly, nodeOnly}` sets the script row's two flags and clears its reClassify,
     unless a classifying run under way started on other bytes of it; both flags true is refused (bad-request), a name that
     is no script (not a .js, outside run://, or ignored) answers "not a production script", a script with no row "no such file"; a
     script in a test folder with a row of its own (a tool of the test system with a test of its own) is classified like
     any; it answers the row.
   - *"continues classifying until all scripts are classified before moving to actual testing"*, *"interactive or not
-    (auto)"*: while any script row has reClassify set, the runner's next job is `spirit/test/scriptClassify.js`, handed
+    (auto)"*: while any script row has reClassify set, the runner's next job is `spirit/testicle/scriptClassify/script.js`, handed
     every such script, and no other suite starts, a pressed one included.
   - *"That row prevents it from being tested in any other way"*: no suite, pressed or flagged, starts for a script whose
     current `classifyable` row is red.
@@ -186,7 +186,7 @@ The box, in Andy's words where he gave them:
 - **By loading, the reasons read:** loads on the node, crashes in the page for lack of `require`: node-only. Crashes on the
   node for lack of `document`, loads in the page: browser-only. Loads in both: neither. Exits on the node with nothing
   thrown (as an app server does without `--state`): it has loaded there, so node-only. A syntax error, and a load that does
-  not finish in 3 s: not classifyable, a red `classifyable` row of `spirit/test/scriptClassify.js`, severity 0.8. A script
+  not finish in 3 s: not classifyable, a red `classifyable` row of `spirit/testicle/scriptClassify/script.js`, severity 0.8. A script
   classified has no red row; each has a suite row of the classifier.
 - **Classified first:** each one's own suite reports only after its `reClassify` cleared; a script whose `classifyable` row
   is red is tested in no other way.
@@ -210,7 +210,7 @@ The box, in Andy's words where he gave them:
   browser-only script shows no `-node` suite, a node-only one no `-browser` suite; and the same after a restart. The kinds
   checks read only live suite rows.
 - **The classifier changed, every script classified again** (Andy, on a script left red by the classifier before its fix:
-  *"wsl, note that and make sure this doesn't happen again."*): after a change of `spirit/test/scriptClassify.js` a
+  *"wsl, note that and make sure this doesn't happen again."*): after a change of `spirit/testicle/scriptClassify/script.js` a
   script classified before reads `reClassify` true again; a script that failed is tried again though it did not change
   (its `classifyable` row tested anew); each of the six is classified again.
 - **After a start, interactive, suites waiting** (Andy: *"wsl, make double sure you catch this with a test."*): with
@@ -225,7 +225,7 @@ The box, in Andy's words where he gave them:
   the script table has zzdB and zzdC deleted; the suite table has zzdB's suite, zzdA's new hash, zzdC's suite deleted; the
   testicle table holds no current result of zzdC, and once zzdA's suite has run again, the test it lost is not current.
 - **The classifier changed while the node was down** (Andy: *"ON STARTUP THAT IS. IT MUST FUCKING START FUCKING
-  CLASSIFYING IN ANY MODE, RIGHT AT STARTUP, AND IT FUCKING DOES NOT!"*): `spirit/test/scriptClassify.js` changed while
+  CLASSIFYING IN ANY MODE, RIGHT AT STARTUP, AND IT FUCKING DOES NOT!"*): `spirit/testicle/scriptClassify/script.js` changed while
   down; after the start every live script's `classifyable` row is tested again.
 - **Interactive mid-classifying** (Andy: *"AND IT FUCKING STOPS CLASSIFYING WHEN I GO BACK TO FUCKING ITERACTIVE
   MODE!!!!!!!!!!!!!!!!!!!"*): the classifier changed, the server is switched to interactive while it classifies again;

@@ -15,8 +15,8 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 
 // The scratch node and the Chrome page on it.
@@ -36,7 +36,7 @@ test.after(function () {
   try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 test.run('it loads through requireScript and mounts with the create of spirit.element.introSpector, handed a container', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;

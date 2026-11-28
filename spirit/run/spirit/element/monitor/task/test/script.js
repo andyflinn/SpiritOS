@@ -9,8 +9,8 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const FILE = path.join(RUN, 'spirit', 'element', 'monitor', 'task', 'script.js');
 // zztask publishes its progress, as a run process does (goal/G29.14: {job: {state, name, done, total, text}}), and runs on
@@ -35,7 +35,7 @@ test.after(function () {
   try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
   try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // Mounted in a container of its own, #task-<app>; what it shows, read from the page.

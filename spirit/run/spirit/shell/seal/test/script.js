@@ -12,7 +12,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/shell/seal/script.js';
@@ -34,7 +34,7 @@ test.run('in a page, run as the loader runs it, the browser seal puts out suppor
   const win = vm.createContext({ crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer, spirit: {} });
   win.window = win;
   let S;
-  try { S = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, win); }
+  try { S = LOADER.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage(SUBJECT, win); }
   catch (e) { return false; }
   W.S = S;
   return S && ['supported', 'newKey', 'seal', 'open'].every(function (f) { return typeof S[f] === 'function'; }) ? true : false;

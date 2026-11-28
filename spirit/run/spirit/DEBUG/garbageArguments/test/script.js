@@ -11,7 +11,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const G = LOADER.requireScript('spirit/DEBUG/garbageArguments/script.js');
 const limits = LOADER.requireScript('spirit/limits/script.js');
 

@@ -13,8 +13,8 @@
 const LOADER = require('../../../script.js');
 const http = require('http');
 const os = require('os');
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6), and its branch, by its old word.
 const SUBJECT = 'spirit/net/server/script.js';
 const BRANCH = 'spirit/net/script.js';

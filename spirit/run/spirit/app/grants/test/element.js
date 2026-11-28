@@ -19,12 +19,12 @@ const { spawn, execSync } = require('child_process');
 // spirit/app/grants/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
@@ -52,7 +52,7 @@ function world(o) {
     grantsPanel: { nodeGrants: NODE_GRANTS, create: function (host, cfg) { const p = { host: host, cfg: cfg || {}, args: arguments.length }; w.panels.push(p); return p; } },
   };
   const FILES = { 'spirit/element/tabContainer/script.js': 'tabContainer', 'spirit/element/bundleEditor/script.js': 'bundleEditor', 'spirit/element/search/grant/grantsPanel/script.js': 'grantsPanel' };
-  // goal/G43.32: the parts are requireScript's answers below; a page's spirit (spirit/test/headLessChrome.js pageSpirit), so
+  // goal/G43.32: the parts are requireScript's answers below; a page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so
   // grants.js is placed at spirit.app.grants.element as it runs (goal/G49.23: on the spirit object itself, no spirit.required).
   const page = {};
   const win = {
@@ -72,7 +72,7 @@ function world(o) {
       const put = function () { const n = FILES[p]; return n ? E[n] : {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
-  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
   if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.win = win; w.els = { grants: (win.spirit.app.grants || {}).element }; w.NODE_GRANTS = NODE_GRANTS;
   return w;
@@ -252,7 +252,7 @@ test.run('when an element is refused it says Grants could not be loaded.', 0.2, 
 // its deletion, closes its branchEditor tab."; "A user can only create, change and delete node-owned bundles and branches,
 // and sees the others read-only". What a person sees is judged: a press is a real click on what is drawn, in the Grants
 // app the shell app opens from its tile (goal/G43.24: "both show in the shell as before").
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const B = {};
 // Its node and Chrome go once the bundle lines are judged (the wrapper part's world starts by it), or at the end.
 async function closeBundleWorld() {

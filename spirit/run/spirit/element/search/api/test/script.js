@@ -16,10 +16,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
 // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
 // stands at its place (a folder's script.js at its folder's name), a stand-in or a real file loaded; nothing there is refused.
@@ -86,8 +86,8 @@ function world() {
   // branch does, read at each use.
   const ANSWERS = { 'spirit/script.js': Object.defineProperty({}, 'client', { get: function () { return win.spirit.client; } }), 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
   win.window = win;
-  // The page's spirit.requireScript, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', SUBJECT] });
+  // The page's spirit.requireScript, as spirit.js hands it (spirit/testicle/headLessChrome/script.js pageSpirit).
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', SUBJECT] });
   vm.createContext(win);
   // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).

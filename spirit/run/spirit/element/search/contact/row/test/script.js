@@ -15,11 +15,11 @@ const vm = require('vm');
 const http = require('http');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const JS = path.join(__dirname, '..', '..', '..', '..');
 function load(file) { PAGE_LOAD.runAsPage(file); }
@@ -40,7 +40,7 @@ let kept, stranger, relay, blocked, ha, hb, ho, found, hf, labelField, gets = nu
 
 test.run('the contact row runs on a window of its own, with the data set and the contact branch\'s data real', 0.2, async function () {
   global.window = { spirit: {} };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   global.spirit = window.spirit;
   // What readyPromise answers holds no branch (goal/G49.6); the branches are answered by their api.js paths, below.
   window.spirit.readyPromise = Promise.resolve({});
@@ -53,7 +53,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // goal/G43.32: what the row opens stands where an element now finds it, spirit.element.
   window.spirit.element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
   // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(window.spirit);
   // The contact branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself
   // to the data set.
   let contactData = false;
@@ -465,7 +465,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (RF.R) RF.R.stop(); } catch (e) { /* gone */ }
   try { if (RF.N && RF.N.child) RF.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (RF.N && RF.N.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(RF.N); } catch (e) { /* scratch */ }
+  try { if (RF.N && RF.N.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(RF.N); } catch (e) { /* scratch */ }
 });
 // row-relayOnFace: a relay's row in Contacts opens the relay on a face, whichever came first (goal/G41.32)
 test.run('a scratch node and a scratch face relay come up', 0.2, async function () {

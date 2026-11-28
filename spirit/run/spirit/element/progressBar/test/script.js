@@ -5,7 +5,7 @@
 // rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // The progress bar (goal/G29.14): one shared shell element, drawn from (done, total, text). The browser file runs in node
-// on a window of its own, placed at its path by its module.exports (spirit/test/headLessChrome.js pageSpirit); the
+// on a window of its own, placed at its path by its module.exports (spirit/testicle/headLessChrome/script.js pageSpirit); the
 // markup it answers is read as text.
 
 const fs = require('fs');
@@ -14,7 +14,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
 // OBJECT. PERIOD!"; box v4: "spirit/element/progressBar/script.js { progressBar }"): asked in a process of its own, spirit.requireScript answers an
 // object holding progressBar, each a function.
@@ -41,7 +41,7 @@ test.run('it runs on a window of its own and places itself at spirit.element.pro
   const win = { Math: Math, Number: Number, String: String, Promise: Promise };
   win.window = win;
   win.spirit = { element: {} };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT);
   await settle();
   P = ((win.spirit.element || {}).progressBar || {}).progressBar;

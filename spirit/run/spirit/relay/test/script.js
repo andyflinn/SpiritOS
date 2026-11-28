@@ -10,8 +10,8 @@
 
 // spirit.js, the loader, first and alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require('../../script.js');
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchRelay, scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchRelay, scratchNode } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/relay/script.js';
 const WORK = 'spirit/relay/server/script.js';

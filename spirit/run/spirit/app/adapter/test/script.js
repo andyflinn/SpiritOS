@@ -13,14 +13,14 @@ const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const limits = SPIRIT.requireScript('spirit/limits/script.js');
 
 
-// The runs of an app's script on the scratch node: spirit/test/headLessChrome.js's, the one watch the tests share.
+// The runs of an app's script on the scratch node: spirit/testicle/headLessChrome/script.js's, the one watch the tests share.
 const runsOf = H.appRuns;
 
 const NAME = 'zzbig';

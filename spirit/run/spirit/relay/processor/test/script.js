@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
@@ -237,11 +237,11 @@ test.run('the long search is answered', 0.2, function () {
 // THE FACE COMES BACK BY ITSELF (goal/G43.30; Andy: "ALL, I had to, several times, refresh my new face, because it
 // doesn't seem to auto-reconnect.", "all, FIX IT, IN THIS ITEM, then we tag."). The face retries only once its stream ends
 // (spirit/shell/boot/script.js), so when the home node's feed into it goes, the relay ends the face's stream: the face opens it
-// again, and the node hears face-open once more and feeds it. A real relay on a scratch copy (spirit/test/headLessChrome.js
+// again, and the node hears face-open once more and feeds it. A real relay on a scratch copy (spirit/testicle/headLessChrome/script.js
 // scratchFaceRelay), a member seated with a face, its node present and its face logged in; the face's stream and the
 // home node's feed over HTTP, as the face and the node send them.
 const http = require('http');
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const F = { R: null, M: null, opened: [], face: null, one: null, two: null, again: null, three: null, opensNow: 0 };
 // The face's own stream, as its page opens it (spirit/shell/boot/script.js): the call spirit.relay.faceEvents at the relay's one
 // door, POST /spirit, its login cookie, on its own host, from its own page (goal/G49.25: GET /face/stream is gone).

@@ -9,7 +9,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const fence = S.requireScript('spirit/net/fence/script.js');
 
 // What the node hands isThisMachine: the target's hostname, lower-cased (server.js:584).

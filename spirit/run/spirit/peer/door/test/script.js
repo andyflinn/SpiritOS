@@ -10,7 +10,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const { answer } = S.requireScript('spirit/peer/door/script.js');
 
 // The node's tree as a member's api ask would get it unstripped: the desk with a verb of its own. No branch carries an FS

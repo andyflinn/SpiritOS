@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 // A file's code, comments blanked (line numbers kept); null when the file is not there.
 function code(file) {

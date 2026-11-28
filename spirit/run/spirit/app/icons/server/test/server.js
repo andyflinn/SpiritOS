@@ -13,8 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
-const { scratchNode, until } = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, until } = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const limits = S.requireScript('spirit/limits/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -28,7 +28,7 @@ const W = {};
 test.after(function () {
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 // Its one verb, asked by the app's id, its folder's path in dots (goal/G49.19).
 const icon = async function (args) {

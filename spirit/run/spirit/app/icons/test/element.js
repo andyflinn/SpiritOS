@@ -12,8 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } }
@@ -31,7 +31,7 @@ test.after(function () {
   });
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // The face, mounted alone in a box, as the Icons app's createApp mounts it.

@@ -10,19 +10,19 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
-const H = S.requireScript('spirit/test/headLessChrome.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
+const H = S.requireScript('spirit/testicle/headLessChrome/script.js');
 
 // ── THE LAUNCHER (goal/G48.5, the box, "completeness, asserted": "spirit/server/script.js starts a node with no mode and with
 // --node, a relay with --relay, a server process with --app <script>; an unknown mode is refused; every argument after the
 // mode reaches the module unchanged; a refused relay exits 78", "no tracked file names an old path", "no file stands at an
-// old path"). Each start in a lab tree of its own (spirit/test/headLessChrome.js scratchTree), stopped and let go after.
+// old path"). Each start in a lab tree of its own (spirit/testicle/headLessChrome/script.js scratchTree), stopped and let go after.
 const { spawn: spawnL, execFileSync: execL } = require('child_process');
 const L = { trees: [], kids: [] };
 function labTree() {
   const t = H.scratchTree();
   L.trees.push(t);
-  // The node's home inside the tree, as spirit/test/headLessChrome.js's startNode makes it.
+  // The node's home inside the tree, as spirit/testicle/headLessChrome/script.js's startNode makes it.
   const file = path.join(t.run, 'spirit', 'state', 'config.json');
   let cfg = {}; try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch (e) { cfg = {}; }
   if (!cfg.spiritHome) { cfg.spiritHome = path.join(path.dirname(path.dirname(t.run)), '.spiritHome'); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(cfg, null, 2)); }
@@ -572,7 +572,7 @@ test.run('debugFirst is DEBUG.js\'s answer, handed every request first', 0.2, fu
 // ══ THE NODE IT STARTS (spirit/server/node/script.js until goal/G49.25, box v16: "the actual node server ... moves into it") ══
 // Its sections: the attacker's garbage at every door of a node (goal/G41.30), after its own. goal/G43.30: "/" is the face. Andy:
 // "can we delete run://shell/, run://spirit/shell/index.html, and make face.html the default for "/" ???"; the box: "In
-// spirit/server/script.js, the home page is face.html." A scratch node of its own (spirit/test/headLessChrome.js); its "/" asked
+// spirit/server/script.js, the home page is face.html." A scratch node of its own (spirit/testicle/headLessChrome/script.js); its "/" asked
 // over HTTP and opened in a real Chrome.
 const FACE = path.join(RUN, 'spirit', 'shell', 'face.html');
 const net = require('net');
@@ -584,7 +584,7 @@ function letGo(node, page) {
   if (page && page.kid) { try { page.kid.kill(); } catch (e) { /* gone */ } }
   if (node && node.child) { try { node.child.kill(); } catch (e) { /* gone */ } }
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
 }
 
 // "/" answers face.html, byte for byte
@@ -669,7 +669,7 @@ test.run('the page at "/" loads face.html\'s own scripts first', 0.2, async func
 // called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at the api. Imitate
 // that attacker", and "what counts as passing: the server MUST not CRASH or HANG."
 //
-// HOW: a scratch copy of spirit/run on a node of its own (spirit/test/headLessChrome.js), its app servers turned on; neither
+// HOW: a scratch copy of spirit/run on a node of its own (spirit/testicle/headLessChrome/script.js), its app servers turned on; neither
 // Andy's node nor an agent's is touched. What the node says about itself (its api answer) names every family's verbs and
 // the shape of their arguments; then garbage goes in raw, over HTTP and over a bare socket, never through spirit.js.
 

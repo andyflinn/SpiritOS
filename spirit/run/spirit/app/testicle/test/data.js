@@ -15,9 +15,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9; goal/G49.23: it answers what the script put out).
-const PAGE_LOAD = S.requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = S.requireScript('spirit/testicle/headLessChrome/script.js');
 const FILE = path.join(__dirname, '..', 'data.js');
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'client', 'script.js');
 

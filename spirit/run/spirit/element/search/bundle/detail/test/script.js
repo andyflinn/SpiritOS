@@ -13,10 +13,10 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'script.js');
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -80,7 +80,7 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}),
     element: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   // goal/G49.21: the bundles and the branches are each their own branch's data. goal/G49.23, box v22 Part 1: each branch's reads are
   // its client, on the branch its require answers; the element reads them there, never at a store, and asks no client script.
   bundleBranch.client = { watch: function (fn) { bundleWatches.push(fn); return function () {}; } };

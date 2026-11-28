@@ -10,8 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { scratchNode, chromePage, findChrome, until, sleep } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, chromePage, findChrome, until, sleep } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const APPS = path.join(RUN, 'spirit', 'app');
 // An app's key is its id, its folder's path in dots (goal/G49.19): spirit.app.publishData for spirit/app/publishData.
@@ -26,7 +26,7 @@ test.after(async function () {
   try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
   await sleep(300);
-  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
   try { if (chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 const ask = async function (verb, args) { const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return { status: r.status, body: JSON.parse(await r.text()) }; } catch (e) { return { status: r.status, body: null }; } };

@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/test/headLessChrome.js
+// spirit/run/spirit/testicle/headLessChrome/script.js
 // WHAT A TEST NEEDS TO DRIVE A REAL BROWSER (goal/G41.22): a scratch node with its DEBUG on, and headless Chrome on a
 // scratch profile, one page of it over the debugging protocol. Taken out of the shell's general rules
 // (spirit/test/script-sibling-browser.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
@@ -12,11 +12,11 @@ const path = require('path');
 // CHROME PROFILES FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): each under a route of
 // this file's own, spirit/test/headLessChrome, named by a random suffix (never a process id), so a profile its watcher removes
 // after the test has ended is no suite's leftover.
-const tempFolder = require('../tempFolder/script.js').tempFolder;
+const tempFolder = require('../../tempFolder/script.js').tempFolder;
 const PROFILES = 'spirit/test/headLessChrome';
 const { spawn, execSync } = require('child_process');
 
-const RUN = path.join(__dirname, '..', '..');
+const RUN = path.join(__dirname, '..', '..', '..');
 const REPO = path.join(RUN, '..', '..');
 const WAIT = 20000;
 
@@ -222,7 +222,7 @@ async function scratchNode(o) {
   (opts.servers || []).forEach(function (name) {
     // Its switch where the node reads it, the app's state folder by spirit.statePath (goal/G49.17). A server is named by its
     // id, its folder in dots (goal/G49.19: spirit.app.desk), and its folder is that id in slashes, never built from a word.
-    const S = require('../script.js');
+    const S = require('../../script.js');
     const dir = path.join(run, ...S.statePath(S.slashedPath(name)).split('/'));
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
@@ -386,7 +386,7 @@ async function scratchFaceRelay(o) {
 // fixed."). A test that ends without closing its page, or is killed, never runs its own cleanup, so a watcher of its own,
 // a process apart, asks twice a second whether the test still lives; once it is gone, it ends that Chrome and deletes its
 // profile. A Chrome that ends first ends its watcher too.
-// ITS PROFILE GOES WITH IT, EITHER WAY (goal/G47.1, Andy: "make sure with spirit/test/headLessChrome.js that no chromes are left
+// ITS PROFILE GOES WITH IT, EITHER WAY (goal/G47.1, Andy: "make sure with spirit/testicle/headLessChrome/script.js that no chromes are left
 // cluttering my machine."; found on his Windows machine: 2274 spirit-chrome-* profiles left in TEMP): a Chrome that ended
 // first left its profile behind, and on Windows a profile is still locked for a moment after its Chrome is killed, so the one
 // delete a test did failed. The watcher deletes it once its Chrome is gone, trying again for ten seconds.
@@ -710,7 +710,7 @@ function runAsPage(file, context, src) {
 module.exports = { runAsPage: runAsPage, sharedChrome: sharedChrome, renewChrome: renewChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
 
 // A WORLD TO HAND OUT, AS A PROCESS OF ITS OWN (goal/G47.1, Q10 1; the box: "no production module loads or requires any test
-// file"): `node spirit/test/headLessChrome.js --world` boots one lab node and one Chrome side by side, prints where they are on
+// file"): `node spirit/testicle/headLessChrome/script.js --world` boots one lab node and one Chrome side by side, prints where they are on
 // one line, @@WORLD {"base", "run", "chromePort"}, and holds them until its input closes (or it is ended), then lets them go.
 // testicle starts it as it starts any test file, and hands what it printed to the suite runs it starts.
 if (require.main === module && process.argv.indexOf('--world') !== -1) {

@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/fs/node/script.js';
 const tempFolder = LOADER.requireScript('spirit/tempFolder/script.js').tempFolder;

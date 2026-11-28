@@ -12,9 +12,9 @@ const vm = require('vm');
 // spirit/app/join/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
@@ -32,7 +32,7 @@ function world(o) {
     console: { log: function () {}, error: function () {} } };
   win.window = win;
   vm.createContext(win);
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so join.js is placed at
+  // goal/G43.32: a page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so join.js is placed at
   // spirit.app.join.element (goal/G49.23: on the spirit object itself); joinList is what its require answers.
   win.spirit = { element: els, app: {},
     requireScript: function (p) {
@@ -44,7 +44,7 @@ function world(o) {
       const put = function () { return p === 'spirit/element/joinList/script.js' ? joinList : {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
   if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.J = (win.spirit.app.join || {}).element;
   return w;

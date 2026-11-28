@@ -14,7 +14,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/codeMirror.js';
@@ -83,9 +83,9 @@ function world() {
       return Promise.resolve({});
     },
   };
-  // The recorder writes down only what the element asks for besides itself (spirit/test/headLessChrome.js pageSpirit).
+  // The recorder writes down only what the element asks for besides itself (spirit/testicle/headLessChrome/script.js pageSpirit).
   const own = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return p === SUBJECT ? pageRequire(p) : own(p); };
   vm.createContext(win);
@@ -256,7 +256,7 @@ test.run('shell.css lets CodeMirror in a fill box take the box and scroll inside
 // from there with its sheet, its marks and its search keys, asking no other place. That no file names the library's old
 // place is spirit/test/script-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
 const REPO = path.resolve(RUN, '../..');
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };
 
 test.run('the library\'s 15 files, licence included, stand in spirit/element/codeMirror/', 0.2, function () {
@@ -307,7 +307,7 @@ test.after(function () {
   try { if (L.page && L.page.kid) L.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (L.node && L.node.child) L.node.child.kill(); } catch (e) { /* gone */ }
   try { if (L.page && L.page.profile) fs.rmSync(L.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (L.node && L.node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(L.node); } catch (e) { /* left */ }
+  try { if (L.node && L.node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(L.node); } catch (e) { /* left */ }
 });
 
 // REFRESHED WHEN IT BECOMES VISIBLE (goal/G48.5; Andy: "there's something that the codeMirror element does when it is

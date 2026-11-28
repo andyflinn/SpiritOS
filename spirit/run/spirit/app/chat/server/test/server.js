@@ -5,7 +5,7 @@
 // "chat/server/server.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in
 // the node's state" (Andy: "how about calling the db chat.db ??????", and "that ruling is replaced."); "The branch name is
 // the folder's: chat"; "No old chat data is rescued" (Andy: "don't even THINK of rescuing any old chat data, that an
-// ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (spirit/test/headLessChrome.js), the
+// ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (spirit/testicle/headLessChrome/script.js), the
 // app switched on as he switches it on, and every verb asked over HTTP as the owner asks it on loopback. A line written to a key nobody answers is kept and
 // stays unsent: one node judges all of it. One test.run per test (goal/G47.2).
 
@@ -13,8 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const auth = SPIRIT.requireScript('spirit/relayAuth/script.js');
 const limits = SPIRIT.requireScript('spirit/limits/script.js');
 const FILE = path.join(__dirname, '..', 'server.js');
@@ -32,7 +32,7 @@ const X = { src: '', node: null, state: '', call: null, up: false, K: '' };
 test.after(function () {
   const node = X.node;
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node && node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // ── its code: no held path and no contact.accept (goal/G43.23, the checks of chatClerver-noHeld.js) ──

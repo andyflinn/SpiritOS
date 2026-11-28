@@ -12,7 +12,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../../tempFolder/script.js').tempFolder;
@@ -27,7 +27,7 @@ try { contacts = LOADER.requireScript('spirit/contact/engine/script.js'); } catc
 const nodeStore = LOADER.requireScript('spirit/nodeStore/script.js');
 const nodeCard = LOADER.requireScript('spirit/nodeCard/script.js');
 const auth = LOADER.requireScript('spirit/relayAuth/script.js');
-const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const { scratchNode } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 
 // A card signed by that key, naming an owner.
@@ -90,7 +90,7 @@ test.after(function () {
   try { if (W.home) fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 const runOf = function () { return W.node.run || path.join(W.node.root, 'spirit', 'run'); };
 // A row of the scratch node's table, its signed card naming that owner.

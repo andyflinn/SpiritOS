@@ -10,8 +10,8 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const FILE = path.join(__dirname, '..', 'script.js');
 
 // Plain: enabled, no element in it, its label alone.
@@ -49,7 +49,7 @@ test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (W.node && W.node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(W.node); } catch (e) { /* left */ }
+  try { if (W.node && W.node.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(W.node); } catch (e) { /* left */ }
 });
 test.run('it adds busyButton with its create and its attach to window.spirit.element', 0.2, function () {
   if (!m) return false;

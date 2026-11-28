@@ -22,7 +22,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/search/grant/grantsPanel/script.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -216,7 +216,7 @@ function world() {
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
   const REAL = [SUBJECT, 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/client/script.js'];
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/.+\/data\.js$/.test(p) || /^spirit\/.+\/client\/script\.js$/.test(p); } });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/.+\/data\.js$/.test(p) || /^spirit\/.+\/client\/script\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);

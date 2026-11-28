@@ -12,7 +12,7 @@
 // spirit.js, the loader, first and alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require('../../../script.js');
 const vm = require('vm');
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/relay/client/script.js';
 const FAMILY = 'spirit.relay';
@@ -27,7 +27,7 @@ function world() {
   win.window = win;
   win.spirit = { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } };
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
+  LOADER.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/client/script.js', SUBJECT] });
   win.spirit.requireScript('spirit/client/script.js');
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.client;

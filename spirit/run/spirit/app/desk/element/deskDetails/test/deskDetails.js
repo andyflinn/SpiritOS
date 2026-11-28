@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'deskDetails.js');
 const KEY = /^[A-Z_]+$/;
 
@@ -246,11 +246,11 @@ function ddWorld(facts, checks, o) {
   // hands some: the desk branch's kept data, as spirit/app/desk/data.js gives it a page, on the branch its api.js hands back
   // (goal/G49.23, box v22 Part 1: an old-shape branch carries its data.js's reads as data; no spirit.required).
   if (o && o.kept) STANDS['spirit/app/desk/api.js'] = Object.defineProperty({}, 'data', { enumerable: false, value: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } });
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit); what it does not know it hands to the requireScript above.
-  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  // A page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit); what it does not know it hands to the requireScript above.
+  SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
   vm.createContext(win);
   // Run as the page's loader runs it, in a module box; the dialog is what it sets as module.exports (goal/G49.9).
-  const dialog = SPIRIT.requireScript('spirit/test/headLessChrome.js').runAsPage(FILE, win, S.raw);
+  const dialog = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage(FILE, win, S.raw);
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
     // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
@@ -622,13 +622,13 @@ test.run('a change that is no chat line (a check) repaints the panel and leaves 
 // ./deskDetails-opened.html, on a scratch node with its DEBUG on, opens the panel in the home page's app area on an item
 // with 200 chat lines and a long box.
 const OPENED = '/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html';
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 // A scratch node and its Chrome page, stopped once their tests are done, and at the end whatever happened.
 function stop(node, page) {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(node); } catch (e) { /* left */ }
 }
 function stopOpened() { stop(S.nodeFacts, S.page); S.nodeFacts = S.page = null; }
 function stopPressing() { stop(S.scratch, S.page2); S.scratch = S.page2 = null; }

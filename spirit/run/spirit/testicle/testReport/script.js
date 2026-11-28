@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/test/testReport.js
+// spirit/run/spirit/testicle/testReport/script.js
 // THE PRODUCT TEST SYSTEM'S OWN REPORTER (goal/G40.13, box v22, point 1). Andy, 2026-10-26: "the new reporter prints the
 // same lines as today. the verifier reads it unchanged.", "BUT, i want the product test system to be independent and
 // not reach into repo:/spirit/test/ at all....".
@@ -11,7 +11,7 @@
 // ONE CALL PER TEST (goal/G47.2; Andy: "Every test inside every suite has its unique (within the suite) title. Every test
 // supplies its severity and reports itself to testicle, with the appropriate severity if the test hangs or crashes, else
 // with the default severity. Every test holds on one single string, the title, which is supplied with the report, success
-// or failure."; its contract: ./test/testReport.md):
+// or failure."; its contract: ./test/script.md):
 //   test.run(title, severity, body, limit)     limit is test.limit.quick, .slow or .long (below). body() answers true to pass, false to fail; it
 //                                              may be async. A throw or a rejection fails it at 0.7; still running at its
 //                                              limit, it fails as a hang at 0.7.
@@ -26,12 +26,12 @@
 // its tests through test.run, so test.check, test.fail, test.subHeading and the place they were keyed by are no more.
 // test.comment prints a note, no check.
 //
-//   const test = require('<run>/spirit/test/testReport.js');
+//   const test = require('<run>/spirit/testicle/testReport/script.js');
 
 const path = require('path');
 // The rule a test's title keeps (goal/G47.4): product code, which a test may load.
 // The description's type since goal/G49.13, when the old rules file went: '' when it takes the title, else why.
-const TITLE_TYPE = require('../type/string/description/script.js');
+const TITLE_TYPE = require('../../type/string/description/script.js');
 function titleProblem(v) { try { TITLE_TYPE.isValid(v); return ''; } catch (e) { return (e && e.message) || 'not a valid title'; } }
 
 const STARS = '**************************************************************************';
@@ -84,7 +84,7 @@ const test = {
 };
 
 // ── ONE CALL PER TEST (goal/G47.2) ──────────────────────────────────────────────────────────────────────────────────────
-const RUN_ROOT = path.join(__dirname, '..', '..');
+const RUN_ROOT = path.join(__dirname, '..', '..', '..');
 function runRel(f) {
   const r = path.relative(RUN_ROOT, f);
   return r && r.indexOf('..') !== 0 && !path.isAbsolute(r) ? r.split(path.sep).join('/') : '';
@@ -142,7 +142,7 @@ function reportToTesticle(rec, verb, after) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'script.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', '..', 'script.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.requireScript('spirit/app/testicle/api.js');
     // ITS FAILURE CAUGHT WHERE IT IS KEPT (the test review, fix 1: "testReport.js:137 stores the report promise with no handler, and
     // :209 charges the rejection to the running test"; with no node, three passing tests gave two greens and a red): a family
@@ -187,7 +187,7 @@ function start() { if (!started) { started = true; ownImmediate(runAll); } }
 // starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
 // not a slow machine, so each is wide; change one here and every suite follows.
 test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
-// A TEST OF ANOTHER SCRIPT (goal/G47.1, box v94, 1: spirit/test/scriptClassify.js, given a list of scripts, reports each one's
+// A TEST OF ANOTHER SCRIPT (goal/G47.1, box v94, 1: spirit/testicle/scriptClassify/script.js, given a list of scripts, reports each one's
 // "classifyable"): opts.script, scoped to run://, names the script that one result is reported for, in place of SCRIPT;
 // a title is then said once per script.
 // FOR ONE SCRIPT OF SEVERAL (goal/G47.1, box v94, 2: a general test "will process all scripts listed in the arguments that

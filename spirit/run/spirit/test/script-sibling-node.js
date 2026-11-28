@@ -37,7 +37,7 @@ function runRel(a) {
   return String(a).split(p.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '');
 }
 
-const test = require('./testReport.js');
+const test = require('../testicle/testReport/script.js');
 // A path's place on the spirit object itself (goal/G49.23, no spirit.required): its first key spirit the object, a folder's
 // script.js at its folder's own name (goal/G49.9), spirit/fs/script.js at spirit.fs.
 function placeKeys(rel) { const k = rel.replace(/\.js$/, '').split('/'); if (k.length > 1 && k[k.length - 1] === 'script') k.pop(); return k.slice(1); }
@@ -81,7 +81,7 @@ const E = { run: '', root: '' };
 // "does not load on the node: this VM has no node: spirit/state/environment.json names no port"): an app's api.js binds its
 // family through the node, so the copy is a scratch node's tree, the apps of the scripts handed turned on (every app, handed
 // none), its environment naming that node's port, as on a VM that runs one.
-const { scratchNode } = S.requireScript('spirit/test/headLessChrome.js');
+const { scratchNode } = S.requireScript('spirit/testicle/headLessChrome/script.js');
 test.run('a copy of the tree with a node of its own is made to require the scripts in', 0.2, async function () {
   const apps = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n'))
     .map(function (f) { return (/^spirit\/app\/([^/]+)\//.exec(f) || [])[1]; }).filter(function (a, i, all) { return a && all.indexOf(a) === i; });
@@ -132,5 +132,5 @@ if (!GIVEN.length) {
 
 test.after(async function () {
   if (E.node && E.node.child) { try { E.node.child.kill(); } catch (e) { /* gone */ } await new Promise(function (r) { setTimeout(r, 300); }); }
-  if (E.root) try { S.requireScript('spirit/test/headLessChrome.js').freeTree(E); } catch (e) { /* scratch */ }
+  if (E.root) try { S.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(E); } catch (e) { /* scratch */ }
 });

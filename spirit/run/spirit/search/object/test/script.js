@@ -13,7 +13,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/search/object/script.js';
 const O = LOADER.requireScript(SUBJECT);
@@ -119,7 +119,7 @@ test.run('in a page, run as the loader runs it, it puts out measureObject and pr
   const stub = { probabilityStringMatch: function (a, b) { return a === b ? 1 : 0; } };
   const ctx = vm.createContext({ spirit: { requireScript: function (p) { asked.push(p); return Promise.resolve(p === 'spirit/search/string/script.js' ? stub : {}); } } });
   ctx.window = ctx;
-  const P = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx);
+  const P = LOADER.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage(SUBJECT, ctx);
   if (!P || typeof P.probabilityStringObjectMatch !== 'function' || typeof P.measureObject !== 'function') return false;
   for (let i = 0; i < 5; i += 1) await Promise.resolve();
   return (short(asked) === short(['spirit/search/string/script.js']) && near(P.probabilityStringObjectMatch('andy', { andy: 'andy' }), 1)) || false;

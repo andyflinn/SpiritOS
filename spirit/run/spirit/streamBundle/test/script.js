@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const limits = S.requireScript('spirit/limits/script.js');
 
 // The module, or null while it does not stand (every check below is then red, never a crash).

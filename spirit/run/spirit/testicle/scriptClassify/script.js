@@ -1,8 +1,8 @@
 'use strict';
-// spirit/run/spirit/test/scriptClassify.js
+// spirit/run/spirit/testicle/scriptClassify/script.js
 // THE CLASSIFIER, A "SPECIAL" GENERAL TEST UNDER ITS OWN NAME (goal/G47.1, box v94, 1). Its contract: ./scriptClassify.md.
 //
-//   node spirit/test/scriptClassify.js [<script> ...]
+//   node spirit/testicle/scriptClassify/script.js [<script> ...]
 //
 // The box: "the script MUST be classified by loading it", "every script is loaded twice, once as a node script and once in
 // a page: a crash on the node for lack of a browser function (window, document): browser-only; a crash in the page for
@@ -15,18 +15,18 @@
 // Each script given (none given: every product script of the tree) is one test, "classifyable", reported for that script
 // (testReport's opts.script). Classified, it tells the node's testicle by testicle.script.classify {script, browserOnly,
 // nodeOnly} and passes; not classifyable, it fails, saying both loads' answers. testicle's server runs it by itself.
-require('../script.js');
+require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { Worker } = require('worker_threads');
-const test = require('./testReport.js');
-const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChrome.js');
+const test = require('../testReport/script.js');
+const { until, freePort, findChrome, chromePage, WAIT } = require('../headLessChrome/script.js');
 
-const RUN = path.join(__dirname, '..', '..');
+const RUN = path.join(__dirname, '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
@@ -257,7 +257,7 @@ function compiles(rel) {
 // proves its tool never reached it: the scratch node or Chrome did not come up before anything of the script was loaded.";
 // cw: "'not charged' must leave the compiling script waiting to run, not green"): a script that compiles is judged only once
 // the scratch node and Chrome are up. When they cannot come up, it gets no test at all, and the run ends with TOOL_DOWN, so
-// testicle leaves it unjudged and waiting for classification (../app/testicle/testicle.js, classifyEnded).
+// testicle leaves it unjudged and waiting for classification (../../app/testicle/testicle.js, classifyEnded).
 const TOOL_DOWN = 3;
 // NO CLASSIFIER OUTLIVES ITS TESTICLE (wsl's find, goal/G49.12: 74 idle classifiers, up to 11 hours old, 8.7 GB together, their
 // node gone): testicle starts it with a channel; when that channel closes, its testicle has gone, killed with its node, and

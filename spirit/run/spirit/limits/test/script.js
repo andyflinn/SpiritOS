@@ -12,7 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const L = S.requireScript('spirit/limits/script.js');
 const seal = S.requireScript('spirit/seal/script.js');
 

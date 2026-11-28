@@ -16,10 +16,10 @@ const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const { freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -52,7 +52,7 @@ function scratch() {
   const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
-  // testicle turned on there, as an owner turns a server on, now that it is not intrinsic (spirit/test/headLessChrome.js
+  // testicle turned on there, as an owner turns a server on, now that it is not intrinsic (spirit/testicle/headLessChrome/script.js
   // scratchNode; the server's test does the same).
   const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(on, { recursive: true });
@@ -79,7 +79,7 @@ function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== nu
 // THE SUITES THAT CONCERN A FILE (goal/G47.1, the server cycle): its own test/<name>.js, and the general tests whose run
 // with no file argument includes it, as the scratch tree's own testModule.js lists them, run as its own process.
 function concerning(run, name) {
-  const lines = require('child_process').execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'testModule.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
+  const lines = require('child_process').execFileSync(process.execPath, [path.join(run, 'spirit', 'testicle', 'testModule', 'script.js')], { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
   const own = path.posix.join(path.posix.dirname(name), 'test', path.posix.basename(name));
   const out = [];
   if (fs.existsSync(path.join(run, own))) out.push(own);
@@ -365,7 +365,7 @@ test.run('shown.js is concerned by its own test and by general tests', 0.2, func
   if (!N || !N.up) return false;
   // And the classifier's row, which every production script has in its detail (Andy: "I LIKE SEING THAT TEST FUCKING LISTED
   // IN THE SCRIPT TAG AND SEEING IT GREEN"); testModule.js does not list it, testicle does.
-  want1 = concerning(s.run, F1).concat(['spirit/test/scriptClassify.js']).sort();
+  want1 = concerning(s.run, F1).concat(['spirit/testicle/scriptClassify/script.js']).sort();
   return (want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1) || false;
 }, test.limit.quick);
 test.run('a production file in the left pane is clicked', 0.2, async function () {
@@ -653,7 +653,7 @@ const searchRows = function () { return T('shown()').then(function (d) { return 
 test.run('iota.js\'s tab is opened and lists its suites', 0.2, async function () {
   if (!face()) return false;
   const had = await call(N.base, 'spirit.app.testicle.testicle.search', { script: F5, text: '' });
-  // iota's own suite's tests alone: its classifier row (spirit/test/scriptClassify.js, classifyable) is there from the start
+  // iota's own suite's tests alone: its classifier row (spirit/testicle/scriptClassify/script.js, classifyable) is there from the start
   // (goal/G47.1, box v94, 1).
   searchBefore = ((had.body && had.body.items) || []).filter(function (i) { return String(i.key).indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length;
   if (!(await T('click(' + JSON.stringify(F5) + ')'))) return false;
@@ -673,7 +673,7 @@ test.run('the run button is the busy button, spirit/element/busyButton/script.js
   return files.some(function (f) { return /['"]spirit\/element\/busyButton\/script\.js['"]/.test(code(path.join(RUN, f))); }) || false;
 }, test.limit.quick);
 // Its title names the button by its words: the glyph holds a zero-width joiner, which the reporter's title rule refuses as an
-// invisible character, so the test never ran (goal/G49.23; spirit/test/testReport.js, titleProblem).
+// invisible character, so the test never ran (goal/G49.23; spirit/testicle/testReport/script.js, titleProblem).
 test.run('a press on iota\'s own suite\'s run button is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {
   if (!face()) return false;
   const row = iotaRows.filter(function (r) { return r.key === iotaOwn || r.key === F5 + '|' + iotaOwn || String(r.text).indexOf('iota.js') !== -1 && String(r.text).indexOf('sibling') === -1; })[0];
@@ -813,12 +813,12 @@ let msgsAt = false;
 // The bar's words as the box words them now (goal/G47.4, ### status bar; statusBox.js): while classifying row 1 names the
 // classifier's file and row 2 reads "<n> of <total>: <script>"; while a suite runs row 1 "<suites owed>: <suite>" and row 2
 // "<tests reported>: <script>". The old wording, "classifying N of M" and "running <suite> for <script>", went with the doing text.
-const CLASSIFIER = 'spirit/test/scriptClassify.js';
+const CLASSIFIER = 'spirit/testicle/scriptClassify/script.js';
 const rowsSeen = function () { return T('bars_seen()').then(function (all) { return (all || []).map(function (b) { return (b.rows || []).map(function (r) { return r.text; }); }); }); };
 test.run('the monitor row\'s messages are recorded, and the classifier is changed so every script is classified again', 0.2, async function () {
   if (!face()) return false;
   msgsAt = (await T('recordBar()')) === true;
-  fs.appendFileSync(path.join(s.run, 'spirit', 'test', 'scriptClassify.js'), '// the classifier, changed, for the status bar\n');
+  fs.appendFileSync(path.join(s.run, 'spirit', 'testicle', 'scriptClassify', 'script.js'), '// the classifier, changed, for the status bar\n');
   return msgsAt || false;
 }, test.limit.quick);
 test.run('while it classifies, the status bar names the classifier in row 1 and says "<n> of <total>: <script>" in row 2, n counting up', 0.2, async function () {

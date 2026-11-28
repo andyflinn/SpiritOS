@@ -11,9 +11,9 @@ const vm = require('vm');
 // spirit/app/starter/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const MANIFEST = path.join(__dirname, '..', 'starter.json');
@@ -57,9 +57,9 @@ function world(card, hold) {
     // The spirit branch by its path, spirit/script.js (goal/G49.23 Part 2: the node branch's verbs are the spirit branch's).
     requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(String(p) === 'spirit/script.js' ? family : {}); },
   };
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js is placed at
+  // goal/G43.32: a page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so starter.js is placed at
   // spirit.app.starter.element as it runs (goal/G49.23: on the spirit object itself).
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
   if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.win = win;
   return w;

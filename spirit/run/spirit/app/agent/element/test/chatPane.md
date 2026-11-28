@@ -32,7 +32,7 @@ Chat input row is filled by an upward scrolling chat log."*, *"how the chat will
 - **No component of the desk**: its code names none.
 
 Asked of a real browser, since pinned rows and a filling log are layout: `./chatPane-laid.html`, opened at
-`/DEBUG/spirit/app/agent/element/test/chatPane-laid.html` on a scratch node with its DEBUG on (`spirit/test/headLessChrome.js`), the pane
+`/DEBUG/spirit/app/agent/element/test/chatPane-laid.html` on a scratch node with its DEBUG on (`spirit/testicle/headLessChrome/script.js`), the pane
 in a centre of 500 by 400.
 
 ## What its test must try to break

@@ -14,9 +14,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
 const tempFolder = S.requireScript('spirit/tempFolder/script.js').tempFolder;
@@ -186,7 +186,7 @@ test.run('the shared element runs on a window of its own, over the real store, s
     if (Object.prototype.hasOwnProperty.call(STANDS, p)) return Promise.resolve(STANDS[p]);
     return Promise.resolve({});
   };
-  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
+  S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(global.window.spirit);
   // Its tree as the page loads it: the shared element first, then this file.
   w.shared = load(SHARED);
   await settle();
@@ -502,7 +502,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   // real list's own heart, probabilitySearch.order, the state it is made with.
   N.LIST = (function () {
     // goal/G43.32: a page's spirit; the list as the loader hands it back, the last run (goal/G49.23).
-    const win = { window: null, spirit: S.requireScript('spirit/test/headLessChrome.js').pageSpirit({ element: {} }), console: console };
+    const win = { window: null, spirit: S.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
     return ['spirit/search/string/script.js', 'spirit/search/object/script.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'].map(function (rel) {

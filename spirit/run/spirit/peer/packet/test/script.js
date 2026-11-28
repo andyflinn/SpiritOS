@@ -13,7 +13,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/peer/packet/script.js';
 const P = LOADER.requireScript(SUBJECT);
@@ -159,7 +159,7 @@ test.run('in a page, run as the loader runs it with the limits already in, it pu
   // A then-able answering at once, as the loader answers a script it has loaded already.
   const ctx = pageWorld(function (p) { asked.push(p); const v = p === 'spirit/limits/script.js' ? limitsCopy() : {}; return { then: function (f) { return Promise.resolve(f ? f(v) : v); } }; });
   let p;
-  try { p = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx); }
+  try { p = LOADER.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage(SUBJECT, ctx); }
   catch (e) { return false; }
   if (!p || typeof p.encode !== 'function') return false;
   const r = p.encode('chat', 'x');
@@ -171,7 +171,7 @@ test.run('in a page without limits.js it asks spirit.requireScript for spirit/li
   const asked = [];
   const ctx = pageWorld(function (p) { asked.push(p); return new Promise(function (r) { setTimeout(function () { r(p === 'spirit/limits/script.js' ? limitsCopy() : {}); }, 10); }); });
   let p;
-  try { p = LOADER.requireScript('spirit/test/headLessChrome.js').runAsPage(SUBJECT, ctx); }
+  try { p = LOADER.requireScript('spirit/testicle/headLessChrome/script.js').runAsPage(SUBJECT, ctx); }
   catch (e) { return false; }
   if (!p || typeof p !== 'object') return false;
   const before = typeof p.encode === 'function';

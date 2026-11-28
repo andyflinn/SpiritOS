@@ -9,7 +9,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 // IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
 // OBJECT. PERIOD!"; box v4: "spirit/fs/filter/api/script.js { api }"): asked in a process of its own, spirit.requireScript answers an
 // object holding api, each a function.

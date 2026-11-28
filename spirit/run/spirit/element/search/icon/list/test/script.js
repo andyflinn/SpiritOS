@@ -14,10 +14,10 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
+const LABH = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = LOADER.requireScript('spirit/test/testReport.js');
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const SET = 'spirit/iconSet.json';
 const OWN = 'spirit/state/app/icons/data/iconSet.json';

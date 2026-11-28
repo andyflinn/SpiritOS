@@ -24,7 +24,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -278,7 +278,7 @@ appApp();
 appRules(TARGETS.filter(function (n) { return n !== BRANCH_TESTS; }).map(factsOf));
 }
 if (!GIVEN.length) appChild([]);
-else GIVEN.forEach(function (one) { require('./testReport.js').forScript(one, function () { appChild([one]); }); });
+else GIVEN.forEach(function (one) { require('../testicle/testReport/script.js').forScript(one, function () { appChild([one]); }); });
 
 // NO APP IS A SHELL ANY MORE (goal/G49.4, box v15; Andy: "the app manifests shell:true goes, and all the logic that goes
 // with it"): no app's <name>.json carries shell.true. Its shell.mount and shell.tile stay, which give an app its face and

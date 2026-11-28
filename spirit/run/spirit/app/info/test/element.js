@@ -15,11 +15,11 @@ const vm = require('vm');
 // spirit/app/info/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/testicle/headLessChrome/script.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
-const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
@@ -48,7 +48,7 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so info.js is placed at
+  // goal/G43.32: a page's spirit (spirit/testicle/headLessChrome/script.js pageSpirit), so info.js is placed at
   // spirit.app.info.element as it runs (goal/G49.23: on the spirit object itself); nodeInfo is what its require answers.
   win.spirit = { element: els, app: {},
     requireScript: function (p) {
@@ -60,7 +60,7 @@ function world(o) {
       const put = function () { return p === 'spirit/element/nodeInfo/script.js' ? nodeInfo : {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
-  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').pageSpirit(win.spirit);
   if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.win = win; w.els = { info: (win.spirit.app.info || {}).element };
   return w;
@@ -170,7 +170,7 @@ test.run('when nodeInfo is refused it says Info could not be loaded.', 0.2, asyn
 const os = require('os');
 const { spawn, execSync } = require('child_process');
 const REPO = path.resolve(RUN, '..', '..');
-const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const H = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }

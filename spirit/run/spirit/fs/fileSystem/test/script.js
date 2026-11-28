@@ -14,7 +14,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
-const test = LOADER.requireScript('spirit/test/testReport.js');
+const test = LOADER.requireScript('spirit/testicle/testReport/script.js');
 // THE FILE MOVED (goal/G49.1; Andy: "spirit/fileSystem.js moves to spirit/fs/fileSystem/script.js", "THEN FUCKING MOVE IT!"): read at
 // its new place, and every check below red, never a crash, while it does not stand there.
 let FS = {};
@@ -147,7 +147,7 @@ test.run('fileServable keeps spirit/element/icon/script.js open', 0.2, function 
 // fileSystem-noPreferences: the node writes no preferences.json (goal/G43.17).
 // Andy: "i want to remove that information and all the code that references it, gone."
 const fs = require('fs');
-const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const { scratchNode } = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const P = {};
 test.run('a scratch node comes up', 0.2, async function () {
   P.N = await scratchNode();
@@ -156,7 +156,7 @@ test.run('a scratch node comes up', 0.2, async function () {
 test.after(function () {
   const N = P.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
-  try { if (N.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(N); } catch (e) { /* scratch */ }
+  try { if (N.root) LOADER.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(N); } catch (e) { /* scratch */ }
 });
 test.run('the node writes no preferences.json', 0.2, function () {
   if (!P.N || !P.N.up || !P.N.root) return false;

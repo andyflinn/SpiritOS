@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const test = S.requireScript('spirit/test/testReport.js');
+const test = S.requireScript('spirit/testicle/testReport/script.js');
 const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
