@@ -176,3 +176,9 @@ who owns a node from owner.json.
 
 peerFile, peerRank, postQueue, peer's api.js and data.js at their new paths, none at the old, no product script requiring an
 old one; spirit/peer/script.js hands out post and acquire; no product script calls peer.post or peer.acquire by the old name.
+
+## The relay's own under the relay branch (goal/G49.26, box v10, Q1)
+
+relayConfig to spirit/relay/configHelper, relayLimits, relayStore, relayStatus and relayDump to spirit/relay/limits, store, status,
+dump: at the new paths, none at the old, required by no product script; spirit/relaySelf/ gone, each of its files (read from git at
+69e84b672) in spirit/relay/; relayAuth, relayRequest and relayUrl stay in the trunk.

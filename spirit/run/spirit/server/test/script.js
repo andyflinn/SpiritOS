@@ -1168,3 +1168,24 @@ test.run('the peer branch hands out its verbs from spirit/peer/script.js: post a
 test.run('no product script calls a peer verb by its old name, peer.post or peer.acquire', 0.4, function () {
   return productHits(['-E', "['\"]peer\\.(post|acquire)['\"]"]).length === 0 || false;
 }, test.limit.slow);
+
+// ── THE RELAY'S OWN UNDER THE RELAY BRANCH (goal/G49.26, box v10, Q1; Andy: "cw, change the box for that"; "All, go!") ──
+// "Six serve a relay alone and move under it; relayAuth, relayRequest and relayUrl serve nodes too and stay in the trunk."
+[['spirit/relayConfig/script.js', 'spirit/relay/configHelper/script.js'], ['spirit/relayLimits/script.js', 'spirit/relay/limits/script.js'],
+  ['spirit/relayStore/script.js', 'spirit/relay/store/script.js'], ['spirit/relayStatus/script.js', 'spirit/relay/status/script.js'],
+  ['spirit/relayDump/script.js', 'spirit/relay/dump/script.js']].forEach(function (m) {
+  test.run(m[0] + ' moved to ' + m[1] + ', and no product script requires the old path', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
+  }, test.limit.slow);
+});
+// "spirit/relaySelf/<verb>.json --> spirit/relay/<verb>.json beside the verbs they describe, its AGENTS.md to spirit/relay/AGENTS.md;
+// spirit/relaySelf/ goes": the verbs it described are read from git at the commit the box was written on, never listed here.
+const SELF_FILES = (function () {
+  try { return execL('git', ['ls-tree', '--name-only', '69e84b672', 'spirit/run/spirit/relaySelf/'], { cwd: REPO_ROOT, encoding: 'utf8' }).split('\n').filter(Boolean).map(function (p) { return p.slice(p.lastIndexOf('/') + 1); }); } catch (e) { return []; }
+}());
+test.run('spirit/relaySelf/ is gone, and each file it held stands in spirit/relay/', 0.4, function () {
+  return (SELF_FILES.length > 5 && !fs.existsSync(path.join(RUN, 'spirit', 'relaySelf')) && SELF_FILES.every(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'relay', n)); })) || false;
+}, test.limit.quick);
+test.run('relayAuth, relayRequest and relayUrl stay in the trunk', 0.4, function () {
+  return ['relayAuth', 'relayRequest', 'relayUrl'].every(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'script.js')); }) || false;
+}, test.limit.quick);
