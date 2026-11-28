@@ -8,7 +8,7 @@
 // THE RUNNER OF THE RULE MODULES (goal/G49.27, step 2a; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
 // the general rules become modules, one rule set one module): its seven parts, branchRules, titleRules, noFuckingGarbage,
 // searchRules, testReachRules, generalRules (its tree rules with it) and typeRules, are each a module of
-// spirit/testicle/general/<rule>/script.js now, every title kept. A module hands out { appliesTo, resource, own, forbids, checks }; this
+// spirit/testicle/general/any/<rule>/script.js now, every title kept. A module hands out { appliesTo, resource, own, forbids, checks }; this
 // file loads each by its full path, asks appliesTo of the path handed and runs checks, the modules whose resource is 'none'
 // and those on a node, which share the one scratch node below. "with no script-argument, they will process all applicable
 // scripts. else it will process all scripts listed in the arguments that fit": no argument, each module judges all it
@@ -38,13 +38,13 @@ const TOOLS = { test: test, run: RUN_DIR, spirit: SPIRIT, node: ONE_NODE };
 // THE RULE MODULES, IN THE ORDER THE PARTS RAN, EACH BY ITS FULL PATH (goal/G49.13: every requireScript a full path written
 // out). A module that fails to load or to hand out its checks is a part that throws (below).
 const RULES = [
-  { name: 'generalRules', dir: 'spirit/testicle/general/generalRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/generalRules/script.js'); } },
-  { name: 'branchRules', dir: 'spirit/testicle/general/branchRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/branchRules/script.js'); } },
-  { name: 'titleRules', dir: 'spirit/testicle/general/titleRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/titleRules/script.js'); } },
-  { name: 'noFuckingGarbage', dir: 'spirit/testicle/general/noFuckingGarbage', load: function () { return SPIRIT.requireScript('spirit/testicle/general/noFuckingGarbage/script.js'); } },
-  { name: 'searchRules', dir: 'spirit/testicle/general/searchRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/searchRules/script.js'); } },
-  { name: 'testReachRules', dir: 'spirit/testicle/general/testReachRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/testReachRules/script.js'); } },
-  { name: 'typeRules', dir: 'spirit/testicle/general/typeRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/typeRules/script.js'); } },
+  { name: 'generalRules', dir: 'spirit/testicle/general/any/generalRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/generalRules/script.js'); } },
+  { name: 'branchRules', dir: 'spirit/testicle/general/any/branchRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/branchRules/script.js'); } },
+  { name: 'titleRules', dir: 'spirit/testicle/general/any/titleRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/titleRules/script.js'); } },
+  { name: 'noFuckingGarbage', dir: 'spirit/testicle/general/any/noFuckingGarbage', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/noFuckingGarbage/script.js'); } },
+  { name: 'searchRules', dir: 'spirit/testicle/general/any/searchRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/searchRules/script.js'); } },
+  { name: 'testReachRules', dir: 'spirit/testicle/general/any/testReachRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/testReachRules/script.js'); } },
+  { name: 'typeRules', dir: 'spirit/testicle/general/any/typeRules', load: function () { return SPIRIT.requireScript('spirit/testicle/general/any/typeRules/script.js'); } },
 ];
 // The resources this runner stands on: none, and the one shared node (box v5); a module on a browser or a relay is another's.
 const RUNS_HERE = ['none', 'node'];

@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/testicle/general/testReachRules/script.js
+// spirit/run/spirit/testicle/general/any/testReachRules/script.js
 // A RULE MODULE OF THE GENERAL TEST (goal/G49.27, step 2a; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
 // the general rules become modules, one rule set one module). Its checks are the part testReachRules(ARGS) of
 // spirit/test/script-sibling-general.js, moved here unchanged in what they check and in their titles; that file is the runner
@@ -11,7 +11,7 @@
 //   checks(scriptPath, tools)  says its tests, each a test.run with its title; scriptPath '' judges every script it
 //                              applies to. tools: { test, run, spirit, node, forbids }, the reporter, the run root judged, its
 //                              spirit object, the run's one shared scratch node ({ node }) and every module's forbids by folder.
-const SPIRIT = require('../../../script.js');
+const SPIRIT = require('../../../../script.js');
 
 function appliesTo(scriptPath) {
   // A production file: a file in a test folder is no module this rule judges (checks says the same).
@@ -29,7 +29,7 @@ const test = tools.test;
 //
 // Judged in the code, comments left out: no require(), import(), spirit.requireScript(), readFileSync() or createReadStream()
 // of a path into a test/ folder. A path is read from the call's own text, its string pieces joined as path.join joins
-// them, so path.join(__dirname, 'test', 'x.js') is caught as 'test/x.js' is. Running a suite as its own process (spawn,
+// them, so path.join(__dirname, '..', '..', 'testReachRules', 'test', 'x.js') is caught as 'test/x.js' is. Running a suite as its own process (spawn,
 // execFile, fork) loads nothing into the module, and is not asked: the desk and its verifier run suites by their path.
 // DEBUG.js (spirit/DEBUG/script.js and spirit/DEBUG/) is the one exception. Each call that breaks it is its own check, named
 // by its file and line.

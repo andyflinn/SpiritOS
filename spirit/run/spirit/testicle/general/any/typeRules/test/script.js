@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/testicle/general/typeRules/test/script.js
+// spirit/run/spirit/testicle/general/any/typeRules/test/script.js
 // THE TYPE RULES MODULE ON A TREE OF ITS OWN (goal/G49.27, step 2a; spec: ./script.md). The box: "Each module has its own
 // test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red." Two type
 // files are planted in a scratch run, one that keeps the rule and one that breaks it; ../script.js judges each, its tests
@@ -8,10 +8,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
-const RULE = SPIRIT.requireScript('spirit/testicle/general/typeRules/script.js');
+const RULE = SPIRIT.requireScript('spirit/testicle/general/any/typeRules/script.js');
 // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"), removed when the suite ends.
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const ROUTE = 'spirit/testicle/general/typeRules/test/script';

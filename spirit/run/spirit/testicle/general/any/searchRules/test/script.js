@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/testicle/general/searchRules/test/script.js
+// spirit/run/spirit/testicle/general/any/searchRules/test/script.js
 // THE SEARCH RULES MODULE ON A TREE OF ITS OWN (goal/G49.27, step 2a; spec: ./script.md). The box: "Each module has its own
 // test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red." Two
 // scripts are planted in a scratch run, one that hands its search the row and one that hands it fields picked by hand;
@@ -8,10 +8,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
-const RULE = SPIRIT.requireScript('spirit/testicle/general/searchRules/script.js');
+const RULE = SPIRIT.requireScript('spirit/testicle/general/any/searchRules/script.js');
 // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"), removed when the suite ends.
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const ROUTE = 'spirit/testicle/general/searchRules/test/script';

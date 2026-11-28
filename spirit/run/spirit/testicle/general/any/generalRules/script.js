@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/testicle/general/generalRules/script.js
+// spirit/run/spirit/testicle/general/any/generalRules/script.js
 // A RULE MODULE OF THE GENERAL TEST (goal/G49.27, step 2a; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
 // the general rules become modules, one rule set one module). Its checks are the part generalRules(ARGS) of
 // spirit/test/script-sibling-general.js, moved here unchanged in what they check and in their titles; that file is the runner
@@ -11,7 +11,7 @@
 //   checks(scriptPath, tools)  says its tests, each a test.run with its title; scriptPath '' judges every script it
 //                              applies to. tools: { test, run, spirit, node, forbids }, the reporter, the run root judged, its
 //                              spirit object, the run's one shared scratch node ({ node }) and every module's forbids by folder.
-const SPIRIT = require('../../../script.js');
+const SPIRIT = require('../../../../script.js');
 
 function appliesTo(scriptPath) {
   // Every path: a file is judged by oneFile, a path that is no file is red ('the file handed is there').

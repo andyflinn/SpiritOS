@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/testicle/general/noFuckingGarbage/test/script.js
+// spirit/run/spirit/testicle/general/any/noFuckingGarbage/test/script.js
 // THE GARBAGE RULES MODULE ON A TREE OF ITS OWN (goal/G49.27, step 2a; spec: ./script.md). The box: "Each module has its own
 // test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red." A module
 // with its test and spec, and a test named after no module, are planted in a scratch run; ../script.js judges each, its
@@ -8,10 +8,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
-const RULE = SPIRIT.requireScript('spirit/testicle/general/noFuckingGarbage/script.js');
+const RULE = SPIRIT.requireScript('spirit/testicle/general/any/noFuckingGarbage/script.js');
 // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"), removed when the suite ends.
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const ROUTE = 'spirit/testicle/general/noFuckingGarbage/test/script';

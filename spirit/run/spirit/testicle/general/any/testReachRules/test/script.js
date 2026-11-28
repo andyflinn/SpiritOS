@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/testicle/general/testReachRules/test/script.js
+// spirit/run/spirit/testicle/general/any/testReachRules/test/script.js
 // THE TEST REACH RULES MODULE ON A TREE OF ITS OWN (goal/G49.27, step 2a; spec: ./script.md). The box: "Each module has its
 // own test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red." Two
 // production scripts are planted in a scratch run, one that loads only a sibling and one that requires a test file;
@@ -8,10 +8,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
-const RULE = SPIRIT.requireScript('spirit/testicle/general/testReachRules/script.js');
+const RULE = SPIRIT.requireScript('spirit/testicle/general/any/testReachRules/script.js');
 // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"), removed when the suite ends.
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const ROUTE = 'spirit/testicle/general/testReachRules/test/script';
