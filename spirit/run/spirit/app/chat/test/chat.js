@@ -54,7 +54,7 @@ test.run('its node mount is true, so the server runs on the node', 0.2, function
 // ── chat.js: the node's script; element.js: the page's (goal/G43.32, rule 4) ──
 test.run('chat.js names chat/server/server.js, for the node', 0.2, function () {
   X.src = code(path.join(APP, 'chat.js'));
-  // The server's script is chat/server/server.js, as the title says (nodeChat.js is gone; goal/G49.23).
+  // The server's script is chat/server/server.js, as the title says (its old node script is gone; goal/G49.23).
   return (/spirit\/app\/chat\/server\/server\.js/).test(X.src) ? true : false;
 }, test.limit.quick);
 test.run('element.js stands beside chat.js for a page, and chat.js does not load it', 0.2, function () {

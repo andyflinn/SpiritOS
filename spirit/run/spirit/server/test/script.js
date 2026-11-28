@@ -98,5 +98,6 @@ test.run('no file stands at an old path: neither the three core files nor the fo
 }, test.limit.quick);
 test.run('spirit/server/script.js is the launcher: it hands its modes to spirit/server/node/script.js, relay.js and app.js', 0.4, function () {
   let src = ''; try { src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8'); } catch (e) { return false; }
-  return ['server/node.js', 'server/relay.js', 'server/app.js'].every(function (m) { return src.indexOf(m) !== -1; }) || false;
+  // Each mode is required by its full path (goal/G49.23: the three moved into spirit/server/<mode>/script.js).
+  return ['node', 'relay', 'app'].every(function (m) { return src.indexOf("requireScript('spirit/server/" + m + "/script.js')") !== -1; }) || false;
 }, test.limit.quick);
