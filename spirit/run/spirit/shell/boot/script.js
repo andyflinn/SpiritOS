@@ -172,14 +172,16 @@
       lines: true,
       any: true,
       retryMs: 5000,
-      // The face's address, asked at each open: its sealing key, and here once after a Connect here press.
-      url: function () {
+      // THE RELAY'S ONE DOOR (goal/G49.25, box v25): the call spirit.relay.faceEvents, made at each open: its sealing key, and here
+      // once after a Connect here press.
+      open: function (signal) {
         var L = spirit.faceLink;
-        var q = [];
-        if (L.sealed) q.push('key=' + encodeURIComponent(L.key.publicKey));
-        if (here) q.push('here=1');
+        var args = {};
+        if (L.sealed) args.key = L.key.publicKey;
+        if (here) args.here = true;
         here = false;
-        return '/face/stream' + (q.length ? '?' + q.join('&') : '');
+        return fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', signal: signal,
+          body: JSON.stringify({ call: 'spirit.relay.faceEvents', args: args }) });
       },
       unit: line,
       onDown: function () { if (!streamStopped) setConnected(false); },

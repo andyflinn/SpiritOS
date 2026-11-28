@@ -2334,9 +2334,9 @@ const FULL_RETRY_S = 30;
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
     'Usage: node spirit/server/script.js --relay [--port <number>]\n\n' +
-    '  Runs a public relay: answers only its one door (POST /spirit/relay/post, and\n' +
-    '  /spirit/relay/reply) and its members\' stream (GET /spirit/relay/stream), and\n' +
-    '  404s everything else. A card ask on the door answers with its key.\n' +
+    '  Runs a public relay: answers only its one door, POST /spirit, the calls of\n' +
+    '  spirit.relay (post, reply, stream and the rest), the faces\' files and the\n' +
+    '  address Caddy asks (/face/allowed), and 404s everything else.\n' +
     '  Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is meant\n' +
     '  to be reached from the internet. A personal node is spirit/server/script.js.\n\n' +
     '  --port <number>   Listen on this port instead of the default (' + DEFAULT_RELAY_PORT + ').\n' +
@@ -2661,9 +2661,39 @@ catch (e) { /* a caption must never be the reason a relay will not boot */ }
 // branch explicitly, then load all trunk branches, using the fs-cache"; Andy: "the relay fucking loads them all, that fucking
 // happens when you fucking move the shit to serveCommon"): spirit.fs first, its cache holding branch and app folders only, since
 // spirit.IS_RELAY is true here (a relay keeps no job table, so nothing of it is published); then every trunk branch it marks. A
-// branch's node work answers nothing on a relay, whose verbs are its processor's, so no node is handed in and nothing is mounted.
+// branch's node work answers nothing on a relay but the spirit.relay branch's, its verbs (spirit/relay/server/script.js): what the
+// relay's server hands it is relayNode, and what it hands back is mounted in relayVerbs, each call checked by spirit/relay/script.js.
 common.loadFs(ROOT_DIR, null);
-common.loadBranches({ rootDir: ROOT_DIR });
+// THE HOME NODE'S UPLOADS (Q10, Andy: "i agree with your recommendation."): named in a header, X-Spirit-Call, the raw upload the
+// body, so it is never read whole and never held to the packet's bound.
+const UPLOADS = ['spirit.relay.faceAnswer', 'spirit.relay.faceFeed'];
+const relayVerbs = Object.create(null);
+const relayNode = { relay: relay, readJsonBody: readJsonBody, clientKeyFor: common.clientKeyFor, nodeRefusal: nodeRefusal, spiritErrors: spiritErrors, streamSink: streamSink, FULL_RETRY_S: FULL_RETRY_S };
+common.loadBranches({
+  rootDir: ROOT_DIR,
+  node: relayNode,
+  mount: function (name, dir, verbs) { Object.keys(verbs || {}).forEach(function (v) { relayVerbs[name + '.' + v] = verbs[v].handler; }); },
+  // A call's arguments checked by its branch's own script before its handler, refused 400 with the check's code; an upload's body
+  // is its file, never read here.
+  check: function (name, branch, verbs) {
+    const out = {};
+    Object.keys(verbs).forEach(function (v) {
+      const handler = verbs[v].handler;
+      out[v] = Object.assign({}, verbs[v], { handler: UPLOADS.indexOf(name + '.' + v) !== -1 ? handler : function (req, res) {
+        return readJsonBody(req).then(function (args) {
+          const bad = spirit.checkArgs(name + '.' + v, (branch.verbs && branch.verbs[v]) || {}, args && typeof args === 'object' && !Array.isArray(args) ? args : {});
+          if (bad) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ ok: false, code: bad.code, error: bad.message, argument: bad.argument }));
+            return null;
+          }
+          return handler(req, res);
+        });
+      } });
+    });
+    return out;
+  },
+});
 
 // handleDeviceOffer (POST /spirit/relay/device) STOOD HERE, removed by
 // goal/G16.2 with the device enrolment.
@@ -2681,147 +2711,36 @@ common.loadBranches({ rootDir: ROOT_DIR });
 // A relay's version reaches its owner in his relay-status report. The
 // claim route's handler (handleRelayClaim, openClaim) and the brochure
 // (relay.html, favicon.svg) went with them.
-function isRelayPublicPath(method, pathname) {
-  // The presence wire, the members' stream: gated inside relay.streamOpen,
-  // which refuses an identity this box does not hold before it allocates
-  // anything.
-  if (method === 'GET' && pathname === '/spirit/relay/stream') return true;
-  // THE ONE DOOR, and the reply that answers what came through it: gated
-  // inside relay.js by a signature, and refused instantly if the peer is
-  // not there to receive it (decision 0006).
-  if (method === 'POST' && (pathname === '/spirit/relay/post' || pathname === '/spirit/relay/reply')) return true;
-  // THE HOME NODE'S UPLOADS TO ITS FACE (goal/G30.14): gated inside relay.js by a signature naming this relay and the
-  // request's id.
-  if (method === 'POST' && (pathname === '/spirit/relay/face/answer' || pathname === '/spirit/relay/face/stream')) return true;
-  return false;
-}
-
-// ── A MEMBER'S FACE (goal/G30.9) ─────────────────────────────────────
-//
-// The relay serves <face>.<its face domain> to anyone while that member has a verified email, a face name and his
-// home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
-// relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
-// EVERY FILE A FACE ASKS IS SERVED BY THE NODE'S OWN STATIC ROUTE, serveCommon's serveStatic (goal/G49.15, box v16: "the static
-// file serving logic should be the exact same on the relay as it is on the node."; "the relay list goes."): "/" is the face page,
-// every other file at its own run path that fileSystem's gate allows. What the face does beyond its files comes from the
-// home node over the link (/face/call, /face/file).
-//
-// /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
-// fetches a certificate for that name on demand (bash/face-setup).
-function faceCookie(req) {
-  const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
-  return m ? m[1] : '';
-}
-function faceSetCookie(res, sid) {
-  res.setHeader('Set-Cookie', 'spirit_face=' + sid + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + (7 * 24 * 60 * 60));
-}
-function faceJson(res, body) {
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-  res.end(JSON.stringify(body));
-}
-// ONLY THE FACE'S OWN PAGE POSTS TO ITS ROUTES (goal/G41.30, the review's RC2: "on every /face/* POST, require Origin equal
-// to the face's own host, require the session's name to match faceAt(host).name, and require Content-Type:
-// application/json"; Andy, Q3: "yes."). All faces are same-site, so the cookie alone goes with a post from a page on another
-// member's face. A browser always sends Origin on a POST, and text/plain is the form a page sends with no preflight.
-function hostOf(req) { return String(req.headers.host || '').toLowerCase(); }
-function facePostProblem(req, host) {
-  let origin = '';
-  try { origin = new URL(String(req.headers.origin || '')).host.toLowerCase(); } catch (e) { origin = ''; }
-  if (!origin || origin !== host) return 'this post did not come from the page of this face';
-  if (String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase() !== 'application/json') return 'a post here is application/json';
-  return '';
-}
-// True when the request was a face's and is answered here.
-function faceDoor(req, res, url, pathname) {
-  if (req.method === 'GET' && pathname === '/face/allowed') {
-    const asked = relay.faceAt(url.searchParams.get('domain') || '');
-    res.writeHead(asked.ok ? 200 : 404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end(asked.ok ? 'ok' : 'no');
-    return true;
+// THE ONE DOOR, /spirit (goal/G49.25, box v25: "the entire set of relay verbs moves into spirit.relay.<verb>, with only ONE, SINGLE
+// door: /spirit, the node's"): a call is { call, args }, as at a node's door, each a verb of the relay's branch, mounted above; an
+// upload is named in its header. Who may call is each verb's own proof: a signature, a face's login, a signed upload.
+function relayDoor(req, res) {
+  const refuse = function (status, body) {
+    if (res.headersSent) return;
+    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(body));
+  };
+  const failed = function () { refuse(500, { ok: false, code: 'handler-failed', error: 'the handler failed' }); };
+  const named = String(req.headers['x-spirit-call'] || '');
+  if (named) {
+    if (UPLOADS.indexOf(named) === -1 || !relayVerbs[named]) { req.resume(); refuse(400, { ok: false, code: 'no-such-verb', error: 'no such upload: ' + named }); return; }
+    try { relayVerbs[named](req, res); } catch (e) { failed(); }
+    return;
   }
-  const at = relay.faceAt(req.headers.host || '');
-  if (!at.face) return false;
-  if (!at.ok) {
-    res.writeHead(at.status || 404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end(at.status === 503 ? 'This face is offline: its home node is not connected.' : 'No such face.');
-    return true;
-  }
-  // THE FACE REACHES ITS HOME NODE (goal/G30.14), by its login: a call or a file is a stream event to the home node,
-  // and this response waits for the home node's upload; /face/stream is the face's own stream of live updates.
-  if ((req.method === 'POST' && pathname === '/face/call') || (req.method === 'GET' && pathname === '/face/file')) {
-    const sidNow = faceCookie(req);
-    const refuse = function (said) {
-      if (res.headersSent) return;
-      res.writeHead(said.status || 502, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: false, error: said.error }));
-    };
-    // The session is this face's, on a file as on a call: another member's login is no login here (goal/G41.30, RC2).
-    const session = relay.faceSession(sidNow);
-    if (session.ok && session.name !== at.name) { req.resume(); refuse({ status: 403, error: 'this login is not this face\'s' }); return true; }
-    if (req.method === 'POST') {
-      const problem = facePostProblem(req, hostOf(req));
-      if (problem) { req.resume(); refuse({ status: 403, error: problem }); return true; }
+  readJsonBody(req).then(function (whole) {
+    const keys = whole && typeof whole === 'object' && !Array.isArray(whole) ? Object.keys(whole) : [];
+    const args = keys.length === 2 && keys.indexOf('call') !== -1 && keys.indexOf('args') !== -1 ? whole.args : null;
+    if (!args || typeof args !== 'object' || Array.isArray(args) || typeof whole.call !== 'string') {
+      refuse(400, { ok: false, code: 'bad-request', error: 'a call is { call: "spirit.relay.<verb>", args: { ... } }, nothing else beside them' });
+      return;
     }
-    if (req.method === 'GET') {
-      const said = relay.faceCall(sidNow, { get: url.searchParams.get('path') || '' }, res);
-      if (!said.ok) refuse(said);
-      return true;
-    }
-    readJsonBody(req).then(function (body) {
-      const said = relay.faceCall(sidNow, body || {}, res);
-      if (!said.ok) refuse(said);
-    }, function () { refuse({ status: 400, error: 'the body is not json' }); });
-    return true;
-  }
-  if (req.method === 'GET' && pathname === '/face/stream') {
-    res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
-    // ?here=1 is the face's Connect here press (goal/G30.12): it moves the stream from another device.
-    // ?key= is the face's sealing key (goal/G30.11), handed to the home node in face-open.
-    const said = relay.faceOpen(faceCookie(req), res, { here: url.searchParams.get('here') === '1', key: url.searchParams.get('key') || '' });
-    if (!said.ok) res.end(JSON.stringify({ type: 'refused', status: said.status, code: said.code || '', error: said.error }) + '\n');
-    return true;
-  }
-  if (req.method === 'POST' && pathname === '/face/api') {
-    const problem = facePostProblem(req, hostOf(req));
-    if (problem) {
-      req.resume();
-      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: false, error: problem }));
-      return true;
-    }
-    readJsonBody(req).then(function (whole) {
-      // A CALL IS { call, args } here too (goal/G41.15): the face's boot.js sends its login calls as it sends every call.
-      const verb = String((whole && whole.call) || '');
-      const body = whole && whole.args && typeof whole.args === 'object' ? whole.args : {};
-      const sid = faceCookie(req);
-      if (verb === 'state') {
-        const s = relay.faceSession(sid);
-        faceJson(res, { ok: true, face: at.name, loggedIn: !!(s.ok && s.name === at.name) });
-        return;
-      }
-      if (verb === 'login') {
-        const said = relay.faceLogin(at.name, String((body && body.text) || ''));
-        if (said.loggedIn) faceSetCookie(res, said.session);
-        faceJson(res, { ok: true, loggedIn: !!said.loggedIn });
-        return;
-      }
-      if (verb === 'logout') {
-        relay.faceLogout(sid);
-        res.setHeader('Set-Cookie', 'spirit_face=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
-        faceJson(res, { ok: true, loggedIn: false });
-        return;
-      }
-      faceJson(res, { ok: false, error: 'no such verb' });
-    }, function () { faceJson(res, { ok: false, error: 'the body is not json' }); });
-    return true;
-  }
-  // EVERY OTHER GET IS A FILE, BY THE NODE'S OWN STATIC ROUTE (goal/G49.15, box v16: "the static file serving logic should be the
-  // exact same on the relay as it is on the node."; "the relay list goes."): "/" is the face page, as at home; no token in
-  // the address logs anyone in (goal/G41.29: the token is pasted into the Log in field, POST /face/api login).
-  if (req.method === 'GET') { common.serveStatic(ROOT_DIR, pathname, res); return true; }
-  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Not found');
-  return true;
+    const run = UPLOADS.indexOf(whole.call) === -1 ? relayVerbs[whole.call] : null;
+    if (!run) { refuse(400, { ok: false, code: 'no-such-verb', error: 'no such verb: ' + whole.call }); return; }
+    common.useBody(req, args);
+    let ran = null;
+    try { ran = run(req, res); } catch (e) { failed(); return; }
+    if (ran && typeof ran.then === 'function') ran.then(null, failed);
+  }, function () { refuse(400, { ok: false, code: 'bad-request', error: 'the body is not JSON' }); });
 }
 
 // { relay: { <verb>: { request, reply } } }, from relaySelf/<verb>.json, for DEBUG.js's garbageArguments.
@@ -2837,266 +2756,43 @@ function relayApiTree() {
 }
 
 const server = http.createServer((req, res) => {
-  // NO LOOPBACK OR HOST GATE, which is the node's first line and not this
-  // one's: a relay is meant to be reached from the internet, and a
-  // deployed relay is reached by whatever name the platform gave it. What
-  // stands in for that gate is not "nothing": isRelayPublicPath (above)
-  // reduces the answerable surface to the one door and the members'
-  // stream, and both are gated by signature checks in relayAuth.js.
-  // The home node's uploads to its face are not posts: faceStream has no size cap (goal/G30.14, Andy's yes), and
-  // they are piped through as they arrive, never held whole.
-  // THE DEBUG TEST ROUTES FIRST, before the face and the door (goal/G41.19, spirit/DEBUG/test/script.md): with DEBUG off they
-  // answer nothing. The relay's api tree is its verbs' own files in relaySelf/, as relay.js answers 'api' to the owner.
+  // NO LOOPBACK OR HOST GATE, which is the node's first line and not this one's: a relay is meant to be reached from the internet.
+  // What stands in for that gate is the one door, each of its verbs gated by its own proof.
+  // THE DEBUG TEST ROUTES FIRST (goal/G41.19, spirit/DEBUG/test/script.md): with DEBUG off they answer nothing. The relay's api tree
+  // is its verbs' own files in relaySelf/, as relay.js answers 'api' to the owner.
   if (common.debugFirst(req, res, { kind: 'relay', api: relayApiTree })) return;
-
-  const faceUpload = req.method === 'POST' && /^\/spirit\/relay\/face\/(answer|stream)(\?|$)/.test(String(req.url || ''));
-  if (!faceUpload && common.refuseTooBig(req, res)) return;
-
+  // The home node's uploads to its face have no size cap (goal/G30.14, Andy's yes): piped through as they arrive, never held whole.
+  const upload = req.method === 'POST' && UPLOADS.indexOf(String(req.headers['x-spirit-call'] || '')) !== -1;
+  if (!upload && common.refuseTooBig(req, res)) return;
   const parsed = common.parseRequestPath(req, res);
   if (!parsed) return;
   const url = parsed.url;
   const pathname = parsed.pathname;
-
-  // A MEMBER'S FACE (goal/G30.9), answered before the relay's own door: its host is <face>.<the face domain>.
-  if (faceDoor(req, res, url, pathname)) return;
-
-  if (!isRelayPublicPath(req.method, pathname)) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
+  // THE ONE ADDRESS LEFT (Q10): /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it
+  // before it fetches a certificate for that name on demand (bash/face-setup), and Caddy can ask nothing but an address.
+  if (req.method === 'GET' && pathname === '/face/allowed') {
+    const asked = relay.faceAt(url.searchParams.get('domain') || '');
+    res.writeHead(asked.ok ? 200 : 404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(asked.ok ? 'ok' : 'no');
     return;
   }
-
-  // GET /spirit/relay/key STOOD HERE (closed by goal/G22.6): its answer is the
-  // relay's card, given to a card ask on the one door (relay.js relayCard).
-
-  // GET /spirit/relay/who STOOD HERE — THE ROLL, DELETED 2026-09-18. See
-  // the tombstone in server.js's history and decision 0012: no party may
-  // ask a relay for its whole enrolment list.
-
-  // THE DEVICE PAGE (/<key>/device, device.html) was removed by goal/G16.2
-  // with the device enrolment.
-
-  // One held connection per identity, carrying who is reachable. The
-  // signature is a HEADER (streamSignatureFrom, relay.js): a query string
-  // is written to every access log the request passes, and this one buys
-  // a STANDING grant rather than a single read.
-  if (req.method === 'GET' && pathname === '/spirit/relay/stream') {
-    const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
-    if (!from.ok) {
-      nodeRefusal(res, from.status);
+  if (req.method === 'POST' && pathname === '/spirit') { relayDoor(req, res); return; }
+  // A MEMBER'S FACE (goal/G30.9): its host is <face>.<the face domain>. EVERY FILE A FACE ASKS IS SERVED BY THE NODE'S OWN STATIC
+  // ROUTE (goal/G49.15, box v16: "the static file serving logic should be the exact same on the relay as it is on the node."): "/" is
+  // the face page, every other file at its own run path that fileSystem's gate allows; no token in the address logs anyone in.
+  const at = relay.faceAt(req.headers.host || '');
+  if (at.face && req.method === 'GET') {
+    if (!at.ok) {
+      res.writeHead(at.status || 404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(at.status === 503 ? 'This face is offline: its home node is not connected.' : 'No such face.');
       return;
     }
-    const token = url.searchParams.get('key') || '';
-
-    // A sink, not a response: relay.js and presence.js hold this and
-    // neither knows what http is. Why its head is written lazily, and
-    // why it cuts a reader that has stopped reading (R35), is in
-    // streamSink.js.
-    //
-    // Declared before the sink, because the sink can call teardown: a
-    // stream cut for not reading is torn down by the cut, not left to
-    // whether the socket's own close event comes.
-    let torndown = false;
-    let heartbeat = null;
-    let live = false;
-    const sink = streamSink.createStreamSink(res, {
-      onStall: function () { if (live) teardown(); },
-    });
-
-    const opened = relay.streamOpen(token, from.sig, sink);
-    if (!opened || !opened.ok) {
-      // SAY HOW LONG, because this box is the only one that knows. A 429
-      // here is the connect allowance — six a minute, one per ten seconds
-      // — and a client left to guess will guess with a constant that has
-      // no idea what this relay allows.
-      //
-      // RFC 9110 Retry-After, in seconds. sseClient honours it over its
-      // own backoff, so the number that governs the retry is the number
-      // that governs the refusal.
-      if (opened && opened.status === 429) {
-        try { res.setHeader('Retry-After', String(Math.ceil(60 / relay.presence.perMin) + 5)); }
-        catch (e) { /* headers already sent */ }
-      }
-      // FULL: the fixed allowance (cycle 8) is taken. Come back when
-      // somebody may have left — not in a second.
-      if (opened && opened.status === 503) {
-        try { res.setHeader('Retry-After', String(FULL_RETRY_S)); }
-        catch (e) { /* headers already sent */ }
-      }
-      // A NODE THAT IS NOT A MEMBER IS TOLD WHY (goal/G19.1, Andy, granted
-      // 2026-10-12): the refusal names the sender, "your id is not a valid
-      // sender here", code not-a-sender, as on a post and a reply, so an
-      // evicted node's peerPost stops dialling and tells its user.
-      // (A partner relay was told the same here until partnering went.)
-      if (opened && opened.status === 403 &&
-          spiritErrors.classify(403, opened.error).code === 'not-a-sender') {
-        res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: opened.error, code: spiritErrors.classify(403, opened.error).code }));
-        return;
-      }
-      nodeRefusal(res, opened && opened.status);
-      return;
-    }
-
-    live = true;
-
-    // Through the sink, so a heartbeat counts toward the backlog like
-    // any other byte a stopped reader is not taking.
-    heartbeat = setInterval(() => {
-      try { sink.write(':\n\n'); } catch (e) { /* teardown will follow */ }
-    }, 20000);
-
-    // Bound to 'error' as well as 'close', and once-guarded. The bug
-    // that guards against is worse here than anywhere: a socket that
-    // dies without a clean close would leave a peer reading as PRESENT
-    // forever, which is the relay lying — and lying is the one thing this
-    // design cannot afford.
-    //
-    // WHICH CLOSE IT WAS is asked of the sink, not of which event came
-    // first: the cut destroys the socket, so 'close' may well beat the
-    // sink's own call, and the stalled path must run either way.
-    function teardown() {
-      if (torndown) return;
-      torndown = true;
-      clearInterval(heartbeat);
-      relay.streamClose(token, sink, sink.stalled() ? 'stalled' : undefined);
-    }
-    req.on('close', teardown);
-    req.on('error', teardown);
+    common.serveStatic(ROOT_DIR, pathname, res);
     return;
   }
-
-  // GET /api/version and the brochure (/, /index.html, /relay.html,
-  // /favicon.svg) STOOD HERE, closed by goal/G22.6.
-
-  if (req.method === 'POST') {
-    // POST /spirit/relay/claim STOOD HERE (closed by goal/G22.6): a claim is a
-    // post on the one door, sealed to the relay's key.
-
-    if (pathname === '/spirit/relay/post') {
-      readJsonBody(req).then(function (body) {
-        // A POST WITH HINTS IS REFUSED (goal/G47.1, box v69: "A post carries no hints: the node sends none, the hint
-        // signature goes, and the relay takes a post with hints no more"). They were not read since goal/G22.6; a
-        // wire change, so nodes and relays move together.
-        if (body && (body.hints !== undefined || body.hintSig !== undefined)) {
-          writePosted({ ok: false, status: 400, error: 'a post carries no hints' });
-          return;
-        }
-        // `budgetMs` — how long the ASKER is still willing to wait, a
-        // remaining duration and never a deadline. Informational: the
-        // relay grants min(asked, its own ceiling), so a number from the
-        // wire can only ever buy less than this box already allows
-        // (0017, and the gap cycle's R5).
-        // A number is a DECLARATION, including zero — a chain that has
-        // run out of time says so, and is refused rather than being
-        // handed this box's default and starting again.
-        const budgetMs = (body && typeof body.budgetMs === 'number' && isFinite(body.budgetMs))
-          ? Math.max(0, body.budgetMs)
-          : undefined;
-        // THE ADDRESS IT CAME FROM, read by relay.js only for a sender it
-        // does not hold: the strangers' address table (goal/G22.6).
-        const posted = relay.routePost(
-          body && body.from, body && body.to, body && body.text, body && body.sig,
-          budgetMs, common.clientKeyFor(req)
-        );
-        // A POST ANSWERED ON ITSELF (R13; goal/G22.6): a card ask, a claim,
-        // or a stranger's post to a member. relay.js hands back `held`, a
-        // promise of the answer, and this request stays open until it
-        // settles — with the reply packet, or with the refusal when the
-        // time this relay granted runs out. Every other post is answered at
-        // once, exactly as before.
-        // It never rejects: holdOnPost settles with the answer or, when
-        // the time runs out, with 504 "no answer yet".
-        if (posted && posted.held && typeof posted.held.then === 'function') {
-          posted.held.then(writePosted);
-          return;
-        }
-        writePosted(posted);
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
-
-      function writePosted(result) {
-        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        // A WHITELIST, AND IT STAYS ONE. What a refusal carries is part of
-        // the protocol, so it is named here rather than being whatever
-        // relay.js happened to put on the object — the alternative leaks
-        // internals to anybody who can provoke an error.
-        //
-        // The cost is that a new field is invisible until it is added
-        // here, which `busy` nearly paid: the router refuses with
-        // { busy, retryAfterMs } and this dropped both on the floor, so
-        // the wire would have said 503 "target is busy" and no scheduler
-        // could have told it from 503 "peer not reachable".
-        res.end(JSON.stringify(result.ok ? result : {
-          error: result.error,
-          inFlight: !!result.inFlight,
-          // THE TARGET IS FINE AND SIMPLY OCCUPIED (0016). Distinct from
-          // "peer not reachable", which is the same status and the
-          // opposite situation: that one says do not expect an answer,
-          // this one says ask again in `retryAfterMs`.
-          busy: !!result.busy,
-          retryAfterMs: typeof result.retryAfterMs === 'number' ? result.retryAfterMs : 0,
-          // NOT ENOUGH TIME TO TRY, which is a third kind of no: the peer
-          // is fine and this box is fine, and what was offered was too
-          // little to attempt anything with. Named here for the reason
-          // `busy` is — a whitelist means a new field is invisible until
-          // somebody adds it, and that has cost this file twice.
-          tooLittleTime: !!result.tooLittleTime,
-          // WHAT IT MEANS, by the catalogue (R36 phase B), BESIDE the
-          // sentence and never instead of it: an older node still reads
-          // `error`. Grok's review: "{ status, error, code } … Keep the
-          // sentence."
-          code: spiritErrors.classify(result.status, result.error, result).code,
-        }));
-      }
-      return;
-    }
-
-    // THE HOME NODE ANSWERS ITS FACE (goal/G30.14): the raw body is piped into the face's waiting response, or into
-    // its open stream, as it arrives. Who it is, and the signature over this relay and the id, are headers, so the
-    // body is never read here.
-    if (pathname === '/spirit/relay/face/answer' || pathname === '/spirit/relay/face/stream') {
-      const from = String(req.headers['x-spirit-from'] || '');
-      const sig = String(req.headers['x-spirit-sig'] || '');
-      const said = pathname === '/spirit/relay/face/answer'
-        ? relay.faceAnswer(from, url.searchParams.get('id') || '', sig, req, { status: req.headers['x-spirit-status'], type: req.headers['x-spirit-type'] })
-        : relay.faceFeed(from, sig, req);
-      if (!said.ok) {
-        res.writeHead(said.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: said.error, code: spiritErrors.classify(said.status, said.error, said).code }));
-        req.resume();
-        return;
-      }
-      // Answered once the upload has been carried through.
-      req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: true })); });
-      return;
-    }
-
-    if (pathname === '/spirit/relay/reply') {
-      readJsonBody(req).then(function (body) {
-        const result = relay.routeReply(
-          body && body.from, body && body.hash, body && body.text, body && body.sig
-        );
-        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : {
-          error: result.error,
-          code: spiritErrors.classify(result.status, result.error, result).code,
-        }));
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
-      return;
-    }
-
-  }
-
-  // Unreachable while isRelayPublicPath and the branches above agree; a
-  // 404 rather than a hang if they ever stop agreeing.
   res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Not found');
+
 });
 
 // A relay binds 0.0.0.0: it is the one server that genuinely needs to be

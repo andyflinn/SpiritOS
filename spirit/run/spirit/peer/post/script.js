@@ -651,7 +651,7 @@ function createPeerPost(opts) {
 
     Promise.resolve()
       .then(function () {
-        return request(it.relayUrl, 'POST', '/spirit/relay/post', it.payload.body);
+        return request(it.relayUrl, 'POST', '/spirit', { call: 'spirit.relay.post', args: it.payload.body });
       })
       .then(function (res) {
         var body = {};
@@ -1167,9 +1167,9 @@ function createPeerPost(opts) {
     var text = nodeCard.describe(rootDir);
     // The receipt covers the text it answers with (S1, goal/G16.1).
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
-    return request(relayUrl, 'POST', '/spirit/relay/reply', {
+    return request(relayUrl, 'POST', '/spirit', { call: 'spirit.relay.reply', args: {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
-    }).then(function (res) {
+    } }).then(function (res) {
       replyAnswered(relayUrl, res);
       note({
         dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
@@ -1199,9 +1199,9 @@ function createPeerPost(opts) {
     var text = JSON.stringify({ v: 1, body: inner });
     // The refusal is a reply too, and its receipt covers it (S1, goal/G16.1).
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
-    return request(relayUrl, 'POST', '/spirit/relay/reply', {
+    return request(relayUrl, 'POST', '/spirit', { call: 'spirit.relay.reply', args: {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
-    }).then(function (res) { replyAnswered(relayUrl, res); return null; }).catch(function () { return null; });
+    } }).then(function (res) { replyAnswered(relayUrl, res); return null; }).catch(function () { return null; });
   }
 
   function onRequest(relayUrl, body) {
@@ -1577,9 +1577,9 @@ function createPeerPost(opts) {
           }
         }
         var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
-        return request(relayUrl, 'POST', '/spirit/relay/reply', {
+        return request(relayUrl, 'POST', '/spirit', { call: 'spirit.relay.reply', args: {
           from: id.publicKey, hash: hash, text: text, sig: receipt,
-        }).then(function (res) {
+        } }).then(function (res) {
           replyAnswered(relayUrl, res);
           if (plain) {
             note({
@@ -1710,7 +1710,7 @@ function createPeerPost(opts) {
       var wait = (publicAskedAt[u] || 0) + STRANGER_GAP_MS - Date.now();
       return (wait > 0 ? pause(wait) : Promise.resolve()).then(function () {
         publicAskedAt[u] = Date.now();
-        return request(u, 'POST', '/spirit/relay/post', body);
+        return request(u, 'POST', '/spirit', { call: 'spirit.relay.post', args: body });
       }).then(function (res) {
         var said = null;
         try { said = JSON.parse(res.text); } catch (e) { said = null; }
@@ -1997,10 +1997,10 @@ function createPeerPost(opts) {
   // What the shell has been told: relay url -> { code, why, at }.
   var refusedShown = Object.create(null);
 
+  // The relay a stream is of: its one door, <relay>/spirit, since goal/G49.25 (the stream is the call spirit.relay.stream there).
   function relayOfStream(streamUrl) {
-    var s = String(streamUrl || '');
-    var at = s.indexOf('/spirit/relay/stream');
-    return at === -1 ? '' : s.slice(0, at).replace(/\/+$/, '');
+    var s = String(streamUrl || '').replace(/\/+$/, '');
+    return /\/spirit$/.test(s) ? s.slice(0, -'/spirit'.length) : '';
   }
 
   var self = {

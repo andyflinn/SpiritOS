@@ -142,6 +142,7 @@ function parseChunk(text) {
 
 // opts:
 //   url        absolute, including query
+//   body       optional: an object, or a FUNCTION returning one, sent as JSON in a POST (goal/G49.25); absent, a GET
 //   headers    an object, or a FUNCTION returning one. Prefer the
 //              function: a header computed once and reused for the life
 //              of a reconnect loop is a header that goes stale, and this
@@ -234,10 +235,15 @@ function connect(opts) {
     touch();
     var res;
     try {
-      res = await doFetch(opts.url, {
-        headers: (typeof opts.headers === 'function' ? opts.headers() : opts.headers) || {},
+      // A BODY MAKES IT A POST (goal/G49.25: a relay's stream is a call at its one door, /spirit), JSON, made per attempt when it is
+      // a function, as a header is; with none, the GET it always was.
+      var body = typeof opts.body === 'function' ? opts.body() : opts.body;
+      var headers = (typeof opts.headers === 'function' ? opts.headers() : opts.headers) || {};
+      if (body !== undefined) headers = Object.assign({ 'Content-Type': 'application/json' }, headers);
+      res = await doFetch(opts.url, Object.assign({
+        headers: headers,
         signal: controller ? controller.signal : undefined,
-      });
+      }, body !== undefined ? { method: 'POST', body: JSON.stringify(body) } : {}));
     } catch (e) {
       scheduleRetry('unreachable: ' + (e && e.message ? e.message : e));
       return;

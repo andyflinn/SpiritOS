@@ -118,7 +118,10 @@ function createFaceHome(opts) {
     return {
       writeHead: function (status, headers) {
         const h = headers || {};
-        req = upload(url, '/spirit/relay/face/answer?id=' + encodeURIComponent(id), Object.assign(signed(url, id), {
+        // THE RELAY'S ONE DOOR (goal/G49.25, Q10): the call spirit.relay.faceAnswer, named in a header with its id, the raw answer the body.
+        req = upload(url, '/spirit', Object.assign(signed(url, id), {
+          'x-spirit-call': 'spirit.relay.faceAnswer',
+          'x-spirit-id': id,
           'x-spirit-status': String(status || 200),
           'x-spirit-type': String(h['Content-Type'] || h['content-type'] || 'application/octet-stream'),
         }));
@@ -388,7 +391,8 @@ function createFaceHome(opts) {
     // A RELAY WITHOUT THE STAR GETS NO STREAM (goal/G48.4, Q19; Andy: "absolutely. either there is a face, or there is not.
     // NO inbetween."): refused as every call there is; the star put on opens it.
     if (!faceIsOwned(url)) { say('face: ' + url + ' asked for a stream, and that relay has no star: refused'); return; }
-    const req = upload(url, '/spirit/relay/face/stream', signed(url, 'stream'));
+    // THE RELAY'S ONE DOOR (goal/G49.25, Q10): the call spirit.relay.faceFeed, named in a header, the raw stream the body.
+    const req = upload(url, '/spirit', Object.assign(signed(url, 'stream'), { 'x-spirit-call': 'spirit.relay.faceFeed' }));
     if (!req) return;
     const key = String(k || '');
     const me = key ? o.identity() : null;

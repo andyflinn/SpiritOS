@@ -2242,14 +2242,30 @@ function createRelay(rootDir, deps) {
   // { plain } or { refusal }; a refusal still leaves as an answer, as it
   // always did. A stranger's sealed claim opens the same way: sealed by the
   // key that signed the post, to this relay's key.
+  // A CALL BY ITS NAME (goal/G49.25, box v25: "its own, as today's signed packet", its text "{ call, args } naming the verb"; Q11,
+  // Andy: "same as today."): a text { call: "spirit.relay.<verb>", args } is the ask { v: 1, body: { <verb>: args } } every verb below
+  // reads, the card's its own value (args.card, or true for the card ask), the api ask the word api. Any other text is as it was.
+  function asCalled(plain) {
+    var parsed = null;
+    try { parsed = JSON.parse(String(plain || '')); } catch (e) { return plain; }
+    var m = parsed && typeof parsed.call === 'string' ? /^spirit\.relay\.([A-Za-z]+)$/.exec(parsed.call) : null;
+    if (!m) return plain;
+    var args = parsed.args && typeof parsed.args === 'object' && !Array.isArray(parsed.args) ? parsed.args : {};
+    var verb = m[1];
+    var body = {};
+    if (verb === 'api') body = 'api';
+    else if (verb === 'card') body.card = args.card !== undefined ? args.card : true;
+    else body[verb] = args;
+    return JSON.stringify({ v: 1, body: body });
+  }
   function openSelfAsk(text, who) {
     if (seal.isSealed(text)) {
       var mine = auth.loadIdentity(rootDir);
       var got = mine && seal.open(mine.sealPrivateKey, who && who.id, mine.publicKey, text);
       if (!got) return { refusal: { ok: false, status: 400, error: 'this did not open for me' } };
-      return { plain: got.text };
+      return { plain: asCalled(got.text) };
     }
-    if (isCardAsk(text)) return { plain: text };
+    if (isCardAsk(asCalled(text))) return { plain: asCalled(text) };
     // The receiver's half of the strict rule, on the relay's own door.
     // A sender-only check is bypassed by not being the sender, and
     // "the relay is the one box everybody can reach" is precisely the

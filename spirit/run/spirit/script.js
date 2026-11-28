@@ -1322,28 +1322,30 @@
 
   // ── THE RELAY LOGIN, spirit.faceLogin (goal/G43.18, box v29, "The relay login") ───────────────────────────────────────
   // Andy: "the login app should belong to the relay only, and not really be an "app"", and "spirit.login": no app, no shell.
-  // The relay's own three calls on /face/api, { call, args } as every call (goal/G41.15), each answering the relay's body:
+  // The relay's own three calls at its one door, /spirit (goal/G49.25, box v25), spirit.relay.faceState, faceLogin and faceLogout,
+  // { call, args } as every call (goal/G41.15), each answering the relay's body:
   //   state() -> { ok, face, loggedIn }   login(text) -> { ok, loggedIn }   logout() -> { ok, loggedIn: false }
   // text is the member's verified email, or the token the relay mailed to it (goal/G41.29: no link in the mail).
   function relayCall(verb, args) {
-    return fetch('/face/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ call: String(verb), args: args || {} }) })
+    var name = 'spirit.relay.' + String(verb);
+    return fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ call: name, args: args || {} }) })
       .then(function (r) {
-        if (!r.ok) throw refusal('relay-refused', '/face/api ' + verb + ' answered ' + r.status, { status: r.status });
+        if (!r.ok) throw refusal('relay-refused', name + ' answered ' + r.status, { status: r.status });
         return r.json();
       });
   }
   if (isBrowser()) {
     self.faceLogin = {
-      state: function () { return relayCall('state'); },
-      login: function (text) { return relayCall('login', { text: String(text == null ? '' : text) }); },
-      logout: function () { return relayCall('logout'); },
+      state: function () { return relayCall('faceState'); },
+      login: function (text) { return relayCall('faceLogin', { text: String(text == null ? '' : text) }); },
+      logout: function () { return relayCall('faceLogout'); },
     };
   }
 
   // ── THE LINK HOME, spirit.faceLink (goal/G43.18, Q22, Andy: "ok." to "the link home moves into spirit.js, and boot.js keeps
   // only the stream and loading the shell") ─────────────────────────────────────────────────────────────────────────
   // On a face, once logged in: the home node's keys (faceHome answers { keys: 1 }), one key of this page's own, kept in
-  // memory and lost with the session (goal/G30.11), and every request to the home node through the relay's /face/call,
+  // memory and lost with the session (goal/G30.11), and every request to the home node through the relay's spirit.relay.faceCall,
   // sealed when this browser can seal (shell/seal.js, the node's own seal in WebCrypto). It is spirit.transport's ask and
   // file, so every call of the spirit object goes through it; boot.js reads its key for the face stream.
   //   spirit.faceLink: { sealed, key, node, ask(verb, args), file(path, onPiece), call(request), onDown(fn) }
@@ -1359,8 +1361,10 @@
   // A REQUEST TOO LARGE FOR ONE TRIP GOES IN PIECES (goal/G33.1): the relay takes one request up to BODY_MAX; a larger one
   // goes as { piece: { id, n, of, text } }, text a run of base64 of its bytes, each piece its own call; the home node
   // (faceHome.js) answers 202 to each but the last, whose answer is this call's. The relay reads none of them.
+  // THE RELAY'S ONE DOOR (goal/G49.25): the request, a JSON text, is the argument request of the call spirit.relay.faceCall.
+  function faceCall(x) { return fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: '{"call":"spirit.relay.faceCall","args":{"request":' + x + '}}' }); }
   function postCall(t) {
-    var once = function (x) { return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: x }); };
+    var once = faceCall;
     var BODY_MAX = (LIMITS && LIMITS.BODY_MAX) || 23552;
     var bytes = new TextEncoder().encode(t);
     if (bytes.length <= BODY_MAX - 1024) return once(t);
@@ -1420,7 +1424,7 @@
     if (!faceLink.sealed) return linkCall(request).then(function (r) { if (r.status === 200) each(r.bytes); return r; });
     return SEAL.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) {
       s.k = faceLink.key.publicKey;
-      return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(s) });
+      return faceCall(JSON.stringify(s));
     }).then(function (r) {
       if (r.status !== 200 || !r.body || typeof r.body.getReader !== 'function') {
         return linkCall(request).then(function (whole) { if (whole.status === 200) each(whole.bytes); return whole; });

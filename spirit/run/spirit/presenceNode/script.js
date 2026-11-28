@@ -23,9 +23,10 @@ const sseClient = spirit.requireScript('spirit/sseClient/script.js');
 // Which key a relay answers to, pinned when this node took its seat.
 const relayKeys = spirit.requireScript('spirit/peer/relay/key/script.js');
 
-function streamUrl(relayUrl, key) {
-  return String(relayUrl).replace(/\/+$/, '') +
-    '/spirit/relay/stream?key=' + encodeURIComponent(key);
+// THE RELAY'S ONE DOOR (goal/G49.25, box v25: "the entire set of relay verbs moves into spirit.relay.<verb>, with only ONE, SINGLE
+// door: /spirit"): the members' stream is the call spirit.relay.stream there.
+function doorUrl(relayUrl) {
+  return String(relayUrl).replace(/\/+$/, '') + '/spirit';
 }
 
 // opts: { rootDir, jobs, connectImpl, probeImpl, now }
@@ -414,7 +415,7 @@ function createPresence(opts) {
 
   function connect(url) {
     return openStream({
-      url: streamUrl(url, identity.publicKey),
+      url: doorUrl(url),
       // SIGNED PER ATTEMPT, not once. streamMessage carries a unix
       // minute and is checked ±1, so a signature captured at connect
       // time is refused by every reconnect more than two minutes later —
@@ -423,24 +424,20 @@ function createPresence(opts) {
       // This shipped as a constant and was caught only on the live relay,
       // because the lab never runs long enough for the minute to roll.
       //
-      // A HEADER, never the query string: a query lands in every access
-      // log the request passes, and the relay refuses one there even when
-      // the header is good.
+      // IN THE CALL'S ARGUMENTS, never the address (goal/G49.25): an address lands in every access log the request passes.
       //
-      // FOR THIS RELAY ONLY (goal/G16.12): the header names the key pinned
+      // FOR THIS RELAY ONLY (goal/G16.12): the signature names the key pinned
       // for this url, so no other relay can replay it. Looked up per
       // attempt. An attempt that finds no pin yet (a first meeting, or a
       // pin that failed while the relay was still starting) asks for one
       // again and is refused; the reconnect loop's next attempt has it.
-      headers: function () {
+      body: function () {
         var relayKey = relayKeys.pinned(rootDir, url) || '';
         if (!relayKey) pinRelay(url);
-        return {
-          'X-Spirit-Sig': auth.sign(
-            identity.privateKey,
-            auth.streamMessage(identity.publicKey, relayKey)
-          ),
-        };
+        return { call: 'spirit.relay.stream', args: {
+          key: identity.publicKey,
+          sig: auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey, relayKey)),
+        } };
       },
       onEvent: function (msg) {
         if (msg.event === 'presence') onChange(url, msg.data);
