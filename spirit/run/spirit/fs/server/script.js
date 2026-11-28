@@ -58,15 +58,26 @@ function sameFlags(a, row) {
   return a.api === (row.api === true) && a.branch === (row.branch === true) && a.app === (row.app === true) && a.live === (row.live === true);
 }
 // ON A RELAY, BRANCH AND APP FOLDERS ONLY (goal/G49.25, box v10: "if spirit.IS_RELAY, the fs cache will cache branch and app folders
-// only."; "the existing logic is used to identify both old and new branches and apps"): a row is kept when it is a folder with the
-// old branch mark (api), the new one (branch) or the app mark, by the same filters as on a node. Every other path stays on the disc,
-// where the marks are worked out from (a relay's RAM is the most expensive thing it has). OUTSIDE spirit/ EVERYTHING (Andy, v12:
-// "it will still cache everything outside of run://spirit/"): a path that is not spirit/ itself or under it is kept whole, as on
-// a node.
-function kept(p, held) {
+// only."; "the existing logic is used to identify both old and new branches and apps"; Q6, "does the cache hold only spirit/<branch>/
+// and spirit/app/<name>/ folders with what is under them", Andy: "spirit is always loaded."). A HOME is a trunk folder spirit/<name>
+// with the old branch mark (api) or the new one (branch), or any folder with the app mark, by the same filters as on a node; kept is
+// spirit/ and the files right in it, each home and everything under it, and OUTSIDE spirit/ EVERYTHING (Andy, v12: "it will still
+// cache everything outside of run://spirit/"). Every other path stays on the disc, where the marks are worked out from (a relay's
+// RAM is the most expensive thing it has). homeAt(dir): whether that folder is a home.
+function isHome(p, held) {
+  return !!held && held.kind === 'folder' && ((/^spirit\/[^/]+$/.test(p) && (held.api === true || held.branch === true)) || held.app === true);
+}
+function kept(p, held, homeAt) {
   if (!spirit.IS_RELAY) return true;
-  if (p !== 'spirit' && String(p).indexOf('spirit/') !== 0) return true;
-  return !!held && held.kind === 'folder' && (held.api === true || held.branch === true || held.app === true);
+  const q = String(p);
+  if (q === 'spirit' || q.indexOf('spirit/') !== 0) return true;
+  if (/^spirit\/[^/]+$/.test(q) && !!held && held.kind === 'file') return true;
+  if (isHome(q, held)) return true;
+  for (let d = q, i = d.lastIndexOf('/'); i > 0; i = d.lastIndexOf('/')) {
+    d = d.slice(0, i);
+    if (homeAt(d)) return true;
+  }
+  return false;
 }
 
 // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
@@ -107,14 +118,35 @@ function start(rootDir, jobs) {
   const seed = new Map();
   fileSystem.scanFolder(rootDir, [], true).forEach(function (entry) { const m = mapEntry(entry, rootDir); seed.set(m.relativePath, heldOf(m.relativePath, m.fullPath, m.kind)); });
   const seedAt = new Date().toISOString();
+  // In path order a folder comes before what is under it, so its flags, and whether it is a home, are known first.
+  const homes = new Set();
   Array.from(seed.keys()).sort().forEach(function (p) {
     const held = seed.get(p);
     if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }, read));
-    if (kept(p, held)) fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
+    if (isHome(p, held)) homes.add(p);
+    if (kept(p, held, function (d) { return homes.has(d); })) fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
   });
   spirit.requireScript('spirit/client/script.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
-  // Whether the tree holds a path: the kept rows on a node, the disc on a relay, which keeps no file rows.
+  // Whether the tree holds a path: the kept rows on a node, the disc on a relay, which keeps only some.
   const has = spirit.IS_RELAY ? function (q) { return fs.existsSync(path.join(rootDir, q)); } : function (q) { return !!tree.file(q); };
+  const homeAt = function (d) { return isHome(d, tree.file(d)); };
+  // A FOLDER THAT TURNED A HOME ON A RELAY BRINGS WHAT IS UNDER IT, and one that stopped being one takes it (goal/G49.25): read
+  // from the disc, as the seed was; a path still kept by another home stays.
+  const under = function (dir) {
+    const out = [];
+    const walk = function (rel) {
+      let names = [];
+      try { names = fs.readdirSync(path.join(rootDir, rel), { withFileTypes: true }); } catch (e) { return; }
+      names.forEach(function (e) {
+        const p = rel + '/' + e.name;
+        if (e.name === '.git') return;
+        out.push({ p: p, kind: e.isDirectory() ? 'folder' : 'file' });
+        if (e.isDirectory()) walk(p);
+      });
+    };
+    walk(dir);
+    return out;
+  };
   // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
   // A RELAY KEEPS NO JOB TABLE (goal/G49.25): there the cache is fed and nothing is published; job is a plain row to stop by.
   const job = jobs ? jobs.ownJob('spirit.fs') : { id: 'spirit.fs' };
@@ -137,8 +169,24 @@ function start(rootDir, jobs) {
     if (spirit.IS_RELAY) {
       const flags = folderFlags(dir, has, read);
       const now = Object.assign(row ? Object.assign({}, row) : statOf(path.join(rootDir, dir), 'folder'), flags);
-      if (kept(dir, now) && (!row || !sameFlags(flags, row))) send(commandOf('createDirectory', dir, new Date().toISOString(), now));
-      else if (!kept(dir, now) && row) send(commandOf('deleteDirectory', dir, new Date().toISOString(), null));
+      const wasHome = isHome(dir, row);
+      const keep = kept(dir, now, homeAt);
+      const at = new Date().toISOString();
+      if (keep && (!row || !sameFlags(flags, row))) send(commandOf('createDirectory', dir, at, now));
+      if (!wasHome && isHome(dir, now)) {
+        under(dir).forEach(function (u) {
+          if (tree.file(u.p)) return;
+          const h = heldOf(u.p, path.join(rootDir, u.p), u.kind);
+          if (u.kind === 'folder') Object.assign(h, folderFlags(u.p, has, read));
+          send(commandOf(u.kind === 'folder' ? 'createDirectory' : 'createFile', u.p, at, h));
+        });
+      } else if (wasHome && !isHome(dir, now)) {
+        Object.keys(tree.files()).filter(function (p) { return p.indexOf(dir + '/') === 0; }).sort().reverse().forEach(function (p) {
+          if (kept(p, tree.file(p), function (d) { return d !== dir && homeAt(d); })) return;
+          send(commandOf(tree.file(p).kind === 'folder' ? 'deleteDirectory' : 'deleteFile', p, at, null));
+        });
+      }
+      if (!keep && row) send(commandOf('deleteDirectory', dir, at, null));
       return;
     }
     if (!row || row.kind !== 'folder') return;
@@ -160,7 +208,7 @@ function start(rootDir, jobs) {
       if (!tree.file(rel)) held = undefined;
     } else held = heldOf(rel, full, 'file'); // a change: the new stat (a file never seen is made by it)
     // On a relay only a kept row is sent, and only a held row is deleted; on a node every path is, as before.
-    const sendable = op === 'deleteFile' || op === 'deleteDirectory' ? held !== undefined : kept(rel, held);
+    const sendable = op === 'deleteFile' || op === 'deleteDirectory' ? held !== undefined : kept(rel, held, homeAt);
     if (!sendable && !spirit.IS_RELAY) return;
     if (sendable) send(commandOf(op, rel, new Date().toISOString(), held));
     // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): a file made or gone inside a folder works the folder's flags out
