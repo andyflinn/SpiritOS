@@ -55,14 +55,16 @@ function readRun(rootDir) {
 // a branch, and spirit.relay will not be exposed as such"): on a node spirit/relay carries neither branch mark.
 const RELAY_BRANCH = 'spirit/relay';
 // NO APP SERVER ON A RELAY (goal/G49.25; Andy: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much
-// weight."): an app whose manifest, its manifest.json or its old <name>.json, says node mount or node run carries neither mark there.
+// weight."): an app whose manifest, its manifest.json or its old <name>.json, says node mount carries neither mark there. CGI-STYLE
+// SERVERS STAY (Andy: "when spirit.IS_RELAY cgi-style servers like spirit.app.icon will still be allowed."): an app that is run per
+// request and ends, node run, keeps its marks.
 function appServer(dir, read) {
   const name = dir.slice(dir.lastIndexOf('/') + 1);
   const text = read(dir + '/manifest.json') || read(dir + '/' + name + '.json');
   let m = null;
   try { m = JSON.parse(String(text)); } catch (e) { m = null; }
   const node = m && m.node && typeof m.node === 'object' ? m.node : {};
-  return node.mount === true || node.run === true;
+  return node.mount === true;
 }
 function folderFlags(dir, has, read) {
   const relayHidden = !spirit.IS_RELAY && dir === RELAY_BRANCH;
