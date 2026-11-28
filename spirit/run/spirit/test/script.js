@@ -1751,3 +1751,23 @@ test.run('package.json\'s start, README.md and the bash/ scripts name no spirit/
   if (texts.length < 3) return false;
   return !texts.some(function (t) { return old.some(function (o) { return t.indexOf(o) !== -1; }); }) || false;
 }, test.limit.quick);
+
+// ── THE TEST SYSTEM'S TOOLS INTO spirit/testicle/ (goal/G49.27, box v4; Andy's Go) ── "spirit/test/ is the trunk's own test folder,
+// by the rule <module>/test/script.js, and holds nothing else"; "each tool is spirit/testicle/<name>/script.js, its test beside it in
+// spirit/testicle/<name>/test/script.js"; "spirit/test/test/ goes"; "the move goes in one step by moveScript, every caller rewritten".
+// The tools are the box's four by name: headLessChrome, testModule, testReport, scriptClassify.
+const TOOLS = ['headLessChrome', 'testModule', 'testReport', 'scriptClassify'];
+function trackedNaming(text) {
+  const REPO_ = path.resolve(RUN, '..', '..');
+  let out = '';
+  try { out = require('child_process').execFileSync('git', ['grep', '-l', '-F', text, '--', 'spirit/run'], { cwd: REPO_, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = ''; }
+  return out.split('\n').filter(Boolean);
+}
+TOOLS.forEach(function (n) {
+  test.run('the tool ' + n + ' stands at spirit/testicle/' + n + '/script.js, nothing at spirit/test/' + n + '.js, and no tracked file names the old path', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, 'spirit', 'testicle', n, 'script.js')) && !fs.existsSync(path.join(RUN, 'spirit', 'test', n + '.js')) && trackedNaming('spirit/test/' + n + '.js').length === 0) || false;
+  }, test.limit.slow);
+});
+test.run('spirit/test/test/ is gone, and each tool that had a test there has it at spirit/testicle/<name>/test/script.js', 0.4, function () {
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'test', 'test')) && ['headLessChrome', 'testModule', 'testReport'].every(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'testicle', n, 'test', 'script.js')); })) || false;
+}, test.limit.quick);
