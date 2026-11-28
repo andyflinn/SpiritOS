@@ -54,9 +54,21 @@ function readRun(rootDir) {
 // THE RELAY BRANCH IS A RELAY'S ONLY (goal/G49.25, box v16: "the fs watcher, when !spirit.IS_RELAY, will never mark spirit.relay as
 // a branch, and spirit.relay will not be exposed as such"): on a node spirit/relay carries neither branch mark.
 const RELAY_BRANCH = 'spirit/relay';
+// NO APP SERVER ON A RELAY (goal/G49.25; Andy: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much
+// weight."): an app whose manifest, its manifest.json or its old <name>.json, says node mount or node run carries neither mark there.
+function appServer(dir, read) {
+  const name = dir.slice(dir.lastIndexOf('/') + 1);
+  const text = read(dir + '/manifest.json') || read(dir + '/' + name + '.json');
+  let m = null;
+  try { m = JSON.parse(String(text)); } catch (e) { m = null; }
+  const node = m && m.node && typeof m.node === 'object' ? m.node : {};
+  return node.mount === true || node.run === true;
+}
 function folderFlags(dir, has, read) {
   const relayHidden = !spirit.IS_RELAY && dir === RELAY_BRANCH;
-  return { api: !relayHidden && FLAG_API(dir, has), branch: !relayHidden && FLAG_BRANCH(dir, has), app: FLAG_APP(dir, has, read), live: FLAG_LIVE(dir, read) };
+  const app = FLAG_APP(dir, has, read);
+  const heavy = spirit.IS_RELAY && app && appServer(dir, read);
+  return { api: !relayHidden && FLAG_API(dir, has), branch: !relayHidden && !heavy && FLAG_BRANCH(dir, has), app: app && !heavy, live: FLAG_LIVE(dir, read) };
 }
 function sameFlags(a, row) {
   return a.api === (row.api === true) && a.branch === (row.branch === true) && a.app === (row.app === true) && a.live === (row.live === true);
