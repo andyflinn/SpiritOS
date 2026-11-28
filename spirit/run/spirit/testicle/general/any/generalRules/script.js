@@ -831,9 +831,16 @@ function ignoredByGit(rel) {
 // Judged by reading each product file (the box: "this item deals with PRODUCT files, NOT tests"); vendored code is
 // spirit.required by others and not judged as ours.
 const BUILTIN = require('module').builtinModules;
+// Whether a / at the end of what is read so far opens a regex literal, not a division.
+function regexStarts(before) {
+  const t = before.replace(/\s+$/, '');
+  if (!t) return true;
+  if (/[(,=:[!&|?{};+\-*%<>~^]$/.test(t)) return true;
+  return /(^|[^\w$.])(return|typeof|case|in|of|delete|void|throw|new|else|do)$/.test(t);
+}
 // The code with its comments blanked, strings and line breaks kept; with bare, the strings' insides blanked too, every
-// offset the same, so a require written inside a string is found as none.
-function codeOf(src, bare) {
+// offset the same, so a require written inside a string is found as none; with noRegex, only the regex literals' insides.
+function codeOf(src, bare, noRegex) {
   let out = '';
   let i = 0;
   while (i < src.length) {
@@ -841,6 +848,14 @@ function codeOf(src, bare) {
     const n = src[i + 1];
     if (c === '/' && n === '/') { while (i < src.length && src[i] !== '\n') { out += ' '; i++; } continue; }
     if (c === '/' && n === '*') { const end = src.indexOf('*/', i + 2); const stop = end === -1 ? src.length : end + 2; out += src.slice(i, stop).replace(/[^\n]/g, ' '); i = stop; continue; }
+    // A REGEX LITERAL IS NO CODE EITHER (goal/G49.27: a rule module's own pattern, /require(?:Script)?\(/, read as a require
+    // call, and a quote inside one opened a string that swallowed the code after it): a / where an expression starts
+    // (after an operator, an opening bracket, a comma, a keyword or the file's start) opens one; with bare its insides are blanked.
+    if (c === '/' && regexStarts(out)) {
+      let j = i + 1; let cls = false;
+      while (j < src.length && src[j] !== '\n' && (cls || src[j] !== '/')) { if (src[j] === '\\') j++; else if (src[j] === '[') cls = true; else if (src[j] === ']') cls = false; j++; }
+      if (j < src.length && src[j] === '/') { out += (bare || noRegex) ? '/' + src.slice(i + 1, j).replace(/[^\n]/g, ' ') + '/' : src.slice(i, j + 1); i = j + 1; continue; }
+    }
     if (c === '\'' || c === '"' || c === '`') {
       let j = i + 1;
       while (j < src.length && src[j] !== c) { if (src[j] === '\\') j++; j++; }
@@ -1362,7 +1377,9 @@ function every() {
 
 
 // fieldCode, not code: a function of that name further down, taking source, would stand in its place (both hoisted).
-function fieldCode(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
+// Markup written in a string is a field it makes, so strings stay; a pattern that looks for fields makes none (goal/G49.27:
+// generalRules' own patterns read as fields), so regex literals are blanked.
+function fieldCode(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return codeOf(t, false, true); }
 // THE INPUT FIELDS A SCRIPT MAKES (goal/G48.4, box v22), read from its code: every createElement of an input or a textarea,
 // and every <input or <textarea it writes as markup, but for an <input of type checkbox, radio, button, submit or hidden.
 const NOT_A_FIELD = /^<input\b[^>]*\btype\s*=\s*\\?["']?(checkbox|radio|button|submit|hidden)\b/i;
