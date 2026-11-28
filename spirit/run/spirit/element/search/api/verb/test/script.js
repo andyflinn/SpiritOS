@@ -128,12 +128,14 @@ test.run('with no server it is hidden and lists nothing', 0.2, function () {
   if (!l) return false;
   return verbs.hidden === true && rows().length === 0 ? true : false;
 }, test.limit.quick);
-test.run('show, given the tree and a server, lists that server\'s verbs and never DEBUG', 0.2, function () {
+test.run('show, given the tree and a server, lists that server\'s verbs, DEBUG among them', 0.2, function () {
   if (!l) return false;
+  // goal/G49.25: DEBUG is offered as any verb (Andy: "the only thing i'd hard-code protect from is ownership change, and the node
+  // has no verbs for that", "they go now"; spirit/fuckingGarbage/apiTreeIndex.js offers every verb).
   // what the family list does when that party answers its tree: keep it under the party's node
   win.spirit.client.keepTree(TREE, win.spirit.fuckingGarbage.apiTreeIndex, PARTY);
   verbs.show(TREE, 'fs');
-  return verbs.hidden === false && short(rows()) === short(['loadFile', 'search']) ? true : false;
+  return verbs.hidden === false && short(rows()) === short(['DEBUG', 'loadFile', 'search']) ? true : false;
 }, test.limit.quick);
 test.run('a pick sets its value and fires change', 0.2, function () {
   if (!l) return false;
@@ -163,12 +165,14 @@ test.run('it requires spirit/script.js and no data.js, and its list is a view of
   N = win.spirit.client;
   return w.required.indexOf('spirit/script.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!m.opts.data && typeof m.opts.data.whole === 'function' && m.opts.data.path === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
-test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s and never DEBUG', 0.2, function () {
+test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s, DEBUG among them', 0.2, function () {
   if (!N || !m) return false;
+  // goal/G49.25: DEBUG is offered as any verb (Andy: "the only thing i'd hard-code protect from is ownership change, and the node
+  // has no verbs for that", "they go now"; spirit/fuckingGarbage/apiTreeIndex.js offers every verb).
   N.keepTree(TREE, win.spirit.fuckingGarbage.apiTreeIndex);
   mine.show(TREE, 'fs');
   const kept = win.spirit.client.getPath(N.verbsBranch) || {};
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];
   const shown = Object.keys(kept).filter(function (k) { return fam && fam.test(kept[k]); }).map(function (k) { return kept[k].name; }).sort();
-  return !!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false ? true : false;
+  return !!fam && short(shown) === short(['DEBUG', 'loadFile', 'search']) && mine.hidden === false ? true : false;
 }, test.limit.quick);

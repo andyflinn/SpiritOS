@@ -14,13 +14,14 @@ it is the verb half of the family selector, `spirit/element/search/api/script.js
 - Its root carries `value`, the chosen verb. Its first option, at the top, reads `All Verbs`: a valid choice whose value is the
   empty string, every verb (Andy, goal/G41.14: *"the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the
   top, which results in an empty string as \"value\""*).
-- `root.show(tree, server)` lists that family's verbs, `apiTreeIndex.verbs(tree, server)`, so DEBUG is never offered
+- `root.show(tree, server)` lists that family's verbs, `apiTreeIndex.verbs(tree, server)`, DEBUG among them
+  (goal/G49.25; Andy: *"the only thing i'd hard-code protect from is ownership change"*, *"they go now"*)
   (DEPENDENCIES is gone, goal/G41.24), and shows the root; with no server it hides, lists nothing, and clears the choice.
 - A pick sets `value` and fires a bubbling `change`.
 
 - **This node's own verbs are the node family's cache** (goal/G41.28; Andy, Q7: *"the family, verb and app-server
   selectors draw from it"*): it requires the node branch's interface `spirit/node/api.js`, which brings its data.js, and no data.js itself; its list is a view of `spirit.required.spirit.data.node.data.verbsBranch`,
-  no rows of its own, and `show(tree, server)` narrows it to that family's verbs, DEBUG never.
+  no rows of its own, and `show(tree, server)` narrows it to that family's verbs, DEBUG among them.
 - **Another party's tree** (`own: false`) is listed from that tree: introSpector's deferral (the box: *"the only
   exception is introspector, deferred for network-scope design reasons."*).
 
@@ -28,7 +29,7 @@ it is the verb half of the family selector, `spirit/element/search/api/script.js
 
 - The file missing, or an old shell list made.
 - The old factory still registered, or a control not appended to its container.
-- DEBUG offered.
+- DEBUG left out.
 - The dropdown shown, or a verb kept, with no server.
 - A pick that does not fire change, All Verbs among them.
 - An All Verbs option that reads otherwise, or gives a value that is not empty.

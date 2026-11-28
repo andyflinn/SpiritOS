@@ -75,9 +75,11 @@ test.run('each verb is listed with the fields its request takes', 0.2, function 
   if (html === undefined) return false;
   return /\{ q \}/.test(html) && /\{ path \}/.test(html) ? true : false;
 }, test.limit.quick);
-test.run('the owner\'s DEBUG is not shown, as no verb is offered', 0.2, function () {
+test.run('DEBUG is shown as its path, fs.DEBUG, as any verb the branch serves', 0.2, function () {
   if (html === undefined) return false;
-  return !/DEBUG/.test(html) ? true : false;
+  // goal/G49.25: DEBUG is offered as any verb (Andy: "the only thing i'd hard-code protect from is ownership change, and the node
+  // has no verbs for that", "they go now"; spirit/fuckingGarbage/apiTreeIndex.js offers every verb).
+  return /fs\.DEBUG/.test(html) ? true : false;
 }, test.limit.quick);
 test.run('it asks nothing: what it shows is the tree it is handed', 0.2, function () {
   if (!asked || html === undefined) return false;

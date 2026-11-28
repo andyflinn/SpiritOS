@@ -182,9 +182,11 @@ test.run('a branch pick sets branch to it and value to the branch alone, with on
   fl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
   return fam.family === 'fs' && fam.verb === '' && fam.value === 'fs' && seen[seen.length - 1] === 'fs' ? true : false;
 }, test.limit.quick);
-test.run('after a branch pick the verb half shows its verbs, and DEBUG is never offered', 0.2, function () {
+test.run('after a branch pick the verb half shows its verbs, DEBUG among them', 0.2, function () {
   if (!vl || !fl) return false;
-  return verbBox.hidden === false && short(names(vl)) === short(['loadFile', 'search']) ? true : false;
+  // goal/G49.25: DEBUG is offered as any verb (Andy: "the only thing i'd hard-code protect from is ownership change, and the node
+  // has no verbs for that", "they go now"; spirit/fuckingGarbage/apiTreeIndex.js offers every verb).
+  return verbBox.hidden === false && short(names(vl)) === short(['DEBUG', 'loadFile', 'search']) ? true : false;
 }, test.limit.quick);
 test.run('a verb pick sets verb to it and value to branch.verb', 0.2, function () {
   if (!vl || !fl) return false;

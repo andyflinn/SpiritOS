@@ -20,8 +20,8 @@ NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it i
   unchosen.
 - Its root carries `family`, `verb` and `value`:
   - nothing chosen: all three `''`, the verb half hidden;
-  - a family picked: `family` is it, `verb` `''`, `value` the family; the verb half shows that family's verbs, DEBUG never
-    (DEPENDENCIES is gone, goal/G41.24);
+  - a family picked: `family` is it, `verb` `''`, `value` the family; the verb half shows that family's verbs, DEBUG among
+    them (goal/G49.25; Andy: *"the only thing i'd hard-code protect from is ownership change"*, *"they go now"*) (DEPENDENCIES is gone, goal/G41.24);
   - a verb picked: `verb` is it, `value` is `family.verb`;
   - All Verbs: `verb` `''`, `value` the family again;
   - another family clears the verb and lists its own verbs.
@@ -38,6 +38,6 @@ NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it i
 - A control not appended to its container.
 - A part counted on that it did not load itself.
 - The verb half shown before a family is chosen, or a verb kept across families.
-- DEBUG offered as a verb.
+- DEBUG left out of a family's verbs.
 - A wrong value after a family pick, a verb pick, or All Verbs.
 - load leaving the old choice.

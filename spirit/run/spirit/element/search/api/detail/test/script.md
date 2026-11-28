@@ -12,8 +12,7 @@ the real api tree reader (`spirit/fuckingGarbage/apiTreeIndex.js`) beside it.
 - It places itself at `spirit.required.spirit.element.search.api.detail`, with a create, and loads the api tree
   reader itself.
 - It lists each verb the family serves, as its path (`family.verb`), sorted, each with the fields its request takes.
-- The owner's DEBUG is not shown: `apiTreeIndex.verbs` never offers it (Andy: *"DEBUG/... are owner only and will never
-  be offered to peerPost clients."*).
+- DEBUG is shown as any verb the family serves, `fs.DEBUG`: `apiTreeIndex.verbs` offers every verb (goal/G49.25; Andy: *"the only thing i'd hard-code protect from is ownership change"*, *"they go now"*).
 - A family that did not answer, or a tree it was not handed, shows no verbs.
 - It asks nothing and changes nothing: what it shows is the tree it is handed.
 - What it paints is escaped.
@@ -23,7 +22,7 @@ the real api tree reader (`spirit/fuckingGarbage/apiTreeIndex.js`) beside it.
 
 ## What its test must try to break
 
-- A verb shown that the tree reader would not offer (DEBUG).
+- A verb the family serves left out (DEBUG).
 - A call to the node for a tree it was already handed.
 - Unescaped text.
 - A detail left in its host after destroy, or drawn after it.
