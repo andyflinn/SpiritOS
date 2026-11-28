@@ -17,3 +17,9 @@ Its test is `./script.js`: runs of its own with keys of their own, every folder 
 - Asked again, it hands the folder back empty.
 - `path` names the same folder and makes nothing.
 - A route with an empty part, a `.` or `..` part, or any character but letters, digits, `.`, `-`, `_` and `/` is refused.
+
+## Every node's root is swept (goal/G49.27)
+
+A hand-out in a fresh process sweeps every root under <tmp>/spirit: a dead process's spot in another node's root goes, and that root
+with it once no live owner is left and it is an hour untouched; a root no process owns, an hour old, goes whole; a root whose
+owner still runs stays, however old.

@@ -132,3 +132,46 @@ test.run('a process\'s own spot stays through its own next hand-out', 0.2, funct
   made.push(T2.tempFolder('zzLeft/mineToo'));
   return fs.existsSync(mine) || false;
 }, test.limit.quick);
+
+// EVERY NODE'S ROOT IS SWEPT (goal/G49.27; Andy: "the test system is STILL littering all over the TEMP folders"; cw measured 191
+// run folders in his Windows temp, most holding only .owners): a hand-out in a fresh process sweeps every root under
+// <tmp>/spirit, not its own alone. Three planted roots of other nodes: one with a spot of a dead process (the spot goes, and with
+// no live owner left and an hour untouched the root goes too), one with no owner at all and an hour old (it goes whole), and one
+// whose owner is this test, alive, though as old (it stays).
+const os2 = require('os');
+const ROOTS = path.join(os2.tmpdir(), 'spirit');
+function plantRoot(name, ownerPid, ageMs) {
+  const root = path.join(ROOTS, name);
+  const spot = path.join(root, 'zzPlanted', 'spot');
+  fs.mkdirSync(spot, { recursive: true });
+  fs.writeFileSync(path.join(spot, 'kept.txt'), 'x');
+  if (ownerPid !== null) {
+    fs.mkdirSync(path.join(root, '.owners'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.owners', 'zz.json'), JSON.stringify({ pid: ownerPid, dir: spot }));
+  }
+  const then = new Date(Date.now() - ageMs);
+  fs.utimesSync(root, then, then);
+  return { root: root, spot: spot };
+}
+const DEAD = (function () { const r = CP.spawnSync(process.execPath, ['-e', 'process.stdout.write(String(process.pid))'], { encoding: 'utf8' }); return Number(r.stdout); }());
+const PLANT = {};
+test.run('a hand-out in a fresh process sweeps three planted roots of other nodes', 0.2, function () {
+  PLANT.dead = plantRoot('zzRootDead' + process.pid, DEAD, 2 * 3600000);
+  PLANT.none = plantRoot('zzRootNone' + process.pid, null, 2 * 3600000);
+  PLANT.live = plantRoot('zzRootLive' + process.pid, process.pid, 2 * 3600000);
+  // the planted spots' mtimes were set on the roots after writing into them; the hand-out runs in a process of its own
+  const r = CP.spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); const d = spirit.requireScript('spirit/tempFolder/script.js').tempFolder('zzSweepAll/one'); process.stdout.write(d);"], { cwd: RUN, encoding: 'utf8', timeout: 20000 });
+  if (r.stdout) made.push(r.stdout);
+  return (r.status === 0 && !!r.stdout) || false;
+}, test.limit.slow);
+test.run('a spot of a dead process in another node\'s root is removed, and that root with it once no live owner is left', 0.2, function () {
+  return (!!PLANT.dead && !fs.existsSync(PLANT.dead.spot) && !fs.existsSync(PLANT.dead.root)) || false;
+}, test.limit.quick);
+test.run('a root no process owns, untouched for an hour, is removed whole', 0.2, function () {
+  return (!!PLANT.none && !fs.existsSync(PLANT.none.root)) || false;
+}, test.limit.quick);
+test.run('a root whose owner still runs stays, its spot with it, however old', 0.2, function () {
+  const kept = !!PLANT.live && fs.existsSync(PLANT.live.spot);
+  if (PLANT.live) try { fs.rmSync(PLANT.live.root, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
+  return kept || false;
+}, test.limit.quick);

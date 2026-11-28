@@ -73,9 +73,45 @@ function sweep(opts) {
     try { fs.rmSync(file, { force: true }); } catch (e) { /* gone already */ }
   });
 }
+// EVERY NODE'S ROOT, NOT ONLY THE ASKING ONE'S (goal/G49.27; Andy: "the test system is STILL littering all over the TEMP folders";
+// cw measured 191 run folders in his Windows temp, most holding only .owners, some a whole tree): sweep() visits the root of
+// the node that asks, so a scratch node's root, once that node was gone, was never visited again. Once a process, every root
+// under <tmp>/spirit is swept the same way, and a root no live process owns any more, untouched for an hour, goes whole.
+const HOUR = 3600000;
+let allSwept = false;
+function sweepAll() {
+  if (allSwept) return;
+  allSwept = true;
+  const base = path.join(os.tmpdir(), 'spirit');
+  let roots = [];
+  try { roots = fs.readdirSync(base); } catch (e) { return; }
+  roots.forEach(function (r) {
+    const root = path.join(base, r);
+    const owners = path.join(root, '.owners');
+    let live = 0;
+    let names = [];
+    try { names = fs.readdirSync(owners); } catch (e) { names = []; }
+    names.forEach(function (n) {
+      const file = path.join(owners, n);
+      let row = null;
+      try { row = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { row = null; }
+      if (row && alive(row.pid)) { live += 1; return; }
+      if (row && typeof row.dir === 'string' && row.dir.indexOf(root + path.sep) === 0) {
+        try { fs.rmSync(row.dir, { recursive: true, force: true }); } catch (e) { /* the system temp folder keeps it */ }
+      }
+      try { fs.rmSync(file, { force: true }); } catch (e) { /* gone already */ }
+    });
+    if (live) return;
+    let st = null;
+    try { st = fs.statSync(root); } catch (e) { return; }
+    if (!st.isDirectory() || Date.now() - st.mtimeMs < HOUR) return;
+    try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* locked: the next sweep */ }
+  });
+}
 function tempFolder(route, opts) {
   const dir = pathOf(route, opts);
   sweep(opts);
+  sweepAll();
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   const owners = ownersOf(opts);

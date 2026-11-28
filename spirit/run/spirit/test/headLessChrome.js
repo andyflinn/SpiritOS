@@ -390,15 +390,15 @@ async function scratchFaceRelay(o) {
 // cluttering my machine."; found on his Windows machine: 2274 spirit-chrome-* profiles left in TEMP): a Chrome that ended
 // first left its profile behind, and on Windows a profile is still locked for a moment after its Chrome is killed, so the one
 // delete a test did failed. The watcher deletes it once its Chrome is gone, trying again for ten seconds.
-function watchChrome(kid, profile) {
+function watchChrome(kid, profile, scratch) {
   if (!kid || !kid.pid) return;
-  const code = 'const [test, chrome, profile] = process.argv.slice(1); const fs = require("fs"); const alive = function (p) { try { process.kill(Number(p), 0); return true; } catch (e) { return false; } };' +
-    ' const rm = function (n) { try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) {} if (fs.existsSync(profile) && n < 20) setTimeout(function () { rm(n + 1); }, 500); };' +
+  const code = 'const [test, chrome, profile, scratch] = process.argv.slice(1); const fs = require("fs"); const alive = function (p) { try { process.kill(Number(p), 0); return true; } catch (e) { return false; } };' +
+    ' const rm = function (n) { [profile, scratch].forEach(function (d) { if (d) try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) {} }); if ((fs.existsSync(profile) || (scratch && fs.existsSync(scratch))) && n < 20) setTimeout(function () { rm(n + 1); }, 500); };' +
     ' const t = setInterval(function () { if (!alive(chrome)) { clearInterval(t); rm(0); return; } if (alive(test)) return; clearInterval(t);' +
     ' try { process.kill(Number(chrome), "SIGTERM"); } catch (e) {}' +
     ' setTimeout(function () { try { process.kill(Number(chrome), "SIGKILL"); } catch (e) {} rm(0); }, 2000); }, 500);';
   try {
-    const w = spawn(process.execPath, ['-e', code, String(process.pid), String(kid.pid), profile], { stdio: 'ignore', detached: true, windowsHide: true });
+    const w = spawn(process.execPath, ['-e', code, String(process.pid), String(kid.pid), profile, scratch || ''], { stdio: 'ignore', detached: true, windowsHide: true });
     w.unref();
   } catch (e) { /* no watcher: the test's own cleanup is all there is */ }
 }
@@ -417,11 +417,11 @@ function sweepProfiles() {
     const w = spawn(process.execPath, ['-e', code, tempFolder.path(PROFILES)], { stdio: 'ignore', detached: true, windowsHide: true });
     w.unref();
   } catch (e) { /* swept by the next test */ }
-  // Chrome's own scratch in the system temp folder (.com.google.Chrome.*, .org.chromium.Chromium.*), once an hour old
-  // (goal/G49.23; Andy: "they still fucking litter, and fill the temp folders").
+  // A TEST CHROME'S OWN TEMP FOLDER A KILLED RUN LEFT (goal/G49.27), spirit-chrome-*, once an hour old. Never Chrome's own names:
+  // Andy's own Chrome makes them in the same folder (cw).
   const chromeScratch = 'const fs = require("fs"); const path = require("path"); const dir = process.argv[1]; const old = Date.now() - 3600000;' +
     ' let names = []; try { names = fs.readdirSync(dir); } catch (e) {}' +
-    ' names.forEach(function (n) { if (n.indexOf(".com.google.Chrome.") !== 0 && n.indexOf(".org.chromium.Chromium.") !== 0) return;' +
+    ' names.forEach(function (n) { if (n.indexOf("spirit-chrome-") !== 0) return;' +
     ' const p = path.join(dir, n); try { if (fs.lstatSync(p).mtimeMs < old) fs.rmSync(p, { recursive: true, force: true }); } catch (e) {} });';
   try {
     const w = spawn(process.execPath, ['-e', chromeScratch, require('os').tmpdir()], { stdio: 'ignore', detached: true, windowsHide: true });
@@ -564,10 +564,16 @@ async function chromePage(chrome) {
   // to the system temp folder beside its profile, where no sweep owns them, and a Chrome that crashed under WSL left a core
   // dump of 669 GB in its crash folder. Its temp is a folder inside its profile, so the profile's removal takes it; its crash
   // reporter is off; and on Linux it starts with core dumps at zero (exec keeps its process id, so its watch and its kill hold).
-  // Its temp stays the system's: Chrome makes its sockets in its temp folder, and a temp inside the profile, under the
-  // node's temp root, is too long a path for a socket, so no page answered (wsl, 2026-11-28: the text page 5/18 with it,
-  // 18/18 without). What it leaves there, sweepProfiles removes once an hour old.
-  const env = process.env;
+  // ITS OWN TEMP FOLDER, NEVER THE SYSTEM'S (goal/G49.27; Andy: "the test system is STILL littering all over the TEMP folders",
+  // "just get this chrome shit fixed"): Chrome's scratch (scoped_dir*, .com.google.Chrome.*) went to the system temp folder (988
+  // scoped_dir folders in Andy's Windows temp), where only a sweep by Chrome's own names found it, and such a sweep can take a
+  // folder of the Chrome Andy uses himself (cw). So each test Chrome gets a temp folder of its own: on Windows inside its
+  // profile; elsewhere a short one, <tmp>/spirit-chrome-<its profile's hex>, since Chrome makes its sockets there and a path
+  // under the profile is too long for a socket (a679dde74: no page answered). It goes with the profile (watchChrome), and one a
+  // killed run left is swept once an hour old by that name, which nothing but this harness uses.
+  const scratch = process.platform === 'win32' ? path.join(profile, 'tmp') : path.join(require('os').tmpdir(), 'spirit-chrome-' + path.basename(profile).slice('chrome-'.length));
+  fs.mkdirSync(scratch, { recursive: true });
+  const env = Object.assign({}, process.env, { TEMP: scratch, TMP: scratch, TMPDIR: scratch });
   const args = ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
     '--disable-breakpad', '--disable-crash-reporter', '--window-size=1280,800', 'about:blank'];
   const how = { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: env };
@@ -577,7 +583,7 @@ async function chromePage(chrome) {
   // the one it honours there, skipping the dump (wsl, measured: an aborted process dumps without it, not with it). prlimit execs, so
   // the pid stays Chrome's, and every child Chrome starts inherits the limit.
   const kid = process.platform === 'linux' ? spawn(fs.existsSync('/usr/bin/prlimit') ? '/usr/bin/prlimit' : 'prlimit', ['--core=1', chrome].concat(args), how) : spawn(chrome, args, how);
-  watchChrome(kid, profile);
+  watchChrome(kid, profile, scratch);
   let err = '';
   kid.stderr.on('data', function (d) { err += String(d); });
   let ws = '';
