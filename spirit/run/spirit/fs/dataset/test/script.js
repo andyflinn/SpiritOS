@@ -51,7 +51,7 @@ function oldShapeFolder() {
   return walk('spirit');
 }
 const OLD_SHAPE = oldShapeFolder();
-const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', OLD_SHAPE || 'spirit/zznoOldShape', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node/script.js', 'spirit/state'];
+const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', OLD_SHAPE || 'spirit/zznoOldShape', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/script.js', 'spirit/state'];
 function caller() {
   const script = [
     "require('./spirit/script.js');",
@@ -158,9 +158,10 @@ test.run('spirit.js knows nothing of fs streaming: it names neither followStream
 // the loopback client, that's really the only place where fileServable() should be used to filter the publish stream",
 // "only brosers can be efectively gated from file access", "go". A node process's spirit.fs family holds the server code and
 // the node's own state folder; a page's holds neither, while it holds a file a page may be served, so it was judged.
-test.run('a node process\'s dataset holds spirit/server/node/script.js, which no page may be served', 0.2, async function () {
+// goal/G49.25: the node's server code is the one server, spirit/server/script.js; spirit/server/node/script.js is gone.
+test.run('a node process\'s dataset holds spirit/server/script.js, which no page may be served', 0.2, async function () {
   if (!up() || !W.kid) return false;
-  return (await until(function () { return !!row('spirit/server/node/script.js'); }, 10000)) || false;
+  return (await until(function () { return !!row('spirit/server/script.js'); }, 10000)) || false;
 }, test.limit.slow);
 test.run('a node process\'s dataset holds the node\'s own state folder, spirit/state', 0.2, async function () {
   if (!up() || !W.kid) return false;
@@ -168,7 +169,7 @@ test.run('a node process\'s dataset holds the node\'s own state folder, spirit/s
 }, test.limit.slow);
 const P = {};
 test.after(function () { try { if (P.chrome && P.chrome.kid) P.chrome.kid.kill(); } catch (e) { /* gone */ } });
-const PAGE_ROWS = "(function () { try { var V = window.spirit.client.viewAt(null, 'spirit.fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/node/script.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
+const PAGE_ROWS = "(function () { try { var V = window.spirit.client.viewAt(null, 'spirit.fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/script.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
 async function pageRows() { try { return JSON.parse(await P.chrome.evaluate(PAGE_ROWS)); } catch (e) { return null; } }
 test.run('a page on the node holds the whole servable tree in the spirit.fs family of its spirit.client', 0.4, async function () {
   if (!up()) return false;
@@ -180,7 +181,8 @@ test.run('a page on the node holds the whole servable tree in the spirit.fs fami
   for (let i = 0; i < 100; i++) { P.rows = await pageRows(); if (P.rows && P.rows.ready && P.rows.desk) break; await H.sleep(300); }
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.count > 100) || false;
 }, test.limit.slow);
-test.run('a page\'s dataset holds no spirit/server/node/script.js', 0.2, function () {
+// goal/G49.25: the one server's code, as spirit/server/node/script.js was before.
+test.run('a page\'s dataset holds no spirit/server/script.js', 0.2, function () {
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.server === false) || false;
 }, test.limit.quick);
 test.run('a page\'s dataset holds nothing of spirit/state', 0.2, function () {

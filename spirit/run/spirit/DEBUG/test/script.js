@@ -5,12 +5,14 @@
 // and relay alike. A scratch copy of the tracked files of spirit/run, a node and two relays of its own on free ports,
 // asked over plain HTTP; Andy's node and an agent's are never touched.
 
+// spirit.js first, as every module requires it (goal/G47.1, box v73).
+require('../../script.js');
 const fs = require('fs');
 const os = require('os');
 const net = require('net');
 const http = require('http');
 const path = require('path');
-const { spawn, execSync, execFileSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
@@ -59,15 +61,14 @@ async function startNode(run) {
   return { port: port, child: child, up: up };
 }
 // A relay whose process has its spirit object switched on (debug) before the relay loads: a scratch relay has no owner
-// to send its DEBUG verb.
+// to send its DEBUG verb. THE ONE SERVER, STARTED AS A RELAY (goal/G49.25, box v16: "spirit/server/script.js is THE server, for
+// node and relay alike"; spirit/server/relay/script.js is gone): the lab's scratchRelay (spirit/test/headLessChrome.js) starts it
+// with --relay, its DEBUG set first by o.debug, in a lab tree of its own.
 async function startRelay(run, debug) {
-  const port = await freePort();
-  const code = 'require("./spirit/script.js").debugLog(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay/script.js"); require("./spirit/server/relay/script.js");';
-  const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
-  const up = await until(function () { return ask('127.0.0.1', port, '/').then(function (r) { return r.status > 0; }); }, 30000);
-  return { port: port, child: child, up: up };
+  const r = await LABH.scratchRelay({ debug: !!debug });
+  return { port: r.port, child: r.child, up: r.up, release: r.release };
 }
-async function stop(server) { if (server && server.child) { try { server.child.kill(); } catch (e) { /* gone */ } await sleep(500); } }
+async function stop(server) { if (server && server.release) { try { await server.release(); } catch (e) { /* gone */ } return; } if (server && server.child) { try { server.child.kill(); } catch (e) { /* gone */ } await sleep(500); } }
 function outsideAddress() {
   const all = os.networkInterfaces();
   for (const name of Object.keys(all)) for (const a of all[name] || []) if (a.family === 'IPv4' && !a.internal) return a.address;
@@ -323,12 +324,13 @@ test.run('no mount file is left: every element mounts with its container alone',
   return (!manifests.length) ? true : false;
 }, test.limit.quick);
 
-// serveCommon requires it: loaded in a child, DEBUG.js is among the modules loaded.
-test.run('serveCommon.js requires DEBUG.js', 0.2, async function () {
+// The one server requires it: loaded in a child, DEBUG.js is among the modules loaded. goal/G49.25: serveCommon's code is the one
+// server's, spirit/server/script.js, which required by another script starts nothing and hands out its helpers.
+test.run('the one server, spirit/server/script.js, requires DEBUG.js', 0.2, async function () {
   loaded = '';
   try {
   // Started by its path as an argument, not through a shell: on Windows node lives under "Program Files".
-  loaded = execFileSync(process.execPath, ['-e', 'require("./spirit/server/serveCommon/script.js"); console.log(Object.keys(require.cache).join("\\n"))'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
+  loaded = execFileSync(process.execPath, ['-e', 'require(' + JSON.stringify(path.join(RUN, 'spirit', 'server', 'script.js')) + '); console.log(Object.keys(require.cache).join("\\n"))'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
   } catch (e) { loaded = String(e.stdout || ''); }
   return (loaded.split('\n').some(function (f) { return path.resolve(f) === path.join(RUN, 'spirit', 'DEBUG', 'script.js'); })) ? true : false;
 }, test.limit.quick);
@@ -515,7 +517,8 @@ test.run('a file outside a test/ folder, the element\'s own script, is refused',
 
 test.run('a server script is refused', 0.8, async function () {
   if (!node || !node.up) return false;
-  rd = await refused('/DEBUG/spirit/server/serveCommon/script.js', {});
+  // goal/G49.25: the one server's code, spirit/server/serveCommon/script.js gone.
+  rd = await refused('/DEBUG/spirit/server/script.js', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 
