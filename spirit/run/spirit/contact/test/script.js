@@ -6,7 +6,8 @@
 // The contact family: the node's book of peers, people and relays in one table (goal/G32.1, goal/G40.11).
 // The interface is run as spirit.js runs the text api {family} answers (loadInterface: the text, with module and exports
 // alone), each call checked by spirit.js's own check (spirit.checkArgs, its rules spirit.ruleNames), the one the spirit object
-// runs before a call leaves. server.js is read as text only, to find the table the node mounts for the family.
+// runs before a call leaves. The table the node mounts is the one
+// server's, spirit/server/script.js, its loadBranches run as the node boots (goal/G49.25).
 
 const fs = require('fs');
 const path = require('path');
@@ -25,49 +26,65 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 const KEY = LOADER.requireScript('spirit/type/string/ID/script.js').defaultValue();
 const NOT_KEY = 'not-a-key';
 
-// THE TABLE THE NODE MOUNTS, read from server.js's text: loopbackVerbs.mount('<family>', <folder>, { '<verb>': { request:
-// { <argument>: ... }, ... } }). Strings and comments are stepped over, so a brace in them counts for nothing.
-function skip(src, i) {
-  const c = src[i];
-  if (c === '/' && src[i + 1] === '/') { const n = src.indexOf('\n', i); return n === -1 ? src.length : n; }
-  if (c === '/' && src[i + 1] === '*') { const n = src.indexOf('*/', i); return n === -1 ? src.length : n + 1; }
-  if (c === '\'' || c === '"' || c === '`') { let j = i + 1; while (j < src.length && src[j] !== c) { if (src[j] === '\\') j++; j++; } return j; }
-  return i;
+// THE TABLE THE ONE SERVER MOUNTS (goal/G49.25, box v10: "serveCommon will load the spirit.fs branch explicitly, then load all
+// trunk branches, using the fs-cache"): spirit/server/script.js, required, starts nothing and hands out its helpers, among them
+// the two the node boots through, loadFs (the fs cache seeded from this tree) and loadBranches (every trunk branch the cache
+// marks, each with its node work's verbs, spirit/<branch>/server/script.js). They are run here as the node runs them, with this
+// test's own mount and check catching what is handed over, by the name it is mounted under: mounted { <verb>: [<argument>, ...]
+// or null when the handler names no request }, and checked { branch, verbs }, what a new-shape branch's check is given. The
+// node's own call of loadBranches is read from the server's text (BOOT). The cache's watcher is stopped once all is read.
+const SERVER = path.join(RUN, 'spirit', 'server', 'script.js');
+const BOOT = 'common.loadBranches({ rootDir: ROOT_DIR, node: branchNode, mount: loopbackVerbs.mount, check: checkedVerbs, root: rootVerbs });';
+function loadMounts() {
+  const common = spirit.requireScript('spirit/server/script.js');
+  const watcher = common.loadFs(RUN, null);
+  const out = { names: [], mounted: {}, checked: {} };
+  // What the node hands each branch's node work (branchNode): nothing of it is called while the verbs are only declared.
+  const node = new Proxy({ rootDir: RUN }, { get: function (o, k) { return typeof k !== 'string' || k === 'then' ? undefined : (k in o ? o[k] : function () { return null; }); } });
+  return common.loadBranches({
+    rootDir: RUN,
+    node: node,
+    check: function (name, branch, verbs) { out.checked[name] = { branch: branch, verbs: verbs }; return verbs; },
+    mount: function (name, dir, verbs) {
+      const table = {};
+      Object.keys(verbs || {}).forEach(function (v) { const r = verbs[v] && verbs[v].request; table[v] = isPlain(r) ? Object.keys(r) : null; });
+      out.mounted[name] = table;
+    },
+  }).then(function (names) { out.names = names; return out; }).finally(function () { if (watcher && typeof watcher._stop === 'function') watcher._stop(); });
 }
-// The keys of the object literal whose { is at open, each with where its value starts.
-function keysAt(src, open) {
-  const out = [];
-  let depth = 0; let expect = false;
-  for (let i = open; i < src.length; i++) {
-    const c = src[i];
-    if (depth === 1 && expect && !/\s/.test(c)) {
-      if (c === '/' && (src[i + 1] === '/' || src[i + 1] === '*')) { i = skip(src, i); continue; }
-      const m = /^(?:'([^']+)'|"([^"]+)"|([A-Za-z_$][\w$]*))\s*:\s*/.exec(src.slice(i, i + 200));
-      expect = false;
-      if (m) { out.push({ key: m[1] || m[2] || m[3], at: i + m[0].length }); i += m[0].length - 1; continue; }
-    }
-    const k = skip(src, i);
-    if (k !== i) { i = k; continue; }
-    if (c === '{' || c === '[' || c === '(') { depth++; if (depth === 1) expect = true; } else if (c === '}' || c === ']' || c === ')') { depth--; if (depth === 0) return out; } else if (c === ',' && depth === 1) expect = true;
-  }
-  return null;
+// mounted(name): the table the one server mounts under that name, or null; and the node boots its branches so.
+function mounted(name) {
+  return loadMounts().then(function (m) {
+    W.loaded = m;
+    if (fs.readFileSync(SERVER, 'utf8').indexOf(BOOT) === -1) return null;
+    return m.names.indexOf(name) !== -1 && isPlain(m.mounted[name]) ? m.mounted[name] : null;
+  });
 }
-function mounted(family) {
-  // The node's server code, spirit/server/node/script.js since goal/G48.5 ("the servers move into spirit/server/").
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8');
-  const head = 'loopbackVerbs.mount(\'' + family + '\',';
-  let at = src.indexOf(head);
-  if (at === -1) return null;
-  const verbs = {};
-  for (; at !== -1; at = src.indexOf(head, at + 1)) {
-    // The third argument: the first { after the folder's path.join(...).
-    const open = src.indexOf('{', src.indexOf(')', at + head.length));
-    (keysAt(src, open) || []).forEach(function (v) {
-      const req = (keysAt(src, v.at) || []).filter(function (k) { return k.key === 'request'; })[0];
-      verbs[v.key] = req && src[req.at] === '{' ? (keysAt(src, req.at) || []).map(function (k) { return k.key; }) : null;
-    });
-  }
-  return verbs;
+
+// THE NODE TAKES EACH VERB'S ARGUMENTS FROM THIS SCRIPT (goal/G49.15, box v23: "the node must use this same script as require to
+// validate incoming requests."; goal/G49.25: the one server's loadBranches hands a new-shape branch's verbs to its check with
+// the branch's own script.js): the check is handed this script, its node work declares no request of its own, or this
+// script's, and the node's check, checkedVerbs in spirit/server/script.js, sets each verb's request to the script's entry and runs
+// its handler behind spirit.checkArgs against it.
+const CHECKED_VERBS = [
+  "request: (branch.verbs && branch.verbs[v]) || verbs[v].request, handler: checkedBy(v, verbs[v].handler)",
+  "spirit.checkArgs(name + '.' + verb, branch.verbs[verb],",
+];
+function takenFromScript(name) {
+  const c = W.loaded && W.loaded.checked[name];
+  // The branch the check is handed is this script as the loader binds it: its verbs this text's, every one.
+  if (!c || !c.branch || !isPlain(c.branch.verbs) || !isPlain(c.verbs)) return false;
+  if (JSON.stringify(Object.keys(c.branch.verbs).sort()) !== JSON.stringify(W.names.slice().sort())) return false;
+  const src = fs.readFileSync(SERVER, 'utf8');
+  if (CHECKED_VERBS.some(function (s) { return src.indexOf(s) === -1; })) return false;
+  if (!W.names.length) return false;
+  const off = W.names.filter(function (v) {
+    const own = c.verbs[v] && c.verbs[v].request;
+    // The script the check is handed declares the verb as this text does, and the node work names no other arguments.
+    if (!c.verbs[v] || !c.branch.verbs || JSON.stringify(c.branch.verbs[v]) !== JSON.stringify(W.verbs[v])) return true;
+    return own !== undefined && JSON.stringify(Object.keys(own).sort()) !== JSON.stringify(Object.keys(W.verbs[v]).sort());
+  });
+  return off.length === 0 || false;
 }
 
 // What the world loads, read by every test after it.
@@ -96,9 +113,9 @@ test.run('it asks for its companion client, spirit/contact/client/script.js, and
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/contact/client/script.js' ? true : false;
 }, test.limit.quick);
-test.run('server.js mounts the contact branch', 0.2, function () {
-  try { W.mounted = mounted('spirit.contact'); } catch (e) { return false; }
-  return !!W.mounted || false;
+// goal/G49.25: the one server mounts every trunk branch the fs cache marks; spirit/server/node/script.js is gone.
+test.run('the one server, spirit/server/script.js, mounts the contact branch it finds in the fs cache as spirit.contact', 0.2, function () {
+  return mounted('spirit.contact').then(function (m) { W.mounted = m; return !!W.mounted || false; }, function () { return false; });
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
@@ -132,13 +149,11 @@ test.run('it declares every verb the node mounts for the branch, and no other', 
   if (!node.length) return false;
   return JSON.stringify(node) === JSON.stringify(here) || false;
 }, test.limit.quick);
-test.run('each verb takes the arguments its handler\'s request carries, and no other', 0.2, function () {
+// goal/G49.25: the handler's request is no longer its own; the node sets it from this script (takenFromScript, above).
+test.run('each verb the node mounts takes its arguments from this script, and checks them', 0.2, function () {
   if (!W.api) return false;
   if (!W.mounted) return false;
-  const judged = W.names.filter(function (v) { return Array.isArray(W.mounted[v]); });
-  if (!judged.length) return false;
-  const off = judged.filter(function (v) { return JSON.stringify(W.mounted[v].slice().sort()) !== JSON.stringify(Object.keys(W.verbs[v]).sort()); });
-  return off.length === 0 || false;
+  return takenFromScript('spirit.contact');
 }, test.limit.quick);
 
 // goal/G40.11: the one table, people and relays, a filter per flag; goal/G48.4: '"flags" must be booleans'

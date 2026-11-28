@@ -290,7 +290,8 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.client since goal/G49.23 (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
+// IS_RELAY: goal/G49.25, box v10, the relay flag.
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'IS_RELAY', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -302,15 +303,16 @@ test.run('no factory, no transport and no second object is handed out, in node o
   const left = factories.filter(function (k) { return k in s || k in T.w.spirit; });
   return !left.length || false;
 }, test.limit.quick);
-// THE NODE IN TWO PLACES, THE RELAY'S FACE ROUTES IN THREE (goal/G43.18, Q22: the link home moved into spirit.js; box v29: the
-// login is spirit.faceLogin): post and get to the node; the login's /face/api, and the link's /face/call, whole and piece by piece.
+// THE NODE IN TWO PLACES, THE RELAY'S DOOR IN TWO (goal/G43.18, Q22: the link home moved into spirit.js; box v29: the
+// login is spirit.faceLogin): post and get to the node; the login's and the link's calls at the relay's one door, /spirit
+// (goal/G49.25, box v25: spirit.relay.faceState, faceLogin, faceLogout and faceCall; were /face/api and /face/call, three fetches).
 // AND ONE STREAM BY ITS ADDRESS (goal/G47.1, the box, "Reload Problems with the face": boot.js "opens the face's stream through
 // spirit.js, handing only the face's address"): readStream fetches the address it is handed, o.url().
-test.run('one post and one get reach the node; three more are the relay\'s face routes, login and link; one is the stream reader\'s', 0.2, function () {
+test.run('one post and one get reach the node; two more are the relay\'s door, the login\'s and the link\'s; one is the stream reader\'s', 0.2, function () {
   const fetches = (code.match(/\bfetch\(/g) || []).length;
-  const toFace = (code.match(/\bfetch\('\/face\/(api|call)'/g) || []).length;
+  const toFace = (code.match(/\bfetch\('\/spirit'/g) || []).length;
   const byAddress = (code.match(/\bfetch\(o\.url\(\)/g) || []).length;
-  return (fetches === 6 && toFace === 3 && byAddress === 1 && /function post\(verb, args(, how)?\)/.test(code) && /function get\(path\)/.test(code)) || false;
+  return (fetches === 5 && toFace === 2 && !/\/face\/(api|call)\b/.test(code) && byAddress === 1 && /function post\(verb, args(, how)?\)/.test(code) && /function get\(path\)/.test(code)) || false;
 }, test.limit.quick);
 
 // ── 2. IN NODE: spirit.js's OWN ──────────────────────────────────────
@@ -733,12 +735,14 @@ test.run('the node serves face.html byte for byte as it is on disk', 0.2, async 
   const served = await new Promise(function (resolve) {
     const chunks = [];
     const res = { writeHead: function () {}, setHeader: function () {}, end: function (b) { if (b) chunks.push(Buffer.from(b)); resolve(Buffer.concat(chunks)); } };
-    try { require(path.join(RUN, 'spirit', 'server', 'serveCommon', 'script.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.alloc(0)); }
+    // serveCommon's sendFile is the one server's since goal/G49.25 (box v16); required, it starts nothing.
+    try { require(path.join(RUN, 'spirit', 'server', 'script.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.alloc(0)); }
   });
   return served.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'))) || false;
 }, test.limit.quick);
-test.run('no server pastes spirit.js into a page, and serveCommon.inlineSpirit is gone from the node and the relay', 0.2, function () {
-  const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'serveCommon', 'script.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'server', 'relay', 'script.js'), 'utf8');
+// goal/G49.25, box v16: serveCommon, the node's and the relay's servers are the one server now; the relay's own code is the relay branch's.
+test.run('no server pastes spirit.js into a page, and inlineSpirit is gone from the one server and the relay\'s own code', 0.2, function () {
+  const serverSrc = ['spirit/server/script.js', 'spirit/relay/server/script.js', 'spirit/relay/processor/script.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   return !/inlineSpirit/.test(serverSrc) || false;
 }, test.limit.quick);
 test.run('on the home node\'s page spirit.js gets spirit/shell/boot/script.js alone and runs it, spirit.faceBooted answering; the seal waits for a face', 0.2, async function () {
@@ -1226,6 +1230,7 @@ const REPO = path.resolve(RUN, '../..');
 // face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js,
 // shell.css, face.css and every other part of the shell come from the home node over that link.", and "The login is
 // spirit.faceLogin, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one
+// [/face/api is gone since goal/G49.25: the calls spirit.relay.faceState, faceLogin and faceLogout at the relay's one door, /spirit]
 // field when logged out. shell/login/ and its login.json go." A real scratch node, a real relay, a real face and its login,
 // and a real Chrome on the face at <name>.localhost, a secure context as a face over https is. A step that could not run is
 // red, never skipped.
@@ -1272,13 +1277,14 @@ async function faceOf(N, R) {
   let f = null;
   for (let i = 0; i < 10; i++) { f = await homeCall(N.base, 'spirit.contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
-  await until(function () { return atFace(R, 'POST', '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
+  // goal/G49.25: the relay's one door, /spirit (was /face/api, call state and login).
+  await until(function () { return atFace(R, 'POST', '/spirit', { call: 'spirit.relay.faceState', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
-  await atFace(R, 'POST', '/face/api', { call: 'login', args: { text: MAIL } });
+  await atFace(R, 'POST', '/spirit', { call: 'spirit.relay.faceLogin', args: { text: MAIL } });
   await until(function () { return R.mailed.length > from; }, 5000);
   const token = R.mailed[from] && String(R.mailed[from].text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
   if (!token) return {};
-  const done = await atFace(R, 'POST', '/face/api', { call: 'login', args: { text: token } });
+  const done = await atFace(R, 'POST', '/spirit', { call: 'spirit.relay.faceLogin', args: { text: token } });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
   return sid ? { sid: sid } : {};
 }
@@ -1320,7 +1326,7 @@ test.run('the relay serves /spirit/script.js', 0.2, function () { return relaySe
 test.run('the relay serves /spirit/shell/seal/script.js', 0.2, function () { return relayServes('/spirit/shell/seal/script.js'); }, test.limit.quick);
 // WHAT THE RELAY SERVES (goal/G49.15, box v16: "the relay list goes. tests must not care."; "the static file serving logic
 // should be the exact same on the relay as it is on the node"): judged in the relay's own test,
-// spirit/server/relay/test/script.js, against a node.
+// spirit/relay/server/test/script.js, against a node (goal/G49.25: was spirit/server/relay/test/script.js).
 
 // the box: "The login is spirit.login, in spirit.js, no app ... and draws the one field when logged out"
 function faceUrl() { return 'http://' + NAME + '.' + DOMAIN + ':' + FL.R.port + '/'; }
@@ -1344,7 +1350,7 @@ test.run('logged out, it loads nothing but spirit/script.js, the seal, spirit/sh
   if (!FL.out) return false;
   const others = (FL.out.loaded || []).filter(function (n) {
     const p = String(n).replace(/^\//, '').replace(/[?#].*$/, '');
-    return !/^(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)$/.test(p) && CM_FILES.indexOf(p) === -1 && CM_SHEETS.indexOf(p) === -1 && !/^face\/api/.test(p);
+    return !/^(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)$/.test(p) && CM_FILES.indexOf(p) === -1 && CM_SHEETS.indexOf(p) === -1 && !/^spirit$/.test(p);  // the login's calls at the relay's door (goal/G49.25: was face/api)
   });
   return (Array.isArray(FL.out.loaded) && !others.length) || false;
 }, test.limit.quick);
@@ -1384,7 +1390,7 @@ test.run('logged out by spirit.faceLogin.logout, the page shows the one field ag
 }, test.limit.slow);
 test.run('after the logout the relay holds the login no more', 0.8, async function () {
   if (!FL.loggedOut) return false;
-  const st = await atFace(FL.R, 'POST', '/face/api', { call: 'state', args: {} }, FL.F.sid);
+  const st = await atFace(FL.R, 'POST', '/spirit', { call: 'spirit.relay.faceState', args: {} }, FL.F.sid);  // goal/G49.25: was /face/api
   return (st.status === 200 && !/"loggedIn":\s*true/.test(st.text)) || false;
 }, test.limit.quick);
 
@@ -1668,10 +1674,12 @@ const isFile = function (rel) { try { return fs.statSync(path.join(RUN, rel)).is
 test.run('the spirit object is spirit/script.js, and spirit/spirit.js is gone', 0.4, function () {
   return (isFile('spirit/script.js') && !isFile(J('spirit/', 'spirit', '.js'))) || false;
 }, test.limit.quick);
-// box v17, "Server Group": server.js, server/app.js, server/node.js, server/relay.js, server/serveCommon.js each to <name>/script.js
-test.run('the server group stands at server/script.js and server/<name>/script.js, and the old files are gone', 0.4, function () {
-  const moved = [[J('spirit/', 'server', '.js'), 'spirit/server/script.js']].concat(['app', 'node', 'relay', 'serveCommon'].map(function (n) { return [J('spirit/server/', n, '.js'), 'spirit/server/' + n + '/script.js']; }));
-  return moved.every(function (m) { return !isFile(m[0]) && isFile(m[1]); }) || false;
+// box v17, "Server Group": server.js, server/app.js, server/node.js, server/relay.js, server/serveCommon.js each to <name>/script.js;
+// goal/G49.25, box v16: "There is only ONE server": server/node, server/relay and server/serveCommon go into server/script.js.
+test.run('the server group stands at server/script.js and server/app/script.js, the old files gone, and server/node, server/relay and server/serveCommon gone into server/script.js', 0.4, function () {
+  const moved = [[J('spirit/', 'server', '.js'), 'spirit/server/script.js'], [J('spirit/server/', 'app', '.js'), 'spirit/server/app/script.js']];
+  const gone = ['node', 'relay', 'serveCommon'].map(function (n) { return [J('spirit/server/', n, '.js'), J('spirit/server/', n, '/script.js')]; });
+  return (moved.every(function (m) { return !isFile(m[0]) && isFile(m[1]); }) && gone.every(function (g) { return !isFile(g[0]) && !isFile(g[1]); })) || false;
 }, test.limit.quick);
 // box v17, "Shell group": boot.js and seal.js to shell/boot/script.js and shell/seal/script.js
 test.run('the shell\'s boot and seal stand at shell/boot/script.js and shell/seal/script.js, and the old files are gone', 0.4, function () {

@@ -187,9 +187,13 @@ test.run('every argument of every verb names a spirit/type/<...>/script.js that 
   }) || false;
 }, test.limit.quick);
 // The node validates an incoming fs call with that same script: it requires it, and a wrong argument is refused.
+// goal/G49.25 (box v10: "serveCommon will load the spirit.fs branch explicitly"): the one server, spirit/server/script.js, requires
+// it in loadFs, and the node boots through loadFs; spirit/server/node/script.js is gone.
 test.run('the node requires spirit/fs/script.js', 0.2, function () {
-  let c = ''; try { c = fsNew.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8'); } catch (e) { c = ''; }
-  return c.indexOf("requireScript('spirit/fs/script.js')") !== -1 || false;
+  let c = ''; try { c = fsNew.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8'); } catch (e) { c = ''; }
+  const loadFs = c.indexOf('function loadFs(');
+  const body = loadFs === -1 ? '' : c.slice(loadFs, c.indexOf('\n}', loadFs));
+  return (body.indexOf("requireScript('spirit/fs/script.js')") !== -1 && c.indexOf('common.loadFs(ROOT_DIR, jobs);') !== -1) || false;
 }, test.limit.quick);
 const NODE = { n: null };
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');

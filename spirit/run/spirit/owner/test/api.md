@@ -2,13 +2,13 @@
 
 The owner family: the owner's boxes and his commands to his puppets (puppets/G4). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The file is run as spirit.js runs the text `api {family}` answers (`loadInterface`: its text with
 `module` and `exports`, and on a page `window.spirit.requireScript`, which it asks for its companion `spirit/owner/data.js` and nothing else: goal/G47.1, Andy's rule *"every api.js requires it's companion data.js, and is the only script to require that data.js"*), every call checked by spirit.js's own check (`spirit.checkArgs`, its rules `spirit.ruleNames`).
-`server.js` is read as text only, for the table `loopbackVerbs.mount('owner', ...)` mounts.
+The table the node mounts is the one server's own (goal/G49.25, box v10: *"serveCommon will load the spirit.fs branch explicitly, then load all trunk branches, using the fs-cache"*): `spirit/server/script.js`'s `loadFs` and `loadBranches`, run as the node boots through them, what it mounts under `owner` caught, and the node's own `loadBranches` call read from the server's text.
 
 - It runs with nothing but `module` and `exports`, and exports its table of verbs and nothing else: it names
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
-  the verbs the node server, spirit/server/node/script.js, mounts for the family, and each verb exactly the arguments its handler's `request` carries.
+  the verbs the one server, spirit/server/script.js, mounts for the branch it finds in the fs cache, and each verb exactly the arguments its handler's `request` carries.
 - `boxSearch`'s q is optional; `boxGet` names the box.
 - `command` names the puppet by its key (`to`) and the command, its `body` an object that may be left out.
 

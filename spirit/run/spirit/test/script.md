@@ -40,14 +40,15 @@ home node once the face is linked. No other line of spirit.js asks where it runs
 
 - **On a page**: the page's own origin, or the face's link to its home node when one is set (`window.spirit.transport`).
 - **In node**: `127.0.0.1` and the `PORT` of `spirit/state/environment.json` in the run root spirit.js sits in, read
-  when spirit.js is required. The node's server writes that file through `serveCommon.writeEnvironment` before it
+  when spirit.js is required. The node's server writes that file through `writeEnvironment` of `spirit/server/script.js` (serveCommon's until goal/G49.25) before it
   starts any server process. No port, no node: calls refuse `no-node`, and no default port is guessed.
 
 ## One post and one get
 
-Nothing else in spirit.js reaches the node. Its other three fetches are the relay's face routes (goal/G43.18, Q22):
-the login's `/face/api`, and the link's `/face/call`, whole and piece by piece; the red counts five fetches, three of
-them those.
+Nothing else in spirit.js reaches the node. Two other fetches are the relay's one door, `/spirit` (goal/G43.18, Q22;
+goal/G49.25, box v25): the login's `spirit.relay.faceState`, `faceLogin` and `faceLogout`, and the link's
+`spirit.relay.faceCall`, whole and piece by piece (were `/face/api` and `/face/call`); the fifth is the stream reader's,
+by the address it is handed. The red counts five fetches, two of them at `/spirit`, and no `/face/api` or `/face/call` left.
 
 | | |
 |---|---|
@@ -257,7 +258,8 @@ spirit.js hands out no `spirit.core`: what a server needs is spirit.js's own.
   bound (`spirit.requireScript('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.
 - **How a face gets it** (goal/G41.19; Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!"): `face.html` loads it by one tag,
   `<script src="/spirit.js"></script>`, and no other script. The node and the relay serve `face.html` byte for byte as
-  it is on disk; no server pastes spirit.js into a page.
+  it is on disk (`sendFile` of `spirit/server/script.js`, goal/G49.25); no server pastes spirit.js into a page, and
+  `inlineSpirit` is nowhere in the one server or the relay's own code (`spirit/relay/server/`, `spirit/relay/processor/`).
 - **Started on a page, it loads the cache and no element** (goal/G41.19: no preloading elements): `spirit.required.spirit.data`, and
   nothing else from `shell/`. Whoever draws with a data set loads its row element.
 
@@ -295,13 +297,13 @@ holds no finder that looks a branch up by its name, and every caller names the f
 
 goal/G43.18, box v29, *The relay login*. Its test is a section of `./script.js`: a real scratch node and relay, a face on a starred relay (box v29: a face only on one), its real login, and a real Chrome on the face at `<name>.localhost`.
 
-Andy's box: *"The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js, shell.css, face.css and every other part of the shell come from the home node over that link."* and *"The login is spirit.faceLogin, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one field when logged out. shell/login/ and its login.json go."*
+Andy's box: *"The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js, shell.css, face.css and every other part of the shell come from the home node over that link."* and *"The login is spirit.faceLogin, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one field when logged out. shell/login/ and its login.json go."* Since goal/G49.25 those calls are `spirit.relay.faceState`, `faceLogin` and `faceLogout` at the relay's one door, `/spirit`.
 
 ### Requirements
 
 - `shell/login/` is gone.
 - The relay serves the face its page, `/spirit.js` and `/shell/seal.js`. Logged out or in, it does not itself serve `/shell/boot.js`, `/shell.css`, `/shell/face.css`, `/shell/login/login.js` or `/shell/login/login.json`.
-- On the face, `spirit.faceLogin` holds `state`, `login` and `logout`. Logged out, the page shows one field and loads nothing but `spirit.js` and `seal.js` (its favicon and `/face/api` aside).
+- On the face, `spirit.faceLogin` holds `state`, `login` and `logout`. Logged out, the page shows one field and loads nothing but `spirit.js` and `seal.js` (its favicon and its calls at `/spirit` aside).
 - Logged in, the face draws the home node's shell (Contacts on its list), and none of `boot.js`, `shell.css` or `face.css` came as the relay's own file.
 - After `spirit.faceLogin.logout()`, the page shows the one field again, and the relay holds the login no more.
 
