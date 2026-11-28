@@ -1148,3 +1148,23 @@ test.run('who owns a node stays: relayAuth.loadOwner reads the key owner.json na
     return auth.loadOwner(t.run, function () {}) === owner.publicKey || false;
   } finally { H.freeTree(t); }
 }, test.limit.slow);
+
+// ── THE PEER BRANCH MIGRATED (goal/G49.26, box v8, Andy's Go) ── "spirit/peerFile/script.js --> spirit/peer/file/script.js",
+// "spirit/peerRank/script.js --> spirit/relay/peerRank/script.js", "spirit/postQueue/script.js --> spirit/peer/post/queue/script.js",
+// "spirit/peer/api.js --> spirit/peer/script.js", "spirit/peer/data.js --> spirit/peer/client/script.js", "the verbs of course take the
+// names spirit.peer.<verb>", "all callers are adjusted for the updated peer branch."
+[['spirit/peerFile/script.js', 'spirit/peer/file/script.js'], ['spirit/peerRank/script.js', 'spirit/relay/peerRank/script.js'],
+  ['spirit/postQueue/script.js', 'spirit/peer/post/queue/script.js'], ['spirit/peer/api.js', 'spirit/peer/script.js'],
+  ['spirit/peer/data.js', 'spirit/peer/client/script.js']].forEach(function (m) {
+  test.run(m[0] + ' moved to ' + m[1] + ', and no product script requires the old path', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
+  }, test.limit.slow);
+});
+test.run('the peer branch hands out its verbs from spirit/peer/script.js: post and acquire', 0.4, function () {
+  let b = null; try { b = require(path.join(RUN, 'spirit', 'peer', 'script.js')); } catch (e) { b = null; }
+  const v = Object.keys((b && b.verbs) || {});
+  return (v.indexOf('post') !== -1 && v.indexOf('acquire') !== -1) || false;
+}, test.limit.quick);
+test.run('no product script calls a peer verb by its old name, peer.post or peer.acquire', 0.4, function () {
+  return productHits(['-E', "['\"]peer\\.(post|acquire)['\"]"]).length === 0 || false;
+}, test.limit.slow);
