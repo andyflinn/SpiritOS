@@ -47,8 +47,10 @@ test.run('spirit/contact/hub/script.js is there', 0.2, function () {
   W.c = W.there ? code(HUB) : '';
   return W.there || false;
 }, test.limit.quick);
-test.run('hub.js\'s code, with its comments left out, still encodes packets with packet.encode, so the read sees code', 0.2, function () {
-  return !!/\bpacket\.encode\(/.test(W.c || '') || false;
+// The read sees code, not only comments: the hub's own functions are there. Its packet.encode went with the puppet sender
+// (goal/G49.24, box v18), so that is no longer the mark.
+test.run('hub.js\'s code, with its comments left out, still holds its functions (shadow, learnPresence), so the read sees code', 0.2, function () {
+  return (/\bfunction shadow\(/.test(W.c || '') && /\bfunction learnPresence\(/.test(W.c || '')) || false;
 }, test.limit.quick);
 test.run('the one decoder, arrivals.js envelopeOf, is there', 0.2, function () {
   let envelopeOf = null;

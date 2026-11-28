@@ -2876,7 +2876,8 @@ if (!GIVEN.length) {
   // "spirit/apiAuth/ --> spirit/grant/auth/"; the grant, bundle and branch tables each a branch, spirit/<table>/script.js and
   // spirit/<table>/client/script.js; "spirit/authTableInterface/ --> spirit/grant/tables/ (only used to pillage for parts, then
   // deleted)"; "the spirit/auth/ is finally deleted"; "the peer and relabel verbs go. die. perish."
-  ['spirit/peer/packet/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/fuckingGarbage/boxes.js', 'spirit/grant/auth/script.js',
+  ['spirit/peer/packet/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/grant/auth/script.js', // boxes.js went with the owner branch (goal/G49.24, box v18)
+   
     'spirit/grant/script.js', 'spirit/grant/client/script.js', 'spirit/bundle/script.js', 'spirit/bundle/client/script.js',
     'spirit/branch/script.js', 'spirit/branch/client/script.js'].forEach(function (rel) {
     isThere(rel);
