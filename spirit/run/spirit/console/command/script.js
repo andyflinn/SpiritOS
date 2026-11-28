@@ -55,7 +55,7 @@ function shown(p) { return p ? 'spirit.' + p : 'spirit'; }
 // Whether spirit/<the path's folders> is there, as the node's fs stat answers.
 function there(p) {
   return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: spirit.slashedPath('spirit.' + p) }); })
-    .then(function () { return true; }, function () { return false; });
+    .then(function (b) { return !(b && b.ok === false); }, function () { return false; });
 }
 
 // A REFUSAL, PRINTED AS JSON (the box v12: "errors are return in JSON.stringify(error,null,2) format."): the node's own
@@ -110,7 +110,9 @@ function apiAt(p) {
   const one = function (i) {
     if (i >= files.length) return Promise.resolve(null);
     const file = files[i];
-    return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: file }); }).then(function () {
+    return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: file }); }).then(function (b) {
+      // Not there is the stat's own no (goal/G49.25, Q18).
+      if (b && b.ok === false) return null;
       return spirit.requireScript(file);
     }).then(function (at) {
       // The interface as spirit.requireScript hands it back (goal/G49.23), never read at its place.

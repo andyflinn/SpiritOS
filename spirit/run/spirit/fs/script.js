@@ -33,7 +33,8 @@ module.exports = {
           throw e;
         });
       },
-      statFile: function (path) { return orNull(call('stat', { path: path })); },
+      // Not there is the stat's own no, { ok: false } (goal/G49.25, Q18): null, as before.
+      statFile: function (path) { return orNull(call('stat', { path: path })).then(function (b) { return b && b.ok === false ? null : b; }); },
       saveFile: function (path, content) { return call('save', { path: path, content: content }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
       deleteFile: function (path) { return call('delete', { path: path }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
       // A data: url of the file, read as the page reads a file (on the face, in its sealed pieces); null if refused.

@@ -29,7 +29,9 @@ function written(r) {
 function answer(verb, args) {
   if (verb === 'stat') {
     const s = FS.statFile(path(args));
-    return s ? { status: 200, body: s } : { status: 404, body: { code: 'not-found' } };
+    // A FILE THAT IS NOT THERE IS THE PROTOCOL'S NO, NOT AN HTTP FAILURE (goal/G49.25, Q18; Andy: "it's no http failure when i ask a
+    // verb and it properly responds with an error that belongs to the api-protocol"): answered 200, { ok: false, code: 'not-found', error: 'no such file' }.
+    return { status: 200, body: s || { ok: false, code: 'not-found', error: 'no such file' } };
   }
   if (verb === 'load') {
     const p = path(args);

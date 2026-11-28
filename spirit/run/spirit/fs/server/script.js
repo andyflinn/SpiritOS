@@ -342,13 +342,10 @@ function verbs(node) {
     'stat': { reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: function (req, res) {
       return readJsonBody(req).then(function (body) {
         const stats = fileSystem.statFile(String((body && body.path) || ''));
-        if (!stats) {
-          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('Not found');
-          return;
-        }
+        // A FILE THAT IS NOT THERE IS THE PROTOCOL'S NO, NOT AN HTTP FAILURE (goal/G49.25, Q18; Andy: "it's no http failure when i ask a
+        // verb and it properly responds with an error that belongs to the api-protocol"): answered 200, { ok: false, code: 'not-found', error: 'no such file' }.
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(stats));
+        res.end(JSON.stringify(stats || { ok: false, code: 'not-found', error: 'no such file' }));
       }).catch(function (e) { bodyRefused(req, res, e); });
     } },
     // THE READ AS A VERB (goal/G14.8): a file's text by path, through loadFile, so fileServable decides as it does for the

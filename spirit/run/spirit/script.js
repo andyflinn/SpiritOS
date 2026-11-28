@@ -733,8 +733,10 @@
       return Promise.resolve(!!(row && row.branch === true));
     }
     if (!branchFolder[dir]) {
+      // A folder that is none answers the stat's own no, { ok: false }, never an HTTP failure (goal/G49.25, Q18): only a size is a yes.
       branchFolder[dir] = post('spirit.fs.stat', { path: dir + '/client/script.js' }).then(function (r) {
-        return !!r && (r.status === undefined ? typeof r.size === 'number' : r.status === 200);
+        var b = r && r.status !== undefined ? r.body : r;
+        return !!b && typeof b.size === 'number';
       }, function () { return false; });
     }
     return branchFolder[dir];

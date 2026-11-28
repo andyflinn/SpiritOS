@@ -165,7 +165,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       expand: function (el) {
         return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/script.js'); }).then(function (f) {
           return f.stat({ path: el.row.path });
-        }).then(function (stat) { return { stat: stat }; });
+        }).then(function (stat) { return { stat: stat && stat.ok === false ? null : stat }; });
       },
     });
     // Its colours, once the word system has answered, and again whenever a word.json changes.

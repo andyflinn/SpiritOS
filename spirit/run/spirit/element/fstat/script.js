@@ -26,7 +26,7 @@
   // apart (goal/G49.15: the branch is spirit.fs, named by its path); null where the node refuses.
   function stat(args) {
     return (window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise : Promise.reject(new Error('no spirit object')))
-      .then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function (f) { return f.stat(args); }).then(function (body) { return body; }, function () { return null; });
+      .then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function (f) { return f.stat(args); }).then(function (body) { return body && body.ok === false ? null : body; }, function () { return null; });
   }
 
   function mimeOf(path) {
