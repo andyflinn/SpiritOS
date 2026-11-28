@@ -2,8 +2,8 @@
 // spirit/run/spirit/testicle/general/browser/placeRules/script.js
 // A RULE MODULE OF THE -browser GENERAL TEST (goal/G49.27, step 2b; box v5, Andy's Go: "spirit/testicle/ is the faceless test
 // system", the general rules become modules, one rule set one module). Its checks are the part "GIVEN NO FILE: THE TREE'S
-// RULES, THEN EVERY PAGE MODULE" of spirit/test/script-sibling-browser.js (every()), moved here unchanged in what they check
-// and in their titles; that file is the runner that loads this module and calls it, and the one this module runs again on each
+// RULES, THEN EVERY PAGE MODULE" of the old -browser runner of spirit/test/ (every()), moved here unchanged in what they check
+// and in their titles; its runner now, which loads this module and calls it, is spirit/testicle/run/browser/script.js, and the one this module runs again on each
 // page script, a run of its own each (tools.runner). Its own test: ./test/script.js. A rule module hands out { appliesTo,
 // resource, own, forbids, checks } (spirit/testicle/general/any/typeRules/script.js says each).
 const SPIRIT = require('../../../../script.js');
@@ -74,7 +74,7 @@ function every(tools) {
 
   // The page modules in its reach, and the one scratch node they are judged on.
   test.run('testModule.js gives it files to judge', 0.2, function () {
-    const reach = SPIRIT.requireScript('spirit/testicle/testModule/script.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/script-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
+    const reach = SPIRIT.requireScript('spirit/testicle/testModule/script.js').testsFor('').filter(function (t) { return t.test === 'spirit/testicle/run/browser/script.js' && t.file; }).map(function (t) { return t.file; });
     // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
     E.files2 = reach.filter(pageScript);
     return E.files2.length > 0 || false;
@@ -141,7 +141,7 @@ function every(tools) {
     if (!onPage.length) return false;
     for (const f of onPage) {
       const out = await new Promise(function (resolve) {
-        const kid = spawn(process.execPath, [tools.runner, f], { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: E.node.base }), stdio: ['ignore', 'pipe', 'pipe'] });
+        const kid = spawn(process.execPath, [tools.runner, f], { cwd: RUN, env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: E.node.base, SPIRIT_RULE_MODULES: 'spirit/testicle/general/browser/pageRules' }), stdio: ['ignore', 'pipe', 'pipe'] });
         let text = '';
         kid.stdout.on('data', function (d) { text += d; });
         kid.stderr.on('data', function (d) { text += d; });

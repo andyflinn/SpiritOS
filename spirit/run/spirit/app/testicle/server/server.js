@@ -20,7 +20,7 @@ require('../../../script.js');
 //   - a changed .js in a test/ folder is a suite, any other .js a product file; the node's state, .git and vendored
 //     code are never watched, and a file that is no script is let go;
 //   - the changes of one moment are taken together: testModule.js is run once, as its own process (a test file is run,
-//     never loaded: script-sibling-general.js (testReachRules)), and the rows are written in one transaction.
+//     never loaded: spirit/testicle/general/any/testReachRules/script.js), and the rows are written in one transaction.
 
 const fs = require('fs');
 const path = require('path');
@@ -236,7 +236,12 @@ const flaggedRows = db.prepare('SELECT script, suite, outcome, ms FROM suite WHE
 let job = null;          // { script, suite, title, scriptHash, suiteHash, started, kid, timer, killed }
 const front = [];        // [{ script, suite, title }], pressed: run first, the newest press first
 let quiet = null;
-function isGeneral(suite) { return /-(child|sibling)-/.test(path.posix.basename(suite)); }
+// THE RUNNERS (goal/G49.27, step 3; the box: "testicle's server half ... starts the runners and nothing else"): the general
+// tests of the tree are spirit/testicle/run/<resource>/script.js, started in the order none, node, browser (the box: "cheapest
+// first: modules needing nothing, then a node, then the browser"); a -child-/-sibling- test, as testicle's own, is general too.
+const RUNNER = /^spirit\/testicle\/run\/(none|node|browser)\/script\.js$/;
+function isGeneral(suite) { return /-(child|sibling)-/.test(path.posix.basename(suite)) || RUNNER.test(String(suite)); }
+function runnerRank(suite) { const m = RUNNER.exec(String(suite)); return m ? ['none', 'node', 'browser'].indexOf(m[1]) : 0; }
 // THE PREFERENCES (goal/G47.1, box v79, 2 and 4): "spirit/state/testicle/data/preferences.json", the one preference
 // interactive, "true by default": "interactive: all actions and runs are controlled by the user through the UI or through
 // api calls", "auto: the default mode until now: the server auto-processes everything". Either way "the server will flag
@@ -321,7 +326,7 @@ function blocked(script) { const r = T.current.get(script, CLASSIFY, CLASSIFYABL
 // back, and the class then standing decides again.
 const dropRow = db.prepare('UPDATE suite SET deleted = 1, changed = ? WHERE script = ? AND suite = ? AND deleted = 0');
 function fits(script, suite) {
-  const kind = (/-(?:child|sibling)-(node|browser)\.js$/.exec(path.posix.basename(suite)) || [])[1];
+  const kind = (/-(?:child|sibling)-(node|browser)\.js$/.exec(path.posix.basename(suite)) || /^spirit\/testicle\/run\/(node|browser)\/script\.js$/.exec(String(suite)) || [])[1];
   if (!kind) return true;
   const sr = Q.script.get(script);
   if (!sr) return true;
@@ -364,7 +369,7 @@ function chooseJob() {
   // possible", then "go! test and build."): a row last judged red before one that was not, then the shorter last run first, a
   // row never timed (ms 0) counting as quick, so new work is not held back; then by name, so the order is stable.
   const red = function (r) { return r.outcome === 'red' ? 1 : 0; };
-  rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (red(b) - red(a)) || ((Number(a.ms) || 0) - (Number(b.ms) || 0)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
+  rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (runnerRank(a.suite) - runnerRank(b.suite)) || (red(b) - red(a)) || ((Number(a.ms) || 0) - (Number(b.ms) || 0)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
   if (!rows.length) return null;
   // A GENERAL TEST IS HANDED A LIST (goal/G47.1, box v94, 2: "else it will process all scripts listed in the arguments that
   // fit"; Andy: "optimizing the testicle server so it gives the general tests a LIST instead of calling them one-by-one"):

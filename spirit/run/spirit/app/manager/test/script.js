@@ -63,7 +63,7 @@ test.run('search takes one optional search string, q, and no filters', 0.2, func
 }, test.limit.quick);
 
 // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
-// That <name>.json names both is a rule of every app branch, judged in ./script-sibling-general.js (branchRules) (goal/G43.32).
+// That <name>.json names both is a rule of every app branch, judged in spirit/testicle/general/any/branchRules/script.js (goal/G43.32).
 // THE APP JUDGED HERE IS THE TEXT EDITOR: the dummy server app these checks were written on is gone (25a95142, "delete dummy
 // app"); the text editor is not intrinsic (goal/G43.17), so it starts off and takes a label of the node's, and it mounts no
 // server on the node.

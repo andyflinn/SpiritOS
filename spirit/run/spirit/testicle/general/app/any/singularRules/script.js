@@ -1,12 +1,12 @@
 'use strict';
 // spirit/run/spirit/testicle/general/app/any/singularRules/script.js
 // A RULE MODULE OF THE APP GENERAL TEST (goal/G49.27, step 2b; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
-// the general rules become modules, one rule set one module). Its checks are the part "0. job AND event, SINGULAR" (rule0) of spirit/test/app-child-general.js,
-// moved here unchanged in what they check and in their titles; that file is the runner that loads this module and calls it.
+// the general rules become modules, one rule set one module). Its checks are the part "0. job AND event, SINGULAR" (rule0) of the old app -general runner of spirit/test/,
+// moved here unchanged in what they check and in their titles; its runner now, which loads this module and calls it, is spirit/testicle/run/none/script.js.
 // Its own test: ./test/script.js. A rule module hands out { appliesTo, resource, own, forbids, checks }
 // (spirit/testicle/general/any/typeRules/script.js says each). Its rule: Andy, the box: "\"jobs\" ... renamed, \"job\" (singular) and the same will happen for \"events\"".
 // Judged on disc, from the files and the code (comments left out): no node is started (goal/G43.32, the box: "rules for
-// sub-folders of run://spirit/app/"; spec: spirit/test/app-child-general.md).
+// sub-folders of run://spirit/app/"; spec: ./test/script.md).
 const SPIRIT = require('../../../../../script.js');
 const fs = require('fs');
 const path = require('path');
@@ -14,7 +14,10 @@ const { execFileSync } = require('child_process');
 
 // Every path handed: a file of an app judges its app, any other path every app, as the file it came from did.
 function appliesTo(scriptPath) {
-  return true;
+  // Its reach (goal/G49.27, step 3): spirit/app/script.js and everything under spirit/app/, as the reach of the runner it
+  // stood in (spirit/app/'s -child- general test, testModule's rule); given nothing, every app.
+  const p = String(scriptPath || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^spirit\/run\//, '');
+  return !p || p.indexOf('spirit/app/') === 0;
 }
 
 // checks(scriptPath, tools): tools { test, run, spirit }; scriptPath '' judges every sub-folder of spirit/app/.

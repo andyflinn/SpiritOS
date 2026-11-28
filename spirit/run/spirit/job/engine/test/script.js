@@ -674,7 +674,7 @@ test.run('there are apps that say node.mount true', 0.2, async function () {
   return SL.servers.length >= 1 ? true : false;
 }, test.limit.quick);
 // EACH APP SERVER STARTS AND ANSWERS ITS INTERFACE, AND ITS STATE FOLDER HOLDS ONLY WHAT IT MAY: rules about each app, so they
-// are judged per app from its own manifest in spirit/test/app-child-browser.js (goal/G47.4; Andy: "you make bloody well sure
+// are judged per app from its own manifest in spirit/testicle/general/app/browser/mountRules/script.js (goal/G47.4; Andy: "you make bloody well sure
 // that such stupid hard-coded tests move to app-child-* immediately"). This file keeps what is about the job system.
 
 // spirit/state/app/<name>/ holds node.json, cache/, data/ and on Linux door.sock, nothing else
@@ -798,7 +798,7 @@ test.run('with backup\'s app folder gone, the state layout holds with nothing ou
 // spirit/fs/server/test/script.js.
 
 // 5. that no file names spirit/run/node_modules, and .gitignore keeps no exception for it, is the general test's,
-// spirit/test/script-sibling-general.js (goal/G47.1): a rule of every file, not of job.js.
+// spirit/testicle/general/any/generalRules/script.js (goal/G47.1): a rule of every file, not of job.js.
 
 // THE MOUNT PART, once appServer-mount.js, then a part of ./appServer.js's test (moved here, goal/G47.1: the node starting
 // a server from spirit/app/<name>/ is job.js's work; appServer.js is the router inside that server).

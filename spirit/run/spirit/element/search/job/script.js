@@ -25,7 +25,7 @@
     var root = document.createElement('div');
     root.className = 'job-selector fill';
     // Its box keeps what it holds inside (the box: "an element container always must constrain its children's display to its own
-    // size"; script-sibling-browser.js: overflow not visible).
+    // size"; spirit/testicle/general/browser/pageRules/script.js: overflow not visible).
     root.style.overflow = 'hidden';
     var made = null;
     var gone = false;

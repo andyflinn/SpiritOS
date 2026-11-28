@@ -194,7 +194,7 @@ test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description
 }, test.limit.slow);
 // WHAT IT LISTS IS WHAT THE CONSOLE OFFERS (goal/G48.8; Andy: "wsl, let the verb list be checked by a general test like
 // app-child-general"): which verbs those are, an app's api.js verbs and its server's auto-verbs, is judged for every app by
-// spirit/test/app-child-general.js (rule 8); here "api" prints that same list, sorted.
+// spirit/testicle/general/app/any/folderRules/script.js (rule 8); here "api" prints that same list, sorted.
 test.run('"api" at spirit.app.desk prints the verbs the console offers there, sorted', 0.4, async function () {
   if (!up() || at() !== 'app.desk') return false;
   const p = await go('api');

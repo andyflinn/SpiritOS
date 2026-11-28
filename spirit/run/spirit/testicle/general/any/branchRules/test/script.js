@@ -55,14 +55,14 @@ test.run('a planted app branch whose manifest names a kind is red', 0.4, async f
 // THE BRANCH PART USES THE NODE ITS RUN IS HANDED (goal/G47.1; Andy: "are the tests not ordered in the general test so that all
 // tests requiring a scratch node can use the same one?", then "fix it, with red and code"): handed a list, the runner ran every
 // part once a script, and its branch part booted a node of its own for each. Folded here from
-// spirit/test/test/spirit-sibling-general.js (goal/G49.27: one test file per module; it runs spirit/test/script-sibling-general.js,
-// the runner, and it is this module's part being run). Here the runner is handed a node, as testicle hands one
+// spirit/test/test/spirit-sibling-general.js (goal/G49.27: one test file per module; it runs spirit/testicle/run/node/script.js,
+// its runner, on this module alone, SPIRIT_RULE_MODULES). Here the runner is handed a node, as testicle hands one
 // (SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN), at an address in front of a real scratch node that counts what reaches it, and two
 // scripts in two branches: their node worlds come up, and the calls they make reach the handed node.
 {
   const http = require('http');
   const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
-  const RUNNER = path.join(RUN, 'spirit', 'test', 'script-sibling-general.js');
+  const RUNNER = path.join(RUN, 'spirit', 'testicle', 'run', 'node', 'script.js');
   const SCRIPTS = ['spirit/app/backup/api.js', 'spirit/app/chat/api.js'];
   const H = { node: null, proxy: null, base: '', reached: 0, out: '', bodies: '' };
   test.after(async function () {
@@ -91,7 +91,7 @@ test.run('a planted app branch whose manifest names a kind is red', 0.4, async f
   }, test.limit.slow);
   test.run('the rule is run on two scripts in two branches, handed that node as testicle hands one', 0.2, async function () {
     if (!H.base) return false;
-    const env = Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: H.base, SPIRIT_MOUNT_RUN: H.node.run });
+    const env = Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: H.base, SPIRIT_MOUNT_RUN: H.node.run, SPIRIT_RULE_MODULES: 'spirit/testicle/general/any/branchRules' });
     H.out = await new Promise(function (resolve) {
       const kid = require('child_process').spawn(process.execPath, [RUNNER].concat(SCRIPTS), { cwd: RUN, env: env, stdio: ['ignore', 'pipe', 'pipe'] });
       let out = '';

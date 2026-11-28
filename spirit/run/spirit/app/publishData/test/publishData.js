@@ -449,7 +449,7 @@ test.run('the README\'s "## Details" comes after Summary, its bullets links to d
   return (!!b && RL.indexOf('## Details') > RL.indexOf('## Summary') && LINKS.length >= 3 && LINKS[0] === 'testState.md' && !missing.length) || false;
 }, test.limit.quick);
 // A document's lines that name a suite and carry counts.
-const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js\b/;
+const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js\b|spirit\/testicle\/run\/[^/]+\/script\.js\b/;
 const linkedDoc = function (f) { try { return fs.readFileSync(path.join(OUT, f), 'utf8').split('\n'); } catch (e) { return []; } };
 const firstDocWith = function (pick) { for (let i = 1; i < (LINKS || []).length; i++) if (linkedDoc(LINKS[i]).some(pick)) return i; return -1; };
 const generalLine = function (l) { return GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 3; };

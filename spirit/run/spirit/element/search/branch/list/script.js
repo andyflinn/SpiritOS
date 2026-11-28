@@ -47,7 +47,7 @@
     var family = ANSWER['spirit/element/search/api/script.js'].create(document.createElement('span'), { all: 'every family' });
     var box = document.createElement('div');
     box.className = 'fill';
-    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: the box it puts into its container declares a constraint, overflow not visible).
     box.style.overflow = 'hidden';
     host.appendChild(box);
 

@@ -105,7 +105,7 @@ Never a live node.
 - Each app switched on has its folder in `spirit/state/` (the box: "spirit/state/<name>/ holds node.json, cache/, data/,
   and on Linux door.sock"; Andy: "so far, so good."). On Linux each server's `door.sock` is `spirit/state/<name>/door.sock`, waited for up to 10 s and judged once per app server, reported for its own script `spirit/app/<name>/<name>.js` (goal/G47.6: "the key then names the item that failed").
 - That each app server starts and answers its interface, and that its own folder holds only `node.json`, `cache/`,
-  `data/` and, on Linux, `door.sock`, is judged per app from its own manifest in `../../../test/app-child-browser.md` (goal/G47.4):
+  `data/` and, on Linux, `door.sock`, is judged per app from its own manifest in `spirit/testicle/general/app/browser/mountRules/script.js` (goal/G47.4):
   this test keeps no list of the tree's apps.
 - Every server is handed `spirit/state/<name>/data` as its `--state`.
 - The node makes no `spirit/run/relay-state/` and no `spirit/run/process/`.

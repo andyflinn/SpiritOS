@@ -5,7 +5,7 @@ The type spirit.type.boolean: a boolean, true or false and nothing else (the box
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`spirit/test/script-sibling-general.js` (its type rules).
+`spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 

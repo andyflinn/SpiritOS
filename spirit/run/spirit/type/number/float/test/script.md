@@ -6,7 +6,7 @@ gigabytes (goal/G48.4, Q23; Andy: "spirit.type.number.float"). Its test: `./scri
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`spirit/test/script-sibling-general.js` (its type rules).
+`spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 

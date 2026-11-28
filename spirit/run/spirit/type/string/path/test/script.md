@@ -5,7 +5,7 @@ The type spirit.type.string.path: a path: it designates a folder and always star
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`spirit/test/script-sibling-general.js` (its type rules).
+`spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 

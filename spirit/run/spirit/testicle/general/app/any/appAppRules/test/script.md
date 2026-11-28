@@ -1,6 +1,6 @@
 # The app app rules module
 
-goal/G49.27, step 2b. Its test is `./script.js`; the module is `../script.js`, the part "the app app" (appApp) of `spirit/test/app-child-general.js` and the two checks "no app is a shell any more" that stood after it at that file's top level, moved into a rule module, that file its runner now.
+goal/G49.27, step 2b. Its test is `./script.js`; the module is `../script.js`, the part "the app app" (appApp) of the old app -general runner of spirit/test/ and the two checks "no app is a shell any more" that stood after it at that file's top level, moved into a rule module, its runner now `spirit/testicle/run/none/script.js`.
 
 The box: *"Each module has its own test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red."*
 

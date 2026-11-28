@@ -6,7 +6,7 @@
 
 **spirit.js is the only JavaScript client interface to the SpiritOS core.** Every module and every page loads it
 first and does everything through it. A module whose first require is not spirit.js goes red
-(`./script-sibling-general.js`, its generalRules part).
+(`spirit/testicle/general/any/generalRules/script.js`).
 
 ## Its role
 
@@ -317,9 +317,9 @@ The tree is read as it is. A second api.js is planted into a scratch node's copy
 
 ### Requirements
 
-- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second api.js of an old-shape app branch's name, planted at `spirit/<name>/api.js` beside `spirit/app/<name>/api.js` in the scratch copy, is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `./script-sibling-general.js (branchRules)` (goal/G43.32).
+- **3. A second `<name>/api.js` is seen.** A family interface is any of `spirit/<name>/api.js`, `spirit/app/<name>/api.js` and `process/js/<name>/[family/]api.js`. A second api.js of an old-shape app branch's name, planted at `spirit/<name>/api.js` beside `spirit/app/<name>/api.js` in the scratch copy, is seen as a duplicate. That no branch's name has two in the tree is judged on each branch folder by `spirit/testicle/general/any/branchRules/script.js` (goal/G43.32).
 - `spirit/app/contact/` is an app folder with no api.js; every old-shape branch the system's own mark (`spirit/fs/filter/api/script.js`) finds in the tree has its api.js found by its name, and no other name is found but app's (goal/G49.26: owner gone, peer, net and config new-shape). The branch the page has not used yet is the first such old-shape branch the page neither called nor asked for.
-- An app's family found where its api.js is is judged on each branch folder by `./script-sibling-general.js (branchRules)` (goal/G43.32).
+- An app's family found where its api.js is is judged on each branch folder by `spirit/testicle/general/any/branchRules/script.js` (goal/G43.32).
 
 ### goal/G43.20: a family's path in a process
 

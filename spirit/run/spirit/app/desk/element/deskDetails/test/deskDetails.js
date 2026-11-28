@@ -815,4 +815,4 @@ test.run('the item detail has no chat search', 0.2, function () {
 }, test.limit.quick);
 
 // The plugin leftovers once in shell/shared (goal/G43.23, item 10): shell/ is gone, and a require of a file that is not there
-// is spirit/test/script-sibling-general.js's, so their checks are dropped (goal/G47.1).
+// is spirit/testicle/general/any/generalRules/script.js's, so their checks are dropped (goal/G47.1).

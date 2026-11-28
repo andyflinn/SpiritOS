@@ -97,7 +97,8 @@ const PLAIN_ARGS = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 &&
 // any other the module beside its test folder, <dir>/test/<name>.js testing <dir>/<name>.js.
 const SUITE_FILE = runRel(path.resolve(String(process.argv[1] || ''))) || path.basename(String(process.argv[1] || ''));
 const SCRIPT = (function () {
-  if (/-(child|sibling)-/.test(path.posix.basename(SUITE_FILE)) && PLAIN_ARGS[0]) {
+  // The runners of spirit/testicle/run/<resource>/script.js are general tests too (goal/G49.27, step 3).
+  if ((/-(child|sibling)-/.test(path.posix.basename(SUITE_FILE)) || /^spirit\/testicle\/run\/[^/]+\/script\.js$/.test(SUITE_FILE)) && PLAIN_ARGS[0]) {
     for (const p of [path.resolve(PLAIN_ARGS[0]), path.join(RUN_ROOT, PLAIN_ARGS[0]), path.join(RUN_ROOT, '..', '..', PLAIN_ARGS[0])]) {
       const r = runRel(p);
       if (r && require('fs').existsSync(p)) return r;
@@ -117,7 +118,7 @@ let testicle = null;
 let reportsOut = 0;
 const reportsLanded = [];
 // EACH REPORT AT ONCE, NONE WAITING FOR THE ONE BEFORE (goal/G49.8; Andy: "make it smaller! make it faster! do it.", after the
-// timing of script-sibling-general.js: 41 checks a script, each waiting its report's round trip): a test's report goes out the
+// timing of spirit/testicle/general/any/generalRules/script.js: 41 checks a script, each waiting its report's round trip): a test's report goes out the
 // moment the test ends, and the next test starts without waiting for it to land. IN ORDER WHERE IT COUNTS (goal/G47.1, box
 // v129: a general test's success for one script comes before any result of the next): a script's success is sent only once
 // every report of its tests has landed (testicle erases a title a completed run did not report), and the run waits for that
@@ -183,7 +184,7 @@ let started = false;
 function start() { if (!started) { started = true; ownImmediate(runAll); } }
 // THE TIME LIMITS, CENTRAL (Andy, 2026-11-11, after limits measured on one machine hung the tests on another: "cw, change
 // the limits, i hope you have those as relatively central constants, GO!!"). Every suite gives a test one of these, never
-// a number of its own (script-sibling-general.js (titleRules) judges it): quick for a test that asks and answers, slow for one that
+// a number of its own (spirit/testicle/general/any/titleRules/script.js judges it): quick for a test that asks and answers, slow for one that
 // starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
 // not a slow machine, so each is wide; change one here and every suite follows.
 test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
@@ -209,7 +210,10 @@ test.hold = function () { holds += 1; start(); };
 test.release = function () { holds = Math.max(0, holds - 1); wake(); };
 test.run = function (title, severity, body, limitMs, opts) {
   const own = opts && typeof opts.script === 'string' && opts.script ? opts.script : forScript;
-  queue.push({ title: title, severity: severity, body: body, limit: limitMs, script: own });
+  // opts.module: the rule module whose check this is (goal/G49.27, the box: "each red is shown the moment it happens, with its
+  // module and its check"; the runners of spirit/testicle/run/ name it), said with a red on stderr as the red ends.
+  const ruleModule = opts && typeof opts.module === 'string' ? opts.module : '';
+  queue.push({ title: title, severity: severity, body: body, limit: limitMs, script: own, module: ruleModule });
   start();
   wake();
 };
@@ -302,9 +306,14 @@ async function runAll() {
   const reasonOf = Object.create(null);
   // A script whose suite said one title twice (goal/G49.6).
   const dupTitles = Object.create(null);
+  // A SCRIPT JUDGED AGAIN LATER IN THE RUN (goal/G49.27, step 3: the browser runner runs each module over every script, so a
+  // script's tests of its second module come after the next script's): its success goes out again once those are said, held
+  // false from its first red on.
+  const since = Object.create(null);
   const succeeded = function (script) {
-    if (ONLY !== null || reported[script]) return;
+    if (ONLY !== null || (reported[script] && !since[script])) return;
     reported[script] = true;
+    since[script] = 0;
     const rec = { script: script, suite: SUITE_FILE, success: held[script] !== false };
     if (!rec.success && dupTitles[script]) rec.reason = 'duplicateTitles';
     else if (!rec.success && reasonOf[script]) rec.reason = reasonOf[script];
@@ -327,7 +336,8 @@ async function runAll() {
     if (doing !== null && doing !== script) { succeeded(doing); await reportChain; }
     // THE SCRIPT, AS A HEADING, where it changes: the script is part of the testicle row's key (script, suite, title), so
     // the lines under it are its tests, each its title and its mark.
-    if (doing !== script) { doing = script; held[script] = true; line(script); }
+    if (doing !== script) { doing = script; if (!(script in held)) held[script] = true; line(script); }
+    since[script] = (since[script] || 0) + 1;
     const once = script + '|' + title;
     // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
     // A TITLE THAT BREAKS THE DESCRIPTION RULE too (goal/G47.4, the box: "test titles are constrained BY
@@ -343,7 +353,10 @@ async function runAll() {
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
     // Its line: the title and its mark, nothing else.
     if (v.pass) { test.successCount++; line(title + ' ' + ICON.SUCCESS); }
-    else { test.failureCount++; line(title + ' ' + ICON.ERROR); }
+    else {
+      test.failureCount++; line(title + ' ' + ICON.ERROR);
+      if (t.module) process.stderr.write(ICON.ERROR + ' ' + script + ' | ' + t.module + ' | ' + title + '\n');
+    }
     if (!v.pass) held[script] = false;
     if (!v.pass && v.crash) reasonOf[script] = (v.hung || reasonOf[script] === 'hung') ? 'hung' : 'crashed';
     // ITS OWN BLOCK'S HASH (goal/G49.6, box v18: "each result row keeps the hash of its own test's block, the source of its

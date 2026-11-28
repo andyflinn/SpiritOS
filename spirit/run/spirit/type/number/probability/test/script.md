@@ -5,7 +5,7 @@ The type spirit.type.number.probability: a probability, a number from 0 to 1 (go
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`spirit/test/script-sibling-general.js` (its type rules).
+`spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 

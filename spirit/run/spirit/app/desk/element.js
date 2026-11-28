@@ -17,7 +17,7 @@
     return a;
   }
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
-  // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
+  // data they display", and spirit/testicle/general/app/browser/mountRules/script.js for every element under spirit/app/; rule/26): desk's api.js and its
   // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});

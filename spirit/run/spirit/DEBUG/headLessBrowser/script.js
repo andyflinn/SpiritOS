@@ -3,7 +3,7 @@ require('../../script.js');
 // spirit/run/spirit/DEBUG/headLessBrowser/script.js
 // THE BARE MOUNT PAGE OF ONE MODULE (goal/G41.19, ./test/script.md), replacing shell/mount.html. Andy: "the response will
 // be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit/script.js"> and the most minimal
-// mount for armingButton.js". Its first user is the shell's general rules (spirit/test/script-sibling-browser.md).
+// mount for armingButton.js". Its first user is the shell's general rules (spirit/testicle/general/browser/pageRules/script.js).
 //
 // The page loads /spirit/script.js, then the module through spirit.requireScript, alone (rule/26). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled

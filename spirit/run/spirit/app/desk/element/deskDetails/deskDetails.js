@@ -26,7 +26,7 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
 // red Qs with grants and checks), the chat in the centre, the right side blank.
 
 // THE INTERFACE IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
-// INTERFACES IT FUCKING NEEDS"; app-child-browser.js): the desk family's api.js, which brings its data.js.
+// INTERFACES IT FUCKING NEEDS"; spirit/testicle/general/app/browser/mountRules/script.js): the desk family's api.js, which brings its data.js.
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {

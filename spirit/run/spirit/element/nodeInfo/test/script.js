@@ -749,7 +749,7 @@ function rotatePart() {
     over, bars, layerButton, armed, closed, back, card1;
   // The old dialog's folder gone, its INTRINSIC line gone, its test moved, nothing opening it (the box, 8): the move is done
   // and shell/ is gone, so those checks are dropped (goal/G47.1); that a require names a file that is there is
-  // script-sibling-general.js's. rotateKey.js itself, alone, is its own test's: spirit/element/rotateKey/test/script.js.
+  // spirit/testicle/general/any/generalRules/script.js's. rotateKey.js itself, alone, is its own test's: spirit/element/rotateKey/test/script.js.
   test.run('nodeInfo opens no dialog of the old shell, through callDialog or otherwise', 0.2, function () {
     ni = code(path.join(RUN, 'spirit', 'element', 'nodeInfo', 'script.js'));
     return (ni.length > 0 && !/\bcallDialog\b/.test(ni)) ? true : false;

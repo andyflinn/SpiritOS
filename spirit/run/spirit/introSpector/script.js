@@ -151,7 +151,7 @@ function fsVerbs(dir, prefix) {
     let names = [];
     try { names = fs.readdirSync(root).sort(); } catch (e) { names = []; }
     const bucket = createProbabilityBucket(Infinity);
-    // THE ROW WHOLE (script-sibling-general.js, searchRules): each item as the answer serves it, { key, label }, matched as it is.
+    // THE ROW WHOLE (spirit/testicle/general/any/searchRules/script.js): each item as the answer serves it, { key, label }, matched as it is.
     names.map(function (name) { return { key: name, label: name }; }).forEach(function (item, i) {
       const tie = 1e-9 / (1 + i);
       if (!words) { bucket.seatFor(0.5 + tie, item); return; }

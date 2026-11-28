@@ -9,7 +9,7 @@
 //     mode         how it is shown: tile, the default. Row comes later (the box); until it does, a mode it does not know is
 //                  drawn as a tile
 //     set(value)   writes the value again, as text, every time, a value the same as before too: a tile that fills itself from
-//                  a stream redraws on every change written into what it watches (script-sibling-browser.js)
+//                  a stream redraws on every change written into what it watches (spirit/testicle/general/browser/pageRules/script.js)
 //
 // Its look is the shared tile's: .stat-tile, its icon the icon element, then .value and .label.
 (function () {

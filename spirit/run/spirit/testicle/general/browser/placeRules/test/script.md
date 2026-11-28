@@ -1,6 +1,6 @@
 # The browser place rules module
 
-goal/G49.27, step 2b. Its test is `./script.js`; the module is `../script.js`, the part "given no file: the tree's rules, then every page module" of `spirit/test/script-sibling-browser.js` moved into a rule module, that file its runner now.
+goal/G49.27, step 2b. Its test is `./script.js`; the module is `../script.js`, the part "given no file: the tree's rules, then every page module" of the old -browser runner of spirit/test/ moved into a rule module, its runner now `spirit/testicle/run/browser/script.js`.
 
 The box: *"Each module has its own test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red."*
 

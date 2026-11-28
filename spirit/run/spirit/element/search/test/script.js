@@ -1107,7 +1107,7 @@ test.run('without the all option the field shows the placeholder', 0.2, function
 }, test.limit.quick);
 test.run('it requires spirit/search/string/script.js, spirit/search/object/script.js and spirit/listLimiter/script.js', 0.2, async function () {
   // it loads the spirit's probability files itself (rule/26; goal/G41.18)
-  // Found by the shell's general rules on a bare page (spirit/test/script-sibling-browser.js): the Apps and Grants
+  // Found by the shell's general rules on a bare page (spirit/testicle/general/browser/pageRules/script.js): the Apps and Grants
   // lists threw "createProbabilityBucket is not a function", since only boot loaded these files. rule/26: every element
   // loads its own parts via spirit.requireScript; nothing is preloaded. This loader answers in the reverse of the order it was
   // asked, as a page's fetches may: whatever order the files land in, the list must work once they are in.

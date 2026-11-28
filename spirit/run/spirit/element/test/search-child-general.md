@@ -52,7 +52,7 @@ decisions."*
 - A panel or detail of a list left in `spirit/element/`, the grants panel outside the grant search, or a second contact
   detail beside the one.
 
-What each element does on a page is judged by `spirit/test/script-sibling-browser.js`.
+What each element does on a page is judged by `spirit/testicle/general/browser/pageRules/script.js`.
 
 ## listRowsOwnTheirPanel (was search-child-listRowsOwnTheirPanel.js)
 
@@ -76,7 +76,7 @@ hands it; given none, all of them.
   no `document.getElementById`, `document.querySelector`, `document.querySelectorAll`, or `document.getElementsBy*`
   (class name, tag name, name). A lookup inside a container (`container.querySelector`) is the way.
 - Each lookup across the page is named by its file and line in what its one check answers (a test's title is steady:
-  no path or line built into it, `../../test/script-sibling-general.js (titleRules)`).
+  no path or line built into it, `spirit/testicle/general/any/titleRules/script.js`).
 - **Never vacuous**: run over the reach, it must have read more than 10 modules; handed a file outside its reach, it is
   red.
 

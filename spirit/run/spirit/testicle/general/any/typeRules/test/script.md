@@ -1,6 +1,6 @@
 # The type rules module
 
-goal/G49.27, step 2a. Its test is `./script.js`; the module is `../script.js`, the part `typeRules` of `spirit/test/script-sibling-general.js` moved into a rule module.
+goal/G49.27, step 2a. Its test is `./script.js`; the module is `../script.js`, the part `typeRules` of the old -general runner of spirit/test/ moved into a rule module.
 
 The box: *"Each module has its own test ... planting a tiny script breaking a rule and one keeping it, so a module that passes everything is red."*
 

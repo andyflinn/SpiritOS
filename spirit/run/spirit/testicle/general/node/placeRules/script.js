@@ -1,8 +1,8 @@
 'use strict';
 // spirit/run/spirit/testicle/general/node/placeRules/script.js
 // A RULE MODULE OF THE -node GENERAL TEST (goal/G49.27, step 2b; box v5, Andy's Go: "spirit/testicle/ is the faceless test
-// system", the general rules become modules, one rule set one module). Its checks are the whole of spirit/test/script-sibling-node.js,
-// which had no parts, moved here unchanged in what they check and in their titles; that file is the runner that loads this
+// system", the general rules become modules, one rule set one module). Its checks are the whole of the old -node runner of spirit/test/,
+// which had no parts, moved here unchanged in what they check and in their titles; its runner now is spirit/testicle/run/node/script.js that loads this
 // module and calls it. Its own test: ./test/script.js. A rule module hands out { appliesTo, resource, own, forbids, checks }
 // (spirit/testicle/general/any/typeRules/script.js says each).
 //

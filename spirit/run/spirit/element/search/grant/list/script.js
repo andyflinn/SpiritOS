@@ -38,7 +38,7 @@
     if (!g || !g.branch || !g.key || !g.label || typeof g.search !== 'function') {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
-      // Its box keeps its words inside (script-sibling-browser.js: overflow not visible).
+      // Its box keeps its words inside (spirit/testicle/general/browser/pageRules/script.js: overflow not visible).
       note.style.overflow = 'hidden';
       note.textContent = 'not configured: a grants table is required ({ branch, key, label, search, revoke, stream })';
       host.appendChild(note);

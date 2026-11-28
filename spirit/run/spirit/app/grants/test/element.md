@@ -75,7 +75,7 @@ Andy: *"i just moved them, didn't fix the manifest."* (4f01465b: shell/info is s
 
 #### 4 and 5. The move
 
-Done: its test runs from its new place, and `shell/` is gone. Their checks are dropped (goal/G47.1); a require of a file that is not there is `spirit/test/script-sibling-general.js`'s.
+Done: its test runs from its new place, and `shell/` is gone. Their checks are dropped (goal/G47.1); a require of a file that is not there is `spirit/testicle/general/any/generalRules/script.js`'s.
 
 #### 6. A wrapper of spirit/element/
 

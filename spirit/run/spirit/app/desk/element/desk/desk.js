@@ -28,7 +28,7 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
 // the stream through the data set's translator (the desk family's cache manager keeps them first), and a dialog opened as a
 // layer over the page through panel.js (the mounter's open, or the page's own stack).
 // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
-// data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): desk's api.js and its
+// data they display", and spirit/testicle/general/app/browser/mountRules/script.js for every element under spirit/app/; rule/26): desk's api.js and its
 // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.

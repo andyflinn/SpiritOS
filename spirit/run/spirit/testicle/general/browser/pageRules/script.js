@@ -2,12 +2,12 @@
 // spirit/run/spirit/testicle/general/browser/pageRules/script.js
 // A RULE MODULE OF THE -browser GENERAL TEST (goal/G49.27, step 2b; box v5, Andy's Go: "spirit/testicle/ is the faceless test
 // system", the general rules become modules, one rule set one module). Its checks are the part "GIVEN A FILE: ITS CODE, THEN
-// ITS PAGE" of spirit/test/script-sibling-browser.js (session, oneFile and what they stand on), moved here unchanged in what
-// they check and in their titles; that file is the runner that loads this module and calls it. Its own test: ./test/script.js.
+// ITS PAGE" of the old -browser runner of spirit/test/ (session, oneFile and what they stand on), moved here unchanged in what
+// they check and in their titles; its runner now, which loads this module and calls it, is spirit/testicle/run/browser/script.js. Its own test: ./test/script.js.
 // A rule module hands out { appliesTo, resource, own, forbids, checks } (spirit/testicle/general/any/typeRules/script.js says
 // each); this one's checks(scriptPath, tools) answers a promise, settled once the script's page is drawn and its checks said.
 //
-// As it stood in the file it came from (its contract: spirit/test/script-sibling-browser.md):
+// As it stood in the file it came from (its contract: ./test/script.md):
 // HOW: a scratch copy of spirit/run (the tracked files) on a node of its own, on a free port, its DEBUG switched on, so
 // neither Andy's node nor an agent's is touched. Headless Chrome, driven over its debugging port with node's own
 // WebSocket, opens the node's DEBUG page for the file (goal/G41.19, spirit/DEBUG/test/script.md; Andy: "wsl's element
@@ -24,9 +24,11 @@ const REPO = path.join(RUN, '..', '..');
 // The reporter of the run, handed by the runner (checks, below).
 let test = null;
 
-// Every path handed: one that is no file, or no page script, is red in its checks ('the file it was handed is there').
+// Every path handed: one that is no file, or no page script, is red in its checks ('the file it was handed is there'). Given
+// none, the tree's page rules judge (../placeRules/script.js, which runs each page script through this module alone), as
+// the old -browser runner sent a run with no file there (goal/G49.27, step 3: the runner asks appliesTo, nothing else).
 function appliesTo(scriptPath) {
-  return true;
+  return !!scriptPath;
 }
 // The file judged now, its path and its page's address: set by useScript for each script handed (checks, below).
 let full = '';

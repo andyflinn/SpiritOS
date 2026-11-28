@@ -71,7 +71,7 @@ test.run('its value is the 99th percentile of the event loop delay of the node, 
   const ok = await until(function () { return js('(function () { var S = window.spirit, d = S.job.client.job("spirit").data.stats; var want = ' + EXPECTED + '; var v = window.__box.querySelector(".value").textContent; return v === want ? v : ""; })()').then(function (v) { shown = v; return !!v; }); }, 10000);
   return ok && SHAPE.test(String(shown)) ? true : false;
 }, test.limit.slow);
-// script-sibling-browser.js: "a change written into what it watches redraws it": the row written again, its stats unchanged.
+// spirit/testicle/general/browser/pageRules/script.js: "a change written into what it watches redraws it": the row written again, its stats unchanged.
 test.run('a change written into the spirit job\'s row writes its value again at once', 0.4, async function () {
   if (!W.made) return false;
   const said = await js('(function () { var D = window.spirit.client; var at = D.homeNode() + "/spirit.job/jobs/spirit"; var before = D.getPath(at); if (!before) return Promise.resolve("no row"); var n = 0; var mo = new MutationObserver(function (l) { n += l.length; }); mo.observe(window.__box, { subtree: true, childList: true, characterData: true }); D.setPath(at, Object.assign({}, before, { label: "zzprobe" })); return new Promise(function (r) { setTimeout(r, 300); }).then(function () { mo.disconnect(); D.setPath(at, before); return n > 0 ? "redrew" : "still"; }); })()');

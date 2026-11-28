@@ -49,7 +49,7 @@ in a panel layer as the apps open one, its options the planted row's fields with
    `search-child-general.md`): a planted row's detail opened and closed, another's opened, the second draws in its own
    pane and the closed one's pane is left as it was.
 
-Input length is checked once, in `spirit/test/script-sibling-browser.js`, not here.
+Input length is checked once, in `spirit/testicle/general/browser/pageRules/script.js`, not here.
 
 ## The world each search needs to draw a list at all
 

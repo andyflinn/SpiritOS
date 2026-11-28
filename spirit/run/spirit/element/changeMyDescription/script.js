@@ -47,7 +47,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // NO COUNTER OUTSIDE THE FORM (goal/G41.27's box v8, Andy: "the most fucking miserable example are those fucking character
     // counter OUTSIDE the fucking form ... they ALL have to go"): fieldInput holds the field at its limit as it is typed.
     host.innerHTML =
-      // Its box keeps what it holds inside (script-sibling-browser.js: overflow not visible).
+      // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: overflow not visible).
       '<div class="stack" style="overflow:hidden"><div data-description="form"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
     var form = ANSWER['spirit/element/rowForm/script.js'].create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });

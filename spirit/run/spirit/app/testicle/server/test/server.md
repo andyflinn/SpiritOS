@@ -232,7 +232,7 @@ The box, in Andy's words where he gave them:
   every one of the six is still classified, nothing pressed.
 - **Every general test takes a list** (box v94, 2: *"else it will process all scripts listed in the arguments that fit"*;
   Andy: *"general tests ALL must accept a list as an argument, RIGHT?"*): two scripts that each break the rules are written;
-  `script-sibling-general.js`, `-node.js` and `-browser.js`, each handed both, name both in their failures (one fixed
+  `testicle-sibling-general.js`, `-node.js` and `-browser.js`, each handed both, name both in their failures (one fixed
   title per check, its answer naming each script that breaks it, goal/G47.2).
 - **The server hands a general test a list** (Andy: *"WSL, write the reds for the server half of passing a list to
   general tests."*): a planted folder `spirit/zzBatch/` with its own `-general`, `-node` and `-browser` tests (each logging

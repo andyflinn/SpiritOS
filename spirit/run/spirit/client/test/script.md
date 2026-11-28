@@ -11,7 +11,7 @@ node.js Process like DeskClient uses the Exact same code as the browser for the 
 is the appServer serializes the cache to disk."*
 
 What every branch's `data.js` must be (there, its branches named by it alone, no disk, its contract, its watch, served
-and brought by its api.js) is judged on each branch folder by `../../test/script-sibling-general.js (branchRules)` (goal/G43.32, Q6, Q7). Here,
+and brought by its api.js) is judged on each branch folder by `spirit/testicle/general/any/branchRules/script.js` (goal/G43.32, Q6, Q7). Here,
 what judges no branch. The numbers are those of the requirements before they moved.
 
 ### Requirements
@@ -70,12 +70,12 @@ Andy, box: *"we rename it spirit/client/script.js and it IS the the spirit.requi
 ### Requirements
 
 Each family's own (its `data.js` there, the old file gone, none of it rolled by hand, `data` and `cache` in node and
-on a page) is judged on each branch folder by `../../test/script-sibling-general.js (branchRules)` since goal/G43.32. Here, what judges
+on a page) is judged on each branch folder by `spirit/testicle/general/any/branchRules/script.js` since goal/G43.32. Here, what judges
 no one branch: one helper for all, no old names in the code, the shape of `spirit.required.spirit.data` and `spirit.app`, the cache by
 node, the reads moved.
 
 - `spirit/client/script.js` stands.
-- Each family's own `data.js` (there, made with the one helper under its folder's name, rolling nothing by hand, the old file gone) is judged on each branch folder by `../../test/script-sibling-general.js`, its branch rules. That no code reads a `spirit.<name>Data`, or names the old cache manager or the old module, is that file's rule of every file (goal/G47.1). Andy's words in a comment are not judged.
+- Each family's own `data.js` (there, made with the one helper under its folder's name, rolling nothing by hand, the old file gone) is judged on each branch folder by `spirit/testicle/general/any/branchRules/script.js`. That no code reads a `spirit.<name>Data`, or names the old cache manager or the old module, is that file's rule of every file (goal/G47.1). Andy's words in a comment are not judged.
 - On a page, each family's data comes with its interface (goal/G47.1: *"every api.js requires it's companion data.js,
   and is the only script to require that data.js"*): the page requires `spirit/app/script.js` for `app`,
   `spirit/<name>/api.js` for a node family, `spirit/app/<name>/api.js` for an app's, and each `spirit.required.spirit.data.<name>` stands.

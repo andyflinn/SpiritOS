@@ -2,7 +2,8 @@
 const SPIRIT = require('../../../../../script.js');
 
 // spirit/run/spirit/testicle/general/browser/pageRules/test/script.js
-// The test of the page rules module, ../script.js, run through its runner spirit/test/script-sibling-browser.js (goal/G49.27,
+// The test of the page rules module, ../script.js, run through its runner spirit/testicle/run/browser/script.js, on the
+// modules of spirit/testicle/general/browser/ alone (SPIRIT_RULE_MODULES; goal/G49.27,
 // step 2b: the runner's test moved here with the module it now calls; spec: ./script.md): THE BROWSER TESTS ON ONE PAGE
 // (goal/G47.1, box v144, "this cycle, first: the browser tests on one page"). The general test is run as testicle runs it,
 // handed a list of scripts: six real elements and one planted script that never ends, a file of its own beside them for the
@@ -13,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-const SUBJECT = path.join(RUN, 'spirit', 'test', 'script-sibling-browser.js');
+const SUBJECT = path.join(RUN, 'spirit', 'testicle', 'run', 'browser', 'script.js');
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
 
 // THE MODULE'S SHAPE (goal/G49.27, step 2b): { appliesTo, resource, own, forbids, checks }, as every rule module hands out.
@@ -68,7 +69,7 @@ async function newestTested(base, script) {
   try {
     const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' },
       // testicle's branch is its id, spirit.app.testicle (goal/G49.19).
-      body: JSON.stringify({ call: 'spirit.app.testicle.testicle.search', args: { script: script, suite: 'spirit/test/script-sibling-browser.js', text: '' } }) });
+      body: JSON.stringify({ call: 'spirit.app.testicle.testicle.search', args: { script: script, suite: 'spirit/testicle/run/browser/script.js', text: '' } }) });
     const b = await r.json();
     return ((b && b.items) || []).map(function (i) { try { return Number(JSON.parse(i.label).tested) || 0; } catch (e) { return 0; } }).reduce(function (a, c) { return Math.max(a, c); }, 0);
   } catch (e) { return 0; }
@@ -84,7 +85,7 @@ test.run('the general test runs on six elements with the hung script among them,
   const list = ELEMENTS.slice(0, 2).concat([HANG]).concat(ELEMENTS.slice(2));
   const base = testicleBase();
   W.startAt = Date.now();
-  const kid = spawn(process.execPath, [SUBJECT].concat(list), { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  const kid = spawn(process.execPath, [SUBJECT].concat(list), { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_RULE_MODULES: 'spirit/testicle/general/browser' }) });
   kid.stdout.on('data', function (d) { W.out += d; });
   kid.stderr.on('data', function (d) { W.out += d; });
   let ended = false;
@@ -148,10 +149,10 @@ test.run('the run takes at least 80% less than the time measured before', 0.4, f
   return (W.ms > 0 && W.ms <= most) || false;
 }, test.limit.quick);
 // box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled."
-test.run('script-sibling-browser.js holds no fixed sleep', 0.4, function () {
+test.run('the browser runner holds no fixed sleep, nor the page modules it runs', 0.4, function () {
   const bad = [];
   // The runner and the modules it runs (goal/G49.27, step 2b: its waits moved into the modules).
-  ['spirit/test/script-sibling-browser.js', 'spirit/testicle/general/browser/pageRules/script.js', 'spirit/testicle/general/browser/placeRules/script.js'].forEach(function (n) {
+  ['spirit/testicle/run/browser/script.js', 'spirit/testicle/run/none/script.js', 'spirit/testicle/general/browser/pageRules/script.js', 'spirit/testicle/general/browser/placeRules/script.js'].forEach(function (n) {
     const lines = fs.readFileSync(path.join(RUN, n), 'utf8').split('\n');
     lines.forEach(function (l, i) {
       const code = l.replace(/\/\/.*$/, '');

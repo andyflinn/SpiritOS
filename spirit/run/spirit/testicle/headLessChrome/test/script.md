@@ -46,4 +46,4 @@ the nodes `repo://lab/node/<name>/`, their locks `<name>.lock` (the holder's pid
 `<name>.pid`; a reset removes even a file whose name passes Windows' old path limit.
 
 The layout of `repo://lab/` itself (labMaster moved there, the old test folder's leftovers gone, `.gitignore`, no test starting
-`spirit/server/script.js` itself) is judged by `../../../test/script-sibling-general.js` over the whole repository.
+`spirit/server/script.js` itself) is judged by `spirit/testicle/general/any/generalRules/script.js` over the whole repository.

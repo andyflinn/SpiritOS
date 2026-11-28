@@ -1,14 +1,14 @@
 'use strict';
 // spirit/run/spirit/testicle/general/app/browser/mountRules/script.js
 // A RULE MODULE OF THE APP BROWSER TEST (goal/G49.27, step 2b; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
-// the general rules become modules, one rule set one module). Its checks are the whole of spirit/test/app-child-browser.js (one
+// the general rules become modules, one rule set one module). Its checks are the whole of the old app -browser runner of spirit/test/ (one
 // world: the scripts' pages, then the apps phase on the same node and Chrome), moved here unchanged in what they check and in
-// their titles; that file is the runner that loads this module and calls it. Its own test: ./test/script.js. A rule module
+// their titles; its runner now, which loads this module and calls it, is spirit/testicle/run/browser/script.js. Its own test: ./test/script.js. A rule module
 // hands out { appliesTo, resource, own, forbids, checks } (spirit/testicle/general/any/typeRules/script.js says each).
 //
 // As it stood in the file it came from (goal/G47.1, box v140-142: "every element under spirit/app/, mounted alone on a scratch
 // node with its app's server on, is red unless it loaded its own app's api.js and data.js"; its contract:
-// spirit/test/app-child-browser.md):
+// ./test/script.md):
 // HOW: one scratch node (the tracked files), the server of every app judged turned on when its folder holds one
 // (spirit/app/<name>/<name>.js), and one headless Chrome page. Each script is opened on its bare DEBUG page, spirit.js and
 // that file alone (spirit/DEBUG/headLessBrowser/script.js); whether it installs an element the page says, no code read. Mounted,
@@ -287,7 +287,10 @@ function judge(rel) {
 }
 // Every path handed: one out of its reach (inReach, above) leaves it nothing to judge, and its world is red for it, as before.
 function appliesTo(scriptPath) {
-  return true;
+  // Its reach (goal/G49.27, step 3): spirit/app/script.js and everything under spirit/app/, as the reach of the runner it
+  // stood in (spirit/app/'s -child- general test, testModule's rule); given nothing, every app.
+  const p = String(scriptPath || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^spirit\/run\//, '');
+  return !p || p.indexOf('spirit/app/') === 0;
 }
 function start(R) {
   TARGETS = (R.given.length ? R.given : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n')).filter(inReach);

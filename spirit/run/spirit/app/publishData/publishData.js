@@ -165,8 +165,8 @@ function writeTestState(out, platform, commit) {
 // THE TWO DOCUMENTS OF ## Details BELOW testState.md (goal/G47.1, box v170): "the general tests: each general suite, the
 // number of production files it judges, and its green and red counts", and "below those, the own suites: each production
 // script with its own suite, and that suite's green and red counts". A general suite is one of the sibling or child rules
-// (script-sibling-general.js and its kind); every other suite is a script's own.
-const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js$/;
+// (the runners of spirit/testicle/run/, goal/G49.27, step 3); every other suite is a script's own.
+const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js$|^spirit\/testicle\/run\/[^/]+\/script\.js$/;
 const SUITE_DOCS = [{ label: 'The general tests', file: 'generalTests.md' }, { label: 'The own suites', file: 'ownSuites.md' }];
 function writeSuiteDocs(out, report) {
   const general = Object.create(null);

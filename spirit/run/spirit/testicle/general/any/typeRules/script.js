@@ -2,8 +2,8 @@
 // spirit/run/spirit/testicle/general/any/typeRules/script.js
 // A RULE MODULE OF THE GENERAL TEST (goal/G49.27, step 2a; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
 // the general rules become modules, one rule set one module). Its checks are the part typeRules(ARGS) of
-// spirit/test/script-sibling-general.js, moved here unchanged in what they check and in their titles; that file is the runner
-// that loads this module and calls it. Its own test: ./test/script.js. A rule module hands out { appliesTo, resource, own, forbids, checks }:
+// the old -general runner of spirit/test/, moved here unchanged in what they check and in their titles; its runner now,
+// which loads this module and calls it, is spirit/testicle/run/none/script.js (goal/G49.27, step 3). Its own test: ./test/script.js. A rule module hands out { appliesTo, resource, own, forbids, checks }:
 //   appliesTo(scriptPath)      whether a path handed may be one this module judges (the runner asks it before checks)
 //   resource                   'none' | 'node' | 'browser' | 'relay': what its checks stand on
 //   own                        true when its checks change their node, which then is one of its own

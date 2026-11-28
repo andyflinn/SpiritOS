@@ -42,7 +42,7 @@ the module's name without extension; the generator script's name without `.js`, 
   - one script tag that loads a file, and it loads `/spirit/script.js`, before any other script;
   - it names the module it mounts (its run path), and mounts that one module alone.
   - What the page does when it runs is judged by the first user, the shell's general rules
-    (`spirit/run/spirit/test/script-sibling-browser.md`).
+    (`spirit/testicle/general/browser/pageRules/script.js`).
 - **garbageArguments**, data: status 200, a JSON type, a list. Each entry is a body for the api door as it is, made
   from the verbs and argument shapes the server's api answers. For a module whose api the node serves (the testicle server, turned on in the lab node,
   `/DEBUG/spirit/app/testicle/testicle/garbageArguments.json`):

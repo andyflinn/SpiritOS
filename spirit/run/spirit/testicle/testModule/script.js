@@ -101,6 +101,11 @@ function generalOf(t, has) {
   return { judges: judges };
 }
 
+// THE RUNNERS OF THE RESOURCES (goal/G49.27, step 3; the box: "one runner per resource"): spirit/testicle/run/<resource>/script.js,
+// each a general test judging every module (its modules' appliesTo says which of them each judges), one entry per module.
+const RUNNER = /^spirit\/testicle\/run\/[^/]+\/script\.js$/;
+function isRunner(rel) { return RUNNER.test(String(rel)); }
+
 function testsFor(file, opts) {
   const root = (opts && opts.root) || RUN;
   const tree = walk(root);
@@ -146,14 +151,15 @@ function testsFor(file, opts) {
   tree.tests.forEach(function (t) {
     const g = generalOf(t, has);
     if (!g) return;
-    // The branch rules judge a script's branch from the script itself since goal/G47.1, box v94, 2 (their part of
-    // ../../test/script-sibling-general.js): every general test is one entry per module, none per branch folder.
+    // The branch rules judge a script's branch from the script itself since goal/G47.1, box v94, 2 (their module,
+    // spirit/testicle/general/any/branchRules/script.js): every general test is one entry per module, none per branch folder.
     judged.filter(g.judges).forEach(function (m) { add(t, m); });
   });
+  tree.modules.filter(isRunner).forEach(function (r) { judged.forEach(function (m) { add(r, m); }); });
   return out;
 }
 
-module.exports = { testsFor: testsFor, branchesOf: branchesOf, TOOLS: TOOLS, SPECIAL: SPECIAL };
+module.exports = { testsFor: testsFor, branchesOf: branchesOf, isRunner: isRunner, TOOLS: TOOLS, SPECIAL: SPECIAL };
 
 if (require.main === module) {
   testsFor(process.argv[2] || '').forEach(function (t) { console.log(t.file ? t.test + ' ' + t.file : t.test); });

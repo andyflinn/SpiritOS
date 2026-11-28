@@ -30,7 +30,7 @@ function folderRules(ARGS) {
 //   node spirit/element/test/search-child-folderRules.js                                      every search
 //
 // Judged on disc, from the files and their code with comments left out. What each element places on a page is judged by
-// spirit/test/script-sibling-browser.js.
+// spirit/testicle/general/browser/pageRules/script.js.
 
 const fs = require('fs');
 const path = require('path');

@@ -978,7 +978,7 @@ test.run('in a process, requiring spirit.js gives spirit.client, the cache', 0.2
 }, test.limit.quick);
 
 // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
-// The module rules are in script-sibling-general.js (its generalRules part) since goal/G47.1, box v94, 2; their own test,
+// The module rules are in spirit/testicle/general/any/generalRules/script.js since goal/G47.1, box v94, 2; their own test,
 // a module whose first require is not spirit.js goes red, is that rule module's: spirit/testicle/general/any/generalRules/test/script.js.
 
 // ── 9. NO API UP FRONT, ON A REAL PAGE (goal/G43.27) ──────────
@@ -1226,9 +1226,9 @@ test.run('after its node restarts on the same port, the page\'s stream comes bac
   return !!back || false;
 }, test.limit.slow);
 
-// The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, script-sibling-general.js
+// The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, spirit/testicle/general/any/generalRules/script.js
 // (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
-// does not define) and script-sibling-browser.js (every element module loads on a page, its factory at its path on the spirit object, goal/G49.23).
+// does not define) and spirit/testicle/general/browser/pageRules/script.js (every element module loads on a page, its factory at its path on the spirit object, goal/G49.23).
 // Andy, goal/G47.1: "1, 2 and 3 Belong in spirit/test/script.js", "the rest belong in motherfucking script-sibling-general/browser/node respectively".
 const { execSync } = require('child_process');
 const REPO = path.resolve(RUN, '../..');
@@ -1459,7 +1459,7 @@ test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function ()
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;
 }, test.limit.quick);
 // That no branch's name has a second api.js in the tree is judged on each branch folder, as is an app's family found where
-// its api.js is (./script-sibling-general.js (branchRules), goal/G43.32). Here, a duplicate planted on purpose is seen.
+// its api.js is (spirit/testicle/general/any/branchRules/script.js, goal/G43.32). Here, a duplicate planted on purpose is seen.
 
 // A scratch node, then folders planted into its copy that break each rule.
 test.run('a scratch node is up, on its own copy of the tree', 0.2, async function () {
@@ -1730,9 +1730,10 @@ test.run('no script stands at spirit/<name>.js any more: every one is spirit/<na
   try { names = fs.readdirSync(path.join(RUN, 'spirit')).filter(function (n) { return /\.js$/.test(n) && fs.statSync(path.join(RUN, 'spirit', n)).isFile(); }); } catch (e) { return false; }
   return (isFile('spirit/script.js') && names.length === 1 && names[0] === 'script.js') || false;
 }, test.limit.quick);
-// box v17, "fallout": "general tests spirit-sibling-* will become script-sibling-*"
-test.run('the three general tests beside the spirit object are spirit/test/script-sibling-general.js, -node.js and -browser.js', 0.4, function () {
-  return (['general', 'node', 'browser'].every(function (k) { return isFile('spirit/test/script-sibling-' + k + '.js'); }) && !['general', 'node', 'browser'].some(function (k) { return isFile(J('spirit/test/', 'spirit', '-sibling-', k, '.js')); })) || false;
+// box v17, "fallout": "general tests spirit-sibling-* will become script-sibling-*"; goal/G49.27, step 3 (the box: "one runner
+// per resource"): those went, and the runners of spirit/testicle/run/ judge every script.
+test.run('the runners spirit/testicle/run/none, node and browser are there, and no general test stands beside the spirit object', 0.4, function () {
+  return (['none', 'node', 'browser'].every(function (k) { return isFile('spirit/testicle/run/' + k + '/script.js'); }) && !['general', 'node', 'browser'].some(function (k) { return isFile(J('spirit/test/', 'spirit', '-sibling-', k, '.js')) || isFile(J('spirit/test/', 'script', '-sibling-', k, '.js')); })) || false;
 }, test.limit.quick);
 // box v17, "fallout": "spirit/job.js (new spirit/job/engine/script.js) will have to be fixed to ... start server processes fully knowing that
 // the server is at ./spirit/server/script.js, relative to the current directory of all spirit processes"

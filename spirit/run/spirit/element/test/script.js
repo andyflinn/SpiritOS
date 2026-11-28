@@ -466,7 +466,7 @@ test.after(stopAll);
       fs.writeFileSync(path.join(dir, k + '.json'), JSON.stringify(j, null, 2));
       fs.writeFileSync(path.join(dir, 'element.js'), monitor.split('spirit/app/monitor/element.js').join('spirit/app/' + k + '/element.js'));
     });
-    // THE TREE'S OWN APPS ARE JUDGED BY THEIR OWN MANIFESTS, in spirit/test/app-child-browser.js (goal/G47.4; Andy: "THIS IS
+    // THE TREE'S OWN APPS ARE JUDGED BY THEIR OWN MANIFESTS, in spirit/testicle/general/app/browser/mountRules/script.js (goal/G47.4; Andy: "THIS IS
     // something that belongs in fucking app-child-browser", "that fucking test is useless, it fucking assumes settings in
     // fucking spirit/app/<name>/<name>.json"): this test judges only the apps it plants.
     return Object.keys(PLANT).every(function (k) { return fs.existsSync(path.join(APPS, k, k + '.json')); }) || false;

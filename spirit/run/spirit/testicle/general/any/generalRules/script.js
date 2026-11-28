@@ -2,8 +2,8 @@
 // spirit/run/spirit/testicle/general/any/generalRules/script.js
 // A RULE MODULE OF THE GENERAL TEST (goal/G49.27, step 2a; box v5, Andy's Go: "spirit/testicle/ is the faceless test system",
 // the general rules become modules, one rule set one module). Its checks are the part generalRules(ARGS) of
-// spirit/test/script-sibling-general.js, moved here unchanged in what they check and in their titles; that file is the runner
-// that loads this module and calls it. Its own test: ./test/script.js. A rule module hands out { appliesTo, resource, own, forbids, checks }:
+// the old -general runner of spirit/test/, moved here unchanged in what they check and in their titles; its runner now,
+// which loads this module and calls it, is spirit/testicle/run/node/script.js (goal/G49.27, step 3). Its own test: ./test/script.js. A rule module hands out { appliesTo, resource, own, forbids, checks }:
 //   appliesTo(scriptPath)      whether a path handed may be one this module judges (the runner asks it before checks)
 //   resource                   'none' | 'node' | 'browser' | 'relay': what its checks stand on
 //   own                        true when its checks change their node, which then is one of its own
@@ -35,7 +35,7 @@ function unforbidden(rel, text) {
   FORBIDS[own].forEach(function (n) { t = t.split(n).join(String(n).replace(/[^\n]/g, ' ')); });
   return t;
 }
-// THE TREE'S OWN RULES, GIVEN NO FILE (goal/G49.27: they stood at the top level of spirit/test/script-sibling-general.js,
+// THE TREE'S OWN RULES, GIVEN NO FILE (goal/G49.27: they stood at the top level of the old -general runner of spirit/test/,
 // before and after its parts; they are this module's now, the first before its rules of a module and the second after).
 // EVERY PATH WRITTEN OUT WHOLE, AND NO SHIM (goal/G49.13; Andy: "that's NOT acceptable. all your saying is that your hacking a fix to
 // compensate for lazyness in properly requiring the fucking interface by it's motherfucking full path", "YOU FUCKING FIX THE CALLERS AND
@@ -817,7 +817,6 @@ const OLD_TEST = 'spirit/run/' + 'test/';
 const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + 'test\\/');
 // The tools of run://spirit/test/: tools, not tests (Q2).
 const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
-const SELF = ['script-sibling-general.js', 'script-sibling-general.md', 'script-sibling-node.js', 'script-sibling-node.md', 'script-sibling-browser.js', 'script-sibling-browser.md'];
 function gitIn(cwd, args) { return require('child_process').execFileSync('git', args, { cwd: cwd, encoding: 'utf8' }).split('\n').filter(Boolean); }
 function ignoredByGit(rel) {
   try { require('child_process').execFileSync('git', ['check-ignore', '-q', '--no-index', rel], { cwd: REPO, stdio: 'ignore' }); return true; }
@@ -1043,7 +1042,7 @@ function dataRequiresOf(rel) {
 // files left out (they name the old homes to find them).
 function elementRuleFiles() {
   return gitIn(RUN, ['ls-files']).filter(function (f) {
-    return /^spirit\//.test(f) && /\.(js|html|md|css|txt|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
+    return /^spirit\//.test(f) && /\.(js|html|md|css|txt|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f));
   });
 }
 // A file as these rules judge it, every offset kept: "Andy's words are never rewritten", so a double-quoted part of a
@@ -1214,7 +1213,7 @@ function every() {
   // no run://node_modules (goal/G43.25; moved here from spirit/job/engine/test/script.js, goal/G47.1). Andy: "can we hide those suckers in
   // spirit/jobs/ for now? without the damn node_modules container?". Over the whole repository, install/ too.
   test.run('no tracked file of the repository names spirit/run/node_modules', 0.4, function () {
-    const naming = gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && SELF.indexOf(path.basename(f)) === -1 && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })
+    const naming = gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })
       .filter(function (f) { return OLD_NODE_MODULES.test(unforbidden(f, fs.readFileSync(path.join(REPO, f), 'utf8'))); });
     return !naming.length || false;
   }, test.limit.quick);
@@ -1279,7 +1278,7 @@ function every() {
   // nothing under spirit/run/ names run://test/
   test.run('the files are read, tests and documents included', 0.2, function () {
     E.files = gitIn(RUN, ['ls-files']).filter(function (f) {
-      return /\.(js|md|html|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && SELF.indexOf(path.basename(f)) === -1 && fs.existsSync(path.join(RUN, f));
+      return /\.(js|md|html|json)$/.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f));
     });
     return E.files.length > 0 || false;
   }, test.limit.quick);
@@ -1426,7 +1425,7 @@ function oneFile(P) {
     return !namesProcess(rel) || false;
   }, test.limit.quick);
   // the element move (elementRuleFiles above): its old homes, and spirit.element only for what the tree holds
-  if (SELF.indexOf(path.basename(rel)) === -1) {
+  {
     test.run('it names no shell/js', 0.4, function () {
       const hits = linesMatching(rel, OLD_ELEMENT_PATH);
       return !hits.length || false;
@@ -1502,7 +1501,7 @@ function oneFile(P) {
   else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
   // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "the same rule MUST apply to both the
   // window object for isBrowser and what is it on node? the process object?", "no developer will want to use a system that
-  // pollutes global name-spaces.", "go on this"). The page's side is script-sibling-browser.js's. In a node every file has
+  // pollutes global name-spaces.", "go on this"). The page's side is spirit/testicle/general/browser/pageRules/script.js's. In a node every file has
   // its own scope, so only an assignment onto globalThis (global) or process leaks: the script is loaded alone, in a node of
   // its own, in a scratch run (the one testicle hands, else one of lab's), and what the global object and process hold after
   // that they did not before spirit.js is the script's when its own code assigns that name; spirit is the one name allowed.
@@ -1637,7 +1636,7 @@ function oneFile(P) {
 // What it judges: given no file, the tree and every page module; given a file, that file. A page module's page is drawn
 // before its rules are said (session above), so a rule its page gives nothing to judge is never said green.
 
-// What it judges: given no file, the tree; given a file, that file's code (its page is script-sibling-browser.js's).
+// What it judges: given no file, the tree; given a file, that file's code (its page is spirit/testicle/general/browser/pageRules/script.js's).
 if (!arg) every();
 else if (!full) test.run('the file handed is there', 0.2, function () { return false; }, test.limit.quick);
 else oneFile({});

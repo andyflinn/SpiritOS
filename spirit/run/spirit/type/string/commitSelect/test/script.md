@@ -5,7 +5,7 @@ The type spirit.type.string.commitSelect: a commit that may be left empty: "" fo
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription), and what
-every <type>Select.js keeps beside its sibling, is judged by `spirit/test/script-sibling-general.js` (its type rules).
+every <type>Select.js keeps beside its sibling, is judged by `spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 

@@ -526,7 +526,7 @@ test.run('on a page, a branch\'s probability decides what goes: past 4 MB its lo
 // management. The only difference is the appServer serializes the cache to disk."
 //
 // What every branch's data.js must be (1, its branches named by it alone in 2, its disk in 4, 5, 6's downloads, 8) is
-// judged on each branch folder by ../../test/script-sibling-general.js (branchRules) (goal/G43.32, Q6, Q7). Here what judges no branch:
+// judged on each branch folder by spirit/testicle/general/any/branchRules/script.js (goal/G43.32, Q6, Q7). Here what judges no branch:
 //   2. one code: the browser and appServer load the same data set file, and appServer a family's cache from its own data.js;
 //   3. the same rows make the same cache: the desk's data.js and the data set, run in node as appServer
 //      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.client.desk.cache;
@@ -697,7 +697,7 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
 }, test.limit.quick);
 
 // That the node serves each family's data.js, and a page requiring the family's api.js gets it, is a rule of every
-// branch, judged on each branch folder in ../../test/script-sibling-general.js (branchRules) (goal/G43.32, goal/G47.1).
+// branch, judged on each branch folder in spirit/testicle/general/any/branchRules/script.js (goal/G43.32, goal/G47.1).
 
 // THE FAMILIES PART, once data-families.js.
 // Once spirit/run/spirit/test/data-families.js.
@@ -731,7 +731,7 @@ test.run('the file spirit/client/script.js exists', 0.2, function () {
 }, test.limit.quick);
 
 // Each family's own data.js, made with the one helper under its folder's name, is judged on each branch folder by
-// ../../test/script-sibling-general.js (branchRules); that no code says the old names (spirit.<name>Data, the old cache manager, the old
+// spirit/testicle/general/any/branchRules/script.js; that no code says the old names (spirit.<name>Data, the old cache manager, the old
 // module) is its rule of every file too (goal/G47.1). The fixed list of eighteen is left to the page below.
 
 // ── ON A PAGE ───────────────────────────────────────────────────────────────────

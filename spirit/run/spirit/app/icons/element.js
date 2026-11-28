@@ -42,7 +42,7 @@ function keptRows(p) { var b = KEPT_BRANCHES[p]; return b ? b.client || b.data |
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/icon/row/script.js');
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
-  // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): icons's api.js and its
+  // data they display", and spirit/testicle/general/app/browser/mountRules/script.js for every element under spirit/app/; rule/26): icons's api.js and its
   // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/icons/api.js')).catch(function () {});
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/icons/api.js')).catch(function () {});

@@ -77,7 +77,7 @@
     var root = document.createElement('span');
     root.className = 'contact-label' + (editable ? ' contact-label-editable' : '') +
       (options.className ? ' ' + options.className : '');
-    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: the box it puts into its container declares a constraint, overflow not visible).
     if (root.style) root.style.overflow = 'hidden';
     var text = document.createElement('span');
     text.className = 'contact-label-text';

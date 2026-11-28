@@ -77,7 +77,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     container.innerHTML = '';
     var box = document.createElement('div');
     box.className = 'fill';
-    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: the box it puts into its container declares a constraint, overflow not visible).
     box.style.overflow = 'hidden';
     var page = document.createElement('div');
     page.className = 'stack';

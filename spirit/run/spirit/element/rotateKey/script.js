@@ -36,7 +36,7 @@
     container.innerHTML = '';
     var body = document.createElement('div');
     body.className = 'stack';
-    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: the box it puts into its container declares a constraint, overflow not visible).
     body.style.overflow = 'hidden';
     container.appendChild(body);
 

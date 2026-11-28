@@ -254,7 +254,7 @@ test.run('shell.css lets CodeMirror in a fill box take the box and scroll inside
 // access to codeMirror library is through the element!". Its 15 files stand there; no
 // product file but the element names the folder; on a real page the page starts with no CodeMirror, and the element draws
 // from there with its sheet, its marks and its search keys, asking no other place. That no file names the library's old
-// place is spirit/test/script-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
+// place is spirit/testicle/general/any/generalRules/script.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
 const REPO = path.resolve(RUN, '../..');
 const H = LOADER.requireScript('spirit/testicle/headLessChrome/script.js');
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };

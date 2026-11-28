@@ -189,7 +189,7 @@ test.run('it has a server beside the face, its node.mount being true', 0.2, func
 }, test.limit.quick);
 // WHAT ITS FOLDERS HOLD IS THE APP RULES' TO JUDGE, FOR EVERY APP ALIKE, NOT A LIST BY HAND HERE (goal/G47.1, Andy: "how much of
 // this shit belongs in app-child-general or app-child-node or app-child-browser!?!?!?!?!", "CLEAN THAT SHIT UP!!!!!!!!!!!!!"):
-// the hand lists of its folder and of its element/ folder went; spirit/test/app-child-general.js judges an app's folder.
+// the hand lists of its folder and of its element/ folder went; spirit/testicle/general/app/any/folderRules/script.js judges an app's folder.
 // spirit/app/testicle/element/ PROPERLY DONE (goal/G47.1, box v134: "every part of testicle's face an element of its own in
 // element/<name>/<name>.js with its own test (the file detail, the monitor row with the status box, the settings panel);
 // element.js only mounts them and the searches; each loads its own, mounts empty, judged by -browser"; Andy: "what you're

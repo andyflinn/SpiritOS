@@ -8,7 +8,7 @@
 //
 // HOW: a scratch node (the tracked files) and a headless Chrome on its face page, one fresh page per search. The selector is
 // mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.element.search.create,
-// as spirit/test/script-sibling-browser.js's WATCH does) to learn the spirit.client branch it is a view of, and more rows than
+// as spirit/testicle/general/browser/pageRules/script.js's WATCH does) to learn the spirit.client branch it is a view of, and more rows than
 // fit are planted in that branch, each a copy of a row the branch holds (or the plain fields alone), its text a long value
 // with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel/script.js), as
 // the apps open one. EACH CHECK ONCE PER SEARCH (goal/G47.6), reported for that search's script: a search a check has nothing

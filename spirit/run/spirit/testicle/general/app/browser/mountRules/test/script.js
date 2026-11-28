@@ -2,7 +2,8 @@
 require('../../../../../../script.js');
 
 // spirit/run/spirit/testicle/general/app/browser/mountRules/test/script.js
-// The test of the app browser rule module, ../script.js, run through its runner spirit/test/app-child-browser.js (goal/G49.27,
+// The test of the app browser rule module, ../script.js, run through its runner spirit/testicle/run/browser/script.js, on this
+// module alone (SPIRIT_RULE_MODULES; goal/G49.27,
 // step 2b: the runner's test moved here with the module it now calls; spec: ./script.md): THE BROWSER TESTS ON ONE PAGE
 // (goal/G47.1, box v144, "this cycle, first: the browser tests on one page"). The general test is run as testicle runs it,
 // handed a list of scripts: six real elements of testicle's face and one planted script under spirit/app/testicle/ that never
@@ -14,8 +15,8 @@ const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
-const SUBJECT = path.join(RUN, 'spirit', 'test', 'app-child-browser.js');
-const SUITE = 'spirit/test/app-child-browser.js';
+const SUBJECT = path.join(RUN, 'spirit', 'testicle', 'run', 'browser', 'script.js');
+const SUITE = 'spirit/testicle/run/browser/script.js';
 const test = S.requireScript('spirit/testicle/testReport/script.js');
 
 // THE MODULE'S SHAPE (goal/G49.27, step 2b): { appliesTo, resource, own, forbids, checks }, as every rule module hands out.
@@ -30,7 +31,7 @@ const ELEMENTS = ['spirit/app/testicle/element/statusBox.js', 'spirit/app/testic
   'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element/search/testicle/row.js'];
 const HANG = 'spirit/app/testicle/zzBrowserHang.js';
 // box v144: "measured before: script-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
-// least 80% less test time" (the before measured on script-sibling-browser.js, the same shape).
+// least 80% less test time" (the before measured on spirit/testicle/general/browser/pageRules/script.js, the same shape).
 const BEFORE_S = process.platform === 'win32' ? 10 : 3.7;
 
 // Every process descended from pid, with its command line (Linux: ps; elsewhere the counts are not judged). The run's own:
@@ -76,7 +77,7 @@ test.run('the general test is run on six elements, the hang among them, and watc
   const list = ELEMENTS.slice(0, 2).concat([HANG]).concat(ELEMENTS.slice(2));
   const base = testicleBase();
   W.startAt = Date.now();
-  const kid = spawn(process.execPath, [SUBJECT].concat(list), { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  const kid = spawn(process.execPath, [SUBJECT].concat(list), { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_RULE_MODULES: 'spirit/testicle/general/app/browser/mountRules' }) });
   kid.stdout.on('data', function (d) { W.out += d; });
   kid.stderr.on('data', function (d) { W.out += d; });
   let ended = false;
@@ -142,10 +143,10 @@ test.run('the run takes at least 80% less than the time measured before', 0.4, f
   return (W.ms > 0 && W.ms <= most) || false;
 }, test.limit.quick);
 // box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled."
-test.run('no fixed sleep in app-child-browser.js', 0.4, function () {
+test.run('no fixed sleep in the browser runner or in the mount rules', 0.4, function () {
   const bad = [];
   // The runner and the module it runs (goal/G49.27, step 2b: its waits moved into the module).
-  ['spirit/test/app-child-browser.js', 'spirit/testicle/general/app/browser/mountRules/script.js'].forEach(function (n) {
+  ['spirit/testicle/run/browser/script.js', 'spirit/testicle/run/none/script.js', 'spirit/testicle/general/app/browser/mountRules/script.js'].forEach(function (n) {
     const lines = fs.readFileSync(path.join(RUN, n), 'utf8').split('\n');
     lines.forEach(function (l, i) {
       const code = l.replace(/\/\/.*$/, '');

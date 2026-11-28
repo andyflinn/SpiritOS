@@ -44,7 +44,7 @@ Andy: *"all, MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"*,
 - Planted apps, each made active first: one saying `shell.mount: true` (its tile must show, or nothing is judged), and every way of not saying it: `false`, absent, `"true"`, `1`, a `null` shell, no shell part, and a `node.run` app. None shows a tile.
 - Judged on the tiles from the start, the tiles reached by the switch, and the shell's own tiles (`hide: ['shell']`).
 - An app whose json drops `shell.mount` on disk loses its tile with no reload; with its shell part gone it does not come back; saying it again brings it back.
-- THE TREE'S OWN APPS ARE NOT NAMED HERE (goal/G47.4; Andy: *"THIS IS something that belongs in fucking app-child-browser"*, *"that fucking test is useless, it fucking assumes settings in fucking spirit/app/<name>/<name>.json"*): each is judged by its own manifest in `spirit/test/app-child-browser.js`: no tile without `shell.mount: true`, a face that mounts with it, and for `node.run` the pane, the dropdown, Run and no Activate. This test judges only the apps it plants.
+- THE TREE'S OWN APPS ARE NOT NAMED HERE (goal/G47.4; Andy: *"THIS IS something that belongs in fucking app-child-browser"*, *"that fucking test is useless, it fucking assumes settings in fucking spirit/app/<name>/<name>.json"*): each is judged by its own manifest in `spirit/testicle/general/app/browser/mountRules/script.js`: no tile without `shell.mount: true`, a face that mounts with it, and for `node.run` the pane, the dropdown, Run and no Activate. This test judges only the apps it plants.
 
 ## The shell part: The shell app, and a shell that replaces itself
 

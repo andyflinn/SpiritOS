@@ -27,7 +27,7 @@
     var on = o.on === true;
     var words = String(o.words == null ? '' : o.words);
     var root = document.createElement('div');
-    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: the box it puts into its container declares a constraint, overflow not visible).
     if (root.style) root.style.overflow = 'hidden';
     host.appendChild(root);
     // One form redrawn whole, as a form's icon is fixed when it is made.

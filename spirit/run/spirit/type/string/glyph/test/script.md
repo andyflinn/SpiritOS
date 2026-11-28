@@ -5,7 +5,7 @@ The type spirit.type.string.glyph: one glyph of at most 32 bytes (Andy: *"glyphs
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`spirit/test/script-sibling-general.js` (its type rules).
+`spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 

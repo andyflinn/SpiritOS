@@ -21,7 +21,7 @@
 //
 // SPACE IS GRANTED TOP-DOWN (rule/16): the root and the content area take the shell's fill class, so the content gets
 // the height the row leaves; the container is never sized here. One listener, on its own box, which keeps what it holds inside
-// (overflow hidden): the general rules (script-sibling-browser.js) have an element listen on itself, not on the container it is
+// (overflow hidden): the general rules (spirit/testicle/general/browser/pageRules/script.js) have an element listen on itself, not on the container it is
 // handed, and its box declare a constraint.
 (function () {
   var made = 0;

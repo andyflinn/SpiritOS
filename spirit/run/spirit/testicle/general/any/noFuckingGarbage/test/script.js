@@ -58,7 +58,7 @@ test.run('a planted test named after no module is red', 0.4, async function () {
 // every missing script-companion-suite is a red at 0.2", and "it is ok to exclude the vendored scripts."). Folded here from
 // spirit/test/test/spirit-sibling-general.js (goal/G49.27: one test file per module). A scratch copy of the tracked files of
 // spirit/run, in a git index of its own (the rule asks git which files are tracked), with planted scripts: has.js with its
-// own test, lacks.js with none, and a script in a vendored folder with none. spirit/test/script-sibling-general.js runs
+// own test, lacks.js with none, and a script in a vendored folder with none. Its runner, spirit/testicle/run/none/script.js, runs
 // there as its own process; with no environment.json, its reporter reports to no node.
 const { execSync, execFileSync } = require('child_process');
 const REPO = path.resolve(RUN, '..', '..');
@@ -82,7 +82,7 @@ let root = null, run = null;
 // nothing.
 function lineOf(arg, check, env) {
   let out = '';
-  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'script-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
+  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'testicle', 'run', 'none', 'script.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
   let script = '';
   let found = null;
   out.split('\n').forEach(function (l) {

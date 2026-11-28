@@ -723,7 +723,7 @@ test.run('grantsPanel.js holds no warning reading and no confirm', 0.2, function
   return !/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel', 'script.js'), 'utf8').replace(/\/\/[^\n]*/g, '')) ? true : false;
 }, test.limit.quick);
 // That no <verb>.warning.txt is left in the tree, spirit/auth/grant.warning.txt among them, is the general test's,
-// spirit/test/script-sibling-general.js (goal/G47.1). The noWarning part once at the end of this file said the same as the
+// spirit/testicle/general/any/generalRules/script.js (goal/G47.1). The noWarning part once at the end of this file said the same as the
 // two checks above, and is folded into them.
 
 // Grant waits, busy, until every grant is answered (goal/G41.23; box: "first users: Ask in the agent's Update model list, and

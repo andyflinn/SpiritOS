@@ -12,5 +12,5 @@ Its test is `./script.js`: a real Chrome on a scratch node's face page.
 - Mounted with an icon, a label and a value, it is a tile (`.stat-tile`) showing all three, the icon drawn by the icon element.
 - Handed no mode, it is shown as a tile; handed a mode it does not know yet (row, until row is built), it is shown as a tile.
 - Handed no value, it shows a dash.
-- `set` writes a new value in place; `set` with the value it already shows writes it again, so a tile filled from a stream redraws on every change written into what it watches (script-sibling-browser.js).
+- `set` writes a new value in place; `set` with the value it already shows writes it again, so a tile filled from a stream redraws on every change written into what it watches (spirit/testicle/general/browser/pageRules/script.js).
 - Destroyed, it leaves its container empty, and a later `set` draws nothing.

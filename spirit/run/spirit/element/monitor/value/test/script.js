@@ -72,7 +72,7 @@ test.run('set writes a new value in place', 0.4, async function () {
   await js('window.v_a.set("43 zz"); true');
   return (await read('a')).value === '43 zz' || false;
 }, test.limit.quick);
-// A tile that fills itself from a stream redraws on every change written into what it watches (script-sibling-browser.js).
+// A tile that fills itself from a stream redraws on every change written into what it watches (spirit/testicle/general/browser/pageRules/script.js).
 test.run('set with the value it already shows writes it again', 0.4, async function () {
   if (!W.made) return false;
   const n = await js('(function () { var c = document.getElementById("v-a"); var n = 0; var mo = new MutationObserver(function (l) { n += l.length; }); mo.observe(c, { subtree: true, childList: true, characterData: true }); window.v_a.set("43 zz"); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { mo.disconnect(); return n; }); })()');

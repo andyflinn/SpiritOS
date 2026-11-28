@@ -2180,7 +2180,7 @@ function ndTypeFields(scope) {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
       note.textContent = 'not configured: no contact named';
-      // A note, not a body: it keeps its words inside and scrolls nothing (script-sibling-browser.js: overflow not visible).
+      // A note, not a body: it keeps its words inside and scrolls nothing (spirit/testicle/general/browser/pageRules/script.js: overflow not visible).
       if (note.style) note.style.overflow = 'hidden';
       container.appendChild(note);
       return done;

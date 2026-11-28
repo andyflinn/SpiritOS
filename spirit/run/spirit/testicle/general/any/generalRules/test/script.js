@@ -46,7 +46,8 @@ test.run('a planted script that starts with a plain require is red', 0.4, async 
 
 // THE RUNNER JUDGING THE GENERAL RULES IN A SCRATCH TREE (goal/G47.1). Folded here from spirit/test/test/spirit-sibling-general.js
 // (goal/G49.27: one test file per module): a scratch copy of the tracked files of spirit/run, in a git index of its own,
-// with planted scripts; spirit/test/script-sibling-general.js runs there as its own process, handed one planted script, and
+// with planted scripts; its runner, spirit/testicle/run/node/script.js (this module alone: SPIRIT_RULE_MODULES), runs there
+// as its own process, handed one planted script, and
 // the verdict of one of this module's titles is read from what it prints. With no environment.json its reporter reports
 // to no node.
 const { execSync, execFileSync } = require('child_process');
@@ -88,7 +89,7 @@ let root = null, run = null;
 // as its title and its mark, under its script's heading), { red, script }, or null when the check printed nothing.
 function lineOf(arg, check, env) {
   let out = '';
-  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'script-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
+  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'testicle', 'run', 'node', 'script.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_RULE_MODULES: 'spirit/testicle/general/any/generalRules' }, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
   let script = '';
   let found = null;
   out.split('\n').forEach(function (l) {

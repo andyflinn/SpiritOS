@@ -206,4 +206,4 @@ test.run('spirit/fs/chokidar/index.js is servable but not writable', 0.8, functi
 test.run('spirit/fs/readdirp/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/fs/readdirp/index.js'); }, test.limit.quick);
 test.run('spirit/element/codeMirror/lib/codemirror.js is servable but not writable', 0.8, function () { return servedOnly('spirit/element/codeMirror/lib/codemirror.js'); }, test.limit.quick);
 // The walkers: that no code skips node_modules by its own name, every walker reading the one list above, is the general
-// test's, spirit/test/script-sibling-general.js, over every file (goal/G47.1); once a list of the walkers at one old commit here.
+// test's, spirit/testicle/general/any/generalRules/script.js, over every file (goal/G47.1); once a list of the walkers at one old commit here.

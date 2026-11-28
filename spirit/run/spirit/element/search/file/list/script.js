@@ -103,7 +103,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // The tree's indent and its hidden path are shell.css's (.files-tree, goal/G47.1, box v109), only where there is a tree.
     host.innerHTML =
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
-      // Its box keeps what it holds inside (script-sibling-browser.js: overflow not visible).
+      // Its box keeps what it holds inside (spirit/testicle/general/browser/pageRules/script.js: overflow not visible).
       '<div class="' + (flat ? 'fill' : 'files-tree fill') + '" style="overflow:hidden"></div>';
     var inner = host.lastChild;
     list = ANSWER['spirit/element/search/script.js'].create(inner, {

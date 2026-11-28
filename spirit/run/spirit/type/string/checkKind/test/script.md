@@ -2,7 +2,7 @@
 
 An options type (goal/G48.4, the box: *"options for a multiple-choice will be held in a separate script file for each field
 type that has its own options"*): its choices in `OPTIONS`, `isValid` true for one of them and an error for anything else.
-Its test: `./script.js`; what every type file keeps, `spirit/test/script-sibling-general.js` (its type rules).
+Its test: `./script.js`; what every type file keeps, `spirit/testicle/general/any/typeRules/script.js`.
 
 ## What its test judges
 
