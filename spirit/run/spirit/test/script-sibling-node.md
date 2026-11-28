@@ -6,6 +6,8 @@ checks that load a script on the node (goal/G43.32, the box, testing point 3; An
 scriptFile.js is to spirit.requireScript() it."*, Q5: *"I'm NOT demanding that all scripts load in all environments, I'm
 demanding that they're placed in the spirit object according to these rules IF they are required."*).
 
+**Its rule module** (goal/G49.27, step 2b): this file is the runner of `spirit/testicle/general/node/placeRules/script.js`, which holds all its checks, every title kept; the copy of the tree is the module's, made once for the run. The module's own test is beside it, `test/script.js`.
+
     node spirit/test/script-sibling-node.js [<script> ...]
 
 ## Requirements

@@ -6,6 +6,8 @@ sub-folder. Given several, each in turn, in one run, its results reported for th
 `test.forScript`; box v94, 2: *"else it will process all scripts listed in the arguments that fit"*). Judged on disc, from
 the files and their code with comments left out; no node is started.
 
+**Its rule modules** (goal/G49.27, step 2b): this file is the runner of `spirit/testicle/general/app/any/folderRules/script.js` (1 to 6), `singularRules/script.js` (0) and `appAppRules/script.js` (the app app, no app a shell), every title kept; the last two checks of the app app, which never ran here (they stood outside the function that defined the reporter), are said by `appAppRules`. Each module's own test is beside it, `test/script.js`.
+
 goal/G43.32. Andy, the box: *"rules for sub-folders of run://spirit/app/"*, rules 0 to 6, and of the name: *"if
 app-child-general.js works that is my decision."*
 

@@ -8,6 +8,8 @@ mounted by itself, nothing thrown, nothing missing, no console error, its box ke
 its fields stopping at their limits, its calls through spirit, its redraws, its writes, its searches, its destroy.
 The file-reading checks of generalRules are `script-sibling-general.js's`, its node checks `script-sibling-node.js's`.
 
+**Its rule modules** (goal/G49.27, step 2b): this file is the runner of `spirit/testicle/general/browser/placeRules/script.js` (given no file: the tree's rules and every page module, each run again through this file) and `spirit/testicle/general/browser/pageRules/script.js` (given a file: its page), every title kept; handed several scripts, it boots the run's one node and one Chrome. Each module's own test is beside it, `test/script.js`.
+
     node spirit/test/script-sibling-browser.js [<script> ...]
 
 - *"with no script-argument, they will process all applicable scripts. else it will process all scripts listed in the

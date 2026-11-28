@@ -1,19 +1,26 @@
 'use strict';
 
-// spirit/run/spirit/test/test/script-sibling-browser.js
-// The test of spirit/test/script-sibling-browser.js, and of no other module (spec: ./script-sibling-browser.md): THE
-// BROWSER TESTS ON ONE PAGE (goal/G47.1, box v144, "this cycle, first: the browser tests on one page"). The general test is
-// run as testicle runs it, handed a list of scripts: six real elements and one planted script that never ends, a file of
-// its own beside them for the run (a git-ignored file never reaches the node the general test takes). What it
-// starts is counted from outside, among its own processes; its time is taken from its start to its end; what reaches
-// testicle is read from the testicle of the node it reports to (spirit/testicle/testReport/script.js, reportToTesticle).
+// spirit/run/spirit/testicle/general/browser/pageRules/test/script.js
+// The test of the page rules module, ../script.js, run through its runner spirit/test/script-sibling-browser.js (goal/G49.27,
+// step 2b: the runner's test moved here with the module it now calls; spec: ./script.md): THE BROWSER TESTS ON ONE PAGE
+// (goal/G47.1, box v144, "this cycle, first: the browser tests on one page"). The general test is run as testicle runs it,
+// handed a list of scripts: six real elements and one planted script that never ends, a file of its own beside them for the
+// run (a git-ignored file never reaches the node the general test takes). What it starts is counted from outside, among its
+// own processes; its time is taken from its start to its end; what reaches testicle is read from the testicle of the node it
+// reports to (spirit/testicle/testReport/script.js, reportToTesticle).
 const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const SUBJECT = path.join(RUN, 'spirit', 'test', 'script-sibling-browser.js');
 const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+
+// THE MODULE'S SHAPE (goal/G49.27, step 2b): { appliesTo, resource, own, forbids, checks }, as every rule module hands out.
+const RULE = SPIRIT.requireScript('spirit/testicle/general/browser/pageRules/script.js');
+test.run('it hands out appliesTo, its resource browser, own false, its forbids and checks', 0.4, function () {
+  return (typeof RULE.appliesTo === 'function' && RULE.resource === 'browser' && RULE.own === false && Array.isArray(RULE.forbids) && typeof RULE.checks === 'function') || false;
+}, test.limit.quick);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -70,7 +77,7 @@ test.after(function () { try { fs.rmSync(path.join(RUN, HANG), { force: true });
 
 test.run('a script that never ends is planted', 0.2, function () {
   const f = path.join(RUN, HANG);
-  fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/test/test/script-sibling-browser.js: it never ends\nfor (;;) { /* hang */ }\n');
+  fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/testicle/general/browser/pageRules/test/script.js: it never ends\nfor (;;) { /* hang */ }\n');
   return fs.existsSync(f) || false;
 }, test.limit.quick);
 test.run('the general test runs on six elements with the hung script among them, watched from outside', 0.2, async function () {
@@ -143,8 +150,9 @@ test.run('the run takes at least 80% less than the time measured before', 0.4, f
 // box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled."
 test.run('script-sibling-browser.js holds no fixed sleep', 0.4, function () {
   const bad = [];
-  ['script-sibling-browser.js'].forEach(function (n) {
-    const lines = fs.readFileSync(path.join(RUN, 'spirit', 'test', n), 'utf8').split('\n');
+  // The runner and the modules it runs (goal/G49.27, step 2b: its waits moved into the modules).
+  ['spirit/test/script-sibling-browser.js', 'spirit/testicle/general/browser/pageRules/script.js', 'spirit/testicle/general/browser/placeRules/script.js'].forEach(function (n) {
+    const lines = fs.readFileSync(path.join(RUN, n), 'utf8').split('\n');
     lines.forEach(function (l, i) {
       const code = l.replace(/\/\/.*$/, '');
       if (/\bsleep\s*\(\s*\d/.test(code) || /setTimeout\s*\([^,]*,\s*\d+\s*\)/.test(code)) bad.push(true);
@@ -162,7 +170,7 @@ test.after(function () { try { fs.rmSync(path.join(RUN, FLAG), { force: true });
 test.run('a change written into a row of true or false fields alone redraws the element that draws it', 0.4, async function () {
   fs.writeFileSync(path.join(RUN, FLAG), [
     '\'use strict\';',
-    '// planted by spirit/test/test/script-sibling-browser.js: it draws a row that holds one true or false field alone',
+    '// planted by spirit/testicle/general/browser/pageRules/test/script.js: it draws a row that holds one true or false field alone',
     '(function () {',
     '  var S = window.spirit;',
     '  function create(container) {',
@@ -200,7 +208,7 @@ function planted(top, wrapped) {
     '  function create(container) { var el = document.createElement(\'div\'); el.style.overflow = \'hidden\'; container.appendChild(el); return { destroy: function () { el.remove(); } }; }',
     // goal/G49.23: an element sets module.exports, and the loader places it at its path.
     '  module.exports = { create: create };'];
-  return ['\'use strict\';', '// planted by spirit/test/test/script-sibling-browser.js: what it leaves on the window', top]
+  return ['\'use strict\';', '// planted by spirit/testicle/general/browser/pageRules/test/script.js: what it leaves on the window', top]
     .concat(wrapped ? ['(function () {'].concat(body, ['}());']) : ['(function () {'].concat(body, ['}());'])).concat(['']).join('\n');
 }
 async function judged(src) {

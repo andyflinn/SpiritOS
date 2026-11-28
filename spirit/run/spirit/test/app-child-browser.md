@@ -4,6 +4,8 @@ The -browser general test beside `spirit/app/manager/script.js` (goal/G47.1, box
 below in a page, the page twin of `app-child-general.js`. What holds for every page script is
 `script-sibling-browser.js`'s.
 
+**Its rule module** (goal/G49.27, step 2b): this file is the runner of `spirit/testicle/general/app/browser/mountRules/script.js`, which holds all its checks in one world, every title kept. The module's own test, once this file's, is beside it, `test/script.js`.
+
     node spirit/test/app-child-browser.js [<script> ...]
 
 Handed scripts, each in its reach is judged, its result reported for that script; handed none, every script under
