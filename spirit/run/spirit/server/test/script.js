@@ -231,3 +231,25 @@ test.run('it serves spirit/zzLoaded/script.js, and never spirit/zzLoaded/server/
   const hidden = await statusOf('spirit/zzLoaded/server/script.js');
   return (open === 200 && hidden !== 200 && hidden !== 0) || false;
 }, test.limit.quick);
+
+// ── THE RELAY BRANCH, AT THE ONE DOOR (goal/G49.25; Andy: "why would not the entire fucking set of relay verbs move into
+// motherfucking spirit.relay.<verb> with only ONE, SINGLE, MOTHERFUCKING DOOR: spirit....", "the whole \"owner\"-verb shit is
+// useless, never was, since the signature on a fucking request already says who the owner is...", "the grant-gate, when
+// spirit.IS_RELAY has to let member requests pass for the neccessary member verbs"; "wsl, assert this in tests") ──
+const REPO_ROOT = path.resolve(RUN, '..', '..');
+function productHits(args) {
+  let out = '';
+  try { out = execL('git', ['grep', '-l'].concat(args, ['--', 'spirit/run/spirit/*.js', ':!spirit/run/spirit/**/test/**', ':!spirit/run/spirit/test/**']), { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = ''; }
+  return out.split('\n').filter(Boolean);
+}
+test.run('the relay branch stands in the tree: spirit/relay/script.js hands out its verbs, its node work in spirit/relay/server/script.js', 0.4, function () {
+  let b = null; try { b = require(path.join(RUN, 'spirit', 'relay', 'script.js')); } catch (e) { b = null; }
+  return (!!b && !!b.verbs && Object.keys(b.verbs).length > 0 && fs.existsSync(path.join(RUN, 'spirit', 'relay', 'server', 'script.js'))) || false;
+}, test.limit.quick);
+test.run('one door: no product script serves or calls a route under /spirit/relay/', 0.4, function () {
+  // Its own folders' names (spirit/relay/...) are paths in the tree, not routes: a route is the door's path with a leading slash.
+  return productHits(['-E', "['\"`]/spirit/relay/"]).length === 0 || false;
+}, test.limit.slow);
+test.run('no owner-verb list: no product script names OWNER_VERBS; the signature says who the owner is, the grants what each may call', 0.4, function () {
+  return productHits(['-w', 'OWNER_VERBS']).length === 0 || false;
+}, test.limit.slow);

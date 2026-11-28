@@ -24,3 +24,8 @@ process ends by itself) and hands out every helper serveCommon handed out at f3e
 mounts, by a written name, only spirit and spirit.fs. A scratch node with planted trunk branches serves spirit.zzLoaded (new
 shape) and spirit.zzOld (old shape) unnamed, no spirit.relay although spirit/relay carries the mark, and never a branch's
 server/ folder.
+
+The relay branch at the one door (Andy: "ONE, SINGLE, MOTHERFUCKING DOOR"; "the whole \"owner\"-verb shit is useless"):
+spirit/relay/script.js hands out its verbs, its node work in spirit/relay/server/script.js; no product script serves or calls
+a route under /spirit/relay/; none names OWNER_VERBS. The member verbs passing the grant gate on a relay is asserted once the
+box names them.
