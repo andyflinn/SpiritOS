@@ -56,10 +56,10 @@ test.after(function () {
 });
 test.run('the launcher, spirit/server/script.js, with no mode and --port, starts a node on that port', 0.4, async function () {
   return (await nodeComesUp([])) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it launches a node in a lab tree and waits for it' });
 test.run('the launcher, spirit/server/script.js, with --node and --port, starts a node on that port', 0.4, async function () {
   return (await nodeComesUp(['--node'])) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it launches a node in a lab tree and waits for it' });
 test.run('the launcher refuses a mode it does not know: it exits, with a code that is not 0, and serves nothing', 0.8, async function () {
   const t = labTree();
   const port = await H.freePort();
@@ -68,7 +68,7 @@ test.run('the launcher refuses a mode it does not know: it exits, with a code th
   const served = await answers(port);
   await done(t, r);
   return (r.code !== null && r.code !== 0 && !served) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it launches the server and waits for it to exit' });
 test.run('a relay the launcher starts with --relay, whose store cannot open, exits 78 for systemd', 0.8, async function () {
   const t = labTree();
   const db = path.join(t.run, 'spirit', 'state', 'relay.db');
@@ -79,7 +79,7 @@ test.run('a relay the launcher starts with --relay, whose store cannot open, exi
   const code = r.code;
   await done(t, r);
   return code === 78 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it launches a relay and waits for it to exit' });
 // The old paths, spelled in pieces so that this file names none of them itself.
 const OLD_PATHS = ['spirit/' + 'appServer.js', 'spirit/' + 'relayServer.js', 'spirit/' + 'serveCommon.js', 'node' + 'Agent.js', 'node' + 'Chat.js', 'node' + 'Desk.js', 'node' + 'Icons.js'];
 const OLD_FILES = ['spirit/' + 'appServer.js', 'spirit/' + 'relayServer.js', 'spirit/' + 'serveCommon.js', 'spirit/app/agent/node' + 'Agent.js', 'spirit/app/chat/node' + 'Chat.js', 'spirit/app/desk/node' + 'Desk.js', 'spirit/app/icons/node' + 'Icons.js'];
@@ -93,7 +93,7 @@ test.run('no tracked file names an old path: none of the three moved core files,
   let built = '';
   try { built = execL('git', ['grep', '-n', '-E', pieces.source], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { built = ''; }
   return (!hits.length && !built.trim()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the whole repo' });
 test.run('no file stands at an old path: neither the three core files nor the four node<Name>.js', 0.4, function () {
   return !OLD_FILES.some(function (f) { return fs.existsSync(path.join(RUN, f)); }) || false;
 }, test.limit.quick);
@@ -131,7 +131,7 @@ test.run('no product script but spirit/server/script.js sets spirit.IS_RELAY tru
   try { hits = execL('git', ['grep', '-l', '-E', 'IS_RELAY\\s*=\\s*true', '--', 'spirit/run/spirit/*.js', ':!spirit/run/spirit/**/test/**'], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = ''; }
   const files = hits.split('\n').filter(Boolean);
   return (files.length === 1 && files[0] === 'spirit/run/spirit/server/script.js') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 // "spirit/server/script.js starts a server only when it is the file node was started with; required by another script (the peer
 // post, the relay request), it starts nothing and hands out its helpers." Its helpers are serveCommon's, every one it handed out
 // at the commit the box was written on (f3e398ecb), read from git, never listed here.
@@ -148,7 +148,7 @@ test.run('required by another script, spirit/server/script.js starts nothing: th
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('KEYS ') === 0; })[0];
   try { REQUIRED.out = line ? JSON.parse(line.slice(5)) : null; } catch (e) { REQUIRED.out = null; }
   return (r.status === 0 && r.signal === null && !!REQUIRED.out) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it spawns a node process that requires the server' });
 test.run('required, it hands out every helper serveCommon handed out', 0.4, function () {
   return (HELPERS.length > 10 && !!REQUIRED.out && HELPERS.every(function (k) { return REQUIRED.out.indexOf(k) !== -1; })) || false;
 }, test.limit.quick);
@@ -216,7 +216,7 @@ test.run('a scratch node comes up on a tree with planted trunk branches: spirit/
     await new Promise(function (r) { setTimeout(r, 500); });
   }
   return !!(PLANTED.tree && PLANTED.tree['spirit.fs']) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and polls its api tree' });
 test.run('its api tree holds spirit.zzLoaded, the new-shape branch no script names', 0.4, function () {
   const t = PLANTED.tree || {};
   return (!!t['spirit.zzLoaded'] && t['spirit.zzLoaded'].ok !== false) || false;
@@ -252,15 +252,15 @@ test.run('the relay branch stands in the tree: spirit/relay/script.js hands out 
 test.run('one door: no product script serves or calls a route under /spirit/relay/', 0.4, function () {
   // Its own folders' names (spirit/relay/...) are paths in the tree, not routes: a route is the door's path with a leading slash.
   return productHits(['-E', "['\"`]/spirit/relay/"]).length === 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 test.run('no owner-verb list: no product script names OWNER_VERBS; the signature says who the owner is, the grants what each may call', 0.4, function () {
   return productHits(['-w', 'OWNER_VERBS']).length === 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 // Box v20: "its five face routes (allowed, call, file, stream, api): no route of its own stays, its files aside"; "the face
 // allowed question stays a plain address, GET /face/allowed?domain=<name>, since Caddy can ask nothing else".
 test.run('one door for the faces too: no product script serves or calls /face/call, /face/file, /face/stream or /face/api', 0.4, function () {
   return productHits(['-E', "['\"`]/face/(call|file|stream|api)\\b"]).length === 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 test.run('the server still answers Caddy at GET /face/allowed', 0.4, function () {
   return serverCode().indexOf("'/face/allowed'") !== -1 || false;
 }, test.limit.quick);
@@ -279,14 +279,14 @@ test.run('the relay branch hands out exactly the 25 verbs of the box (Q13; faceF
 }, test.limit.quick);
 test.run('no member-verb list: no product script names MEMBER_VERBS', 0.4, function () {
   return productHits(['-w', 'MEMBER_VERBS']).length === 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 // THE PRESENCE MOVES (Andy, G49.25: "move ... spirit.presenceNode to spirit.contact.nodePresence"; "so presence belongs in
 // relay.presence ?", answered yes; "cw, box it like that."): each stands at its new path, nothing at its old one, and no product
 // script requires the old path.
 [['spirit/presence/script.js', 'spirit/relay/presence/script.js'], ['spirit/presenceNode/script.js', 'spirit/contact/nodePresence/script.js']].forEach(function (m) {
   test.run(m[0] + ' moved to ' + m[1] + ', and nothing requires the old path', 0.4, function () {
     return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 });
 
 // ══ THE HELPERS IT HANDS OUT (serveCommon's; goal/G49.25, box v16: "spirit.server.serveCommon goes: spirit/server/script.js
@@ -592,7 +592,7 @@ test.run('a scratch node comes up for this suite', 0.2, async function () {
   W.node = await H.scratchNode();
   W.face = fs.readFileSync(FACE, 'utf8');
   return W.node.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a GET of "/" answers 200', 0.2, async function () {
   if (!W.node || !W.node.up) return false;
   W.r = await fetch(W.node.base + '/');
@@ -649,7 +649,7 @@ test.run('the page at "/" has the spirit object', 0.2, async function () {
   if (!W.page || W.page.error) return false;
   W.ready = await H.until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   return !!W.ready || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the Chrome page to load the spirit object' });
 test.run('on the page at "/", spirit.readyPromise settles, as on face.html', 0.2, async function () {
   if (!W.ready) return false;
   const settled = await W.page.evaluate('window.spirit.readyPromise.then(function () { return "ready"; }, function () { return false; })');
@@ -912,7 +912,7 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
   G.actingVerbs = G.actingAsks.map(function (a) { return a.name; }).filter(function (n, k, l) { return l.indexOf(n) === k; });
   const missingServers = SERVER_IDS.filter(function (s) { return !tree[s]; });
   return !missingServers.length || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and waits for its app servers' });
 
 // THROWN, BATCH BY BATCH: each ask judged; after each batch the node answers a plain call within PLAIN_MS.
 const hungAfter = [];
@@ -938,7 +938,7 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
   }
   thrown = true;
   return Object.keys(broken).length === 0;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it throws every verb its garbage over HTTP, in batches' });
 test.run('after every batch thrown at /spirit, the node answered a plain call in time', 0.2, function () {
   if (!thrown) return false;
   return hungAfter.length === 0;
@@ -965,7 +965,7 @@ test.run('no climbing address, plain or encoded, brings back the node\'s identit
     if (r && r.status === 200 && marks.some(function (m) { return (r.text || '').indexOf(m) !== -1; })) leaked.push(p);
   }
   return leaked.length === 0;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sends ten raw requests to the scratch node' });
 
 // the node's door: raw requests and malformed paths
 // Each request written out, in the order thrown, so that each check has a plain title of its own. A request is thrown by
@@ -986,69 +986,69 @@ async function door(ri) {
   if (node.child && node.child.exitCode !== null && !G.killer) { G.killer = true; why = true; }
   return !why;
 }
-test.run('a body that is not JSON is answered, and the node still answers', 0.2, function () { return door(0); }, test.limit.slow);
-test.run('JSON that is not an object is answered, and the node still answers', 0.2, function () { return door(1); }, test.limit.slow);
-test.run('a bare JSON string is answered, and the node still answers', 0.2, function () { return door(2); }, test.limit.slow);
-test.run('a body of JSON null is answered, and the node still answers', 0.2, function () { return door(3); }, test.limit.slow);
-test.run('a body cut off half-way is answered, and the node still answers', 0.2, function () { return door(4); }, test.limit.long);
-test.run('a body one byte past BODY_MAX is answered, and the node still answers', 0.2, function () { return door(5); }, test.limit.slow);
-test.run('a Content-Length far past what is sent is answered, and the node still answers', 0.2, function () { return door(6); }, test.limit.long);
-test.run('a body nested 5000 levels deep is answered, and the node still answers', 0.2, function () { return door(7); }, test.limit.slow);
-test.run('arguments with a __proto__ key are answered, and the node still answers', 0.2, function () { return door(8); }, test.limit.slow);
-test.run('arguments with a constructor key are answered, and the node still answers', 0.2, function () { return door(9); }, test.limit.slow);
-test.run('a call named __proto__ is answered, and the node still answers', 0.2, function () { return door(10); }, test.limit.slow);
-test.run('a call named constructor.prototype is answered, and the node still answers', 0.2, function () { return door(11); }, test.limit.slow);
-test.run('a post with no Content-Type is answered, and the node still answers', 0.2, function () { return door(12); }, test.limit.slow);
-test.run('a post with Content-Type text/plain is answered, and the node still answers', 0.2, function () { return door(13); }, test.limit.slow);
-test.run('a post with Content-Type multipart and no boundary is answered, and the node still answers', 0.2, function () { return door(14); }, test.limit.slow);
-test.run('a body of invalid UTF-8 bytes is answered, and the node still answers', 0.2, function () { return door(15); }, test.limit.slow);
-test.run('a request line that is not HTTP is answered, and the node still answers', 0.2, function () { return door(16); }, test.limit.slow);
-test.run('a header line with no colon is answered, and the node still answers', 0.2, function () { return door(17); }, test.limit.slow);
-test.run('a GET of /.. is answered, and the node still answers', 0.2, function () { return door(18); }, test.limit.slow);
-test.run('a POST to /.. is answered, and the node still answers', 0.2, function () { return door(19); }, test.limit.slow);
-test.run('a GET of /../../../../etc/passwd is answered, and the node still answers', 0.2, function () { return door(20); }, test.limit.slow);
-test.run('a POST to /../../../../etc/passwd is answered, and the node still answers', 0.2, function () { return door(21); }, test.limit.slow);
-test.run('a GET of /%2e%2e/%2e%2e/etc/passwd is answered, and the node still answers', 0.2, function () { return door(22); }, test.limit.slow);
-test.run('a POST to /%2e%2e/%2e%2e/etc/passwd is answered, and the node still answers', 0.2, function () { return door(23); }, test.limit.slow);
-test.run('a GET of /shell/%2f%2f..%2f..%2fetc is answered, and the node still answers', 0.2, function () { return door(24); }, test.limit.slow);
-test.run('a POST to /shell/%2f%2f..%2f..%2fetc is answered, and the node still answers', 0.2, function () { return door(25); }, test.limit.slow);
-test.run('a GET of a path of 9001 letters is answered, and the node still answers', 0.2, function () { return door(26); }, test.limit.slow);
-test.run('a POST to a path of 9001 letters is answered, and the node still answers', 0.2, function () { return door(27); }, test.limit.slow);
-test.run('a GET of /% is answered, and the node still answers', 0.2, function () { return door(28); }, test.limit.slow);
-test.run('a POST to /% is answered, and the node still answers', 0.2, function () { return door(29); }, test.limit.slow);
-test.run('a GET of /%zz is answered, and the node still answers', 0.2, function () { return door(30); }, test.limit.slow);
-test.run('a POST to /%zz is answered, and the node still answers', 0.2, function () { return door(31); }, test.limit.slow);
-test.run('a GET of /%E0%A4%A is answered, and the node still answers', 0.2, function () { return door(32); }, test.limit.slow);
-test.run('a POST to /%E0%A4%A is answered, and the node still answers', 0.2, function () { return door(33); }, test.limit.slow);
-test.run('a GET of /api/%2e%2e/spirit is answered, and the node still answers', 0.2, function () { return door(34); }, test.limit.slow);
-test.run('a POST to /api/%2e%2e/spirit is answered, and the node still answers', 0.2, function () { return door(35); }, test.limit.slow);
-test.run('a GET of //api//spirit is answered, and the node still answers', 0.2, function () { return door(36); }, test.limit.slow);
-test.run('a POST to //api//spirit is answered, and the node still answers', 0.2, function () { return door(37); }, test.limit.slow);
-test.run('a GET of /DEBUG/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(38); }, test.limit.slow);
-test.run('a POST to /DEBUG/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(39); }, test.limit.slow);
-test.run('a GET of /spirit/element/../../../spirit/state/identity.json is answered, and the node still answers', 0.2, function () { return door(40); }, test.limit.slow);
-test.run('a POST to /spirit/element/../../../spirit/state/identity.json is answered, and the node still answers', 0.2, function () { return door(41); }, test.limit.slow);
-test.run('a GET of /spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(42); }, test.limit.slow);
-test.run('a POST to /spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(43); }, test.limit.slow);
-test.run('a GET of /\\..\\..\\relay-state is answered, and the node still answers', 0.2, function () { return door(44); }, test.limit.slow);
-test.run('a POST to /\\..\\..\\relay-state is answered, and the node still answers', 0.2, function () { return door(45); }, test.limit.slow);
-test.run('a GET of /?% is answered, and the node still answers', 0.2, function () { return door(46); }, test.limit.slow);
-test.run('a POST to /?% is answered, and the node still answers', 0.2, function () { return door(47); }, test.limit.slow);
-test.run('a GET of /#x is answered, and the node still answers', 0.2, function () { return door(48); }, test.limit.slow);
-test.run('a POST to /#x is answered, and the node still answers', 0.2, function () { return door(49); }, test.limit.slow);
-test.run('a GET of * is answered, and the node still answers', 0.2, function () { return door(50); }, test.limit.slow);
-test.run('a POST to * is answered, and the node still answers', 0.2, function () { return door(51); }, test.limit.slow);
-test.run('a GET of /%00 is answered, and the node still answers', 0.2, function () { return door(52); }, test.limit.slow);
-test.run('a POST to /%00 is answered, and the node still answers', 0.2, function () { return door(53); }, test.limit.slow);
-test.run('a GET of /index.html%00.js is answered, and the node still answers', 0.2, function () { return door(54); }, test.limit.slow);
-test.run('a POST to /index.html%00.js is answered, and the node still answers', 0.2, function () { return door(55); }, test.limit.slow);
+test.run('a body that is not JSON is answered, and the node still answers', 0.2, function () { return door(0); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('JSON that is not an object is answered, and the node still answers', 0.2, function () { return door(1); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a bare JSON string is answered, and the node still answers', 0.2, function () { return door(2); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a body of JSON null is answered, and the node still answers', 0.2, function () { return door(3); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a body cut off half-way is answered, and the node still answers', 0.2, function () { return door(4); }, test.limit.long, { why: 'it holds a short body open while the node waits' });
+test.run('a body one byte past BODY_MAX is answered, and the node still answers', 0.2, function () { return door(5); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a Content-Length far past what is sent is answered, and the node still answers', 0.2, function () { return door(6); }, test.limit.long, { why: 'it holds a short body open while the node waits' });
+test.run('a body nested 5000 levels deep is answered, and the node still answers', 0.2, function () { return door(7); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('arguments with a __proto__ key are answered, and the node still answers', 0.2, function () { return door(8); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('arguments with a constructor key are answered, and the node still answers', 0.2, function () { return door(9); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a call named __proto__ is answered, and the node still answers', 0.2, function () { return door(10); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a call named constructor.prototype is answered, and the node still answers', 0.2, function () { return door(11); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a post with no Content-Type is answered, and the node still answers', 0.2, function () { return door(12); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a post with Content-Type text/plain is answered, and the node still answers', 0.2, function () { return door(13); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a post with Content-Type multipart and no boundary is answered, and the node still answers', 0.2, function () { return door(14); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a body of invalid UTF-8 bytes is answered, and the node still answers', 0.2, function () { return door(15); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a request line that is not HTTP is answered, and the node still answers', 0.2, function () { return door(16); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a header line with no colon is answered, and the node still answers', 0.2, function () { return door(17); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /.. is answered, and the node still answers', 0.2, function () { return door(18); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /.. is answered, and the node still answers', 0.2, function () { return door(19); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /../../../../etc/passwd is answered, and the node still answers', 0.2, function () { return door(20); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /../../../../etc/passwd is answered, and the node still answers', 0.2, function () { return door(21); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /%2e%2e/%2e%2e/etc/passwd is answered, and the node still answers', 0.2, function () { return door(22); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /%2e%2e/%2e%2e/etc/passwd is answered, and the node still answers', 0.2, function () { return door(23); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /shell/%2f%2f..%2f..%2fetc is answered, and the node still answers', 0.2, function () { return door(24); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /shell/%2f%2f..%2f..%2fetc is answered, and the node still answers', 0.2, function () { return door(25); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of a path of 9001 letters is answered, and the node still answers', 0.2, function () { return door(26); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to a path of 9001 letters is answered, and the node still answers', 0.2, function () { return door(27); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /% is answered, and the node still answers', 0.2, function () { return door(28); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /% is answered, and the node still answers', 0.2, function () { return door(29); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /%zz is answered, and the node still answers', 0.2, function () { return door(30); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /%zz is answered, and the node still answers', 0.2, function () { return door(31); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /%E0%A4%A is answered, and the node still answers', 0.2, function () { return door(32); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /%E0%A4%A is answered, and the node still answers', 0.2, function () { return door(33); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /api/%2e%2e/spirit is answered, and the node still answers', 0.2, function () { return door(34); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /api/%2e%2e/spirit is answered, and the node still answers', 0.2, function () { return door(35); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of //api//spirit is answered, and the node still answers', 0.2, function () { return door(36); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to //api//spirit is answered, and the node still answers', 0.2, function () { return door(37); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /DEBUG/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(38); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /DEBUG/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(39); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /spirit/element/../../../spirit/state/identity.json is answered, and the node still answers', 0.2, function () { return door(40); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /spirit/element/../../../spirit/state/identity.json is answered, and the node still answers', 0.2, function () { return door(41); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(42); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(43); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /\\..\\..\\relay-state is answered, and the node still answers', 0.2, function () { return door(44); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /\\..\\..\\relay-state is answered, and the node still answers', 0.2, function () { return door(45); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /?% is answered, and the node still answers', 0.2, function () { return door(46); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /?% is answered, and the node still answers', 0.2, function () { return door(47); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /#x is answered, and the node still answers', 0.2, function () { return door(48); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /#x is answered, and the node still answers', 0.2, function () { return door(49); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of * is answered, and the node still answers', 0.2, function () { return door(50); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to * is answered, and the node still answers', 0.2, function () { return door(51); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /%00 is answered, and the node still answers', 0.2, function () { return door(52); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /%00 is answered, and the node still answers', 0.2, function () { return door(53); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a GET of /index.html%00.js is answered, and the node still answers', 0.2, function () { return door(54); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
+test.run('a POST to /index.html%00.js is answered, and the node still answers', 0.2, function () { return door(55); }, test.limit.slow, { why: 'it sends a raw request and a plain call to the node' });
 
 // the node is still running at the end
 test.run('the scratch node is still running and answers', 0.2, async function () {
   if (!G.tree) return false;
   const node = G.node;
   return (node.child && node.child.exitCode === null && await G.plain()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sends a plain call to the scratch node' });
 
 // THE VERBS THAT ACT, ON A THROWAWAY NODE OF THEIR OWN: node A is let go first. Verb by verb, each verb's garbage in
 // batches, a plain call after each; a node that dies is judged and replaced by a fresh one, so the next verb is judged
@@ -1062,7 +1062,7 @@ test.run('the throwaway node for the verbs that act comes up, with every app ser
   if (!B.plain) return false;
   HOST = new URL(B.base).host;
   return !B.missing.length || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a fresh scratch node with its app servers' });
 test.run('the verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 0.2, async function () {
   if (!B || !B.plain) return false;
   const actingAsks = G.actingAsks; const actingVerbs = G.actingVerbs;
@@ -1092,7 +1092,7 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
   const fine = actingVerbs.length - bad.length;
   if (fine <= 0) return false;
   return !(bad.length || fresh.length);
-}, test.limit.long);
+}, test.limit.long, { why: 'it throws the acting verbs their garbage, in batches' });
 
 // ── node.js reads the common file/folder cache (goal/G49.2; Andy: "go on node.js") ──
 // G49.1's box: "node.js's branch folder lookup" moves onto spirit/fs/dataset/script.js, and "each disc scan goes in the same commit that
@@ -1125,20 +1125,20 @@ test.after(function () {
 ['spirit/owner', 'spirit/ownerPost', 'spirit/puppetStream'].forEach(function (d) {
   test.run(d + '/ is gone, and no product script requires a file of it', 0.4, function () {
     return (!fs.existsSync(path.join(RUN, d)) && productHits(['-F', "'" + d + '/']).length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 });
 test.run('spirit/fuckingGarbage/boxes.js is gone, and no product script names it', 0.4, function () {
   return (!fs.existsSync(path.join(RUN, 'spirit', 'fuckingGarbage', 'boxes.js')) && productHits(['-F', 'fuckingGarbage/boxes']).length === 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 ['peerOwnerPost', 'puppetDoor', 'ownerCommandIn', 'commandMessage'].forEach(function (n) {
   test.run('no product script names ' + n, 0.4, function () {
     return productHits(['-w', n]).length === 0 || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 });
 // puppetMode went too (Andy: "get rid of spirit.puppetMode, too."); who owns a node stays, read by relayAuth.loadOwner.
 test.run('spirit/puppetMode/ is gone, and no product script requires a file of it', 0.4, function () {
   return (!fs.existsSync(path.join(RUN, 'spirit', 'puppetMode')) && productHits(['-F', "'spirit/puppetMode/"]).length === 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 test.run('who owns a node stays: relayAuth.loadOwner reads the key owner.json names', 0.4, function () {
   const t = H.scratchTree();
   try {
@@ -1147,7 +1147,7 @@ test.run('who owns a node stays: relayAuth.loadOwner reads the key owner.json na
     auth.writeOwner(t.run, owner.publicKey);
     return auth.loadOwner(t.run, function () {}) === owner.publicKey || false;
   } finally { H.freeTree(t); }
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it takes a lab tree and makes a key pair' });
 
 // ── THE PEER BRANCH MIGRATED (goal/G49.26, box v8, Andy's Go) ── "spirit/peerFile/script.js --> spirit/peer/file/script.js",
 // "spirit/peerRank/script.js --> spirit/relay/peerRank/script.js", "spirit/postQueue/script.js --> spirit/peer/post/queue/script.js",
@@ -1158,7 +1158,7 @@ test.run('who owns a node stays: relayAuth.loadOwner reads the key owner.json na
   ['spirit/peer/data.js', 'spirit/peer/client/script.js']].forEach(function (m) {
   test.run(m[0] + ' moved to ' + m[1] + ', and no product script requires the old path', 0.4, function () {
     return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 });
 test.run('the peer branch hands out its verbs from spirit/peer/script.js: post and acquire', 0.4, function () {
   let b = null; try { b = require(path.join(RUN, 'spirit', 'peer', 'script.js')); } catch (e) { b = null; }
@@ -1167,7 +1167,7 @@ test.run('the peer branch hands out its verbs from spirit/peer/script.js: post a
 }, test.limit.quick);
 test.run('no product script calls a peer verb by its old name, peer.post or peer.acquire', 0.4, function () {
   return productHits(['-E', "['\"]peer\\.(post|acquire)['\"]"]).length === 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 
 // ── THE RELAY'S OWN UNDER THE RELAY BRANCH (goal/G49.26, box v10, Q1; Andy: "cw, change the box for that"; "All, go!") ──
 // "Six serve a relay alone and move under it; relayAuth, relayRequest and relayUrl serve nodes too and stay in the trunk."
@@ -1176,7 +1176,7 @@ test.run('no product script calls a peer verb by its old name, peer.post or peer
   ['spirit/relayDump/script.js', 'spirit/relay/dump/script.js']].forEach(function (m) {
   test.run(m[0] + ' moved to ' + m[1] + ', and no product script requires the old path', 0.4, function () {
     return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 });
 // "spirit/relaySelf/<verb>.json --> spirit/relay/<verb>.json beside the verbs they describe, its AGENTS.md to spirit/relay/AGENTS.md;
 // spirit/relaySelf/ goes": the verbs it described are read from git at the commit the box was written on, never listed here.
@@ -1195,5 +1195,5 @@ test.run('relayAuth, relayRequest and relayUrl stay in the trunk', 0.4, function
 [['spirit/search/string.js', 'spirit/search/string/script.js'], ['spirit/search/object.js', 'spirit/search/object/script.js']].forEach(function (m) {
   test.run(m[0] + ' moved to ' + m[1] + ', and no product script requires the old path', 0.4, function () {
     return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the product scripts' });
 });

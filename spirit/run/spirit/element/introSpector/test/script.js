@@ -27,7 +27,7 @@ let made, text, html, reply, SEL, tree, pick, keys, labels, jsonCase, empty;
 test.run('a scratch node comes up for this suite', 0.2, async function () {
   node = await scratchNode();
   return !!node.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a Chrome page opens', 0.2, async function () {
   chrome = await chromePage(findChrome());
   return !chrome.error || false;

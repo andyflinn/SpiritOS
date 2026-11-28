@@ -70,12 +70,12 @@ test.run('a scratch node comes up, with Chrome on its face page', 0.2, async fun
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('it loads through spirit.requireScript and is spirit.element.search.app.list', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/list/script.js"); }).then(function () { var L = spirit.element.search.app.list; return !!(L && typeof L.create === "function"); }, function () { return false; })');
   return loaded === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the script into the page from the node' });
 
 // create(host, opts) -> { list, refresh(), destroy() }
 test.run('create, given a host and options, answers an object holding list, refresh and destroy', 0.2, async function () {
@@ -84,13 +84,13 @@ test.run('create, given a host and options, answers an object holding list, refr
   await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; return true; }())');
   made = await make('pane', '{ face: "pane", pick: function (row, key) { window.picks.push({ row: row, key: key }); } }');
   return made === true || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('as a pane it lists every app of the tree, the apps that only run among them', 0.2, async function () {
   if (made !== true) return false;
   const want = keysOf(function () { return true; });
   const ok = await until(function () { return shown('pane').then(function (k) { return JSON.stringify(k) === JSON.stringify(want); }); }, 10000);
   return (ok && keysOf(function (a) { return a.run; }).length > 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the pane to list every app' });
 // Andy, box: "no filters, just a search string"
 test.run('it asks app.search with a search string and nothing more', 0.2, async function () {
   if (made !== true) return false;
@@ -108,12 +108,12 @@ test.run('a press on a row hands the row and its key to pick', 0.2, async functi
   await chrome.evaluate('(function () { var r = document.getElementById("pane").querySelector("tr[data-key=\\"spirit.app.grants\\"] td[data-field=\\"label\\"]"); if (r) r.click(); return !!r; }())');
   const ok = await until(function () { return chrome.evaluate('window.picks.length > 0 && window.picks[0].key === "spirit.app.grants"'); }, 3000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the press to reach pick' });
 test.run('refresh asks app.search again', 0.2, async function () {
   if (made !== true) return false;
   const again = await chrome.evaluate('(function () { var n = window.asked.length; window.pane.refresh(); return new Promise(function (r) { setTimeout(function () { r(window.asked.length > n); }, 800); }); }())');
   return again === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it refreshes and waits 800 ms for the ask' });
 
 // goal/G43.20; Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"
 test.run('as tiles it shows only the apps whose <name>.json says shell.mount true', 0.2, async function () {
@@ -122,7 +122,7 @@ test.run('as tiles it shows only the apps whose <name>.json says shell.mount tru
   const want = keysOf(function (a) { return a.tile; });
   const ok = await until(function () { return shown('tiles').then(function (k) { return JSON.stringify(k) === JSON.stringify(want); }); }, 10000);
   return (!!ok && want.length < TREE.length) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the tiles to show' });
 // goal/G43.21; Andy: "spirit app search will list these jobs (node:run) only in pane mode"; "the appSelector will only show icon and label"
 test.run('as a dropdown it lists no app that only runs', 0.2, async function () {
   if (loaded !== true) return false;
@@ -132,7 +132,7 @@ test.run('as a dropdown it lists no app that only runs', 0.2, async function () 
   await until(function () { return shown('drop').then(function (k) { return k.length > 1; }); }, 10000);
   const k = await shown('drop');
   return (k.length > 1 && runs.every(function (r) { return k.indexOf(r) === -1; })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the dropdown to list apps' });
 test.run('as a dropdown each row shows the icon and the label only', 0.2, async function () {
   if (loaded !== true) return false;
   const f = await fieldsOf('drop');
@@ -145,7 +145,7 @@ test.run('the server filter is hidden by default, and shown by servers: true', 0
   await until(function () { return shown('servers').then(function (k) { return k.length > 1; }); }, 10000);
   const n = await chrome.evaluate('[document.getElementById("pane").querySelectorAll("button[data-filter]").length, document.getElementById("servers").querySelectorAll("button[data-filter]").length]');
   return JSON.stringify(n) === '[0,1]' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the list with servers to draw' });
 test.run('destroy leaves its host empty', 0.2, async function () {
   if (made !== true) return false;
   const empty = await chrome.evaluate('(function () { window.pane.destroy(); var b = document.getElementById("pane"); return b.innerHTML === ""; }())');

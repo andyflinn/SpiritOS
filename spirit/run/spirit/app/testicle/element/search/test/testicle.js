@@ -168,7 +168,7 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node' });
 test.run('tests of the planted scripts are set on the node', 0.2, async function () {
   if (!N || !N.up) return false;
   GEN = s.gen;
@@ -189,7 +189,7 @@ test.run('tests of the planted scripts are set on the node', 0.2, async function
   planted = out.every(function (r) { return r.status === 200; });
   out.forEach(function (r, i) { const b = r.body || {}; if (r.status === 200 && b.key) current[i === 3 ? FLIPS : i === 0 ? LONG : i === 1 ? FAILS : 'replaced'] = b; });
   return planted || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for testicle, then sets four rows' });
 let gammaPlanted = false;
 test.run('gamma\'s 2 failed tests are set on the node before the page opens', 0.2, async function () {
   if (!N || !N.up) return false;
@@ -200,7 +200,7 @@ test.run('gamma\'s 2 failed tests are set on the node before the page opens', 0.
   }
   gammaPlanted = !bad;
   return gammaPlanted || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets gamma rows on the node' });
 test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
@@ -209,7 +209,7 @@ test.run('the face page has its spirit', 0.2, async function () {
   if (c.error) return false;
   await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face page in Chrome' });
 
 // its place: spirit.app.testicle.element.search.testicle, with a create
 test.run('it loads through spirit.requireScript and mounts with create(container), answering destroy', 0.2, async function () {
@@ -221,7 +221,7 @@ test.run('it loads through spirit.requireScript and mounts with create(container
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : false; }, function () { return false; })');
   return made === 'made' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the search in the page and mounts it' });
 
 // goal/G47.1, the box: "The testicle search's default equals testicle.red: all scripts, all suites, reds only, most severe
 // first" (Andy: "the default setting for testicle search should be EQUAL the the RED verb of testicle."); and earlier
@@ -232,13 +232,13 @@ test.run('when opened, red is on and green is off', 0.2, async function () {
   await waitFor('filter("red") && filter("green")', 10000);
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!red && !!green && red.on && !green.on) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the filters to be drawn' });
 test.run('when opened, it shows the reds, every one of gamma\'s 2, in its one answer', 0.2, async function () {
   if (mounted()) return false;
   if (!gammaPlanted) return false;
   const ok = await waitFor('keys().filter(function (k) { return k.indexOf("' + Z2 + '") === 0; }).length >= ' + GAMMA_REDS, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for gamma rows to be drawn' });
 test.run('when opened, it shows reds only, the most severe first', 0.2, async function () {
   if (mounted()) return false;
   const sev = await columnNow(1);
@@ -251,13 +251,13 @@ test.run('green is pressed, and both filters are on', 0.2, async function () {
   await T('press("green")');
   const ok = await waitFor('filter("green").on && filter("red").on', 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses green and waits for the filters' });
 
 // the box: "the current rows shown"
 test.run('the list draws the planted tests', 0.2, async function () {
   if (mounted()) return false;
   return !!(await waitFor('keys().filter(function (k) { return k.indexOf("' + Z + '") === 0; }).length >= 3', 15000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the planted tests to be drawn' });
 test.run('it lists each test once, by its current row alone', 0.2, async function () {
   if (mounted()) return false;
   const keys = ((await T('keys()')) || []).filter(function (k) { return k.indexOf(Z) === 0; });
@@ -287,7 +287,7 @@ test.run('typed words show the tests they find, the best match first', 0.2, asyn
   await T('typeMain("")');
   await sleep(500);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types words and waits for the matches' });
 
 // the box: "The columns, in this order: the result first, as an icon ... severity second; the title third; then the script
 // name (no path), then the suite name (no path)"
@@ -371,10 +371,10 @@ const sortsBy = async function (i) {
   const other = one === 'asc' ? 'desc' : 'asc';
   return (!!one && ordered(second, i, other) && JSON.stringify(first) !== JSON.stringify(second)) || false;
 };
-test.run('a press on the severity header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(1); }, test.limit.slow);
-test.run('a press on the title header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(2); }, test.limit.slow);
-test.run('a press on the script header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(3); }, test.limit.slow);
-test.run('a press on the suite header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(4); }, test.limit.slow);
+test.run('a press on the severity header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(1); }, test.limit.slow, { why: 'it presses the header twice, 200 ms apart' });
+test.run('a press on the title header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(2); }, test.limit.slow, { why: 'it presses the header twice, 200 ms apart' });
+test.run('a press on the script header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(3); }, test.limit.slow, { why: 'it presses the header twice, 200 ms apart' });
+test.run('a press on the suite header sorts the rows by it, a second press the other way', 0.2, function () { return sortsBy(4); }, test.limit.slow, { why: 'it presses the header twice, 200 ms apart' });
 test.run('a press on the header of the result sorts the failures and the successes apart, a second press the other way', 0.2, async function () {
   if (mounted()) return false;
   if (!(await T('sortBy(0)'))) return false;
@@ -385,7 +385,7 @@ test.run('a press on the header of the result sorts the failures and the success
   const second = await columnNow(0);
   const grouped = function (l) { const f = l.indexOf('✅'), x = l.indexOf('❌'); return f !== -1 && x !== -1 && (l.lastIndexOf('✅') < x || l.lastIndexOf('❌') < f); };
   return (grouped(first) && grouped(second) && first[0] !== second[0]) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses the header twice, 200 ms apart' });
 
 // the box: "two filters, red and green; at least one of the two is selected at all times: the only combination forbidden is
 // both off"
@@ -399,7 +399,7 @@ test.run('with red off and green on, only the successes show', 0.2, async functi
   await T('press("red")');
   const ok = await until(function () { return columnNow(0).then(function (l) { return l.length > 0 && l.every(function (v) { return v === '✅'; }); }); }, 5000);
   return (!!ok && !(await T('filter("red")')).on) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses red and waits for the rows' });
 test.run('with red off, a press on green leaves it on: both off is refused', 0.2, async function () {
   if (mounted()) return false;
   await T('press("green")');
@@ -407,7 +407,7 @@ test.run('with red off, a press on green leaves it on: both off is refused', 0.2
   const green = await T('filter("green")');
   const shown = await columnNow(0);
   return (!!green && green.on && shown.length > 0 && shown.every(function (v) { return v === '✅'; })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses green and waits 300 ms' });
 test.run('with green off and red on, only the failures show', 0.2, async function () {
   if (mounted()) return false;
   await T('press("red")');
@@ -416,21 +416,21 @@ test.run('with green off and red on, only the failures show', 0.2, async functio
   const ok = await until(function () { return columnNow(0).then(function (l) { return l.length > 0 && l.every(function (v) { return v === '❌'; }); }); }, 5000);
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!ok && red.on && !green.on) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses red and green and waits for the rows' });
 test.run('with red off, a press on red leaves it on: both off is refused', 0.2, async function () {
   if (mounted()) return false;
   await T('press("red")');
   await sleep(300);
   const red = await T('filter("red")');
   return (!!red && red.on) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses red and waits 300 ms' });
 test.run('both filters are on again', 0.2, async function () {
   if (mounted()) return false;
   await T('press("green")');
   await sleep(300);
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!red && !!green && red.on && green.on) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses green and waits 300 ms' });
 
 // the box: "a script selector, unselected (all) the default", "the file search as a dropdown, production scripts only"
 test.run('it has two selectors, the script selector first, the suite selector second, each a dropdown', 0.2, async function () {
@@ -451,13 +451,13 @@ test.run('the script selector lists production scripts only: no test, no other k
   const keys = (await T('selRows(0)')) || [];
   const planted0 = keys.filter(function (k) { return String(k).indexOf(Z) !== -1; });
   return (planted0.length > 0 && planted0.every(function (k) { return /\.js$/.test(k) && k.split('/').indexOf('test') === -1; }) && planted0.some(function (k) { return k === A; })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types in the selector and waits for its rows' });
 test.run('a script chosen narrows the rows to that script\'s tests', 0.2, async function () {
   if (mounted()) return false;
   if (!(await T('pickSel(0, ' + JSON.stringify(A) + ')'))) return false;
   const ok = await until(function () { return columnNow(3).then(function (l) { return l.length > 0 && l.every(function (v) { return v === base(A); }); }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it picks a script and waits for the rows' });
 
 // the box: "a suite selector, unselected (all) the default"
 test.run('with a script chosen, the suite selector lists that script\'s suites', 0.2, async function () {
@@ -468,7 +468,7 @@ test.run('with a script chosen, the suite selector lists that script\'s suites',
   const keys = (await T('selRows(1)')) || [];
   const has = function (suite) { return keys.some(function (k) { return k === suite || k === A + '|' + suite; }); };
   return (has(AS) && has(GEN) && !has(BS)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the suite selector and waits for its rows' });
 test.run('a suite chosen narrows the rows to that suite\'s tests', 0.2, async function () {
   if (mounted()) return false;
   const keys = (await T('selRows(1)')) || [];
@@ -476,21 +476,21 @@ test.run('a suite chosen narrows the rows to that suite\'s tests', 0.2, async fu
   if (!k || !(await T('pickSel(1, ' + JSON.stringify(k) + ')'))) return false;
   const ok = await until(function () { return columnNow(4).then(function (l) { return l.length > 0 && l.every(function (v) { return v === base(GEN); }); }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it picks a suite and waits for the rows' });
 test.run('with the suite unselected again, every suite of the script shows', 0.2, async function () {
   if (mounted()) return false;
   await T('openSel(1)');
   if (!(await T('noneSel(1)'))) return false;
   const ok = await until(function () { return columnNow(4).then(function (l) { return l.indexOf(base(AS)) !== -1 && l.indexOf(base(GEN)) !== -1; }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it unselects the suite and waits for the rows' });
 test.run('with the script unselected again, every script\'s tests show', 0.2, async function () {
   if (mounted()) return false;
   await T('openSel(0)');
   if (!(await T('noneSel(0)'))) return false;
   const ok = await until(function () { return columnNow(3).then(function (l) { return l.indexOf(base(A)) !== -1 && l.indexOf(base(B)) !== -1; }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it unselects the script and waits for the rows' });
 // goal/G47.1, the box: "The testicle search can search by a suite alone: with the script selector blank (all scripts), the
 // suite selector lists every suite, each once, and suite.search given no script answers that list; a suite chosen with
 // the script blank shows every test of that suite, whichever script it ran for." It replaces the line "with all scripts,
@@ -506,7 +506,7 @@ test.run('with no script chosen, the suite selector lists the suites of every sc
     return T('selRows(1)').then(function (keys) { return suiteKeysOf(keys || [], AS).length > 0 && suiteKeysOf(keys || [], BS).length > 0; });
   }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types in the selector and waits for the suites' });
 test.run('with no script chosen, a suite of two scripts is listed once', 0.2, async function () {
   if (mounted()) return false;
   await T('typeSel(1, ' + JSON.stringify(path.posix.basename(GEN, '.js')) + ')');
@@ -514,7 +514,7 @@ test.run('with no script chosen, a suite of two scripts is listed once', 0.2, as
   await sleep(500);
   const keys = (await T('selRows(1)')) || [];
   return suiteKeysOf(keys, GEN).length === 1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types in the selector and waits for its rows' });
 test.run('a suite chosen with no script shows that suite\'s tests of every script', 0.2, async function () {
   if (mounted()) return false;
   const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: GEN, test: 'beta holds the general rule', verified: true, severity: 0.2 });
@@ -527,14 +527,14 @@ test.run('a suite chosen with no script shows that suite\'s tests of every scrip
     });
   }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a row, picks a suite, waits for the rows' });
 test.run('with the suite unselected and no script chosen, every script\'s tests show again', 0.2, async function () {
   if (mounted()) return false;
   await T('openSel(1)');
   if (!(await T('noneSel(1)'))) return false;
   const ok = await until(function () { return columnNow(4).then(function (l) { return l.indexOf(base(AS)) !== -1 && l.indexOf(base(BS)) !== -1; }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it unselects the suite and waits for the rows' });
 
 // the box: "a view of the testicle branch data.js keeps": a test set on the node shows by itself.
 test.run('a test set on the node shows in the list with no press', 0.2, async function () {
@@ -544,7 +544,7 @@ test.run('a test set on the node shows in the list with no press', 0.2, async fu
   if (r.status !== 200) return false;
   const ok = await until(function () { return T('cells()').then(function (rows) { return (rows || []).some(function (x) { return titleOf(x) === 'beta answers later'; }); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a row on the node and waits for the draw' });
 
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {
@@ -585,7 +585,7 @@ test.run('the node holds 110 passing tests of beta at severity 1, 25 failing tes
   out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: QUOKKA, verified: true, severity: 0 }));
   many = out.every(function (r) { return r.status === 200; });
   return many || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it sets 136 rows on the node one by one' });
 test.run('a fresh page opens the search again with no words and no selector', 0.2, async function () {
   if (!many) return false;
   if (!c || c.error || !c.evaluate) return false;
@@ -601,7 +601,7 @@ test.run('a fresh page opens the search again with no words and no selector', 0.
   let last = -1, now = 0;
   for (let i = 0; i < 30; i++) { now = ((await results()) || []).length; if (now === last && now > 0) break; last = now; await sleep(1000); }
   return now > 0 || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it reloads the page and mounts the search again' });
 // goal/G47.1, the box: "The testicle search's default equals testicle.red: all scripts, all suites, reds only, most severe
 // first". Opened, the 57 reds alone; then green pressed, both on, for the checks of the following answers.
 const severities = function () { return plantedCells().then(function (rows) { return rows.map(function (r) { return Number((r.cells[1] || {}).text); }); }); };
@@ -623,7 +623,7 @@ test.run('green is pressed on the fresh page, and both filters are on', 0.2, asy
   let last = -1, now = 0;
   for (let i = 0; i < 30; i++) { now = ((await results()) || []).length; if (now === last && now > 0) break; last = now; await sleep(1000); }
   return now > 0 || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it presses green and waits for the rows to settle' });
 test.run('with both filters on, the reds show first', 0.2, async function () {
   if (reopened()) return false;
   const got = (await results()) || [];
@@ -640,7 +640,7 @@ test.run('with green off, the failures one answer holds show, and no success', 0
   await T('press("green")');
   const ok = await until(function () { return results().then(function (l) { return l.length > 0 && l.every(function (v) { return v === '❌'; }); }); }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses green and waits for the answer' });
 test.run('with red off and green on, the successes one answer holds show, and no failure', 0.2, async function () {
   if (reopened()) return false;
   await T('press("green")');
@@ -648,7 +648,7 @@ test.run('with red off and green on, the successes one answer holds show, and no
   await T('press("red")');
   const ok = await until(function () { return results().then(function (l) { return l.length > 0 && l.every(function (v) { return v === '✅'; }); }); }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses green and red and waits for the answer' });
 test.run('choosing a script asks the server again, so with alpha chosen and green alone, alpha\'s quiet pass shows', 0.2, async function () {
   if (reopened()) return false;
   await T('openSel(0)');
@@ -658,7 +658,7 @@ test.run('choosing a script asks the server again, so with alpha chosen and gree
   const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
   const shown = await columnNow(3);
   return (!!ok && shown.every(function (v) { return v === base(A); })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it picks a script and waits for the server' });
 test.run('with the script unselected, alpha\'s own suite chosen and green alone, alpha\'s quiet pass shows', 0.2, async function () {
   if (reopened()) return false;
   await T('openSel(0)');
@@ -673,7 +673,7 @@ test.run('with the script unselected, alpha\'s own suite chosen and green alone,
   const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
   const shown = await columnNow(4);
   return (!!ok && shown.every(function (v) { return v === base(AS); })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it unselects, picks a suite, waits for the server' });
 test.run('the suite is unselected, and red and green are both on', 0.2, async function () {
   if (reopened()) return false;
   await T('openSel(1)');
@@ -682,25 +682,25 @@ test.run('the suite is unselected, and red and green are both on', 0.2, async fu
   await sleep(500);
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!red && !!green && red.on && green.on) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it unselects the suite, presses red, waits 500 ms' });
 test.run('typed words show the tests they find: "quokka" shows the quiet pass', 0.2, async function () {
   if (reopened()) return false;
   if (!(await T('typeMain("quokka")'))) return false;
   const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types words and waits for the matches' });
 test.run('typed words show the tests they find: "fails" shows failures', 0.2, async function () {
   if (reopened()) return false;
   if (!(await T('typeMain("fails")'))) return false;
   const ok = await until(function () { return titles().then(function (t) { return t.some(function (x) { return /fails/.test(x); }); }); }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types words and waits for the matches' });
 test.run('with the words cleared, the reds show first again', 0.2, async function () {
   if (reopened()) return false;
   await T('typeMain("")');
   const ok = await until(function () { return results().then(function (l) { return l.length > 0 && l[0] === '❌'; }); }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it clears the words and waits for the rows' });
 test.run('destroy leaves the fresh search\'s container empty', 0.2, async function () {
   if (reopened()) return false;
   const after = await c.evaluate('(function () { window.__made.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : "gone"; }())');

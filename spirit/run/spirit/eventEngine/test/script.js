@@ -105,7 +105,7 @@ test.run('a quiet stream hears a beat each second, with no gap of more than 1.5 
   let worst = 0;
   for (let i = 1; i < marks.length; i++) worst = Math.max(worst, marks[i] - marks[i - 1]);
   return worst <= 1500 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it listens to the stream for 4 seconds' });
 // an open stream holds its heartbeat and its listeners, and hears every event
 test.run('with one stream open, there is one heartbeat and one listener on the jobs', 0.2, async function () {
   if (!W.port) return false;
@@ -234,4 +234,4 @@ test.run('a page\'s connect to the node\'s event stream reaches each app server 
   const reached = await until(function () { return selfSubs() > before; }, 8000);
   page.destroy();
   return reached || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a node and waits for its subscribe' });

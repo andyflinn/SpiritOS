@@ -78,7 +78,7 @@ test.run('a scratch node comes up, and a server of the test\'s own on this machi
   await new Promise(function (r) { W.target.listen(0, '0.0.0.0', r); });
   W.port = W.target.address().port;
   return (!!W.node && W.node.up && W.port > 0) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and a server' });
 // fetch.json: "It never reaches this machine: a url on loopback, localhost, 0.0.0.0, :: or one of this machine's own interface
 // addresses (or a name that resolves to one) is refused 403, code this-machine, and nothing is sent."
 test.run('fetch of a loopback address is refused 403 this-machine, and nothing is sent', 0.8, async function () {

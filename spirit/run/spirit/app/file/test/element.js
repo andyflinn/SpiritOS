@@ -183,7 +183,7 @@ test.run('a scratch node comes up for this suite', 0.2, async function () {
   const N = await boot(W.s.run); W.live.push(N.child);
   W.N = N;
   return N.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a Chrome page opens for this suite', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const where = findChrome();
@@ -211,7 +211,7 @@ test.run('create(container) draws into it and answers { destroy }, and destroy l
   if (!W.page) return false;
   const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.requireScript("spirit/app/file/element.js").then(function (E) { if (!E || typeof E.create !== "function") return false; var m = E.create(b); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : false; }); }, function () { return false; }); }())');
   return made === 'ok' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the element in Chrome and draws it' });
 
 // the box: intrinsic, so its tile is there with nothing pressed; the tile opens the list
 test.run('the tiles show Files, with nothing pressed', 0.2, async function () {
@@ -248,7 +248,7 @@ test.run('pressing Name again turns the order round', 0.2, async function () {
   await T('head("Name")');
   await sleep(300);
   return before.length > 1 && short(after) === short(before.slice().reverse()) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Name twice and waits 800 ms' });
 
 // the box: "the folder tree, a folder opening and closing while the search is empty"
 test.run('with no words a folder starts shut, its files not shown', 0.2, async function () {
@@ -314,7 +314,7 @@ test.run('a name is found while its folder is shut', 0.2, async function () {
   if (!W.page) return false;
   await T('type("deep")');
   return await waitFor('rows().indexOf("zzFiles/inner/deep.txt") !== -1') ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types a name and waits for the rows' });
 test.run('in contents both files holding the word are found, ranked above the files it misses', 0.2, async function () {
   if (!W.page) return false;
   await T('filter("in", "contents")');
@@ -324,7 +324,7 @@ test.run('in contents both files holding the word are found, ranked above the fi
   // every file the word misses, which only the contents answer does.
   const hits = 'rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/notes.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/inner/deep.txt") !== -1';
   return await waitFor(hits, 15000) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it searches the contents on the node and waits' });
 test.run('the file with two matches ranks above the one with one', 0.2, async function () {
   if (!W.page) return false;
   const ranked = await T('rows()');

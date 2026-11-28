@@ -50,7 +50,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens it in Chrome' });
 // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
 test.run('it loads through spirit.requireScript, at spirit.element.monitor.job, with a create, the six tiles beside it', 0.2, async function () {
   if (!W.page) return false;
@@ -68,7 +68,7 @@ test.run('once the stream\'s reading is in, each tile holds its icon and a value
   if (!W.made) return false;
   const filled = await until(function () { return read().then(function (r) { return (r.tiles || []).every(function (t) { return t.icon && t.value && t.value !== '–'; }); }); }, 20000);
   return filled ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the stats to fill every tile' });
 test.run('destroyed, it leaves its container empty, and a later change of the spirit job draws nothing', 0.2, async function () {
   if (!W.made) return false;
   const html = await js('(function () { window.__made.destroy(); var D = window.spirit.client; var at = D.homeNode() + "/spirit.job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');

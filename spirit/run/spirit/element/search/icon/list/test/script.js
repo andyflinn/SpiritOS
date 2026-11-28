@@ -159,7 +159,7 @@ test.run('a scratch node, a scratch relay and Chrome come up', 0.2, async functi
     return chrome.evaluate('window.__box.innerText').then(function (x) { return String(x).indexOf(glyph) === -1; });
   };
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node, a relay and Chrome' });
 
 // at home
 test.run('the list is made', 0.2, async function () {
@@ -167,20 +167,20 @@ test.run('the list is made', 0.2, async function () {
   await open(N.base + '/');
   one = await made();
   return one === 'made' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face page and makes the list' });
 test.run('it finds the file\'s last icon by its word', 0.2, async function () {
   if (one !== 'made') return false;
   return (await shows(lastWord, lastOnly)) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the list to find the word' });
 test.run('it does not find the glyph of the Icons app\'s own file', 0.2, async function () {
   if (one !== 'made') return false;
   return (await lacks('planted', PLANTED)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it searches and waits 800 ms' });
 test.run('its file is spirit/iconSet.json', 0.2, async function () {
   if (one !== 'made') return false;
   atHome = await seen();
   return atHome.SET === SET ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('it reads that file and no other, through spirit.fs.api.loadFile', 0.2, function () {
   if (!atHome) return false;
   return JSON.stringify(atHome.asks) === JSON.stringify([SET]) ? true : false;
@@ -198,17 +198,17 @@ test.run('the rows stay after the stream connects', 0.2, async function () {
   await chrome.evaluate('window.__sameLoad = true; 1');
   await sleep(4000);
   return (await shows(lastWord, lastOnly)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 4 s, then for the list to find the word' });
 test.run('a second list on the page has them too', 0.2, async function () {
   if (one !== 'made') return false;
   const two = await made();
   return two === 'made' && await shows(lastWord, lastOnly) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a second list and waits for its rows' });
 test.run('the file was read once for both lists', 0.2, async function () {
   if (one !== 'made') return false;
   const asks = (await seen()).asks;
   return asks.length === 1 ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('the node goes away and comes back while the page stays open', 0.2, async function () {
   if (one !== 'made') return false;
   const port = Number(new URL(N.base).port);
@@ -219,47 +219,47 @@ test.run('the node goes away and comes back while the page stays open', 0.2, asy
   // goal/G49.23 Part 2: node.card is spirit.card.
   const back = await until(function () { return home(N.base, 'spirit.card').then(function (r) { return r.status === 200; }, function () { return false; }); }, 30000);
   return !!back ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it kills the node and waits for it to restart' });
 test.run('the rows are still there after the reconnect', 0.2, async function () {
   if (one !== 'made') return false;
   await sleep(6000);
   return (await shows(lastWord, lastOnly)) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits 6 s, then for the list to find the word' });
 // A RECONNECT FORGETS NOTHING (goal/G47.1, box v148; Andy: "THE FUCKING CACHE IS NOT WIPED OUT."): the set the page held
 // stays, so the file is not read again.
 test.run('after the reconnect the file is not read again, since the page kept the set', 0.2, async function () {
   if (one !== 'made') return false;
   const asks = (await seen()).asks;
   return asks.length === 1 ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('all of this happens on the one load of the page', 0.2, async function () {
   if (one !== 'made') return false;
   return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 
 // a changed file reaches the open page
 test.run('the open page has the changed file with no reload', 0.2, async function () {
   if (one !== 'made') return false;
   fs.writeFileSync(path.join(N.root, 'spirit', 'run', SET), JSON.stringify(Object.assign({}, set, { [PLANTED]: ['committedword'] })));
   return (await shows('committedword', PLANTED)) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the changed file to reach the page' });
 test.run('the changed file arrives on the same load of the page', 0.2, async function () {
   if (one !== 'made') return false;
   return (await chrome.evaluate('window.__sameLoad === true')) === true ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('with the file put back, the page has the planted glyph no more', 0.2, async function () {
   if (one !== 'made') return false;
   fs.writeFileSync(path.join(N.root, 'spirit', 'run', SET), JSON.stringify(set));
   await chrome.evaluate(FINDS('committedword'));
   return !!(await until(function () { return chrome.evaluate('window.__box.innerText').then(function (x) { return String(x).indexOf(PLANTED) === -1; }); }, 6000)) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the file put back to reach the page' });
 
 // on a real face
 test.run('a real node has a real face, logged in', 0.2, async function () {
   if (!open) return false;
   F = await faceOf(N, R);
   return !!F.sid ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it logs a face in through the scratch relay' });
 // A FACE WITH NO STAR GETS NOTHING (goal/G43.18, box v29: "A face is whole, or there is none"; Andy, Q18: "yes"): its page
 // has no link home, so the set file is not read there; asked, it answers no text within ten seconds.
 test.run('a face with no star reads no set file', 0.8, async function () {
@@ -270,22 +270,22 @@ test.run('a face with no star reads no set file', 0.8, async function () {
   await sleep(2000);
   const got = await chrome.evaluate('Promise.race([window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/script.js"); }).then(function (f) { return f.loadFile(' + JSON.stringify(SET) + '); }).then(function (t) { return typeof t === "string" ? "read" : "none"; }, function () { return "none"; }), new Promise(function (r) { setTimeout(function () { r("none"); }, 10000); })])');
   return got === 'none' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face and waits up to 12 s' });
 
 // The star put on at home: a face page opened after it has the set (a starless page has no link to hear a star by).
 test.run('the star is put on at home', 0.2, async function () {
   if (!FACE) return false;
   const star = await home(N.base, 'spirit.contact.faceable', { key: R.relayKey, faceable: true });
   return star.status === 200 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node to put the star on' });
 test.run('a fresh starred face has the set too', 0.2, async function () {
   if (!FACE) return false;
   await open(FACE);
   await sleep(2000);
   return (await made()) === 'made' && await shows(lastWord, lastOnly) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face, waits 2 s, then for the rows' });
 test.run('the starred faces get the set through one read of the file', 0.2, async function () {
   if (!FACE) return false;
   const asks = (await seen()).asks;
   return JSON.stringify(asks) === JSON.stringify([SET]) ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);

@@ -76,7 +76,7 @@ test.run('its server answers spirit.app.chat.chats.search', 0.2, async function 
   await X.call('spirit.app.active', { key: 'spirit.app.chat', active: true });
   const up = await H.until(function () { return X.call('spirit.app.chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return up ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and asks its chat server' });
 const jobOf = async function () { return ((await X.call('spirit.job.get', { key: 'spirit.app.chat' })).body || {}).job || {}; };
 if (process.platform === 'linux') {
   test.run('the process the node runs for it is spirit/app/chat/chat.js', 0.2, async function () {
@@ -107,7 +107,7 @@ test.run('the app selector\'s tiles are drawn on a page', 0.2, async function ()
   const tiles = await page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function (E) { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = E.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return null; })');
   X.TILE = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("Chat") !== -1; })[0]';
   return tiles === 'made' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a page in Chrome and waits for the tiles' });
 test.run('Chat has a tile, switched on', 0.2, async function () {
   const page = X.page;
   if (!page || !X.TILE) return false;

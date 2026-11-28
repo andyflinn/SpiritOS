@@ -55,14 +55,14 @@ test.run('a clone is made with one commit its bare origin does not hold', 0.2, f
   const made = git(['commit', '-q', '-m', 'the commit to push'], clone);
   W.head = (git(['rev-parse', 'HEAD'], clone).stdout || '').trim();
   return made.status === 0 && !!W.head ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git origin and clone' });
 
 // Run as Run starts it: the script and nothing more, from a folder that is no repo.
 test.run('run with no argument it ends well', 0.2, function () {
   if (!W.head) return false;
   const r = spawnSync(process.execPath, [W.copy], { cwd: W.tmp, encoding: 'utf8', timeout: 60000 });
   return r.status === 0 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs pushOrigin as a process' });
 test.run('origin now holds the commit of the repo it lives in', 0.2, function () {
   if (!W.head) return false;
   const there = (git(['rev-parse', 'master'], W.origin).stdout || '').trim();
@@ -106,7 +106,7 @@ test.run('given no repo, or one that is no clone, it answers ok false with a rea
     if (!answered(r)) bad.push(a);
   }
   return !bad.length || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs pushOrigin on folders that are no clone' });
 // goal/G19.6, the box: "it refuses a detached HEAD".
 test.run('a detached HEAD is refused, saying so, and the clone and origin are as they were', 0.4, async function () {
   const p = lib(); if (!p) return false;
@@ -118,7 +118,7 @@ test.run('a detached HEAD is refused, saying so, and the clone and origin are as
   // pushing HEAD:HEAD would make a branch called HEAD on origin (pushOrigin.js): origin keeps master alone.
   const heads = (git(['for-each-ref', '--format=%(refname)', 'refs/heads'], w.origin).stdout || '').trim();
   return (answered(r) && /detached HEAD/i.test(r.reason) && w.head(w.clone) === before && w.originHead() === was && heads === 'refs/heads/master') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone and pushes' });
 // pushOrigin.js: "a rebase already in progress is the owner's: either way it refuses, { ok:false, reason }, and touches
 // nothing". A rebase-merge leaves HEAD detached, which is refused before; an am stopped on a patch keeps HEAD on its branch.
 test.run('a rebase already in progress is refused, saying so, and is still in progress after', 0.4, async function () {
@@ -136,7 +136,7 @@ test.run('a rebase already in progress is refused, saying so, and is still in pr
   const r = await p({ repo: w.clone });
   const still = fs.existsSync(apply);
   return (answered(r) && /rebase is in progress/i.test(r.reason) && still && w.originHead() === was) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone mid-rebase and pushes' });
 // goal/G5.1, pushOrigin.js: "if the rebase hits a clash ... The clone is left exactly as it was (same HEAD, unsaved edits
 // back in place, untracked files kept), and origin is unchanged."
 test.run('a clash with origin answers ok false and puts the clone back as it was, edits and untracked files kept, origin untouched', 0.4, async function () {
@@ -157,7 +157,7 @@ test.run('a clash with origin answers ok false and puts the clone back as it was
   if (!fs.existsSync(path.join(w.clone, 'loose.txt'))) bad.push(true);
   if (fs.existsSync(path.join(w.clone, '.git', 'rebase-merge')) || fs.existsSync(path.join(w.clone, '.git', 'rebase-apply'))) bad.push(true);
   return !bad.length || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone and pushes' });
 // goal/G5.1, Andy: "ensures my commits go through", while the clone is behind origin; its unsaved edit comes back.
 test.run('behind origin with no clash it pushes: origin holds both commits, and the unsaved edit is back', 0.4, async function () {
   const p = lib(); if (!p) return false;
@@ -171,7 +171,7 @@ test.run('behind origin with no clash it pushes: origin holds both commits, and 
   const holds = git(['merge-base', '--is-ancestor', theirs, on], w.origin).status === 0 && /mine/.test(git(['log', '--format=%s', '-1', on], w.origin).stdout || '');
   const back = fs.readFileSync(path.join(w.clone, 'shared.txt'), 'utf8') === 'line one, edited unsaved\n';
   return (!!r && r.ok === true && holds && back) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone and pushes' });
 // goal/G19.6, the box: "pushOrigin puts back exactly its own stash, or says it could not", and pushOrigin.js: "a stash
 // somebody else made meanwhile stays where it is". The meanwhile is a pre-push hook in the clone that stashes an edit.
 test.run('it puts back only its own stash, and a stash somebody made meanwhile stays in the list untouched', 0.4, async function () {
@@ -188,4 +188,4 @@ test.run('it puts back only its own stash, and a stash somebody made meanwhile s
   const back = fs.readFileSync(path.join(w.clone, 'mine.txt'), 'utf8') === 'mine, edited unsaved\n';
   const theirs = fs.readFileSync(path.join(w.clone, 'shared.txt'), 'utf8') === 'line one\n';
   return (!!r && r.ok === true && kept && back && theirs) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone and pushes through a hook' });

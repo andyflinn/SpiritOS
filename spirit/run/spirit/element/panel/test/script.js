@@ -124,7 +124,7 @@ test.run('a scratch node comes up', 0.2, async function () {
   N = await boot(s.run);
   live.push(N.child);
   return (N.up) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('Chrome is here', 0.2, function () {
   if (!N || !N.up) return false;
   where = findChrome();
@@ -262,7 +262,7 @@ test.run('Files reopened in the same session shows what was there, with its word
   await waitFor('bars().length === 0');
   await T('press("spirit.app.file")');
   return (await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && words() === "notes"', 10000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it closes Files, reopens it and waits for its row' });
 test.run('after a reload Files opens with no words', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
@@ -298,7 +298,7 @@ test.run('the Agent\'s ✕ hides the detail, which stays on the page, out of vie
   detail = await T('markLayer("detail")');
   await T('close("Agent")');
   return (await waitFor('bars().length === 0 && rows().indexOf("spirit.app.agent") !== -1') && detail > 0 && (await T('marked("detail")')) > 0) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits a second, then closes the Agent and waits' });
 test.run('when the Agent is pressed again, the same detail shows', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
@@ -333,7 +333,7 @@ test.run('app.active switches the Agent off', 0.2, async function () {
   heardBefore = c.heard.length;
   off = await call(N.base, 'spirit.app.active', { key: 'spirit.app.agent', active: false });
   return (off.status === 200) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 2 s, then asks the node to switch it off' });
 test.run('the Agent\'s open layer leaves the view', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
@@ -362,7 +362,7 @@ test.run('after the shell boots again none of the Agent is loaded', 0.2, async f
   await sleep(2000);
   loaded = await c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }).filter(function (n) { return /\\/spirit\\/app\\/agent\\//.test(n); })');
   return (Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent)'))) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reboots the shell and waits 2 s for any load' });
 const zzKey = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
 test.run('a person is in the book', 0.2, async function () {
   if (!N || !N.up) return false;
@@ -502,7 +502,7 @@ test.run('the first person\'s details open', 0.2, async function () {
   // panel shows its own row, read from what is in view: its Public Handle fact (detail.js) and, blocked, Unblock.
   a = await openOne(zzKey, 'rowA');
   return (a > 0) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a row panel and waits for its details' });
 test.run('the first person\'s panel shows their data, Public Handle zzPerson and Unblock', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;
@@ -516,7 +516,7 @@ test.run('the second person\'s panel shows their own data, Public Handle zzPerso
   await closeOne();
   b = await openOne(zzKey2, 'rowB');
   return (await until(function () { return showsOwn('zzPersonTwo'); }, 8000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the second panel and waits for its data' });
 test.run('the second person\'s details are a new panel of their own, with the first\'s out of view', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!where) return false;

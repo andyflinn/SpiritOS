@@ -472,12 +472,12 @@ test.run('a scratch node and a scratch face relay come up', 0.2, async function 
   RF.N = await scratchNode();
   RF.R = await scratchFaceRelay({ members: [], faceDomain: DOMAIN });
   return RF.N.up && RF.R.up ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and a scratch face relay' });
 test.run('a real node has a real face, logged in', 0.2, async function () {
   if (!RF.N || !RF.N.up || !RF.R || !RF.R.up) return false;
   RF.F = await faceOf(RF.N, RF.R);
   return RF.F.sid ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it makes a face on the relay and logs it in' });
 test.run('the browser holds the login', 0.2, async function () {
   if (!RF.F || !RF.F.sid) return false;
   const where = findChrome();
@@ -500,7 +500,7 @@ test.run('the face\'s desktop is drawn with Contacts on it', 0.2, async function
   if (!RF.chrome || RF.chrome.error || !RF.FACE) return false;
   const plain = await desktop(RF.chrome, RF.FACE);
   return plain.indexOf('Contacts') !== -1 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face in Chrome and waits for its desktop' });
 // A RELAY'S ROW IS A RELAY'S (goal/G41.32; Andy: "where the fuck did the contents of the relayPanel disappear to", "No
 // folding panels anymore"; cw, on his node: the presence stream puts the row in the page before Contacts' search says
 // relay: yes, so it was made as a person and stayed one). On a face that order is the usual one; a row follows its row.
@@ -516,13 +516,13 @@ test.run('Contacts opens, 📡 Relays is chosen, and the relay\'s row is pressed
   await sleep(DRAWN_MS / 4);
   const pressedRow = await press('scratch');
   return pressedApp === true && pressedKind === true && pressedRow === true ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses three tiles, waiting 4.5 s to draw' });
 test.run('the relay\'s panel opens with its folds', 0.2, async function () {
   if (!RF.chrome || RF.chrome.error || !RF.FACE) return false;
   await until(function () { return RF.chrome.evaluate('document.querySelectorAll(".nd-fold").length > 0'); }, 8000);
   RF.relayOpened = await RF.chrome.evaluate('JSON.stringify({ folds: document.querySelectorAll(".nd-fold").length, person: /Public Handle/.test(document.body.innerText) })').then(JSON.parse);
   return RF.relayOpened.folds > 0 ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the relay panel to draw its folds' });
 test.run('the relay\'s panel is not the person\'s page', 0.2, function () {
   if (!RF.relayOpened) return false;
   return RF.relayOpened.person === false ? true : false;

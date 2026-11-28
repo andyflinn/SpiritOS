@@ -32,7 +32,7 @@ test.run('Chrome is on this machine', 0.2, function () {
 test.run('a scratch node comes up with its DEBUG on and testicle on', 0.2, async function () {
   W.node = await H.scratchNode({ servers: ['spirit.app.testicle'] });
   return (W.node.up && W.node.debug) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a page loads the element by itself', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
@@ -41,7 +41,7 @@ test.run('a page loads the element by itself', 0.2, async function () {
   W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.app && window.spirit.app.testicle && window.spirit.app.testicle.element.scriptDetail)').then(function (v) { return v === true; }); }, H.WAIT);
   if (W.ok) await ev(HANDS);
   return !!W.ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a page in Chrome' });
 test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
@@ -56,7 +56,7 @@ test.run('mounted with no script, the script detail draws its empty box, an empt
   await H.sleep(1500);
   const r = await ev('({ title: window.zz.title("zzNone"), below: window.zz.below("zzNone"), kids: document.getElementById("zzNone").children.length })');
   return (r && r.title === '' && r.below === '' && r.kids === 1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts the detail and waits 1.5 s' });
 test.run('mounted with a production script, the script detail\'s title is the script\'s full path', 0.4, async function () {
   if (!W.ok) return false;
   const m = await ev('window.zz.mount("zzSpirit", { script: "spirit/script.js" })');
@@ -68,7 +68,7 @@ test.run('once script.get has answered, the suite search of that script shows be
   if (!W.ok) return false;
   const ok = await H.until(function () { return ev('window.zz.list("zzSpirit")').then(function (n) { return n > 0; }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for script.get to answer' });
 test.run('for a name that is no production script, the error script.get gives shows below the title, and no search', 0.4, async function () {
   if (!W.ok) return false;
   const m = await ev('window.zz.mount("zzNot", { script: "spirit/zz/notes.md" })');
@@ -76,7 +76,7 @@ test.run('for a name that is no production script, the error script.get gives sh
   const ok = await H.until(function () { return ev('window.zz.below("zzNot")').then(function (t) { return /not a production script|not-a-production-script/i.test(String(t)); }); }, H.WAIT);
   const n = await ev('window.zz.list("zzNot")');
   return (!!ok && n === 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts the detail and waits for the error' });
 // Its own test in red when missing (scriptDetail.js's head, from the box: "A script tab shows, right under its title line,
 // the name of the script's own test in red when that test is missing on disc", "When the own test is there, nothing shows
 // in that place"), and box v143: "all of testicle's elements must subscribe to the data they display, the testicle detail
@@ -95,7 +95,7 @@ test.run('for a script with no own test on disc, the own test\'s name shows in r
   const o = await own('zzLone');
   const next = await ev('(function () { var t = document.querySelector("#zzLone .testicle-title"); return t && t.nextElementSibling ? t.nextElementSibling.className : null; }())');
   return (!!ok && /^rgb\(\s*(2[0-9]{2}|1[5-9][0-9]),\s*0,\s*0\)$/.test(o.color) && next === 'testicle-own-missing') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants a script, waits 3 s, mounts the detail' });
 test.run('when the script\'s own test is written while the detail is open, the red name goes by itself, with no new mount', 0.4, async function () {
   if (!W.ok) return false;
   if (!((await own('zzLone')) || {}).text) return false;
@@ -104,13 +104,13 @@ test.run('when the script\'s own test is written while the detail is open, the r
   fs.writeFileSync(path.join(run, LONE_OWN), "'use strict';\n// the own test of zzLone\n");
   const ok = await H.until(function () { return own('zzLone').then(function (o) { return !!o && o.text === ''; }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it writes the own test and waits for the repaint' });
 test.run('for a script whose own test is on disc, nothing shows in that place', 0.4, async function () {
   if (!W.ok) return false;
   await H.sleep(3000);
   const o = await own('zzSpirit');
   return (!!o && o.text === '') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 3 s for the detail to settle' });
 test.run('the script detail\'s box keeps what it holds inside, its overflow not visible', 0.2, async function () {
   if (!W.ok) return false;
   const o = await ev('getComputedStyle(document.querySelector("#zzSpirit .testicle-detail")).overflowY');

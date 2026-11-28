@@ -54,7 +54,7 @@ test.run('a scratch node comes up with three apps planted, and Chrome opens its 
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
   // Slow, not quick: a scratch node booted, Chrome started and up to 20 s for the page cannot fit 10 s; on Andy's node,
   // loaded by his testicle run, it did not (2026-11-17, red at 0.7, every row after it with it).
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node with apps and opens Chrome' });
 test.run('it loads through spirit.requireScript', 0.2, async function () {
   if (!chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.requireScript("spirit/element/monitor/task/script.js").then(function () { return spirit.element.monitor.task && typeof spirit.element.monitor.task.create === "function" ? "loaded" : "no create"; })');
@@ -91,7 +91,7 @@ test.run('while its job runs, the line shows the name and the text the app publi
   if (!ran) return false;
   running = await waitFor('zztask', function (l) { return l.button === 'Cancel' && l.line === 'Zz Task: halfway there'; }, 15000);
   return running ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the job to publish its text' });
 // spirit/job/engine/script.js: a cancelled run is removed, so Run comes back.
 // goal/G49.23: the job read from the job branch's client, spirit.job.client, never from the store by a short name.
 test.run('Cancel ends its job, and the row offers Run again with the name alone', 0.4, async function () {
@@ -100,7 +100,7 @@ test.run('Cancel ends its job, and the row offers Run again with the name alone'
   const back = await waitFor('zztask', function (l) { return l.button === 'Run' && l.line === 'Zz Task'; }, 15000);
   const gone = await chrome.evaluate('!window.spirit.job.client.job("spirit.app.zztask")');
   return back && gone === true ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it cancels the job and waits for Run to come back' });
 // Andy: "run-apps usually self-delete if they're successful, if they fail, they stay and offer "delete"".
 let failed;
 test.run('a run that fails stays: the line says failed, and the button is Delete', 0.4, async function () {
@@ -110,14 +110,14 @@ test.run('a run that fails stays: the line says failed, and the button is Delete
   await press('zzfail');
   failed = await waitFor('zzfail', function (l) { return l.button === 'Delete' && l.line === 'Zz Fail: failed'; }, 15000);
   return failed ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs an app that fails and waits for Delete' });
 test.run('Delete takes the failed job away, and the row offers Run again', 0.4, async function () {
   if (!failed) return false;
   await press('zzfail');
   const back = await waitFor('zzfail', function (l) { return l.button === 'Run' && l.line === 'Zz Fail'; }, 15000);
   const gone = await chrome.evaluate('!window.spirit.job.client.job("spirit.app.zzfail")');
   return back && gone === true ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it deletes the job and waits for Run to come back' });
 test.run('destroyed, it leaves its container empty', 0.2, async function () {
   if (!shown) return false;
   const html = await chrome.evaluate('(function () { window.t_zztask.destroy(); return document.getElementById("task-zztask").innerHTML; }())');

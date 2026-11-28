@@ -64,7 +64,7 @@ test.run('a scratch node comes up and answers its card', 0.2, async function () 
   // spirit.card, node.card before goal/G49.23 (box v22 Part 2).
   N.card = await call('spirit.card');
   return (N.card.status === 200 && typeof N.card.body.publicKey === 'string') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and asks its card' });
 test.after(async function () {
   try { if (N.node) await N.node.release(); } catch (e) { /* gone */ }
   try { if (N.node) H.freeTree(N.node); } catch (e) { /* left */ }
@@ -73,16 +73,16 @@ test.run('at the node, spirit.contact.label takes the node\'s own key past its a
   if (!N.card || N.card.status !== 200) return false;
   const r = await call('spirit.contact.label', { publicKey: N.card.body.publicKey, myLabel: 'zz own' });
   return (r.status !== 0 && !typeRefused(r, 'publicKey')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the scratch node over HTTP' });
 let stranger = '';
 test.run('at the node, spirit.contact.label refuses a well-formed key nobody there has seen, naming publicKey', 0.4, async function () {
   if (!N.card || N.card.status !== 200) return false;
   try { stranger = spirit.requireScript('spirit/relayAuth/script.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
   const r = await call('spirit.contact.label', { publicKey: stranger, myLabel: 'zz stranger' });
   return typeRefused(r, 'publicKey') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the scratch node over HTTP' });
 test.run('at the node, spirit.contact.get takes that stranger\'s key and answers 404, not known', 0.4, async function () {
   if (!stranger) return false;
   const r = await call('spirit.contact.get', { key: stranger });
   return (r.status === 404 && !typeRefused(r)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the scratch node over HTTP' });

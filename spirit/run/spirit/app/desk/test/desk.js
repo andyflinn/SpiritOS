@@ -230,7 +230,7 @@ test.run('a desk server starts for this suite', 0.2, async function () {
   W.up = true;
   await call('subscribe', { branch: ID }, CW);
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a desk server' });
 
 // chat.search's since and before are UTC times (goal/G48.4, Q5): since keeps the lines from that time on, before the lines
 // before it; 0 is no limit.
@@ -468,7 +468,7 @@ const search = async function (ask, o) { const r = await ask('items.search', Obj
 test.run('a desk of its own starts for the search cases', 0.2, async function () {
   W.askS = await startDesk('desk-list', {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id }; }) }]);
   return !!W.askS || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a desk server' });
 test.run('a search row holds only what the List draws, presses and filters on', 0.2, async function () {
   if (!W.askS) return false;
   const first = W.first = await search(W.askS);
@@ -507,14 +507,14 @@ const searchM = async function (o) { const r = await W.askM('items.search', Obje
 test.run('a desk of its own starts for the include closed filter', 0.2, async function () {
   W.askM = await startDesk('desk-mixed', {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id }; }) }]);
   return !!W.askM || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a desk server' });
 test.run('with the 40 oldest items closed, a search without the filter shows only the 5 open ones', 0.2, async function () {
   if (!W.askM) return false;
   await W.askM('press', { id: MIX_GOAL.id, what: 'end-design' }, ANDY);
   for (const id of CLOSED) await W.askM('press', { id: id, what: 'close' }, ANDY);
   const without = await searchM({ includeClosed: false });
   return (without.filter(function (k) { return CLOSED.indexOf(k) !== -1; }).length === 0 && OPEN.every(function (k) { return without.indexOf(k) !== -1; })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses close on 40 items, one by one' });
 test.run('with the include closed filter every open item is still in the answer', 0.2, async function () {
   if (!W.askM) return false;
   const withC = W.withC = await searchM({ includeClosed: true });

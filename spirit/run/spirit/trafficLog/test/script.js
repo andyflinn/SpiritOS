@@ -261,7 +261,7 @@ test.run('arrivals are capped: a limit of none, zero or below asks the default, 
   return (log.arrivals().length === 200 && log.arrivals({ limit: 0 }).length === 200 && log.arrivals({ limit: -3 }).length === 200 &&
     log.arrivals({ limit: 'many' }).length === 200 && log.arrivals({ limit: 10000 }).length === 500 &&
     (log.arrivals({ limit: 10000 })[0] || {}).hash === 'n0') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it notes 501 arrivals in a scratch log' });
 
 // ── taken ──
 const K = { log: null, at: null };

@@ -71,7 +71,7 @@ test.run('a scratch node comes up with Icons switched on, and a Chrome page open
   W.chrome = await chromePage(findChrome());
   W.up = !!(W.node.up && W.node.root && !W.chrome.error);
   return W.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 
 // the node finds it at the app's top: api {family: icons} answers this file
 test.run('the api verb asked for the icons branch answers spirit/app/icons/api.js, word for word', 0.2, async function () {
@@ -93,7 +93,7 @@ test.run('a call the icons api allows starts a run, and the job names a new pid 
   await sleep(300);
   const p2 = await lastRun();
   return r0.status === 200 && r1.status === 200 && !!p1 && !!p2 && p1 !== p2 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it calls the node twice, waiting 300 ms each' });
 // One crooked call: its answer, and whether a run of the app was started for it.
 const crooked = async function (name, args) {
   if (!W.up) return null;
@@ -108,7 +108,7 @@ const byRun = function () { return !W.up ? false : !W.last ? false : W.last.byRu
 test.run('a verb the icons api does not name is refused', 0.2, async function () {
   const c = await crooked(ID + '.zzNoSuchVerb', {});
   return !c ? false : c.refused || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it calls the node and waits 400 ms for a run' });
 test.run('a verb the icons api does not name is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('an argument the icons api does not name is refused', 0.2, async function () {
   const c = await crooked(ID + '.' + W.v, { op: 'search', zzExtra: 1 });

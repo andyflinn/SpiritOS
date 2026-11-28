@@ -50,14 +50,14 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
     return { status: r.status, body: b, text: t };
   };
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and Chrome' });
 test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
   // The job asks the fs cache, never the disc (goal/G49.19): both planted folders are apps once app.search lists them.
   await until(function () { return call('spirit.app.search', { q: '' }).then(function (r) { const keys = ((r.body && r.body.items) || []).map(function (i) { return i.key; }); return keys.indexOf('spirit.app.zzFail') !== -1 && keys.indexOf('spirit.app.zzSleep') !== -1; }); }, 30000);
   const failed = await call('spirit.job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
   return failed.status >= 200 && failed.status < 300 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the apps to be listed, then starts one' });
 test.run('it loads through requireScript and mounts with spirit.element.search.job.list.create, given container and open', 0.2, async function () {
   if (!call) return false;
   await until(function () { return call('spirit.job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
@@ -70,7 +70,7 @@ test.run('it loads through requireScript and mounts with spirit.element.search.j
   rowOf = function (name) { return rows().then(function (r) { return r.filter(function (t) { return t.indexOf(name) !== -1; })[0] || ''; }); };
   press = function (w) { return chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === ' + JSON.stringify(w) + '; })[0]; if (b) b.click(); return !!b; }())'); };
   return made === 'made' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the job to fail, then loads the page' });
 
 // the old module: every job of the node a row, its columns Status, Name, Kind, Progress, Updated
 test.run('the node\'s own jobs are rows, spirit.fs among them', 0.2, async function () {
@@ -78,7 +78,7 @@ test.run('the node\'s own jobs are rows, spirit.fs among them', 0.2, async funct
   const there = await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
   t0 = await text();
   return there ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the rows to paint' });
 test.run('it has a Status column', 0.2, function () {
   if (t0 === undefined) return false;
   return t0.indexOf('Status') !== -1 ? true : false;
@@ -103,12 +103,12 @@ test.run('spirit.fs, the node\'s own, is of kind node, running', 0.2, async func
   if (made !== 'made') return false;
   const fsRow = await rowOf('spirit.fs');
   return /\bnode\b/.test(fsRow) && /running/.test(fsRow) ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('a failed job shows ❌ failed', 0.2, async function () {
   if (made !== 'made') return false;
   const failRow = await rowOf('zzFail');
   return /failed/.test(failRow) && failRow.indexOf('❌') !== -1 || /failed/.test(failRow) && await chrome.evaluate('document.getElementById("box").innerHTML.indexOf("❌") !== -1') ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 
 // the kind filter: all, node, servers, transient, failed ("the last filter in the jobs search should be failed")
 test.run('its kind filter offers, in order, all, node, servers, transient and failed', 0.2, async function () {
@@ -117,39 +117,39 @@ test.run('its kind filter offers, in order, all, node, servers, transient and fa
   const want = ['all', 'node', 'servers', 'transient', 'failed'];
   const at = want.map(function (w) { return (words || []).indexOf(w); });
   return at.every(function (i) { return i !== -1; }) && at.every(function (i, n) { return n === 0 || i > at[n - 1]; }) ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('failed lists the failed jobs only', 0.2, async function () {
   if (made !== 'made') return false;
   await press('failed');
   return (await until(function () { return rows().then(function (r) { return r.length >= 1 && r.every(function (t) { return /failed/.test(t); }); }); }, 5000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the filter to repaint the rows' });
 test.run('node lists the node\'s own jobs only', 0.2, async function () {
   if (made !== 'made') return false;
   await press('node');
   return (await until(function () { return rows().then(function (r) { return r.length >= 1 && r.every(function (t) { return /\bnode\b/.test(t); }) && !r.some(function (t) { return t.indexOf('zzFail') !== -1; }); }); }, 5000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the filter to repaint the rows' });
 test.run('all lists them all again', 0.2, async function () {
   if (made !== 'made') return false;
   await press('all');
   return (await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('zzFail') !== -1; }) && r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 5000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the filter to repaint the rows' });
 
 // "one green dot hops between rows, always showing the most recent update"
 test.run('zzSleep is started', 0.2, async function () {
   if (!call) return false;
   const started = await call('spirit.job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzSleep/zzSleep.js']) });
   return started.status >= 200 && started.status < 300 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node to start a job' });
 test.run('the one dot is on zzSleep, the job that changed last', 0.2, async function () {
   if (made !== 'made') return false;
   dotted = function () { return chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.innerHTML.indexOf("●") !== -1 ? String(r.innerText || "") : ""; }).filter(Boolean)'); };
   return (await until(function () { return dotted().then(function (d) { return d.length === 1 && d[0].indexOf('zzSleep') !== -1; }); }, 10000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the dot to move to zzSleep' });
 test.run('a job cancelled on the node repaints its row, no reload', 0.2, async function () {
   if (made !== 'made') return false;
   await call('spirit.job.cancel', { id: 'spirit.app.zzSleep' });
   return (await until(function () { return rowOf('zzSleep').then(function (r) { return /cancelled|stopped/.test(r) || r === ''; }); }, 10000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it cancels the job on the node and waits' });
 
 // Q1: "a job row opens detail panel overtop of jobs": a press hands the row to the mounter's open
 const PRESS_FS = '(function () { var r = Array.prototype.filter.call(document.querySelectorAll("#box tr, #box .list-row"), function (x) { return x.getClientRects().length && String(x.textContent).indexOf("spirit.fs") !== -1; })[0]; if (!r) return false; var leaf = Array.prototype.filter.call(r.querySelectorAll("*"), function (e) { return !e.children.length && e.getClientRects().length; })[0] || r; leaf.click(); return true; }())';
@@ -159,7 +159,7 @@ test.run('a press on spirit.fs calls open with its key and a fill', 0.2, async f
   const opened = await until(function () { return chrome.evaluate('window.opened.length >= 1'); }, 5000);
   const o1 = JSON.parse(await chrome.evaluate('JSON.stringify(window.opened)'));
   return opened && o1[0].fill && /spirit\.fs/.test(o1[0].key) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for open to be called' });
 
 // with no open handed, its own panel over its box (as contact's)
 const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return false; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return false; return String(l.textContent).indexOf("spirit.fs") !== -1; }())';
@@ -169,21 +169,21 @@ test.run('a press opens a panel over the whole list, spirit.fs on it', 0.2, asyn
   await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
   await chrome.evaluate(PRESS_FS);
   return (await until(function () { return chrome.evaluate(OVER).then(function (v) { return v === true; }); }, 5000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts the list again and waits for its panel' });
 test.run('its close brings the list back', 0.2, async function () {
   if (made !== 'made') return false;
   await chrome.evaluate('(function () { var c = Array.prototype.filter.call(document.querySelectorAll("#box .app-container-close"), function (x) { return x.offsetParent !== null; }).pop(); if (c) c.click(); return !!c; }())');
   return (await until(function () { return chrome.evaluate('!Array.prototype.some.call(document.querySelectorAll("#box .app-container"), function (c) { return c.offsetParent !== null; })'); }, 5000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the panel to close' });
 
 // destroy
 test.run('destroy empties its container', 0.2, async function () {
   if (made !== 'made') return false;
   const empty = await chrome.evaluate('(function () { window.made.destroy(); return document.getElementById("box").children.length === 0; }())');
   return empty === true ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('the page threw nothing', 0.2, async function () {
   if (made !== 'made') return false;
   const errors = JSON.parse(await chrome.evaluate('JSON.stringify(window.pageErrors)'));
   return errors.length === 0 ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);

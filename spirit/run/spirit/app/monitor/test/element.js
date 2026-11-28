@@ -82,7 +82,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   W.page = !!(await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 test.run('monitor.js loads on a page', 0.2, async function () {
   if (!W.page) return false;
   const started = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/job/script.js"); }).then(function () { return window.spirit.requireScript("spirit/app/monitor/element.js"); }).then(function () { return "loaded"; }, function () { return null; })');
@@ -111,7 +111,7 @@ test.run('opened, it shows the six tiles', 0.2, async function () {
   W.made = true;
   const n = await until(function () { return js('window.__box.querySelectorAll("[data-tile]").length === 6'); }, 20000);
   return n ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the six tiles to draw' });
 
 // { destroy() }
 test.run('destroy leaves its container empty', 0.2, async function () {
@@ -127,4 +127,4 @@ test.run('after destroy, a later reading paints nothing', 0.2, async function ()
   await sleep(6000);
   const still = await read();
   return String(still.text) === String(quiet.text) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 6 s for a later reading' });

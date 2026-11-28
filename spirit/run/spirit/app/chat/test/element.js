@@ -58,7 +58,7 @@ test.run('a scratch node comes up with chat switched on and its face page open i
   await page.send('Page.navigate', { url: node.base + '/' });
   X.ready = await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   return X.ready ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 
 // ── spirit.app.chat.element.create(container, { open }) -> { destroy }, mounted alone ──
 test.run('it loads through spirit.requireScript and mounts, answering an object with a destroy', 0.2, async function () {

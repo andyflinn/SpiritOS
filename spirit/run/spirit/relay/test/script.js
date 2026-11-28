@@ -84,7 +84,7 @@ test.run('it declares exactly the verbs the relay\'s node work answers on a rela
 test.run('a scratch relay comes up', 0.2, async function () {
   W.relay = await scratchRelay();
   return (!!W.relay && W.relay.up) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch relay' });
 // A verb is there when its call is anything but no-such-verb: as { call, args }, or else as an upload named in its header.
 test.run('every verb it declares is a verb at the relay\'s one door, as a call or as an upload', 0.2, async function () {
   if (!W.relay || !W.relay.up || !W.branch) return false;
@@ -97,7 +97,7 @@ test.run('every verb it declares is a verb at the relay\'s one door, as a call o
     if (!r.status || noVerb(r)) return false;
   }
   return verbs.length > 0;
-}, test.limit.long);
+}, test.limit.long, { why: 'it calls every declared verb at the scratch relay' });
 test.run('a verb it does not declare is no verb at the relay\'s door', 0.2, async function () {
   if (!W.relay || !W.relay.up) return false;
   return noVerb(await ask(W.relay.base, 'spirit.relay.zzNoSuchVerb', {})) || false;
@@ -122,13 +122,13 @@ test.run('the scratch relay is let go', 0.2, async function () {
   try { if (W.relay) await W.relay.release(); } catch (e) { return false; }
   W.relay = null;
   return true;
-}, test.limit.long);
+}, test.limit.long, { why: 'it stops the scratch relay' });
 
 // ── ON A NODE IT IS NO BRANCH (box v25: "the fs watcher, when !spirit.IS_RELAY, will never mark spirit.relay as a branch") ──
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return (!!W.node && W.node.up) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node' });
 test.run('on a node no verb it declares is served: each is no such verb at the node\'s door', 0.2, async function () {
   if (!W.node || !W.node.up || !W.branch) return false;
   const verbs = Object.keys(W.branch.verbs);
@@ -137,4 +137,4 @@ test.run('on a node no verb it declares is served: each is no such verb at the n
     if (!(r.status === 400 && r.body && /no such verb/.test(String(r.body.error || '')))) return false;
   }
   return verbs.length > 0;
-}, test.limit.long);
+}, test.limit.long, { why: 'it calls every declared verb at the scratch node' });

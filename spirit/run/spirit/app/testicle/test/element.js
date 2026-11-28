@@ -239,7 +239,7 @@ test.run('a scratch node comes up for this suite', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node' });
 // Chrome, opened on the node's face page: its failures are this test's.
 test.run('the node\'s face page opens in Chrome and has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
@@ -249,7 +249,7 @@ test.run('the node\'s face page opens in Chrome and has its spirit', 0.2, async 
   if (c.error) return false;
   await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face page in Chrome' });
 
 // its place: spirit.app.testicle.element, with a create
 test.run('it loads through spirit.requireScript and mounts with create(container), answering { destroy }', 0.2, async function () {
@@ -261,20 +261,20 @@ test.run('it loads through spirit.requireScript and mounts with create(container
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : null; }, function () { return null; })');
   return made === 'made' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the face in the page and mounts it' });
 
 // Box v134: each part loads its own and stands as an element of its own, so any app can mount it.
 test.run('once the face is mounted, each part stands at spirit.app.testicle.element.<name> with a create', 0.4, async function () {
   if (!face()) return false;
   const got = await c.evaluate('(function () { var n = ' + JSON.stringify(PART_NAMES) + '; var at = ((((window.spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { return !(at[k] && typeof at[k].create === "function"); }); }())');
   return (Array.isArray(got) && !got.length) || false;
-}, test.limit.slow);
+}, test.limit.quick);
 
 // the box: "a workBench with one 📁 icon"
 test.run('the workBench\'s left strip is drawn', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('icons("left") && icons("left").length > 0')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the left strip to be drawn' });
 // goal/G47.1, box v79, 2: "a new left-strip-icon in the UI: ⚙", "the second icon below the existing one".
 test.run('its left strip holds two icons, 📁 then ⚙', 0.2, async function () {
   if (!face()) return false;
@@ -291,7 +291,7 @@ test.run('its right strip holds none', 0.2, async function () {
 test.run('the leftmost pane shows the file list, its search field there', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('inLeft("input[id$=text]") > 0', 15000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the file list to be drawn' });
 // goal/G47.1, the cycle "the testicle search", the box: "The UI gets its first non-closable tab in the workbench centre pane:
 // the testicle search", "the tab is the tabContainer's, closable false, first in the centre, before any script's tab; the
 // script tabs stay closable".
@@ -300,20 +300,20 @@ test.run('at the start the centre holds one tab, the testicle search, and it is 
   await waitFor('tabs().length > 0', 10000);
   const tabs0 = (await T('tabs()')) || [];
   return (tabs0.length === 1 && tabs0[0].closable === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the first tab to be drawn' });
 test.run('its tab shows the testicle search, spirit/app/testicle/element/search/testicle.js, which the face loads', 0.2, async function () {
   if (!face()) return false;
   const loaded = /['"]spirit\/app\/testicle\/element\/search\/testicle\.js['"]/.test(code(FACE));
   const there = await c.evaluate('!!((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle)');
   return (loaded && there && !!(await waitFor('shown() !== null && inCenter("input[id$=text]") > 0', 10000))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the search to be drawn in its tab' });
 
 // goal/G47.1, the box: "With flat on: no folder rows, never the indented tree; with an empty field every file the app
 // accepts is listed, each with its path; typing narrows it."
 test.run('with the field empty the list draws rows', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('rows().length > 0', 15000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the list to draw rows' });
 // A folder's key has no extension; every production script's has .js.
 test.run('with the field empty no folder row shows', 0.2, async function () {
   if (!face()) return false;
@@ -337,7 +337,7 @@ test.run('a planted production script is found by its word', 0.2, async function
   if (!face()) return false;
   await T('type("zzTesticle")');
   return !!(await waitFor('rows().indexOf("' + SHOWN[0] + '") !== -1', 15000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types a word and waits for the rows' });
 test.run('every planted production *.js file shows', 0.2, async function () {
   if (!face()) return false;
   rows = (await T('rows()')) || [];
@@ -375,7 +375,7 @@ test.run('a production file in the left pane is clicked', 0.2, async function ()
 test.run('a click on a production file opens one tab in the centre, after the testicle search\'s', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('tabs().length === 2 && tabs()[0].closable === false', 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the second tab to open' });
 test.run('the new tab is the active one', 0.2, async function () {
   if (!face()) return false;
   t1 = ((await T('tabs()')) || [])[1] || {};
@@ -392,11 +392,11 @@ test.run('its tab is closable', 0.2, async function () {
 test.run('the detail\'s title row is the full file name', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F1), 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the detail title to be drawn' });
 test.run('below the title the suite search draws rows', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().rows.length >= ' + want1.length, 15000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the suite rows to be drawn' });
 test.run('below the title it lists every suite that concerns the file', 0.2, async function () {
   if (!face()) return false;
   d1 = (await T('shown()')) || { rows: [] };
@@ -421,11 +421,11 @@ test.run('the suite search is spirit/app/testicle/element/search/suite.js, which
 test.run('a second click on the same file opens no second tab: its tab is made active', 0.2, async function () {
   if (!face()) return false;
   return (await T('click(' + JSON.stringify(F1) + ')') && !!(await waitFor('tabs().length === 2 && tabs()[1].selected', 3000))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it clicks the file and waits for its tab' });
 test.run('a click on another file opens a second tab', 0.2, async function () {
   if (!face()) return false;
   return (await T('click(' + JSON.stringify(F2) + ')') && !!(await waitFor('tabs().length === 3', 10000))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it clicks another file and waits for its tab' });
 test.run('the newest tab is the active one, and only it', 0.2, async function () {
   if (!face()) return false;
   two = ((await T('tabs()')) || []).slice(1);
@@ -442,7 +442,7 @@ test.run('the testicle search\'s tab stays first, and not closable', 0.2, async 
 test.run('the active tab shows its own file\'s detail', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F2), 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the detail to be drawn' });
 
 // goal/G47.1, the box: "A script tab shows, right under its title line, the name of the script's own test in red when that
 // test is missing on disc: the folder test/ beside the script, the same file name (for spirit/app/x/x.js,
@@ -453,20 +453,20 @@ const alsoOwn = 'spirit/zzTesticle/inner/test/alsoShown.js';
 test.run('a script with no own test shows that test\'s name in red, right under its title line', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F2) + ' && underTitle() && underTitle().text === ' + JSON.stringify(alsoOwn) + ' && underTitle().red', 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the red name to be drawn' });
 test.run('a script with its own test shows no red name under its title line', 0.2, async function () {
   if (!face()) return false;
   if (!(await T('click(' + JSON.stringify(F1) + ')')) || !(await waitFor('shown() && shown().first === ' + JSON.stringify(F1) + ' && shown().rows.length > 0', 10000))) return false;
   await sleep(500);
   const u = await T('underTitle()');
   return (!!u && !u.red) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it clicks a file, waits for its rows and 500 ms' });
 
 // the box: "The UI must listen to changes on all tables it interacts with"
 test.run('eta.js\'s detail lists its suites', 0.2, async function () {
   if (!face()) return false;
   return (await T('click(' + JSON.stringify(F3) + ')') && !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && shown().rows.length > 0', 15000))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it clicks eta.js and waits for its rows' });
 test.run('before its own test is written, eta.js does not list it', 0.2, async function () {
   if (!face()) return false;
   etaBefore = await T('shown()');
@@ -475,17 +475,17 @@ test.run('before its own test is written, eta.js does not list it', 0.2, async f
 test.run('before its own test is written, eta.js shows that test\'s name in red', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('underTitle() && underTitle().text === ' + JSON.stringify(etaOwn) + ' && underTitle().red', 5000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the red name to be drawn' });
 test.run('a suite written for the file shows in its open detail, with no click: the detail listens, the server publishes', 0.2, async function () {
   if (!face()) return false;
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
   fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the new test of eta\n');
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it writes a suite and waits for the detail' });
 test.run('once its own test is written, the red name goes by itself', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F3) + ' && underTitle() && !underTitle().red && underTitle().text !== ' + JSON.stringify(etaOwn), 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the red name to go' });
 // goal/G47.1, the box: "Every element of testicle's face updates itself in response to the server stream: what the server
 // streams, a row or busy, shows in every element drawing it, never asked again and never waiting for a reload" (Andy: "ADD to
 // THIS cycle, EVERY element updates itself in response to the server stream."). eta's own test removed: the server marks its
@@ -495,12 +495,12 @@ test.run('a suite removed from disc shows so in the open detail by itself: the d
   fs.rmSync(path.join(s.run, etaOwn), { force: true });
   const live = function (r) { return (r.key === etaOwn || r.key === F3 + '|' + etaOwn || String(r.text).indexOf(etaOwn) !== -1) && !/deleted/i.test(String(r.text)); };
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.first === F3 && d.rows.length > 0 && !d.rows.some(live); }); }, 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it removes a suite and waits for the detail' });
 test.run('eta\'s own test, written again, is listed again', 0.2, async function () {
   if (!face()) return false;
   fs.writeFileSync(path.join(s.run, etaOwn), '\'use strict\';\n// the test of eta, again\n');
   return !!(await until(function () { return T('shown()').then(function (d) { return !!d && d.rows.some(function (r) { return r.key === etaOwn || r.key === F3 + '|' + etaOwn || String(r.text).indexOf(etaOwn) !== -1; }); }); }, 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it writes the suite again and waits for the row' });
 
 // the box: "The tab opens first ... or the error script.get gives"
 test.run('gone.js is listed in the left pane', 0.2, async function () {
@@ -516,11 +516,11 @@ test.run('gone.js, once removed, is still there to click', 0.2, async function (
 test.run('its tab opens and is the active one, though script.get will refuse', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('tabs().some(function (t) { return t.label === "gone.js" && t.selected; })', 5000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the tab to open' });
 test.run('below the title line it shows the error script.get gives: no such file', 0.2, async function () {
   if (!face()) return false;
   return !!(await waitFor('shown() && shown().first === ' + JSON.stringify(F4) + ' && /no such file/.test(shown().text)', 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the error to be drawn' });
 test.run('the removed script\'s tab shows no suite search', 0.2, async function () {
   if (!face()) return false;
   goneShown = await T('shown()');
@@ -532,7 +532,7 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
   if (!face()) return false;
   before = ((await T('tabs()')) || []).length;
   return (await T('closeTab(' + JSON.stringify(F4) + ')') && !!(await waitFor('tabs().length === ' + (before - 1) + ' && !tabs().some(function (t) { return t.label === "gone.js"; })', 3000))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it closes a tab and waits for it to go' });
 
 // goal/G47.1, the cycle "the test table streamed, and the page showing the current tests", the box: "The testicle server
 // streams every update, to every table: on a flip, the replaced row turning current false is published too, beside the new
@@ -563,7 +563,7 @@ test.run('on a flip the replaced row reaches the page too, current false, beside
   const old = kept.filter(function (x) { return x.row.current === false; });
   const cur = kept.filter(function (x) { return x.row.current === true; });
   return (old.length === 1 && cur.length === 1 && old[0].row.verified === true && cur[0].row.verified === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for both rows to reach the page' });
 // goal/G48.4 (Andy: "FLIPPED IS KILLED NOW"): a row's key ends in its own number, id, in place of flipped (cw's 05f39a64).
 test.run('the page keeps every test row by its full key, script|suite|test|id', 0.2, async function () {
   if (!face()) return false;
@@ -588,7 +588,7 @@ test.run('the testicle search\'s tab is shown again, and it lists eta\'s test', 
   const cur = (kept || []).filter(function (x) { return x.row.current === true; })[0];
   if (!cur) return false;
   return !!(await waitFor('shown() && shown().rows.some(function (r) { return r.key === ' + JSON.stringify(cur.key) + '; })', 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it selects the tab and waits for its rows' });
 test.run('a click on a test row opens a new tab, active and closable', 0.2, async function () {
   if (!face()) return false;
   const cur = (kept || []).filter(function (x) { return x.row.current === true; })[0];
@@ -596,7 +596,7 @@ test.run('a click on a test row opens a new tab, active and closable', 0.2, asyn
   if (!cur || !(await T('pressCenter(' + JSON.stringify(cur.key) + ')'))) return false;
   const ok = await waitFor('tabs().length === ' + (before + 1) + ' && tabs()[tabs().length - 1].selected && tabs()[tabs().length - 1].closable', 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a row and waits for its tab' });
 test.run('the detail is the test\'s history of flips: both its rows, the newest first', 0.2, async function () {
   if (!face()) return false;
   const old = (kept || []).filter(function (x) { return x.row.current === false; })[0];
@@ -605,7 +605,7 @@ test.run('the detail is the test\'s history of flips: both its rows, the newest 
   await waitFor('shownKeys().indexOf(' + JSON.stringify(old.key) + ') !== -1', 10000);
   histKeys = ((await T('shownKeys()')) || []).filter(function (k) { return k === old.key || k === cur.key; });
   return (histKeys.length === 2 && histKeys[0] === cur.key && histKeys[1] === old.key) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the history rows to be drawn' });
 
 // goal/G47.1, the cycle "run a suite from the script tab", the box: "In the script detail's suite search, a 🏃‍♂️ run icon-button
 // runs that suite, for the script that was the argument for that closable tab", "The 🏃‍♂️ column is on every row of the script
@@ -621,14 +621,14 @@ test.run('a monitor row stands above the workbench, a busy icon in it, the sleep
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().benchTop !== null && monitor().bottom <= monitor().benchTop + 0.5', 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the monitor row to be drawn' });
 // goal/G47.1, box v80, 2: "the status display has one extra icon at the beginning: 🤖 auto / 🖖 interactive, ahead of the
 // 🛌/🚶‍➡️ icon, from the stream." The scratch node starts interactive, the default.
 test.run('the monitor row\'s first icon is the mode, 🖖 interactive at the start, ahead of the busy icon', 0.2, async function () {
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().mode === "🖖"', 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the mode icon to be drawn' });
 test.run('the face never asks testicle.busy: the icon is what the server streams', 0.2, function () {
   const files = ['spirit/app/testicle/element.js', 'spirit/app/testicle/data.js'];
   const asks = files.filter(function (f) { return /testicle\s*(\.\s*busy\b|\[\s*['"]busy['"]\s*\])/.test(code(path.join(RUN, f))); });
@@ -646,7 +646,7 @@ test.run('testicle has brought its tables up to date, classified the tree and is
   if (!face()) return false;
   const idle = await until(function () { return call(N.base, 'spirit.app.testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
   return !!idle || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for testicle to classify the tree' });
 let iotaRows = [], iotaKey = '', searchBefore = 0;
 // The rows the shown tab draws, by key.
 const searchRows = function () { return T('shown()').then(function (d) { return ((d && d.rows) || []).map(function (r) { return r.key; }); }); };
@@ -660,7 +660,7 @@ test.run('iota.js\'s tab is opened and lists its suites', 0.2, async function ()
   const ok = await waitFor('shown() && shown().first === ' + JSON.stringify(F5) + ' && shown().rows.length > 0', 15000);
   iotaRows = ok ? ((await T('shown()')) || { rows: [] }).rows : [];
   return iotaRows.length > 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node and waits for the suite rows' });
 test.run('every suite row of the script detail has a run button in its first column', 0.2, async function () {
   if (!face()) return false;
   const cells = [];
@@ -681,14 +681,14 @@ test.run('a press on iota\'s own suite\'s run button is answered at once: the bu
   if (!iotaKey || !(await T('runPress(' + JSON.stringify(iotaKey) + ')'))) return false;
   const back = await until(function () { return T('runCell(' + JSON.stringify(iotaKey) + ')').then(function (x) { return !!x && x.disabled === false; }); }, 2500);
   return !!back || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses run and waits for the button' });
 // the box: busy "stays the one answer it is today (a write, a wait, files pending, a script.get, a suite running)": iota's
 // own suite waits three seconds before its first test reports, so in that time only the suite running makes the server work.
 test.run('before any test of the suite reports, the suite running alone shows the walker', 0.2, async function () {
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().icon === "🚶‍➡️"', 2000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the walker icon' });
 test.run('while the suite runs, the permanent testicle search tab shows iota\'s tests by itself', 0.2, async function () {
   if (!face()) return false;
   const first = ((await T('tabs()')) || [])[0] || {};
@@ -701,7 +701,7 @@ test.run('while the suite runs, the permanent testicle search tab shows iota\'s 
   if (!(await T('typeCenter("zzTesticle/test/iota")'))) return false;
   const ok = await until(function () { return searchRows().then(function (k) { return (k || []).filter(function (x) { return x.indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length >= 2; }); }, 40000);
   return (!!ok && searchBefore === 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it selects the tab and waits for the rows' });
 
 // The monitor row, after iota's run: the server worked while the suite it started ran (busy counts it), then slept.
 test.run('while a suite the server started runs, the monitor shows the walker', 0.2, async function () {
@@ -712,7 +712,7 @@ test.run('once the server is back to listening, the monitor shows 🛌', 0.2, as
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().icon === "🛌" && icons_seen().indexOf("🚶‍➡️") !== -1', 20000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the run to end and the icon' });
 // THE LAST-CHANGE LINE WENT (goal/G47.4, the box, ### status bar: the two rows replace "the last-change line, the doing text";
 // spirit/app/testicle/element/statusBox.js): its check "after the icon, the message shows the last change" with it. A script
 // with a long name is classified by itself, so the bar's second row names it while it is.
@@ -728,7 +728,7 @@ test.run('a long script name in the status bar leaves the row\'s height as it wa
   // Read as it was drawn, while the long name showed: the bar is recorded on each change, so a short moment is caught too.
   barLong = ((await T('bars_seen()')) || []).filter(long)[0] || null;
   return (!!barLong && Math.abs(barLong.height - monitorBefore.height) < 0.5) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it writes a script and waits for the bar' });
 test.run('a long name in the status bar is ellipsed, never wrapped', 0.2, function () {
   if (!face()) return false;
   const r = barLong ? barLong.rows.filter(function (x) { return x.text.indexOf('LongLongLong') !== -1; })[0] : null;
@@ -764,13 +764,13 @@ test.run('⚙ on the left strip is pressed', 0.2, async function () {
 test.run('it opens a panel in the left pane, titled "⚙ Configuration"', 0.2, async function () {
   if (!gear) return false;
   return !!(await waitFor('leftSays().shown && left().innerText.indexOf("⚙ Configuration") !== -1', 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the panel to open' });
 test.run('its switch is the app\'s toggle form: one toggle, no Save button, no select', 0.2, async function () {
   if (!gear) return false;
   await waitFor('left().innerText.indexOf("🟢") !== -1 || left().innerText.indexOf("🔴") !== -1', 10000);
   const t = await c.evaluate(TOGGLE);
   return (!!t && t.toggles === 1 && t.save === false && t.selects === 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the toggle to be drawn' });
 test.run('its words say what it switches: interactive or auto', 0.2, async function () {
   if (!gear) return false;
   const t = await c.evaluate(TOGGLE);
@@ -788,23 +788,23 @@ test.run('one press of the toggle sends it at once: the node\'s preference inter
   if (!pressed) return false;
   const ok = await until(function () { return prefsNow().then(function (p) { return p.interactive === false; }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses the toggle and waits for the node' });
 test.run('the stream sets the switch, the toggle drawn off, 🔴', 0.2, async function () {
   if (!pressed) return false;
   const ok = await until(function () { return c.evaluate(TOGGLE).then(function (t) { return !!t && t.state === '🔴'; }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the stream to set the toggle' });
 test.run('the monitor row\'s first icon follows the switch to 🤖 auto', 0.2, async function () {
   if (!pressed) return false;
   return !!(await waitFor('monitor() && monitor().mode === "🤖"', 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the mode icon to follow' });
 test.run('a set by the verb elsewhere is followed: interactive true shows the toggle on, 🟢, and the monitor 🖖', 0.2, async function () {
   if (!gear) return false;
   await call(N.base, 'spirit.app.testicle.preferences', { interactive: true });
   const ok = await until(function () { return c.evaluate(TOGGLE).then(function (t) { return !!t && t.state === '🟢'; }); }, 10000);
   const m = await waitFor('monitor() && monitor().mode === "🖖"', 10000);
   return (!!ok && !!m) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets the node and waits for the toggle' });
 
 // ── WHAT TESTICLE IS DOING, SAID IN THE STATUS BAR (Andy, on cw's offer of "classifying 120 of 253" while it classifies,
 // "running <suite>" while it tests: "cw, do that", "wsl, test that this is how it's done.") ──
@@ -829,7 +829,7 @@ test.run('while it classifies, the status bar names the classifier in row 1 and 
   const ns = seen.map(function (rs) { return Number(/^(\d+) of/.exec(rs[1])[1]); });
   const up = ns.length >= 2 && ns.every(function (n, i) { return i === 0 || n >= ns[i - 1]; });
   return up || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the classifier to count, 240 s' });
 test.run('while it runs a suite, the status bar names the suite in row 1 and its script in row 2', 0.2, async function () {
   if (!msgsAt) return false;
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
@@ -841,7 +841,7 @@ test.run('while it runs a suite, the status bar names the suite in row 1 and its
   const running = function (rs) { return rs.length === 2 && /^(\d+:\s*)?(\S*\/)?test\/zzMonitorRun\.js$/.test(rs[0]) && /^(\d+:\s*)?(\S*\/)?zzTesticle\/zzMonitorRun\.js$/.test(rs[1]); };
   const ok = await until(function () { return rowsSeen().then(function (all) { return all.some(running); }); }, 240000);
   return !!ok || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it plants a suite and waits for its run' });
 
 // destroy
 test.run('destroy leaves its container empty', 0.2, async function () {

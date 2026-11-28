@@ -108,7 +108,7 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   // Its testicle answers once its app server runs, a moment after the node.
   N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and waits for testicle' });
 test.run('tests of alpha and beta are set, each in its own suite', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
@@ -117,7 +117,7 @@ test.run('tests of alpha and beta are set, each in its own suite', 0.2, async fu
   }
   planted = out.every(function (r) { return r.status === 200; });
   return planted || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets two test rows on the node' });
 test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
@@ -126,7 +126,7 @@ test.run('the face page has its spirit', 0.2, async function () {
   if (c.error) return false;
   await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face page in Chrome' });
 test.run('it loads alone through spirit.requireScript and mounts with create, handed a container, a script and a pick, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
@@ -134,7 +134,7 @@ test.run('it loads alone through spirit.requireScript and mounts with create, ha
   if (loaded !== 'loaded') return false;
   made = await mount('zzBox', { script: A });
   return made === 'made' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the element in the page and mounts it' });
 
 // goal/G41.19, box v23: "every element gets a container and appends itself"
 test.run('create appends its own root to the container and answers it', 0.2, async function () {
@@ -147,13 +147,13 @@ test.run('it loads its own list, spirit/app/testicle/element/search/suite/list.j
   if (notMounted()) return false;
   const ok = await until(function () { return c.evaluate('!!((((((((window.spirit || {}).app || {}).testicle || {}).element || {}).search || {}).suite || {}).list || {}).create)'); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for its list to load' });
 test.run('its list in its root shows the suites of the script it is given, and of no other', 0.2, async function () {
   if (notMounted()) return false;
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.keys.indexOf(A + '|' + AS) !== -1; }); }, 15000);
   const k = ((await view('zzBox')) || {}).keys || [];
   return (!!ok && k.every(function (x) { return x.indexOf(A + '|') === 0; })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the rows to be drawn' });
 // "face, placeholder, all, pick   handed to its list as they are"
 test.run('as a dropdown, its placeholder is handed on: the field shows it', 0.2, async function () {
   if (notMounted()) return false;
@@ -161,14 +161,14 @@ test.run('as a dropdown, its placeholder is handed on: the field shows it', 0.2,
   if (m !== 'made') return false;
   const ok = await until(function () { return view('zzDrop').then(function (v) { return !!v && /pick a suite/.test(v.field || ''); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts a dropdown and waits for its field' });
 test.run('as a dropdown, its all words are handed on: the field shows them', 0.2, async function () {
   if (notMounted()) return false;
   const m = await mount('zzAll', { script: A, face: 'dropdown', placeholder: 'pick a suite', all: 'every suite there is' });
   if (m !== 'made') return false;
   const ok = await until(function () { return view('zzAll').then(function (v) { return !!v && /every suite there is/.test(v.field || ''); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts a dropdown and waits for its field' });
 test.run('its pick is handed on: a row chosen in the dropdown is handed to it, by its key', 0.2, async function () {
   if (notMounted()) return false;
   const k = A + '|' + AS;
@@ -179,7 +179,7 @@ test.run('its pick is handed on: a row chosen in the dropdown is handed to it, b
   await sleep(300);
   const got = await c.evaluate('window.__picked');
   return (Array.isArray(got) && got.indexOf(k) !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the dropdown and presses a row' });
 
 test.run('destroy takes its root out of the container', 0.2, async function () {
   if (notMounted()) return false;
@@ -194,4 +194,4 @@ test.run('destroy lets its list go: a suite row written after draws nothing', 0.
   await sleep(1500);
   const after = await c.evaluate('(function () { var r = window.zzBox; return r.innerHTML; }())');
   return (before === '' && after === '') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a row on the node and waits 1.5 s' });

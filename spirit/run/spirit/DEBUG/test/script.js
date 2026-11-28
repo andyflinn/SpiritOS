@@ -339,7 +339,7 @@ test.run('the scratch node comes up', 0.2, async function () {
   copy = scratchCopy();
   node = await startNode(copy.run);
   return (node.up) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 
 test.run('on the node, DEBUG off, its DEBUG address answers as an address of no route', 0.8, async function () {
   if (!node || !node.up) return false;
@@ -450,7 +450,7 @@ test.run('each entry that breaks the shape is refused with a code: a 4xx, never 
     } else if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push(entry);
   }
   return (!wrong.length) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it posts every garbage entry to the scratch node' });
 
 test.run('each lone bad string, the shape kept, is answered by its handler: never a 5xx or a handler failed', 0.2, async function () {
   if (!node || !node.up) return false;
@@ -563,7 +563,7 @@ test.run('the scratch relay comes up with DEBUG off', 0.2, async function () {
   // /spirit/relay/garbageArguments.json, a relay, DEBUG off.
   relay = await startRelay(copy.run, false);
   return (relay.up) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it stops the node and starts a scratch relay' });
 
 test.run('on the relay, DEBUG off, its DEBUG address answers as an address of no route', 0.8, async function () {
   if (!relay || !relay.up) return false;
@@ -576,7 +576,7 @@ test.run('the scratch relay comes up with DEBUG on', 0.2, async function () {
   await stop(relay); relay = null;
   relay = await startRelay(copy.run, true);
   return (relay.up) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it restarts the scratch relay with DEBUG on' });
 
 test.run('the relay answers its own api\'s garbage, a JSON list', 0.2, async function () {
   if (!relay || !relay.up) return false;

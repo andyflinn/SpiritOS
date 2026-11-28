@@ -83,7 +83,7 @@ test.run('Chrome is on this machine', 0.2, function () {
 test.run('a scratch node comes up with its DEBUG on and testicle on', 0.2, async function () {
   W.node = await H.scratchNode({ servers: ['spirit.app.testicle'] });
   return (W.node.up && W.node.debug) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a page loads the box by itself and mounts it alone', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
@@ -92,7 +92,7 @@ test.run('a page loads the box by itself and mounts it alone', 0.2, async functi
   W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.app && window.spirit.app.testicle && window.spirit.app.testicle.element.statusBox)').then(function (v) { return v === true; }); }, H.WAIT);
   if (W.ok) { await ev(HANDS); W.ok = (await ev('window.zz.mount()')) === true; }
   return !!W.ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a page in Chrome' });
 test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
@@ -135,7 +135,7 @@ test.run('its mode and busy icons stand vertically centred in the bubble', 0.4, 
   let r = null;
   await H.until(function () { return ev(CENTRED).then(function (v) { r = v; return ok(v); }); }, H.WAIT);
   return ok(r) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the icons to be drawn' });
 test.run('its mode and busy icons are drawn at 2em, twice the font size of its container', 0.4, async function () {
   if (!W.ok) return false;
   const r = await ev('(function () { var b = document.getElementById("zzA"), m = b.querySelector(".testicle-mode"), i = b.querySelector(".testicle-busy"); if (!m || !i) return null; var f = parseFloat(getComputedStyle(b).fontSize); return [m, i].every(function (x) { return Math.abs(parseFloat(getComputedStyle(x).fontSize) - 2 * f) < 0.5; }); }())');
@@ -147,23 +147,23 @@ test.run('it shows the mode the node\'s testicle stands at: 🖖, interactive, a
   const want = p && (p.preferences || p).interactive === false ? '🤖' : '🖖';
   const ok = await H.until(function () { return ev('window.zz.mode').then(function (m) { return m === want; }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node and waits for the box' });
 test.run('testicle has classified the scratch tree and is idle', 0.2, async function () {
   if (!W.ok) return false;
   return (await idle(280000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for testicle to classify the tree' });
 test.run('when testicle is idle, the box shows 🛌', 0.2, async function () {
   if (!W.ok) return false;
   const ok = await H.until(function () { return ev('window.zz.icons[window.zz.icons.length - 1]').then(function (g) { return /🛌/.test(String(g)); }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the box to show idle' });
 // The box: "when no run is active, both rows are empty: no dangling info once testicle goes idle."
 const EMPTY_ROWS = '(function () { var r = document.querySelectorAll("#zzA .testicle-rows > .testicle-row"); return r.length === 2 && Array.prototype.every.call(r, function (x) { return String(x.textContent || "").trim() === ""; }); }())';
 test.run('once testicle is idle after classifying, both rows are empty', 0.4, async function () {
   if (!W.ok) return false;
   const ok = await H.until(function () { return ev(EMPTY_ROWS).then(function (v) { return v === true; }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for both rows to empty' });
 // A CLASSIFICATION WATCHED FROM ITS START: the scratch tree is classified before the box can be sure to be watching, so thirty
 // scripts are planted at once while it watches, and classified as one batch; enough that it lasts seconds, not a blink a
 // page's watch would see only the end of.
@@ -177,7 +177,7 @@ test.run('thirty scripts planted at once are classified while the box watches, a
   CLS.forEach(function (f) { fs.writeFileSync(path.join(run, f), "'use strict';\n// " + f + "\n"); });
   W.walked = !!(await H.until(function () { return ev('(function () { var i = document.querySelector("#zzA .testicle-busy"); return i ? String(i.innerText || i.textContent || "") : ""; }())').then(function (g) { return /🚶/.test(String(g)); }); }, 60000));
   return (await idle(280000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it plants thirty scripts and waits for classifying' });
 test.run('while testicle classified them, the box showed its walking icon', 0.2, async function () {
   return W.walked === true || false;
 }, test.limit.quick);
@@ -207,7 +207,7 @@ test.run('zzOk.js and zzBad.js are planted with their own tests, and testicle is
   fs.writeFileSync(path.join(run, BADS), SUITE_HEAD + "test.run('zzBad fails', 0.2, function () { return false; }, test.limit.quick);\n");
   await H.until(function () { return ask('spirit.app.testicle.suite.search', { script: OK, text: '' }).then(function (r) { return !!(r && (r.items || []).length); }); }, 60000);
   return (await idle(280000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it plants two suites and waits for testicle' });
 // The box: "row 1: <suites owed>: <suite file name>", "row 2: <tests reported>: <script file name>", "no test titles and no
 // results of suites or tests in the bar."
 const runRows = async function (script, suite) {
@@ -229,7 +229,7 @@ test.run('while zzOk\'s own suite runs, row 1 reads a number and its suite\'s fi
   if (!W.ok) return false;
   W.okRows = await runRows(OK, OKS);
   return (W.okRows || []).some(function (p) { return names(p[0], OKS); }) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the zzOk suite to run' });
 test.run('while zzOk\'s own suite runs, row 2 reads the tests reported, 1, and the script\'s file name', 0.4, function () {
   return (W.okRows || []).some(function (p) { const m = NUM_NAME.exec(p[1]); return !!m && m[1] === '1' && names(p[1], OK); }) || false;
 }, test.limit.quick);
@@ -241,7 +241,7 @@ test.run('while zzBad\'s own suite runs, its rows read its suite and script, and
   if (!W.ok) return false;
   const rows = await runRows(BAD, BADS);
   return ((rows || []).some(function (p) { return names(p[0], BADS) && names(p[1], BAD); }) && noTitleNoResult(rows || [], 'zzBad fails')) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the zzBad suite to run' });
 // goal/G47.4, Andy: "the two numbers, starting the tow rows must be fixed width, 6em, right aligned, and invisible when zero.",
 // then: "a width of 4em for the two numbers is likely enough."
 // Judged on every row drawn through classifying and both runs.
@@ -287,14 +287,14 @@ test.run('the stream carries the test red for the most scripts and the script wi
     return !!got && !!L && !!got.test && !!got.script && L.tests.some(function (x) { return x.suite === got.test.suite && x.test === got.test.test && Number(x.n) === Number(got.test.n); }) && L.scripts.some(function (x) { return x.script === got.script.script && Number(x.n) === Number(got.script.n); });
   }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the stream to carry the leaders' });
 test.run('once the runs are over and reds are left, row 1 names the test red for the most scripts, with its count', 0.4, async function () {
   if (!W.ok) return false;
   let rows = null, L = null;
   await H.until(function () { return ev(ROWS_NOW).then(function (r) { rows = r; L = leadersInDb(); return !!L && L.tests.length > 0 && Array.isArray(r) && r.length === 2 && L.tests.some(function (t) { return holds(r[0], t.n, [t.test, fileOf(t.suite)]); }); }); }, H.WAIT);
   W.leaders = { rows: rows, L: L };
   return (!!L && L.tests.length > 0 && Array.isArray(rows) && L.tests.some(function (t) { return holds(rows[0], t.n, [t.test, fileOf(t.suite)]); })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for row 1 to name the leaders' });
 test.run('once the runs are over and reds are left, row 2 names the script with the most reds, with its count', 0.4, function () {
   const w = W.leaders;
   return (!!w && !!w.L && w.L.scripts.length > 0 && Array.isArray(w.rows) && w.L.scripts.some(function (x) { return holds(w.rows[1], x.n, [fileOf(x.script), x.script]); })) || false;
@@ -321,7 +321,7 @@ test.run('with the node set to auto the box shows 🤖 by itself, and set back t
   if (!b) return false;
   const back = await H.until(function () { return ev('window.zz.mode').then(function (m) { return m === '🖖'; }); }, H.WAIT);
   return (!!auto && !!back) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it sets the mode twice and waits for the box' });
 // SUITES OWED (the box: "suites owed is the number of suites marked needs running, in the current run or not; it counts
 // down as suites report their final status and goes up as changes and classifications mark more. a general suite counts
 // once"): two scripts planted while interactive, each with an own suite that takes 15 s; set to auto, row 1's number is the
@@ -334,7 +334,7 @@ test.run('in auto mode, row 1\'s number is the count of suites testicle\'s datab
   const run = path.join(W.node.root, 'spirit', 'run');
   fs.writeFileSync(path.join(run, W1), "'use strict';\n// zzWait1\n");
   fs.writeFileSync(path.join(run, W2), "'use strict';\n// zzWait2\n");
-  [W1S, W2S].forEach(function (f) { fs.writeFileSync(path.join(run, f), SUITE_HEAD + "test.run('it waits a while', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 15000); }); }, test.limit.slow);\n"); });
+  [W1S, W2S].forEach(function (f) { fs.writeFileSync(path.join(run, f), SUITE_HEAD + "test.run('it waits a while', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 15000); }); }, test.limit.slow, { why: 'it waits on purpose' });\n"); });
   await H.until(function () { return ask('spirit.app.testicle.suite.search', { script: W2, text: '' }).then(function (r) { return !!(r && (r.items || []).length); }); }, 60000);
   const a = await ask('spirit.app.testicle.preferences', { interactive: false });
   if (!a) return false;
@@ -342,7 +342,7 @@ test.run('in auto mode, row 1\'s number is the count of suites testicle\'s datab
   await H.until(function () { return ev(ROW1).then(function (n) { const o = owedInDb(); if (n !== null && n >= 1 && o && n === o.suites) seen = n; return seen !== null; }); }, 60000);
   W.owedSeen = seen || 0;
   return seen !== null || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it plants two waiting suites and watches row 1' });
 test.run('as suites report, row 1\'s number follows them down: still the count marked, and lower than before', 0.4, async function () {
   if (!W.owedSeen) return false;
   const first = W.owedSeen;
@@ -350,7 +350,7 @@ test.run('as suites report, row 1\'s number follows them down: still the count m
   await H.until(function () { return ev(ROW1).then(function (n) { const o = owedInDb(); if (n !== null && o && n === o.suites && n < first) later = n; return later !== null; }); }, 240000);
   await ask('spirit.app.testicle.preferences', { interactive: true });
   return later !== null || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for suites to report, up to 240 s' });
 // THE NUMBER OF REDS (goal/G48.4; Andy: "what's the cost of streaming the number of reds, and displaying it in a large, RED box
 // at the right windows edge of the status bar????", then "NOW! including test."; cw, as built: "a red that comes or goes
 // changes the number in the box without a press"). The reds are the current rows testicle's database holds failed, read only.
@@ -382,14 +382,14 @@ test.run('the stream carries the number of reds, as testicle\'s database counts 
   await H.until(function () { return streamedReds().then(function (n) { got = n; want = redsInDb(); return n !== null && n === want && n > 0; }); }, H.WAIT);
   W.reds = got;
   return (got !== null && got === want && got > 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for testicle to be idle and the stream' });
 test.run('the status bar shows that number in a red box', 0.4, async function () {
   if (W.reds === undefined || W.reds === null) return false;
   let b = null;
   await H.until(function () { return redBox().then(function (x) { b = x; return !!x && x.n === W.reds; }); }, H.WAIT);
   W.box = b;
   return (!!b && !b.none && b.n === W.reds) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the red box to show' });
 test.run('the red box stands at the right edge of the status bar', 0.4, function () {
   const b = W.box;
   return (!!b && !b.none && Math.abs(b.barRight - b.right) <= 2) || false;
@@ -410,14 +410,14 @@ test.run('a red set on the node raises the number in the box, with no press', 0.
   if (!r || r.ok === false) return false;
   const ok = await H.until(function () { return redBox().then(function (x) { return !!x && x.n === W.reds + 1 && x.n === redsInDb(); }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a red on the node and waits for the box' });
 test.run('the red cleared on the node lowers the number in the box again, with no press', 0.4, async function () {
   if (!W.box || W.box.none) return false;
   const r = await ask('spirit.app.testicle.testicle.set', { script: OK, suite: OKS, test: 'zzOk holds', verified: true, severity: 0.2 });
   if (!r || r.ok === false) return false;
   const ok = await H.until(function () { return redBox().then(function (x) { return !!x && x.n === W.reds && x.n === redsInDb(); }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it clears a red on the node and waits for the box' });
 // The box: "on connect: a page that connects to testicle's stream is sent the current suites-owed and classifications-owed
 // numbers once, so a page opened or reloaded while nothing changes shows them at once". A page loaded anew while testicle is
 // idle and nothing is marked or unmarked holds both, as the database says them, with no change between.
@@ -432,7 +432,7 @@ test.run('a page loaded anew while nothing changes is sent suites owed and class
   await H.until(function () { return ev('(function () { try { var o = window.spirit.app.testicle.data.monitor.get().owed; return o ? JSON.stringify(o) : null; } catch (e) { return null; } }())').then(function (t) { got = t ? JSON.parse(t) : null; return !!got; }); }, H.WAIT);
   const o = owedInDb();
   return (!!got && !!o && got.suites === o.suites && got.classifications === o.classifications) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for idle and reloads the page' });
 test.run('once the box is destroyed, its container is empty', 0.2, async function () {
   if (!W.ok) return false;
   const r = await ev('(function () { window.m_zzA.destroy(); return document.getElementById("zzA").innerHTML; }())');

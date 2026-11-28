@@ -72,7 +72,7 @@ test.run('a scratch node comes up, with a node-owned bundle to fill', 0.2, async
   const b = await ask('spirit.bundle.add', { label: 'Zz Holder' });
   W.bundle = b.body && b.body.id;
   return isId(W.bundle) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and adds a bundle on it' });
 // add.json: "A branch of the node's API, and one verb of it or '' for all of it, into a bundle: {id}".
 test.run('add puts a branch and one verb the node serves into the bundle, answering {id}', 0.2, async function () {
   if (!W.bundle || !W.declared.length) return false;

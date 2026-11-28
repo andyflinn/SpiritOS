@@ -40,7 +40,7 @@ test.run('measure answers, run on lab nodes and a lab relay', 0.2, async functio
   if (!M.mod) return false;
   try { M.got = await M.mod.measure(function () { M.said.push(true); }); } catch (e) { M.threw = true; }
   return (!!M.got && !M.threw) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it measures on lab nodes and a lab relay' });
 test.run('a node at rest is measured as a figure in MB, above 0 and below this machine\'s RAM', 0.2, function () {
   if (!M.got) return false;
   const mb = M.got.nodeAtRestMB;

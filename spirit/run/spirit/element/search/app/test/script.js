@@ -37,50 +37,50 @@ test.run('a scratch node comes up with Chrome on its face page', 0.2, async func
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('it loads through spirit.requireScript', 0.2, async function () {
   if (!text) return false;
   loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/script.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the script into the page from the node' });
 // The app branch is asked of the loader, as the list asks it (goal/G49.20: its interface is spirit/app/script.js).
 test.run('its create makes a list in the host it is given', 0.2, async function () {
   if (!text) return false;
   const made = await chrome.evaluate('spirit.requireScript("spirit/app/script.js").then(function (b) { window.asked = []; var real = b.searchApp; b.searchApp = function (a) { window.asked.push(a); return real.call(b, a); }; window.picks = []; window.list = spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; })');
   return made === true ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the app branch into the page' });
 test.run('it draws what app.search finds', 0.2, async function () {
   if (!text) return false;
   // An app every node has: grants (the app called server, read here before, is gone from the tree).
   identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'grants', 'grants.json'), 'utf8')).identity;
   const drawn = await until(function () { return text().then(function (x) { return x.indexOf(identity.label) !== -1; }); }, 8000);
   return drawn ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the list to draw the app' });
 test.run('it asks app.search with a search string and nothing more', 0.2, async function () {
   if (!text) return false;
   const asked = await chrome.evaluate('JSON.stringify(window.asked)');
   return JSON.parse(asked).length > 0 && JSON.parse(asked).every(function (a) { return Object.keys(a).every(function (k) { return k === 'q'; }); }) ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('its row can be pressed', 0.2, async function () {
   if (!identity) return false;
   const pressed = await chrome.evaluate('(function () { var want = ' + JSON.stringify(identity.label) + '; var all = document.getElementById("under-test").querySelectorAll("*"); var hit = null; for (var i = 0; i < all.length; i++) { if (!all[i].children.length && String(all[i].innerText || "").indexOf(want) !== -1) hit = all[i]; } if (!hit) return false; hit.click(); return true; }())');
   return pressed === true ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('a press hands the row to pick', 0.2, async function () {
   if (!identity) return false;
   const picked = await until(function () { return chrome.evaluate('window.picks.length === 1 && String(window.picks[0].label).indexOf(' + JSON.stringify(identity.label) + ') !== -1'); }, 3000);
   return picked ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the press to reach pick' });
 test.run('refresh asks again', 0.2, async function () {
   if (!text) return false;
   const refreshed = await chrome.evaluate('(function () { var n = window.asked.length; window.list.refresh(); return new Promise(function (r) { setTimeout(function () { r(window.asked.length > n); }, 500); }); }())');
   return refreshed === true ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it refreshes and waits 500 ms for the ask' });
 test.run('destroy empties its host', 0.2, async function () {
   if (!text) return false;
   const empty = await chrome.evaluate('(function () { window.list.destroy(); return document.getElementById("under-test").children.length === 0; }())');
   return empty === true ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 
 // goal/G43.18. Andy, box: "The app search gains a server filter, node.mount true and active ... this filter is hidden by
 // default."; Q4: "The programmer who uses app:search makes it visible", by create's servers: true (cw's 64c04fd2).
@@ -109,7 +109,7 @@ test.run('without the servers option it shows no filter', 0.2, async function ()
   serversB = await filterButtons('servers');
   press = function () { return chrome.evaluate('(function () { var b = document.getElementById("servers").querySelector("button[data-filter]"); if (!b) return false; b.click(); return true; }())'); };
   return plainB === 0 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for two lists to draw' });
 test.run('with the servers option set to true it shows the one filter', 0.2, function () {
   if (serversB === undefined) return false;
   return serversB === 1 ? true : false;
@@ -122,22 +122,22 @@ test.run('the app that runs on the node is switched on', 0.2, async function () 
   const on = await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === true; }); }, 10000);
   await chrome.evaluate('window.servers.refresh(); true');
   return on ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it switches the app on and waits for it' });
 test.run('its filter can be pressed', 0.2, async function () {
   if (!press) return false;
   return (await press()) === true ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('with the filter pressed, it draws the active apps that run on the node, and no other app', 0.2, async function () {
   if (!press) return false;
   want = await wantOn();
   const on1 = await until(function () { return drawnIn('servers').then(function (d) { return JSON.stringify(d) === JSON.stringify(want); }); }, 8000);
   return on1 && want.indexOf(MOUNT.label) !== -1 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the filtered list to draw' });
 test.run('the list without the filter still draws every app', 0.2, async function () {
   if (!press) return false;
   plainNow = await drawnIn('plain');
   return plainNow.length > want.length ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 // "and active": switched off, it leaves the filter's list.
 test.run('once switched off, the app leaves the filtered list', 0.2, async function () {
   if (!press) return false;
@@ -147,8 +147,8 @@ test.run('once switched off, the app leaves the filtered list', 0.2, async funct
   want = await wantOn();
   const off1 = await until(function () { return drawnIn('servers').then(function (d) { return d.indexOf(MOUNT.label) === -1 && JSON.stringify(d) === JSON.stringify(want); }); }, 8000);
   return off1 ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it switches the app off and waits for the list' });
 test.run('with the filter pressed again, every app is back', 0.2, async function () {
   if (!press || !plainNow) return false;
   return (await press()) === true && await until(function () { return drawnIn('servers').then(function (d) { return d.length === plainNow.length; }); }, 8000) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for every app to come back' });

@@ -586,7 +586,7 @@ test.run('the page server-picker.html draws the provider\'s detail with the real
   try { m = JSON.parse(s); } catch (e) { m = null; }
   PK.m = m;
   return m ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 test.run('the provider\'s detail shows its Model field, the provider having models', 0.2, function () {
   const m = PK.m;
   if (!m) return false;

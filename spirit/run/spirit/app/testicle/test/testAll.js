@@ -45,14 +45,14 @@ test.run('a scratch tree is made with a script whose own suite holds and one who
   fs.writeFileSync(path.join(run, REDS), SUITE_HEAD + "test.run('red fails', 0.2, function () { return false; }, test.limit.quick);\n");
   T.run = run;
   return fs.existsSync(path.join(run, REDS)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it hands out a lab node reset to the tree' });
 test.run('testAll given both runs them and fails: it exits other than 0, since one is red', 0.8, function () {
   if (!T.run || !fs.existsSync(path.join(T.run, TESTALL))) return false;
   T.both = spawnSync(process.execPath, [TESTALL, GREEN, RED], { cwd: T.run, encoding: 'utf8', timeout: 280000 });
   return (T.both.status !== null && T.both.status !== 0) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs testAll on two suites as a process' });
 test.run('testAll given the holding one alone exits 0', 0.8, function () {
   if (!T.both) return false;
   T.alone = spawnSync(process.execPath, [TESTALL, GREEN], { cwd: T.run, encoding: 'utf8', timeout: 280000 });
   return T.alone.status === 0 || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs testAll on one suite as a process' });

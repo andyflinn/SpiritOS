@@ -34,7 +34,7 @@ test.run('a scratch node comes up with a Chrome on its face page', 0.2, async fu
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('it loads through spirit.requireScript and is spirit.element.search.app.changeAppIcon', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/changeAppIcon/script.js"); }).then(function () { return !!(spirit.element.search.app.changeAppIcon && spirit.element.search.app.changeAppIcon.create); }, function () { return false; })');
@@ -63,7 +63,7 @@ test.run('the app\'s icon stays 🤖', 0.2, async function () {
   await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); bs[bs.length - 1].click(); return 1; }())');
   await sleep(1500);
   return (await iconOf(AGENT)) === '🤖' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Change and waits 1.5 s' });
 
 // the box: "writing through the app family's iconApp": a glyph picked, then Change
 test.run('the dropdown opens on the icon set', 0.2, async function () {

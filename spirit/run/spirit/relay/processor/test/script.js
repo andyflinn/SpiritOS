@@ -189,7 +189,7 @@ test.run('500 members are seated and connected', 0.2, function () {
     LS.seated += 1;
   }
   return LS.seated === MEMBERS;
-}, test.limit.long);
+}, test.limit.long, { why: 'it seats and connects 500 members, each signed' });
 test.run('the search thrown is at least 12000 characters, near 3/4 of the payload', 0.2, function () {
   if (!LS.box || !LS.asker) return false;
   const limits = S.requireScript('spirit/limits/script.js');
@@ -224,7 +224,7 @@ test.run('the relay takes the search', 0.2, async function () {
   LS.worst = Math.max(gap, inPost);
   LS.ran = true;
   return (!!LS.posted && LS.posted.ok !== false);
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits up to 5 s for the long search to be answered' });
 test.run('while the relay searches, it keeps answering: its event loop never waited more than 250 ms', 0.2, function () {
   if (!LS.ran) return false;
   return LS.worst <= GAP_MS;
@@ -283,19 +283,19 @@ test.run('a scratch relay comes up with harbour seated with a face, its node pre
   if (!F.R.up) return false;
   F.M = F.R.members.harbour;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch relay with a face' });
 test.run('the face opens its stream, and the home node hears face-open', 0.2, async function () {
   if (!F.M) return false;
   const opensBefore = faceOpens();
   F.face = await openFace();
   return (await wait(function () { return faceOpens() > opensBefore; }) && !F.face.ended) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face stream and waits for face-open' });
 test.run('the home node\'s feed reaches the face', 0.2, async function () {
   if (!F.face) return false;
   F.one = feed();
   F.one.write(JSON.stringify({ event: 'zz-first', data: {} }) + '\n');
   return !!(await wait(function () { return F.face.lines.join('').indexOf('zz-first') !== -1; })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it feeds the face and waits for the event to arrive' });
 
 // the attacker: a feed replaced by a newer one goes, and the face's stream stays
 test.run('once the old feed is cut, the face\'s stream stays open and the newer feed still reaches it', 0.2, async function () {
@@ -308,20 +308,20 @@ test.run('once the old feed is cut, the face\'s stream stays open and the newer 
   await new Promise(function (r) { setTimeout(r, 1500); });
   F.two.write(JSON.stringify({ event: 'zz-third', data: {} }) + '\n');
   return (!face.ended && !!(await wait(function () { return face.lines.join('').indexOf('zz-third') !== -1; }))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 1.5 s after the old feed is cut' });
 
 // the feed into the face goes, as when the home node goes away
 test.run('the relay ends the face\'s stream: the face sees it end, and retries', 0.2, async function () {
   if (!F.two) return false;
   F.two.destroy();
   return !!(await wait(function () { return F.face.ended; }, 8000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits up to 8 s for the relay to end the stream' });
 test.run('the face opens its stream again, and the home node hears face-open once more', 0.2, async function () {
   if (!F.M) return false;
   const opensNow = faceOpens();
   F.again = await openFace();
   return (await wait(function () { return faceOpens() > opensNow; }) && !F.again.ended) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reopens the face stream and waits for face-open' });
 test.run('the home node\'s updates reach the face again, with no reload', 0.2, async function () {
   if (!F.again) return false;
   F.three = feed();
@@ -329,7 +329,7 @@ test.run('the home node\'s updates reach the face again, with no reload', 0.2, a
   const heard = await wait(function () { return F.again.lines.join('').indexOf('zz-back') !== -1; });
   F.three.destroy();
   return !!heard || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it feeds the face and waits for the event to arrive' });
 
 // THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "the \"routes\" aren't read by anybody in the fucking system"): "The
 // relay sends no route event after an exchange. Its announcement of a member stays for what the node still uses of it,
@@ -363,7 +363,7 @@ test.run('two members are on their streams, and one posts to the other, who answ
   await new Promise(function (r) { setTimeout(r, 300); });
   RX.after = { A: heard.A.slice(mark.A).join(''), B: heard.B.slice(mark.B).join('') };
   return (!!RX.replied && RX.replied.ok === true && /event: reply/.test(RX.after.A)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it routes a post and a reply, then waits 300 ms' });
 test.run('after an exchange the relay sends the asker no route event', 0.2, function () {
   if (!RX.after) return false;
   return !/event: route/.test(RX.after.A) || false;

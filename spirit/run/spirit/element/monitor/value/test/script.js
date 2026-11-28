@@ -37,7 +37,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens it in Chrome' });
 test.run('it loads through spirit.requireScript, at spirit.element.monitor.value, with a create', 0.2, async function () {
   if (!W.page) return false;
   W.loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/monitor/value/script.js"); }).then(function () { var m = window.spirit.element.monitor; return !!(m && m.value && typeof m.value.create === "function"); }, function () { return false; })');

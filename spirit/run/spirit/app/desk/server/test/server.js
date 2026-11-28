@@ -97,7 +97,7 @@ test.run('a scratch desk answers api with its verbs, item.get among them', 0.2, 
   W.api = api[ID] || api;
   const verbs = W.verbs = Object.keys(W.api);
   return (verbs.length > 5 && verbs.indexOf('item.get') !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a desk server as a process' });
 test.run('its api serves no verb of a plugin', 0.2, function () {
   const verbs = W.verbs || [];
   const plug = verbs.filter(function (v) { return /^(stackFrameChecks|vision|fallout)\./.test(v); });

@@ -644,7 +644,7 @@ test.run('Chrome opens a scratch node with its DEBUG on, and its page measures t
   const s = await page.evaluate('window.opened()').catch(function () { return ''; });
   try { S.m = JSON.parse(s); } catch (e) { S.m = null; }
   return !!S.m || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 test.run('the page does not scroll, and the chat input is on screen', 0.2, function () {
   const m = S.m;
   if (!m) return false;
@@ -671,7 +671,7 @@ test.run('the box is a CodeMirror editor showing line numbers', 0.2, async funct
   if (!S.m) return false;
   const v = S.box = await pageAnswer('window.boxView()');
   return (!!v && v.codeMirror === true && v.numbers > 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the box panel and waits 1.2 s' });
 test.run('above the box stands its last stored version', 0.2, function () {
   if (!S.m) return false;
   const v = S.box;
@@ -708,9 +708,9 @@ async function fullHeight(key) {
   const full = !!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1;
   return full || false;
 }
-test.run('the box panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('box'); }, test.limit.slow);
+test.run('the box panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('box'); }, test.limit.slow, { why: 'it opens the panel and waits 800 ms' });
 // The last check on the opened page closes it.
-test.run('the qs panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, async function () { const full = await fullHeight('qs'); stopOpened(); return full; }, test.limit.slow);
+test.run('the qs panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, async function () { const full = await fullHeight('qs'); stopOpened(); return full; }, test.limit.slow, { why: 'it opens the panel and waits 800 ms' });
 
 // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk on, a goal and two items: one pressed done, whose detail
@@ -764,7 +764,7 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function (E) { E.create(d, {}); return true; }); })()");
   S.readyPromise = true;
   return (before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and opens a page in Chrome' });
 test.run('the detail of "A done item to close" offers Close', 0.2, function () {
   return detailOffers('A done item to close', 'dd-close', 'Close');
 }, test.limit.quick);
@@ -773,7 +773,7 @@ test.run('with its Close pressed once, the item is still done and nothing is clo
   S.closeArmed = await pressOnce('dd-close');
   const afterClose = await state(S.done.id);
   return afterClose.status === 'done' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Close and waits 1.5 s' });
 test.run('its Close then stands armed, waiting for the second press', 0.2, function () {
   return S.closeArmed === true || false;
 }, test.limit.quick);
@@ -789,7 +789,7 @@ test.run('with its Delete pressed once, the item is still there, its status as b
   const design = S.design, before = S.beforePress;
   const afterDelete = await state(design.id);
   return (afterDelete.id === design.id && afterDelete.status === before.design.status && afterDelete.status !== 'closed' && (afterDelete.buttons || []).indexOf('delete') !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Delete and waits 1.5 s' });
 test.run('its Delete then stands armed, waiting for the second press', 0.2, function () {
   stopPressing();
   return S.deleteArmed === true || false;

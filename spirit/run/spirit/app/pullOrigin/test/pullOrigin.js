@@ -64,7 +64,7 @@ test.run('given no repo, or a folder that is no clone, it answers ok false with 
     if (!r || r.ok !== false || !r.reason) return false;
   }
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs pullOrigin on folders that are no clone' });
 
 // Andy: "push any changes i made".
 test.run('its owner\'s edited and new files are committed and pushed, and the clone ends at the front of master', 0.4, async function () {
@@ -75,7 +75,7 @@ test.run('its owner\'s edited and new files are committed and pushed, and the cl
   const r = await p({ repo: w.clone });
   const there = (git(['show', 'master:shared.txt'], w.origin).stdout || '') === 'line one, his\n' && (git(['show', 'master:new.txt'], w.origin).stdout || '') === 'new of his\n';
   return (!!r && r.ok === true && there && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git origin and clone and syncs' });
 
 // Andy: "pull to the front of master".
 test.run('behind origin, it takes origin\'s newest and lays its owner\'s change on top', 0.4, async function () {
@@ -85,7 +85,7 @@ test.run('behind origin, it takes origin\'s newest and lays its owner\'s change 
   fs.writeFileSync(path.join(w.clone, 'mine.txt'), 'mine\n');
   const r = await p({ repo: w.clone });
   return (!!r && r.ok === true && w.read(w.clone, 'theirs.txt') === 'theirs\n' && w.read(w.clone, 'mine.txt') === 'mine\n' && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git origin and clone and syncs' });
 
 test.run('with nothing of its own and nothing new on origin, it ends well and makes no commit', 0.2, async function () {
   const p = lib(); if (!p) return false;
@@ -93,7 +93,7 @@ test.run('with nothing of its own and nothing new on origin, it ends well and ma
   const was = w.originHead();
   const r = await p({ repo: w.clone });
   return (!!r && r.ok === true && w.originHead() === was && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git origin and clone and syncs' });
 
 // Andy: "past any mess that sometimes blocks it": both changed the same line, and the owner's line wins.
 test.run('where its owner and origin changed the same line, its owner\'s line wins, and it is pushed', 0.4, async function () {
@@ -103,7 +103,7 @@ test.run('where its owner and origin changed the same line, its owner\'s line wi
   fs.writeFileSync(path.join(w.clone, 'shared.txt'), 'line one, his\n');
   const r = await p({ repo: w.clone });
   return (!!r && r.ok === true && (git(['show', 'master:shared.txt'], w.origin).stdout || '') === 'line one, his\n' && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git origin and clone and syncs' });
 
 test.run('a rebase left in progress is ended, and the clone ends at the front of master', 0.4, async function () {
   const p = lib(); if (!p) return false;
@@ -115,7 +115,7 @@ test.run('a rebase left in progress is ended, and the clone ends at the front of
   if (stuck.status === 0 || !fs.existsSync(path.join(w.clone, '.git', 'rebase-merge')) && !fs.existsSync(path.join(w.clone, '.git', 'rebase-apply'))) return false;
   const r = await p({ repo: w.clone });
   return (!!r && r.ok === true && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone mid-rebase and syncs' });
 
 test.run('a merge left in progress is ended, and the clone ends at the front of master', 0.4, async function () {
   const p = lib(); if (!p) return false;
@@ -127,7 +127,7 @@ test.run('a merge left in progress is ended, and the clone ends at the front of 
   if (stuck.status === 0 || !fs.existsSync(path.join(w.clone, '.git', 'MERGE_HEAD'))) return false;
   const r = await p({ repo: w.clone });
   return (!!r && r.ok === true && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git clone mid-merge and syncs' });
 
 // A detached HEAD's own commits are never lost.
 test.run('a detached HEAD goes back to master, its own commit kept on a branch of its own', 0.4, async function () {
@@ -139,7 +139,7 @@ test.run('a detached HEAD goes back to master, its own commit kept on a branch o
   const r = await p({ repo: w.clone });
   const kept = w.branches().some(function (b) { return /^pullOrigin-/.test(b) && w.head(w.clone) !== lone && (git(['rev-parse', b], w.clone).stdout || '').trim() === lone; });
   return (!!r && r.ok === true && kept && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a detached git clone and syncs' });
 
 // What no side can win (one deleted what the other changed): the owner's commits are kept, and master is origin's.
 test.run('a clash no side wins leaves master at origin\'s, its owner\'s commit kept on a branch, and says so', 0.4, async function () {
@@ -151,7 +151,7 @@ test.run('a clash no side wins leaves master at origin\'s, its owner\'s commit k
   const kept = w.branches().filter(function (b) { return /^pullOrigin-/.test(b); }).some(function (b) { return (git(['show', b + ':gone.txt'], w.clone).stdout || '') === 'changed by him\n'; });
   const said = !!r && (r.did || []).some(function (d) { return /kept on the branch pullOrigin-/.test(d); });
   return (!!r && r.ok === true && kept && said && w.atFront()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it makes a git origin and clone and syncs' });
 
 // Run as Run starts it: the script and nothing more, from a folder that is no repo; it syncs the clone it lives in.
 test.run('run with no argument it syncs the clone it lives in, and its line says ok', 0.2, function () {
@@ -166,4 +166,4 @@ test.run('run with no argument it syncs the clone it lives in, and its line says
   fs.copyFileSync(FILE, copy);
   const r = spawnSync(process.execPath, [copy], { cwd: w.tmp, encoding: 'utf8', timeout: 120000 });
   return (r.status === 0 && /^pullOrigin: ok/.test(r.stdout || '') && w.atFront() && (git(['ls-tree', '-r', '--name-only', 'master'], w.origin).stdout || '').indexOf('spirit/run/spirit/app/pullOrigin/pullOrigin.js') !== -1) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it copies the tree and runs pullOrigin in it' });

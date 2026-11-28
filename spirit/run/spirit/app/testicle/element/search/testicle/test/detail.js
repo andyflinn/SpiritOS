@@ -100,7 +100,7 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   // Its testicle answers once its app server runs, a moment after the node.
   N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and waits for testicle' });
 test.run('the test flips three times, passing, failing and passing, and another test of its suite is set', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
@@ -109,7 +109,7 @@ test.run('the test flips three times, passing, failing and passing, and another 
   planted = out.every(function (r) { return r.status === 200; });
   out.slice(0, 3).forEach(function (r) { if (r.body && r.body.key) keys.push(r.body.key); });
   return (planted && keys.length === 3 && new Set(keys).size === 3) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets four rows, waiting 1.1 s between flips' });
 test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
@@ -118,7 +118,7 @@ test.run('the face page has its spirit', 0.2, async function () {
   if (c.error) return false;
   await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face page in Chrome' });
 test.run('the test detail loads on its own and mounts for a given script, suite and test, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
@@ -126,7 +126,7 @@ test.run('the test detail loads on its own and mounts for a given script, suite 
   if (loaded !== 'loaded') return false;
   made = await mount('zzBox', { script: A, suite: AS, test: FLIPS });
   return made === 'made' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the detail in the page and mounts it' });
 
 // the box: "The title line is the test's title in full"; goal/G47.4, Andy: "row 1: Title Bubble: presented as Row Form with a
 // run button on the right side, like the ones in app for one-shot jobs".
@@ -134,7 +134,7 @@ test.run('the detail\'s title line is the test\'s title in full', 0.2, async fun
   if (mounted()) return false;
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.title === FLIPS; }); }, 5000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the title to be drawn' });
 test.run('row 1 is a row form holding the title, with its run button on the right', 0.4, async function () {
   if (mounted()) return false;
   const ok = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var top = b && b.firstElementChild && b.firstElementChild.firstElementChild; var f = top && top.querySelector(".shell-row-form"); var t = f && f.querySelector("[data-history=title]"); var bs = f ? f.querySelectorAll("button") : []; var last = bs.length ? bs[bs.length - 1] : null; return !!t && t.textContent === ' + JSON.stringify(FLIPS) + ' && !!last && last.textContent === "run" && !f.querySelector("input"); }())');
@@ -158,7 +158,7 @@ test.run('below the title, every row of the test shows, current or not, the newe
   const want = keys.slice().reverse();
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && JSON.stringify(v.rows.map(function (r) { return r.key; })) === JSON.stringify(want); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for every row to be drawn' });
 // goal/G47.4, Andy: "Column headings should always have the same horizontal alignment as their column content. In this
 // horrendous example the column ceadings are centered, wher the column itself os left aligned... UNREADABLE!"
 test.run('each column heading is aligned as the cells of its column', 0.4, async function () {
@@ -205,12 +205,12 @@ test.run('a flip set on the node shows at the top with no press', 0.2, async fun
   if (r.status !== 200 || !r.body || !r.body.key) return false;
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.rows.length === 4 && v.rows[0].key === r.body.key && v.rows[0].cells[1] === '❌'; }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a flip on the node and waits for the draw' });
 test.run('after that flip, its row is the bold one, and the row it replaced is no longer bold', 0.4, async function () {
   if (mounted()) return false;
   const ok = await until(function () { return c.evaluate(BOLDS).then(function (b) { return Array.isArray(b) && b.length === 4 && b[0] === 'bold' && b.slice(1).every(function (x) { return x === 'plain'; }); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the bold row to move' });
 // goal/G47.1, box v130: "the testicle detail has a 🏃 run button for its script and suite; a press stops the running suite
 // and runs it first, as a top-10 fix does; the detail shows its full script and suite path" (Andy: "the testicle detail
 // doesn't show the full script name"; "give me a run button on the testicle detail"). What the press does on the server is
@@ -243,7 +243,7 @@ test.run('a press of the detail\'s run button asks spirit.app.testicle.run for i
   const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.run/.test(x); }))');
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
   return (!!ok && !!body && body.args && body.args.script === A && body.args.suite === AS) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses run and waits for the ask' });
 // goal/G47.4, the box: "a second rowForm will allow me to change the tests title", "new titles and the corresponding ui INPUT
 // must be bounded by DESCRIPTION_MAX_BYTES"; then Andy: "display the title in a bubble on top.", "a rowForm to change it below
 // that.", then "row 1: Title Bubble: presented as Row Form with a run button ... row 2: rowForm for title change". What the
@@ -277,21 +277,21 @@ test.run('a press of Change asks spirit.app.testicle.testicle.title with the scr
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
   const a = (body && body.args) || {};
   return (!!ok && a.script === A && a.suite === AS && a.oldTitle === FLIPS && a.title === 'alpha has a new name') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Change and waits for the ask' });
 // The planted suite file does not write the title, so the node refuses ("can not be found excatcly once as a literal").
 test.run('a refused rename says why below the forms, and the title line stays', 0.4, async function () {
   if (mounted()) return false;
   const ok = await until(function () { return c.evaluate('String((document.querySelector("#zzBox [data-history=said]") || {}).textContent || "").length > 0'); }, 10000);
   const v = await view('zzBox');
   return (!!ok && !!v && v.title === FLIPS) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the refusal to show' });
 test.run('a test with no row says so', 0.2, async function () {
   if (mounted()) return false;
   const m = await mount('zzNone', { script: A, suite: AS, test: 'alpha never ran this' });
   if (m !== 'made') return false;
   const ok = await until(function () { return view('zzNone').then(function (v) { return !!v && /No row of this test\./.test(v.html); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts a detail and waits for its words' });
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (mounted()) return false;
   const after = await c.evaluate('(function () { window.zzBox.destroy(); var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
@@ -304,4 +304,4 @@ test.run('once the detail is destroyed, a flip set on the node draws nothing in 
   await sleep(2000);
   const after = await c.evaluate('(function () { var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');
   return after === '' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a flip on the node and waits 2 s' });

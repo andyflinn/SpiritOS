@@ -117,7 +117,7 @@ test.run('a scratch node comes up for this suite', 0.2, async function () {
   const N = await boot(W.s.run); W.live.push(N.child);
   W.N = N;
   return N.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 
 // the box: "A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay"
 test.run('the scratch node knows a contact', 0.2, async function () {
@@ -188,7 +188,7 @@ test.run('a contact\'s detail no longer shows the inbound and outbound counters'
   await sleep(1500);
   const detail = await shown();
   return !/Unanswered inbound|Inbound rate|Outbound rate/.test(detail) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a contact and waits 1.5 s' });
 
 // the box: "In the appSelector's detail an intrinsic app has no row to activate or deactivate it"
 test.run('its detail shows no Activate and no Deactivate', 0.2, async function () {
@@ -199,7 +199,7 @@ test.run('its detail shows no Activate and no Deactivate', 0.2, async function (
   await sleep(2000);
   const panel = await shown();
   return panel.indexOf('Contacts') !== -1 && !/Activate|Deactivate/.test(panel) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Contacts and waits 2 s' });
 
 // the box: "app.active does not switch it off"
 test.run('after app.active switches it off, its tile is still there', 0.2, async function () {
@@ -208,7 +208,7 @@ test.run('after app.active switches it off, its tile is still there', 0.2, async
   await selector('tiles');
   await sleep(1500);
   return (await shown()).indexOf('Contacts') !== -1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it switches the app off and waits 1.5 s' });
 
 // nothing threw on the page
 test.run('no uncaught error on the page, all the way', 0.2, async function () {

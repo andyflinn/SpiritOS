@@ -545,7 +545,7 @@ function gateSection() {
     const r = require('child_process').spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 20000 });
     try { Z.out = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { Z.out = null; }
     return (!!Z.out && Z.out.zero === 502) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it spawns an app server process and calls it twice' });
   test.run('after the 502, the server answers ping 200: it did not die', 0.8, function () {
     return (!!Z.out && Z.out.ping === 200) || false;
   }, test.limit.quick);
@@ -686,7 +686,7 @@ function stateCachePart() {
     if (noTree()) return false;
     inCache = await startWith(cache);
     return (!!inCache.seen && inCache.seen.kept === cache) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts the follower process and waits for its save' });
   test.run('its cache.dump writes the cache there again, as spirit/state/follower/cache/<id>.json', 0.2, function () {
     if (!inCache) return false;
     const wrote = Array.isArray(inCache.saved) ? inCache.saved.map(function (f) { return f.file; }) : [];
@@ -724,24 +724,24 @@ function stateCachePart() {
     if (noTree()) return false;
     const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: KEPT_ID, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
     return (swapped.up && !swapped.seen) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts the follower process and waits for its save' });
   // the attacker: only a half-written .tmp, as a kill leaves it
   test.run('a .tmp is never read back', 0.2, async function () {
     if (noTree()) return false;
     const half = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json.tmp'), JSON.stringify({ key: SENDER, family: KEPT_ID, run: 'r', n: 1, rows: [{ kept: 'half' }] })); });
     return (half.up && !half.seen) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts the follower process and waits for its save' });
   // the attacker: a cache file that is no JSON, and one that is JSON of the wrong shape
   test.run('with a broken cache file the server still starts, reads nothing back, and saves', 0.2, async function () {
     if (noTree()) return false;
     const broken = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), '{"key": "' + SENDER + '", "rows": [ {"kept": '); });
     return (broken.up && !broken.seen && Array.isArray(broken.saved)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts the follower process and waits for its save' });
   test.run('with cached rows that are no list, nothing is read back and the server saves on', 0.2, async function () {
     if (noTree()) return false;
     const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: KEPT_ID, run: 7, n: -3, rows: 'not a list' })); });
     return (shape.up && !shape.seen && Array.isArray(shape.saved)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts the follower process and waits for its save' });
   test.run('after all of it spirit/state/follower/ holds nothing beside cache/ and its socket', 0.2, function () {
     if (noTree()) return false;
     const strays = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return ['cache', 'data', 'node.json', 'door.sock'].indexOf(f) === -1; }) : [];
@@ -858,7 +858,7 @@ function ownPart() {
     await tick(800);
     const landed = []; for (let i = 10; i < 30; i++) if (has(i)) landed.push(i);
     return landed.length === 20 || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it holds and releases deliveries, waiting over a second' });
   test.run('nineteen rows backed up behind a held one went in a bundle, not one peerPost each', 0.2, function () {
     if (noServer()) return false;
     return posts.length - before <= 3 || false;
@@ -882,7 +882,7 @@ function ownPart() {
     again = await O.s.subscribe(PUBLISHER, ID);
     await tick(500);
     return (again === true && has(30) && has(31) && has(32)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits out a refused delivery and a new subscribe' });
   // THE APP SERVER READS NO FIELD OF A ROW (goal/G48.8; Andy: "GET RID OF THAT FUCKING SHIT IN THE APPSERVER!", "GET RID OF
   // ANY TEST THAT ASSERTS THAT SHIT!"): a row naming keys in a to of its own is handed to every subscriber, as any row is.
   test.run('a row naming another key in its to is handed all the same, in the subscribe again\'s catch-up', 0.2, function () {
@@ -894,7 +894,7 @@ function ownPart() {
     O.A.publish(Object.assign(row(item(34)), { to: ['KEY-SOMEONE-ELSE'] }));
     await tick(500);
     return has(34) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits half a second for the live row to land' });
   test.run('spirit/server/app/script.js reads no to of a row', 0.2, function () {
     let t = '';
     try { t = fs.readFileSync(FILE, 'utf8'); } catch (e) { t = ''; }
@@ -927,7 +927,7 @@ function ownPart() {
     await O.s.subscribe(PUBLISHER, ID);
     await tick(600);
     return bootstraps === before + 1 || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits out a refused delivery and a new subscribe' });
   test.run('the push takes precedence, so a row it carries replaces the one kept', 0.2, function () {
     if (noServer()) return false;
     const one1 = itemOf('a1');
@@ -976,7 +976,7 @@ function ownPart() {
     release();
     await tick(400);
     return (has(60) && has(61) && has(62)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it holds the rows four seconds before they land' });
   test.run('what piled up while the first was out goes in one bundle after it', 0.2, function () {
     if (noServer()) return false;
     const sentLate = posts.slice(L.posts).filter(Array.isArray);
@@ -1149,7 +1149,7 @@ function ownPart() {
     const a = R.later = await asOwner('remote', {});
     const keys = ((a.body && a.body.items) || []).map(function (i) { return i.key; });
     return (keys[0] === SELF && keys.indexOf('KEY-PEER') !== -1) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the background check between two calls' });
   test.run('a contact whose server refuses this node is not listed, nor one that stays silent', 0.2, function () {
     const keys = ((R.later && R.later.body && R.later.body.items) || []).map(function (i) { return i.key; });
     return (keys.indexOf('KEY-PEER') !== -1 && keys.indexOf('KEY-NOGRANT') === -1 && keys.indexOf('KEY-SILENT') === -1) || false;
@@ -1171,7 +1171,7 @@ function ownPart() {
     const again = flaky.length >= 2;
     await asOwner('remote', { id: SELF });
     return again || false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it polls until the sibling is asked to subscribe again' });
 
   // THE LISTENER AND THE PUBLISHER'S VERBS ARE AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be
   // an auto-verb of spirit/server/app/script.js!", "both: \"publisher\" and \"listener\" belong in spirit/server/app/script.js", "they're both
@@ -1183,12 +1183,12 @@ function ownPart() {
     const r = runChild('publisherOnly', 'zzPubOnly');
     clearCache('zzPubOnly');
     return sided(r) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
   test.run('a server with a stream only, as deskClient is, names listener, subscribe, unsubscribe and remote, and no streamListener', 0.2, function () {
     const r = runChild('streamOnly', 'zzStreamOnly');
     clearCache('zzStreamOnly');
     return sided(r) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
   // goal/G47.5, the cache in client mode (see the child's clientCache): the same file a following server keeps, deskClient's,
   // in spirit/state/<server>/cache/<sender>.json, with the sibling's run, its place and every row it sent.
   const SELFSUB = {};
@@ -1199,7 +1199,7 @@ function ownPart() {
     const f = r.file || {};
     return (r.switched === 200 && r.pushed === 200 && r.streamed === 200 && f.key === PUBLISHER && f.run === 'r1' && f.n === 3
       && Array.isArray(f.ids) && ['head', 'a1', 'a2'].every(function (id) { return f.ids.indexOf(id) !== -1; })) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
   // goal/G47.5, part 2 (see selfSubscribe): this node's own subscribe is its pages', in both modes.
   test.run('in client mode a subscribe under this node\'s own key publishes the cache to its pages, none by peerPost', 0.2, function () {
     const r = SELFSUB.client || {};
@@ -1210,7 +1210,7 @@ function ownPart() {
     const r = runChild('selfServer', 'zzSelfServer');
     clearCache('zzSelfServer');
     return (r.selfStatus === 200 && allOf(r.toPages) && Array.isArray(r.byPost) && r.byPost.length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
   // the cache, per sender, saved and read back (box v15)
@@ -1238,7 +1238,7 @@ function ownPart() {
   test.run('started again, it reads its cache back before it subscribes', 0.2, function () {
     C.two = runChild('restart', 'cacheProbe');
     return (!!C.two.readOne && !!C.two.readTwo) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
   test.run('a sender of a new run pushes in full, its rows take precedence, and a kept row it does not carry stays', 0.2, function () {
     const two = C.two || {};
     return (two.subscribed === true && two.title === 'item 1, renamed' && !!two.two) || false;
@@ -1257,14 +1257,14 @@ function ownPart() {
     clearCache('cacheEvery');
     const every = runChild('every', 'cacheEvery');
     return (Array.isArray(every.a) && every.a.length === 3 && Array.isArray(every.b) && every.b.length === 3) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
   test.run('the cache keeps to the limit the client sets', 0.2, function () {
     clearCache('cacheLimit');
     C.full = runChild('limit', 'cacheLimit');
     let size = -1;
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
     return (size > 0 && size <= 3500) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
   // The family's own rules do the shedding (Andy, Q2: "it sits at the receiving end of the stream, it owns the cache ...
   // IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"); the desk's are judged in the desk's own test (goal/G47.4).
   // A family with none: the oldest rows go first (appServer's shedOldest). The rows kept are the newest, in order, and
@@ -1285,7 +1285,7 @@ function ownPart() {
     for (let i = 1; i <= 10; i++) sent.push('b' + i);
     const prefix = kept.length > 1 && kept.length < sent.length && kept.every(function (id, i) { return id === sent[i]; });
     return (prefix && kept.indexOf('b10') === -1) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs the server in a child process' });
 }
 
 if (CHILD) {

@@ -72,7 +72,7 @@ test.run('on a relay it hands no answer', 0.2, function () {
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return (!!W.node && W.node.up) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node' });
 // add.json: "A new bundle ... {id}. Owned by node (an owner naming an app server is refused not-node-owned, an invalid one is
 // read as node); its label is never empty, unique among node's bundles (label-taken)".
 test.run('add makes a node-owned bundle, answering {id}', 0.2, async function () {

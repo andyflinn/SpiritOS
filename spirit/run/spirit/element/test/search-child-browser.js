@@ -303,11 +303,11 @@ test.run('there are searches to judge, a scratch node and a Chrome page', 0.2, a
   W.page = await chromePage(chrome);
   if (W.page.error) { world = true; return false; }
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('each search is mounted, planted and opened on a page of its own', 0.2, async function () {
   // Each search's checks are said once this ends, however it ends, and the run let go.
   try { return await openEach(); } finally { judgeAll(); test.release(); }
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens every search on a page of its own' });
 async function openEach() {
   if (world) return false;
   const failed = [];

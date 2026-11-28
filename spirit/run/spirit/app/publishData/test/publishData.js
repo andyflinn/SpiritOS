@@ -212,7 +212,7 @@ test.run('in a clone with no traffic log, publishData exits 1 naming where it lo
   if (!WR.ready) return false;
   nolog = publish(BARE_CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'y'), '--asks', '1']);
   return (nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs publishData as a process' });
 
 // --only packets --out: N read-only testicle asks, timed by the node's own traffic log
 test.run('run with --only packets and --out, publishData exits 0 saying it wrote to the out folder', 0.2, function () {
@@ -221,7 +221,7 @@ test.run('run with --only packets and --out, publishData exits 0 saying it wrote
   headBefore = git(CLONE, ['rev-parse', 'HEAD']).out;
   r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
   return (r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs publishData as a process' });
 test.run('publishData names its platform, and its commit by the tree it runs from', 0.2, function () {
   if (!WR.ready) return false;
   return (r.out.indexOf('publishData: platform ' + PLATFORM + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : false;
@@ -544,7 +544,7 @@ test.run('the whole run exits 0 saying it published platform/<platform>/', 0.2, 
   before = git(CLONE, ['rev-parse', 'HEAD']).out;
   w = publish(CLONE, ['45440', '--asks', '2']);
   return (w.status === 0 && w.out.split('\n').pop() === 'publishData: published platform/' + PLATFORM + '/') ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs publishData and git as processes' });
 // NO HARNESS STEP: it went with the old harness (Andy's commit "KILL!", e9c6cb8c, removed spirit/test/measurePlatform.js).
 test.run('the whole run has no harness step, so nothing runs measurePlatform', 0.2, function () {
   if (!WR.ready) return false;
@@ -622,12 +622,12 @@ test.run('another clone pushes a commit of its own to the origin', 0.2, function
   git(BARE_CLONE, ['push', '-q', 'origin', 'master']);
   moved = git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
   return (!!moved && moved !== head) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it pulls, commits and pushes with git' });
 test.run('published again, publishData exits 0 though the origin moved on', 0.2, function () {
   if (!moved) return false;
   w2 = publish(CLONE, ['45440', '--asks', '1']);
   return (w2.status === 0) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs publishData as a process' });
 test.run('the origin then holds the new commit on top of the other clone\'s', 0.2, function () {
   if (!w2) return false;
   const top = git(ORIGIN, ['rev-parse', 'refs/heads/master']).out;
@@ -663,7 +663,7 @@ test.run('published while another machine pushed its platform\'s line to platfor
   git(BARE_CLONE, ['push', '-q', 'origin', 'master']);
   w3 = publish(CLONE, ['45440', '--asks', '1']);
   return (w3.status === 0) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it pushes with git and runs publishData' });
 test.run('the origin\'s platform/README.md then lists every platform folder the origin holds', 0.2, function () {
   if (!w3) return false;
   const want = foldersOnOrigin();

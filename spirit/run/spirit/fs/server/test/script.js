@@ -161,7 +161,7 @@ test.run('the fs-watcher job hears a file made.txt created in its folder', 0.2, 
     "setTimeout(function () { process.exit(0); }, 12000);",
   ].join('\n'), path.join(RUN, 'vendoredFolders-jobs-test'));
   return /^HEARD/.test(jobsOut) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a watcher child process and waits on it' });
 
 // A FILE ALREADY GONE IS NO FAILURE (goal/G49.19; cw's find on Andy's Windows node, a Windows EPERM on testicle.db-journal,
 // a file SQLite makes and deletes within moments, marked spirit.fs failed and stopped the file cache's feed; Andy: "cw, go",
@@ -191,14 +191,14 @@ function statusAfter(code, gone) {
 ['EPERM', 'ENOENT', 'EBUSY'].forEach(function (code) {
   test.run('an ' + code + ' on a file already gone leaves spirit.fs running', 0.2, function () {
     return statusAfter(code, true) === 'STATUS running' || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs a watcher child process' });
 });
 test.run('an EPERM on a file still there marks spirit.fs failed', 0.2, function () {
   return statusAfter('EPERM', false) === 'STATUS failed' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a watcher child process' });
 test.run('an error of another kind, ENOSPC, marks spirit.fs failed', 0.2, function () {
   return statusAfter('ENOSPC', true) === 'STATUS failed' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a watcher child process' });
 
 // THE CORE FLAG IS KEPT ON THE FILE LIST (goal/G47.1; Andy: "stick that flag on the fucking file list, then you have to
 // check each file once with isCore()"): the tree sent to a page that connects reads nothing from disc. Asked on every
@@ -238,7 +238,7 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
   ].join('\n'));
   try { treeSent = JSON.parse(String(out).trim().split('\n').pop()); } catch (e) { treeSent = null; }
   return (!!treeSent && treeSent.files > 100) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'a watcher child process walks the whole run folder' });
 test.run('the tree sent twice reads no app json from disc', 0.2, function () {
   if (!treeSent) return false;
   return treeSent.reads === 0 || false;
@@ -301,7 +301,7 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
     try { flagged = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { flagged = null; }
     return !!flagged || false;
   } finally { LABH.freeTree(tree); }
-}, test.limit.long);
+}, test.limit.long, { why: 'it takes a lab tree and runs a watcher child' });
 test.run('zzKept.js, of an app whose json says intrinsic false, comes without the core flag', 0.2, function () {
   if (!flagged) return false;
   return flagged.before === false || false;
@@ -361,7 +361,7 @@ test.run('the watcher runs on a scratch folder holding an old branch, a new bran
     try { rows = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { rows = null; }
     return !!rows || false;
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs a watcher child process on a scratch tree' });
 test.run('a folder holding api.js and data.js carries api, and not branch', 0.2, function () { return (!!rows && !!rows.old && rows.old.api === true && rows.old.branch === false) || false; }, test.limit.quick);
 test.run('a folder holding script.js and client/script.js carries branch, and not api', 0.2, function () { return (!!rows && !!rows.new && rows.new.branch === true && rows.new.api === false) || false; }, test.limit.quick);
 test.run('a folder holding script.js alone carries neither api nor branch', 0.2, function () { return (!!rows && !!rows.alone && rows.alone.branch === false && rows.alone.api === false) || false; }, test.limit.quick);
@@ -421,7 +421,7 @@ test.run('the watcher runs on a scratch folder holding new-style apps, each with
     try { newApps = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { newApps = null; }
     return (!!newApps && Object.keys(NEW_APPS).every(function (n) { return !!newApps[n]; })) || false;
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs a watcher child process on a scratch tree' });
 const flagOf = function (n) { return newApps && newApps[n] ? newApps[n] : null; };
 test.run('node mount true with script.js, server/script.js and client/script.js: an app, and a branch', 0.2, function () { const r = flagOf('zzMount'); return (!!r && r.app === true && r.branch === true) || false; }, test.limit.quick);
 test.run('node mount true with no server/script.js: no app', 0.2, function () { const r = flagOf('zzMountNoServer'); return (!!r && r.app === false) || false; }, test.limit.quick);
@@ -497,7 +497,7 @@ test.run('the watcher on the run folder hands its tree as a node and as a relay'
     .filter(function (d) { return Object.keys(AS.node).some(function (q) { return q.indexOf(d + '/') === 0 && AS.node[q].kind === 'file'; }); })[0] || '';
   AS.plain = plainDir ? Object.keys(AS.node).filter(function (q) { return q.indexOf(plainDir + '/') === 0 && AS.node[q].kind === 'file'; })[0] : '';
   return (AS.homes.length > 5 && !!AS.plain) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it takes a lab tree and walks it as node and relay' });
 test.run('as a node, the tree holds a file of a trunk folder that is no branch and no app', 0.2, function () {
   return (!!AS.node && !!AS.plain && !!AS.node[AS.plain]) || false;
 }, test.limit.quick);

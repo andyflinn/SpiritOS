@@ -980,14 +980,14 @@ test.run('the relay mails a join code', 0.2, async function () {
   await until(function () { return S.R.mailed.length > 0; }, 5000);
   S.code = joinCode(S.R);
   return !!S.code || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and relay, then joins' });
 test.run('Once the join code is given, the relay\'s row says it is claimed', 0.2, async function () {
   if (!S.code) return false;
   await home(S.N.base, 'spirit.contact.join', { key: S.R.relayKey, email: MAIL, code: S.code });
   await until(function () { const r = last(S.key); return !!r && r.claimed === true && r.status === 200; }, 10000);
   S.seated = last(S.key) || {};
   return S.seated.claimed === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the claimed row on the stream' });
 test.run('The relay\'s row carries status 200 while the stream is held', 0.2, function () {
   if (!S.seated) return false;
   return S.seated.status === 200 || false;
@@ -1021,7 +1021,7 @@ test.run('Once the relay is back, its row says status 200 and owned', 0.2, async
   await until(function () { const r = last(S.key); return !!r && r.owned === true && r.status === 200; }, 20000);
   S.ownedRow = last(S.key) || {};
   return (S.ownedRow.status === 200 && S.ownedRow.owned === true) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the owned row on the stream' });
 test.run('Once the relay is back, its roll names this node its owner', 0.2, function () {
   if (!S.ownedRow) return false;
   return (!!S.ownedRow.roll && S.ownedRow.roll.ownerKey === S.me) || false;
@@ -1070,7 +1070,7 @@ test.run('In Chrome the contact detail is mounted for the relay\'s key, told it 
   if (mounted !== 'ok') return false;
   S.chrome = chrome;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens Chrome and waits 3 s for the page' });
 test.run('it paints the relay\'s label', 0.2, async function () {
   if (!S.chrome) return false;
   await until(function () { return panelText().then(function (t) { return t.indexOf(LABEL) !== -1; }); }, 8000);
@@ -1114,7 +1114,7 @@ test.run('With no 😏, the relay\'s detail has no "A face name" fold', 0.2, asy
   if (!S.chrome) return false;
   await sleep(1000);
   return !(await hasFaceHead()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits a second for the fold not to come' });
 test.run('The home node makes the relay faceable', 0.2, async function () {
   if (!S.up) return false;
   const sOn = await home(S.N.base, 'spirit.contact.faceable', { key: S.key, faceable: true });
@@ -1124,14 +1124,14 @@ test.run('Once the relay is faceable, the "A face name" fold comes with no reloa
   if (!S.chrome) return false;
   await until(hasFaceHead, 5000);
   return (await hasFaceHead()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the fold to come' });
 test.run('Opened, the "A face name" fold holds the face form\'s field and its button', 0.2, async function () {
   if (!S.chrome) return false;
   await S.chrome.evaluate('(function () { var h = ' + faceHead + '; if (h) h.click(); }())');
   await until(function () { return S.chrome.evaluate('!!document.querySelector("#zzPanel .nd-face-form input")'); }, 5000);
   const drawn = await S.chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button") } : null; }())');
   return (!!drawn && drawn.input && drawn.button) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the fold and waits for the face form' });
 test.run('The home node takes 😏 off the relay', 0.2, async function () {
   if (!S.up) return false;
   const sOff = await home(S.N.base, 'spirit.contact.faceable', { key: S.key, faceable: false });
@@ -1141,7 +1141,7 @@ test.run('With 😏 off, the "A face name" fold is gone again', 0.2, async funct
   if (!S.chrome) return false;
   await until(function () { return hasFaceHead().then(function (h) { return !h; }); }, 5000);
   return !(await hasFaceHead()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the fold to go' });
 
 // it listens, shown or hidden, and asks no one again
 const asks = function () { return S.chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"relay\.(status|get)"/.test(String((m.params.request || {}).postData || '')); }).length; };
@@ -1153,7 +1153,7 @@ test.run('While shown, the relay\'s detail paints a new label', 0.2, async funct
   await home(S.N.base, 'peer.post', { to: S.key, text: JSON.stringify({ app: 'relay', body: { relayLabel: { label: NEW1 } } }) });
   await until(function () { return panelText().then(function (t) { return t.indexOf(NEW1) !== -1; }); }, 8000);
   return (await panelText()).indexOf(NEW1) !== -1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it posts a new label and waits for the paint' });
 test.run('The detail asked the node for no relay status or relay details to paint the new label', 0.2, function () {
   if (S.asked === undefined) return false;
   return asks() === S.asked || false;
@@ -1166,7 +1166,7 @@ test.run('While hidden, the relay\'s detail paints a new label all the same', 0.
   const said = await panelText();
   await S.chrome.evaluate('document.getElementById("zzPanel").style.display = ""; 1');
   return said.indexOf(NEW2) !== -1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it posts a new label and waits for the paint' });
 
 // it follows only its row
 // Another relay's row, joined and not owned: a panel that listened to it would stop saying this relay is owned.
@@ -1176,7 +1176,7 @@ test.run('a second relay comes up', 0.2, async function () {
   S.Other = await scratchFaceRelay({ members: [] });
   S.others.push(S.Other);
   return !!S.Other.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a second scratch relay' });
 test.run('the other relay\'s row, seated and not owned, is on the stream', 0.2, async function () {
   if (!S.Other) return false;
   const Other = S.Other;
@@ -1187,13 +1187,13 @@ test.run('the other relay\'s row, seated and not owned, is on the stream', 0.2, 
   await until(function () { const r = last(Other.relayKey); return !!r && r.claimed === true && r.owned === false; }, 10000);
   const otherRow = last(Other.relayKey) || {};
   return (otherRow.claimed === true && otherRow.owned === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it joins the other relay and waits for its row' });
 test.run('Nothing of the other relay\'s row reaches this relay\'s detail', 0.2, async function () {
   if (S.before === undefined) return false;
   await sleep(1000);
   const now = await panelText();
   return now === S.before || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits a second to see nothing paints' });
 
 // gone from the page, it stops
 test.run('it has a destroy', 0.2, async function () {
@@ -1209,7 +1209,7 @@ test.run('a later change neither throws nor paints', 0.2, async function () {
   const threw = S.chrome.heard.slice(S.mark).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   const now = await panelText();
   return (!threw.length && now.indexOf('zzNameThree') === -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it posts a label and waits 1.5 s' });
 
 // THE FACE FORM OFFERS A STARRED RELAY ONLY (goal/G43.18's box, v29, Andy: "on the home node, NO face is offered (faceForm
 // hides itself) for a relay without star."), with goal/G41.32's "faceForm provides that check as a function", "if there are
@@ -1223,7 +1223,7 @@ test.run('The face form has a function saying whether it has relays to offer', 0
   await sleep(3000);
   S.checkArgs = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/faceForm/script.js")).then(function () { var F = window.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
   return !!S.checkArgs || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reloads the page and waits 3 s for it' });
 test.run('The face form offers a faceable relay, alone or beside one without 😏', 0.2, function () {
   if (!S.checkArgs) return false;
   return (S.checkArgs.starred === true && S.checkArgs.one === true) || false;
@@ -1244,7 +1244,7 @@ test.run('With neither relay faceable, Info shows no face form and leaves no emp
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Info"; })[0]; if (e) e.click(); }())');
   await sleep(3000);
   return (!(await tileShown()) && !(await emptyTile())) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens Info and waits 3 s' });
 test.run('With one relay faceable, the face form comes with no reload and offers that relay alone', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
@@ -1253,7 +1253,7 @@ test.run('With one relay faceable, the face form comes with no reload and offers
   await until(function () { return options().then(function (o) { return o.indexOf(S.R.base) !== -1; }); }, 5000);
   const one = await options();
   return ((await tileShown()) && one.indexOf(S.R.base) !== -1 && one.indexOf(S.Other.base) === -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it stars a relay and waits for the form' });
 test.run('The face form followed the row without reading anything', 0.2, function () {
   if (S.readsBefore === undefined) return false;
   return infoReads() === S.readsBefore || false;
@@ -1265,7 +1265,7 @@ test.run('With both relays faceable, the face form offers both', 0.2, async func
   await until(function () { return options().then(function (o) { return o.length >= 2; }); }, 5000);
   const both = await options();
   return (both.indexOf(S.R.base) !== -1 && both.indexOf(S.Other.base) !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it stars the other relay and waits for the form' });
 test.run('With 😏 taken off one, that relay is gone from the dropdown and the other stays', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
@@ -1287,7 +1287,7 @@ test.run('a third relay comes up', 0.2, async function () {
   S.Far = await scratchFaceRelay({ members: [] });
   S.others.push(S.Far);
   return !!S.Far.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a third scratch relay' });
 test.run('The home node refuses with a code to make faceable a relay that is listed but holds no seat', 0.2, async function () {
   if (!S.Far) return false;
   await home(S.N.base, 'spirit.contact.add', { url: S.Far.base, label: 'zzFar' });
@@ -1308,7 +1308,7 @@ test.run('taking away a 😏 it does not have changes nothing', 0.2, async funct
   await home(S.N.base, 'spirit.contact.block', { publicKey: S.person });
   const personAns = await home(S.N.base, 'spirit.contact.faceable', { key: S.person, faceable: true });
   return (pass && personAns.status >= 400 && personAns.status < 500) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node four times' });
 
 // its panel offers no star there
 test.run('the panel draws for it', 0.2, async function () {
@@ -1334,7 +1334,7 @@ test.run('Once this node has joined the relay, 😏 goes on', 0.2, async functio
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === true; }, 10000);
   const farYes = await home(S.N.base, 'spirit.contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farYes.status === 200 && await starred(S.Far.relayKey)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it joins the relay by mail and waits for its row' });
 test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
   if (!S.Far) return false;
   // The first ask may still be waiting for the relay's card, as relay.face's does.
@@ -1342,7 +1342,7 @@ test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
   for (let i = 0; i < 8; i++) { left = await home(S.N.base, 'spirit.contact.leave', { key: S.Far.relayKey }); if (left.status < 300 || left.status === 404) break; await sleep(2000); }
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === false; }, 8000);
   return ((last(S.Far.relayKey) || {}).claimed) === false || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it leaves the relay, retrying, and waits for its row' });
 test.run('Leaving the relay takes 😏 away with the seat', 0.2, async function () {
   if (!S.Far) return false;
   await until(function () { return starred(S.Far.relayKey).then(function (x) { return !x; }); }, 5000);
@@ -1361,7 +1361,7 @@ test.run('a relay naming this node its owner comes up', 0.2, async function () {
   S.Own = await scratchFaceRelay({ members: [], ownerKey: S.me });
   S.others.push(S.Own);
   return !!S.Own.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch relay owned by this node' });
 test.run('Once the owned relay\'s report has come, its row says it is owned', 0.2, async function () {
   if (!S.Own) return false;
   const Own = S.Own;
@@ -1373,7 +1373,7 @@ test.run('Once the owned relay\'s report has come, its row says it is owned', 0.
   await until(function () { const r = last(Own.relayKey); return !!r && r.owned === true; }, 20000);
   const ownedRow2 = last(Own.relayKey) || {};
   return ownedRow2.owned === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it joins the owned relay and waits for its report' });
 test.run('On a relay this node owns, 😏 goes on', 0.2, async function () {
   if (!S.Own) return false;
   const ownYes = await home(S.N.base, 'spirit.contact.faceable', { key: S.Own.relayKey, faceable: true });
@@ -1400,7 +1400,7 @@ test.run('a relay\'s label is bold and italic, under 📡 Relays', 0.2, async fu
   const relayLook = await styleOf('scratch');
   S.listed = true;
   return (!!relayLook && relayLook.weight >= 700 && relayLook.style === 'italic') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reloads the page and opens the contacts list' });
 test.run('a person is listed too', 0.2, async function () {
   if (!S.listed) return false;
   // A person is under 👨‍👩‍👧‍👦 People (box v29).

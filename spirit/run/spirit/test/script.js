@@ -394,7 +394,7 @@ test.run('spirit.appPath is run in a process whose file cache holds a new-style 
     try { AP.out = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { AP.out = null; }
     return (!!AP.out && !AP.out.none && !AP.out.threw) || false;
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs spirit.appPath in a child with a watcher' });
 test.run('spirit.appPath answers a promise', 0.2, function () { return (!!AP.out && AP.out.promise === true) || false; }, test.limit.quick);
 test.run('spirit.appPath of a new-style app\'s element/script.js is the app\'s id, spirit.zzApps.zzShell', 0.2, function () { return (!!AP.out && AP.out.shell === 'spirit.zzApps.zzShell') || false; }, test.limit.quick);
 test.run('spirit.appPath of an element deeper in that app is the same id', 0.2, function () { return (!!AP.out && AP.out.deeper === 'spirit.zzApps.zzShell') || false; }, test.limit.quick);
@@ -447,7 +447,7 @@ test.run('the instance of a scratch run root that names a fake node answers what
   if (o.threw) return false;
   T.o = o;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the spirit object in a child process' });
 function O() { return T.o || null; }
 test.run('the scratch run root\'s instance is its process\'s one global', 0.2, function () {
   const o = O(); if (!o) return false;
@@ -581,7 +581,7 @@ test.run('with no port in its environment.json, require of an interface and tree
   if (!T.bare) return false;
   const n = await observe(T.bare, 'none');
   return (n.require === 'no-node' && n.tree === 'no-node' && n.noPort === true) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the spirit object in a child process' });
 
 // ── 6. ON A PAGE: ITS NODE IS THE PAGE'S ORIGIN ──────────────────────
 // 6. on a page: its node is the page's own origin, or the link set on it
@@ -998,7 +998,7 @@ test.run('a scratch node comes up with a headless page on it', 0.2, async functi
   L.page = L.node.up ? await H.chromePage(H.findChrome()) : null;
   if (!L.node.up || !L.page || L.page.error) { L.page = null; return false; }
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 // THE SPIRIT BRANCH, PART 2 (goal/G49.23, box v22 Part 2; Andy: "GO ON PART TWO"): "the node and event branches verbs move into
 // the spirit branch"; "on the wire they are spirit.card, spirit.debug, spirit.setName, spirit.setDescription, spirit.rotateCipher,
 // spirit.publish, spirit.subscribe; node.* and event.* are gone".
@@ -1034,12 +1034,12 @@ test.run('on the node, spirit.card answers the node\'s card, and node.card is re
   const yes = await door('spirit.card', {});
   const no = await door('node.card', {});
   return (!!yes && yes.status === 200 && !!yes.body && typeof yes.body.publicKey === 'string' && !!no && no.status !== 200) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it calls the node over HTTP twice' });
 test.run('on the node, spirit.subscribe opens the stream, and event.subscribe is refused', 0.2, async function () {
   const yes = await door('spirit.subscribe', {});
   const no = await door('event.subscribe', {});
   return (!!yes && yes.status === 200 && yes.stream === true && !!no && no.status !== 200 && !no.stream) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the node stream over HTTP twice' });
 test.run('spirit/node/ and spirit/event/ are gone, and each of the seven verbs has its spirit/<verb>.json', 0.2, function () {
   const RUNP = path.resolve(__dirname, '..', '..');
   const gone = !fs.existsSync(path.join(RUNP, 'spirit', 'node')) && !fs.existsSync(path.join(RUNP, 'spirit', 'event'));
@@ -1061,7 +1061,7 @@ test.run('the page called verbs as it loaded', 0.2, async function () {
   L.used = new Set(L.verbCalls.map(function (c) { return String(c.call).split('.')[0]; }));
   L.asked = L.atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.branch; }).map(function (c) { return String(c.args.branch); });
   return L.verbCalls.length > 0 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the home page and waits 6 s' });
 test.run('on a real page, the page never asks for the whole api, an api call with no branch', 0.2, function () {
   if (!L.atLoad) return false;
   const whole = L.atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.branch); });
@@ -1129,7 +1129,7 @@ test.run('an old-shape branch of the tree, by the system\'s own mark, is a branc
     if (a && a.status === 200 && a.body && typeof a.body.interface === 'string') { L.fresh = b.name; L.freshPath = b.api; break; }
   }
   return !!L.fresh || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it walks the tree and asks the node per branch' });
 test.run('the branch the page has not used yet is bound on the page once it is required', 0.2, async function () {
   if (!L.fresh) return false;
   L.before = calls().length;
@@ -1141,7 +1141,7 @@ test.run('the branch the page has not used yet is bound on the page once it is r
   await H.sleep(1000);
   L.reached = true;
   return (first === true && second === true) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it binds a branch on the page and waits 1 s' });
 test.run('on a real page, using the branch the page has not used yet for the first time asks its api once, and using it again asks nothing', 0.2, function () {
   if (!L.reached) return false;
   const later = calls().slice(L.before).filter(function (c) { return c.call === 'api' && c.args && c.args.branch === L.fresh; });
@@ -1168,7 +1168,7 @@ test.run('the desk server answers the page once switched on', 0.2, async functio
   }
   L.up = up;
   return up === '200' || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it switches desk on and waits for its server' });
 test.run('on a real page, the Desk element opens on the page that loaded before desk was on', 0.2, async function () {
   if (L.up !== '200') return false;
   const mark = L.page.heard.length;
@@ -1181,7 +1181,7 @@ test.run('on a real page, the Desk element opens on the page that loaded before 
   L.got = got;
   L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/spirit$/.test(m.params.request.url) && /"call":"spirit\.app\.desk\.items\.search"/.test(m.params.request.postData || ''); });
   return (!got.refused && got.nodes > 0) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it draws the Desk element and waits 8 s' });
 test.run('on a real page, the Desk element asks desk itself with spirit.app.desk.items.search, and no reload', 0.2, function () {
   if (!L.got) return false;
   return L.deskAsked.length > 0 || false;
@@ -1218,13 +1218,13 @@ test.run('a face page opens, its stream handing a subscriber the node\'s snapsho
   const ok = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > 0'); }, 20000);
   RC.before = await L.page.evaluate('window.zzHeard || 0');
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a face page and waits for its stream' });
 test.run('after its node restarts on the same port, the page\'s stream comes back by itself: the node is heard again within 60 s', 0.8, async function () {
   if (!RC.before) return false;
   await L.node.restart();
   const back = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > ' + RC.before); }, 60000);
   return !!back || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it restarts the node and waits for the stream' });
 
 // The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, spirit/testicle/general/any/generalRules/script.js
 // (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
@@ -1317,7 +1317,7 @@ test.run('a real node has a real face on a starred relay, logged in', 0.2, async
   if (!FL.N.up || !FL.R.up) return false;
   const F = FL.F = await faceOf(FL.N, FL.R);
   return !!F.sid || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and a scratch relay' });
 function faceUp() { return !!FL.F && !!FL.F.sid; }
 // the box: "The relay serves a logged-out face one plain page ... with spirit.js and seal.js only"
 test.run('the relay serves the face its page', 0.2, async function () {
@@ -1349,7 +1349,7 @@ test.run('spirit.faceLogin holds state, login and logout', 0.2, async function (
   await sleep(3000);
   FL.out = parsed(await chrome.evaluate(SEEN)) || {};
   return FL.out.login === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face page in Chrome and waits 3 s' });
 test.run('logged out, the page shows one field', 0.2, async function () {
   if (!FL.out) return false;
   return FL.out.fields === 1 || false;
@@ -1377,7 +1377,7 @@ test.run('logged in, the face draws the home node\'s shell', 0.2, async function
   FL.drew = await until(function () { return chrome.evaluate(SEEN).then(function (t) { const v = parsed(t) || {}; return v.shell === true; }); }, 30000);
   FL.inn = parsed(await chrome.evaluate(SEEN)) || {};
   return !!FL.drew || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face page and waits for the shell' });
 test.run('logged in, none of boot.js, shell.css or face.css came as the relay\'s own file', 0.2, function () {
   if (!FL.inn) return false;
   const plainGets = (FL.inn.loaded || []).filter(function (n) { return /^\/shell\/(boot\.js|face\.css)|^\/shell\.css/.test(n); });
@@ -1395,7 +1395,7 @@ test.run('logged out by spirit.faceLogin.logout, the page shows the one field ag
   const after = parsed(await chrome.evaluate(SEEN)) || {};
   FL.loggedOut = true;
   return (after.fields === 1 && after.shell === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it logs out, reloads the page and waits 3 s' });
 test.run('after the logout the relay holds the login no more', 0.8, async function () {
   if (!FL.loggedOut) return false;
   const st = await atFace(FL.R, 'POST', '/spirit', { call: 'spirit.relay.faceState', args: {} }, FL.F.sid);  // goal/G49.25: was /face/api
@@ -1478,7 +1478,7 @@ test.run('a scratch node is up, on its own copy of the tree', 0.2, async functio
   FF.dup = app.word;
   plant('spirit/' + app.word + '/api.js', 'module.exports = { verbs: {} };\n');
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 // 3. a duplicate is seen
 test.run('the check sees a planted second api.js of an old-shape branch\'s name, with both spirit/<name>/ and spirit/app/<name>/ there', 0.2, function () {
   if (!FF.sRun || !FF.dup) return false;
@@ -1564,7 +1564,7 @@ test.run('a page on a scratch node has its stream open', 0.2, async function () 
   if (!(await H.until(function () { return SIL.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000))) return false;
   await SIL.page.evaluate('window.zzConn = []; window.spirit.eventStream.subscribe({ onConnection: function (u) { window.zzConn.push(u); } }); true');
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.after(async function () {
   try { if (SIL.gate) SIL.gate.stop(); } catch (e) { /* gone */ }
   try { if (SIL.page && SIL.page.kid) SIL.page.kid.kill(); } catch (e) { /* gone */ }
@@ -1589,7 +1589,7 @@ test.run('a stream with no event for 5 s is reset, and the page opens a new one 
   SIL.saidDown = (await SIL.page.evaluate('window.zzConn.slice(' + SIL.conn + ')')) || [];
   SIL.gate.quiet(false);
   return !!reset || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it silences the stream and waits for a new one' });
 test.run('the page cancels the silent stream first, so the old one ended before the new one was sent', 0.8, function () {
   if (!SIL.old || !SIL.fresh) return false;
   const ended = endedAt(SIL.old), sent = sentAt(SIL.fresh);
@@ -1643,7 +1643,7 @@ test.run('a scratch node with the loader\'s planted scripts comes up, with a pag
   if (!LD.page || LD.page.error) return false;
   await LD.page.send('Page.navigate', { url: LD.node.base + '/' });
   return !!(await H.until(function () { return LD.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.after(async function () {
   try { if (LD.page && LD.page.kid) LD.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (LD.node && LD.node.release) await LD.node.release(); } catch (e) { /* gone */ }
@@ -1664,17 +1664,17 @@ async function ldPage() {
   return LD.onPage;
 }
 // in node
-test.run('in node, requireScript answers what a script.js sets as module.exports', 0.4, function () { const o = ldNode(); return !!o && o.objA === 1 || false; }, test.limit.slow);
-test.run('in node, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, function () { const o = ldNode(); return !!o && o.objAt === true || false; }, test.limit.slow);
-test.run('in node, the folder\'s other script stands under its script.js, which stays where it was', 0.4, function () { const o = ldNode(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
-test.run('in node, a script.js exposing a function is refused, and nothing is placed at its folder\'s name', 0.4, function () { const o = ldNode(); return !!o && o.fnRefused === true && o.fnPlaced === false || false; }, test.limit.slow);
-test.run('in node, a script.js exposing a bare string is refused', 0.4, function () { const o = ldNode(); return !!o && o.strRefused === true || false; }, test.limit.slow);
+test.run('in node, requireScript answers what a script.js sets as module.exports', 0.4, function () { const o = ldNode(); return !!o && o.objA === 1 || false; }, test.limit.slow, { why: 'it runs the loader in a child process' });
+test.run('in node, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, function () { const o = ldNode(); return !!o && o.objAt === true || false; }, test.limit.quick);
+test.run('in node, the folder\'s other script stands under its script.js, which stays where it was', 0.4, function () { const o = ldNode(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.quick);
+test.run('in node, a script.js exposing a function is refused, and nothing is placed at its folder\'s name', 0.4, function () { const o = ldNode(); return !!o && o.fnRefused === true && o.fnPlaced === false || false; }, test.limit.quick);
+test.run('in node, a script.js exposing a bare string is refused', 0.4, function () { const o = ldNode(); return !!o && o.strRefused === true || false; }, test.limit.quick);
 // on a page
-test.run('on a page, requireScript answers what a script.js sets as module.exports', 0.4, async function () { const o = await ldPage(); return !!o && o.objA === 1 || false; }, test.limit.slow);
-test.run('on a page, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, async function () { const o = await ldPage(); return !!o && o.objAt === true || false; }, test.limit.slow);
-test.run('on a page, the folder\'s other script stands under its script.js, which stays where it was', 0.4, async function () { const o = await ldPage(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
-test.run('on a page, a script.js exposing a function is refused, and nothing is placed at its folder\'s name', 0.4, async function () { const o = await ldPage(); return !!o && o.fnRefused === true && o.fnPlaced === false || false; }, test.limit.slow);
-test.run('on a page, a script.js exposing a bare string is refused', 0.4, async function () { const o = await ldPage(); return !!o && o.strRefused === true || false; }, test.limit.slow);
+test.run('on a page, requireScript answers what a script.js sets as module.exports', 0.4, async function () { const o = await ldPage(); return !!o && o.objA === 1 || false; }, test.limit.slow, { why: 'it runs the loader on the Chrome page' });
+test.run('on a page, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, async function () { const o = await ldPage(); return !!o && o.objAt === true || false; }, test.limit.quick);
+test.run('on a page, the folder\'s other script stands under its script.js, which stays where it was', 0.4, async function () { const o = await ldPage(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.quick);
+test.run('on a page, a script.js exposing a function is refused, and nothing is placed at its folder\'s name', 0.4, async function () { const o = await ldPage(); return !!o && o.fnRefused === true && o.fnPlaced === false || false; }, test.limit.quick);
+test.run('on a page, a script.js exposing a bare string is refused', 0.4, async function () { const o = await ldPage(); return !!o && o.strRefused === true || false; }, test.limit.quick);
 // THE PAGE LIST GOES (goal/G49.15, box v16: "the page list goes."): the spirit object names no vendored folder; codeMirror
 // comes from face.html's own script tags.
 test.run('the spirit object holds no list of vendored folders: no VENDORED_ON_PAGE, and it names no spirit/element/codeMirror/', 0.4, function () {
@@ -1691,7 +1691,7 @@ test.run('in node, a stand-in put into the module cache for a script is what req
   let o = null;
   try { o = JSON.parse(r.stdout || 'null'); } catch (e) { o = null; }
   return !!o && o.answer === true && o.at === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the loader in a child process' });
 
 
 // ── THE FLAG DAY'S MOVES (goal/G49.12, box v17, "Flag-Day-Moves") ──
@@ -1767,7 +1767,7 @@ function trackedNaming(text) {
 TOOLS.forEach(function (n) {
   test.run('the tool ' + n + ' stands at spirit/testicle/' + n + '/script.js, nothing at spirit/test/' + n + '.js, and no tracked file names the old path', 0.4, function () {
     return (fs.existsSync(path.join(RUN, 'spirit', 'testicle', n, 'script.js')) && !fs.existsSync(path.join(RUN, 'spirit', 'test', n + '.js')) && trackedNaming('spirit/test/' + n + '.js').length === 0) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it runs git grep over the tracked tree' });
 });
 test.run('spirit/test/test/ is gone, and each tool that had a test there has it at spirit/testicle/<name>/test/script.js', 0.4, function () {
   return (!fs.existsSync(path.join(RUN, 'spirit', 'test', 'test')) && ['headLessChrome', 'testModule', 'testReport'].every(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'testicle', n, 'test', 'script.js')); })) || false;

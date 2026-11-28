@@ -112,7 +112,7 @@ test.run('a scratch node with its own disc comes up with Icons and Desk switched
   W.SET = path.join(run, 'spirit', 'state', 'app', 'icons', 'data', 'iconSet.json');
   W.up = true;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('seven glyphs the system set does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const system = json(path.join(W.node.root, 'spirit', 'run', 'spirit', 'iconSet.json')) || {};
@@ -232,7 +232,7 @@ test.run('after five Adds at once, all five are in the set, none lost to another
   W.watched = await watching.stop();
   const s5 = W.s5 = json(W.SET);
   return allFive ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sends five adds from the page and waits' });
 test.run('the glyphs added before the five stay, and the file is whole JSON', 0.2, function () {
   if (!W.watched) return false;
   return !!W.s5 && W.G1 in W.s5 && W.G2 in W.s5 ? true : false;
@@ -251,7 +251,7 @@ test.run('a page writing spirit/state/app/icons/data/iconSet.json itself is refu
   await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/script.js"); }).then(function (s) { return s.saveFile("spirit/state/app/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
   await sleep(800);
   return W.G1 in (json(W.SET) || {}) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the page to save and waits 800 ms' });
 
 // the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"
 test.run('Icons is switched off', 0.2, async function () {
@@ -265,7 +265,7 @@ test.run('switched off, spirit.app.icons.icon answers app-not-served', 0.2, asyn
   await sleep(1500);
   const asked = W.verbs.length ? await ask(ID + '.' + W.verbs[0], {}) : { text: '' };
   return /app-not-served/.test(asked.text) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 1.5 s, then asks the node' });
 test.run('switched off, the api tree holds no icons branch', 0.2, async function () {
   if (!W.ready) return false;
   const tOff = await ask('api', {});

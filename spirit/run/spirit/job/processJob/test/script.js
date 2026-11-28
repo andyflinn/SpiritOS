@@ -87,7 +87,7 @@ test.run('a process of a scratch run root naming a fake node runs processJob by 
   T.root = scratchRoot(T.node.port);
   T.o = await observe(T.root, 'spirit.app.zzjob');
   return (!!T.o && !T.o.threw) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs processJob in a child process' });
 test.run('spirit/job/processJob/script.js exposes an object holding report, log, complete, fail, publish, cycle, start, progress and end', 0.2, function () {
   return (!!T.o && JSON.stringify(T.o.verbs) === JSON.stringify(VERBS.slice().sort())) || false;
 }, test.limit.quick);
@@ -109,4 +109,4 @@ test.run('in a process the node did not start as a job, report is refused no-job
   if (!T.root) return false;
   T.none = await observe(T.root, '');
   return (!!T.none && T.none.noJob === 'no-job') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs processJob in a child process' });

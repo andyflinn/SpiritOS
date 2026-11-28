@@ -122,7 +122,7 @@ test.run('a scratch run root holds a planted testicle.db, and the tool is starte
   W.a = run(W.root, []);
   W.b = run(W.root, []);
   return !!W.a && !!W.b;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants a testicle.db and starts the tool twice' });
 // "one JSON object on stdout, nothing else printed there"
 test.run('it prints one JSON object on stdout and nothing else there', 0.6, function () {
   return !!W.a && W.a.code === 0 && !!W.a.json && typeof W.a.json === 'object' && !Array.isArray(W.a.json);
@@ -204,38 +204,38 @@ function verdictOf(script, suite, title) {
 test.run('q.js\'s red, its own test changed and its script not, is blamed on the test', 0.6, function () {
   const j = verdictOf(Q, QS, QT);
   return !!j && !!j.blame && j.blame.where === 'in the test';
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // "in a script it requires (neither changed, and a file it requires changed after the green, named ...)"
 test.run('r.js\'s red, neither changed and d.js it requires changed after the green, is blamed on a script it requires, d.js named', 0.6, function () {
   const j = verdictOf(R, RS, RT);
   return !!j && !!j.blame && j.blame.where === 'in a script it requires' && JSON.stringify(j.blame).indexOf(D) !== -1;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // "First the run: a run that hung, crashed or never started (the suite row's reason) is its own verdict, not in this test: the
 // run hung, ahead of every check below": h.js's script hash changed too, and the run's reason still comes first.
 test.run('h.js\'s red, in a run that hung, is not in this test, ahead of its changed script hash', 0.6, function () {
   const j = verdictOf(HS, HSS, HT);
   return !!j && !!j.blame && /^not in this test/.test(String(j.blame.where)) && /hung/.test(JSON.stringify(j.blame));
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // box v18, 4: "never green, none, since there is no green to be after"
 test.run('n.js\'s red, never green, has no suspects though it requires d.js', 0.4, function () {
   const j = verdictOf(N, NS, NT);
   return !!j && Array.isArray(j.suspects) && j.suspects.length === 0;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // "handed its id alone, it reads the rest of the row from testicle.db"
 test.run('handed x.js\'s red by its id alone, it analyzes that red', 0.4, function () {
   if (!W.root) return false;
   const row = handed(X, GEN, RED);
   const r = run(W.root, [JSON.stringify({ id: row && row.id })]);
   return r.code === 0 && !!r.json && !!r.json.red && r.json.red.script === X && r.json.red.test === RED;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 test.run('c1.js\'s red, red with c2.js and c3.js within a second, is not in this test: one run red on all', 0.6, function () {
   const j = verdictOf(C[0], CS, CT);
   return !!j && !!j.blame && /^not in this test/.test(String(j.blame.where)) && /one run/.test(String(j.blame.where) + ' ' + String(j.blame.because));
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 test.run('e1.js\'s red, red with e2.js and e3.js 5 s apart, is no one run: blamed on its changed script', 0.4, function () {
   const j = verdictOf(E[0], ES, ET);
   return !!j && !!j.blame && j.blame.where === 'in the script';
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // box v20: "it opens testicle.db with a busy timeout of 5 s, so a server write makes it wait, never fail". The suite holds a write on
 // the planted database for 2 s while the tool starts; the tool waits and answers.
 test.run('started while testicle.db is held by a write for 2 s, it waits and answers, never failing on a lock', 0.6, async function () {
@@ -257,7 +257,7 @@ test.run('started while testicle.db is held by a write for 2 s, it waits and ans
   let j = null;
   try { j = JSON.parse(out); } catch (e) { j = null; }
   return code === 0 && !!j && !!j.red;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it holds a write on the database for 2 s' });
 // "handed a red-testicle: the red testicle row itself"
 test.run('handed f.js\'s red row, it analyzes that one, and finds it flaky: green and red with the same hashes', 0.6, function () {
   if (!W.root) return false;
@@ -265,31 +265,31 @@ test.run('handed f.js\'s red row, it analyzes that one, and finds it flaky: gree
   const r = run(W.root, [row]);
   const j = r.json;
   return r.code === 0 && !!j && !!j.red && j.red.script === F && j.red.test === FT && j.flaky === true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // "--all lifts the per-list and per-diff bounds"
 test.run('with --all, the same test on other scripts is listed whole: 25', 0.2, function () {
   if (!W.root) return false;
   const r = run(W.root, ['--all']);
   return r.code === 0 && !!r.json && Array.isArray(r.json.sameTestElsewhere) && r.json.sameTestElsewhere.length === 25;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // "nothing red: { "red": null }, exit code 0"
 test.run('on a testicle.db with nothing red it answers { red: null } and exits 0', 0.4, function () {
   W.empty = tempFolder('spirit/app/testicle/job/analyze/test/empty');
   plant(W.empty, [[X, GEN, RED, 1, 1, T2, 'h2', 0.6, 's1']]);
   const r = run(W.empty, []);
   return r.code === 0 && !!r.json && r.json.red === null;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants a testicle.db and starts the tool' });
 // "a failure of the tool itself (no database, a red handed that is not there) goes to stderr with exit code 1"
 test.run('with no testicle.db it says why on stderr, prints nothing on stdout, and exits 1', 0.6, function () {
   W.none = tempFolder('spirit/app/testicle/job/analyze/test/none');
   const r = run(W.none, []);
   return r.code === 1 && r.out.trim() === '' && r.err.trim().length > 0 && !/Cannot find module/.test(r.err);
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 test.run('handed a red that is not in testicle.db it says why on stderr and exits 1', 0.4, function () {
   if (!W.root) return false;
   const r = run(W.root, [JSON.stringify({ script: 'spirit/zz/gone.js', suite: 'spirit/zz/test/gone.js', test: 'not there' })]);
   return r.code === 1 && r.out.trim() === '' && r.err.trim().length > 0 && !/Cannot find module/.test(r.err);
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the tool as a process' });
 // "it reads testicle.db directly, read only"
 test.run('it leaves testicle.db as it found it', 0.4, function () {
   if (!W.root || !W.a || W.a.code !== 0) return false;

@@ -50,7 +50,7 @@ test.run('spirit/console/command/script.js exists', 0.2, function () {
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode({});
   return (!!W.node && W.node.up) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.after(async function () {
   try { if (W.node) await W.node.release(); } catch (e) { /* gone */ }
   try { if (W.node) H.freeTree(W.node); } catch (e) { /* left */ }
@@ -63,7 +63,7 @@ test.run('"path app" at the root stores app as the path in spirit/state/console/
   if (!up()) return false;
   await go('path app');
   return at() === 'app' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('and the command log stores "path app"', 0.4, function () {
   return (up() && last() === 'path app') || false;
 }, test.limit.quick);
@@ -72,7 +72,7 @@ test.run('"path" without argument shows the path stored in state, and leaves it'
   if (!up()) return false;
   const p = await go('path');
   return (p.ended && /(^|[\s.])app\s*$/.test(p.out.trim()) && at() === 'app') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 // "if the user then types \"path agent\", the command sent to spirit/console/command/script.js is \"path agent\", the command processor
 // works out current-path + navigation, and stores \"app.agent\" as current path in state and logs the command as \"path
 // app.agent\"."
@@ -80,7 +80,7 @@ test.run('"path agent" at app stores app.agent as the path', 0.4, async function
   if (!up()) return false;
   await go('path agent');
   return at() === 'app.agent' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('and logs the command as "path app.agent", as typed from the root', 0.4, function () {
   return (up() && last() === 'path app.agent') || false;
 }, test.limit.quick);
@@ -89,48 +89,48 @@ test.run('a path to a folder that does not exist under spirit is refused with an
   if (!up()) return false;
   const p = await go('path nope');
   return refused(p, 'app.agent') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 // "\"path\" with \"<\" as an argument navigates to the parent"
 test.run('"path <" at app.agent goes to the parent, app', 0.4, async function () {
   if (!up()) return false;
   await go('path <');
   return at() === 'app' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 // "a path argument that is a name or a dot sequence is always validated as state-path + asked path, and is invalid if it does
 // not result in a valid path inside run://spirit/"
 test.run('a dot sequence counts from the path in state: "path app.agent" at app (app.app.agent) is refused, the path stays', 0.4, async function () {
   if (!up()) return false;
   const p = await go('path app.agent');
   return refused(p, 'app') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 // "\"path\" with \"<<\" as an argument navigates to the root"
 test.run('"path <<" at app goes to the root', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
   return at() === '' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('a dot sequence at the root: "path app.agent" stores app.agent', 0.4, async function () {
   if (!up()) return false;
   await go('path app.agent');
   return at() === 'app.agent' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('"path <<" at app.agent goes straight to the root', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
   return at() === '' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 // "for the two special arguments \"<\" and \"<<\" the command processor ... responds with an error when the consoles root is
 // already reached"
 test.run('"path <" at the root is refused with an error, and the path stays the root', 0.4, async function () {
   if (!up()) return false;
   const p = await go('path <');
   return refused(p, '') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('"path <<" at the root is refused with an error, and the path stays the root', 0.4, async function () {
   if (!up()) return false;
   const p = await go('path <<');
   return refused(p, '') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 // THE api COMMAND (goal/G48.3, the box): "if I'm at a branch folder, this command without arguments lists all verbs, in
 // simple json format, sorted by name. This is a simple list, without any detailed description. IN JSON FORMAT!!!!"; "if
 // there's no branch's api.js it returns a json error."; "if the api command names a verb: it returns that verbs
@@ -166,23 +166,23 @@ test.run('"api" at the root, the spirit branch, lists its verbs in JSON, by name
   const want = verbsOf('');
   const got = json(p.out);
   return (!!want && want.length > 0 && Array.isArray(got) && JSON.stringify(got) === JSON.stringify(want)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js twice and spirit.js in a child' });
 test.run('"api card" at the root, the spirit branch, answers spirit/card.json\'s description and request in JSON, with "usage" at the very bottom', 0.4, async function () {
   if (!up() || at() !== '') return false;
   const p = await go('api card');
   return describes(p.out, 'card', fileOf('', 'card')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('a verb\'s answer is printed as JSON.stringify(it, null, 2)', 0.4, async function () {
   if (!up() || at() !== '') return false;
   const p = await go('api card');
   const o = json(p.out);
   return (!!o && typeof o.usage === 'string' && String(p.out).trim() === JSON.stringify(o, null, 2)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('"api nope", a verb the spirit branch does not have, answers a JSON error, and the path stays', 0.4, async function () {
   if (!up() || at() !== '') return false;
   const p = await go('api nope');
   return refused(p, '') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description and request, its usage naming item.get and its id', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
@@ -191,7 +191,7 @@ test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description
   const p = await go('api item.get');
   const o = json(p.out);
   return (describes(p.out, 'item.get', fileOf('app/desk', 'item.get')) && /\bid=/.test(o.usage)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js three times' });
 // WHAT IT LISTS IS WHAT THE CONSOLE OFFERS (goal/G48.8; Andy: "wsl, let the verb list be checked by a general test like
 // app-child-general"): which verbs those are, an app's api.js verbs and its server's auto-verbs, is judged for every app by
 // spirit/testicle/general/app/any/folderRules/script.js (rule 8); here "api" prints that same list, sorted.
@@ -202,7 +202,7 @@ test.run('"api" at spirit.app.desk prints the verbs the console offers there, so
   try { offered = await LOADER.requireScript('spirit/console/command/script.js').verbsAt('app.desk'); } catch (e) { offered = null; }
   const want = offered && typeof offered === 'object' ? Object.keys(offered).sort() : null;
   return (!!want && JSON.stringify(json(p.out)) === JSON.stringify(want)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js and loads the command processor' });
 test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSON error', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
@@ -212,7 +212,7 @@ test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSO
   const r = refused(p, 'app.agent.test');
   await go('path <<');
   return r || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js four times' });
 // EXECUTING VERBS (goal/G48.3, box v7, ## executing verbs): "at a branch, a line typed as its usage shows ... executes that
 // verb, and the console shows the json it returns, as JSON.stringify(answer,null,2)."; "a verb the node refuses shows that
 // refusal as a json error, as every other console error." ## typing values: "a value with a space in it is put in double
@@ -234,13 +234,13 @@ test.run('at the root, "card" executes spirit.card and shows its answer as JSON.
   const o = answered(p);
   const want = await call('spirit.card');
   return (!!o && want.status === 200 && JSON.stringify(o) === JSON.stringify(want.body)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js twice and calls the node' });
 test.run('a value with a space, put in double quotes, arrives whole: setDescription description="said in four words"', 0.4, async function () {
   if (!up() || at() !== '') return false;
   const p = await run(['setDescription', 'description="said in four words"']);
   const card = await call('spirit.card');
   return (!!answered(p) && card.status === 200 && card.body.description === 'said in four words') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js and calls the node' });
 // A DOUBLE QUOTE IN A VALUE (goal/G48.8, wsl: "a quoted value cannot hold a double quote, there is no escape"; Andy: "cw, fix
 // the console. push it"): typed \" inside the quotes, it arrives as a double quote.
 test.run('a double quote typed \\" inside a quoted value arrives as one: setDescription description="a \\"quoted\\" word"', 0.4, async function () {
@@ -248,7 +248,7 @@ test.run('a double quote typed \\" inside a quoted value arrives as one: setDesc
   const p = await run(['setDescription', 'description="a \\"quoted\\" word"']);
   const card = await call('spirit.card');
   return (!!answered(p) && card.status === 200 && card.body.description === 'a "quoted" word') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js and calls the node' });
 test.run('an object argument is read as JSON: debug debug={"on":...} sets the node\'s debug flag', 0.4, async function () {
   if (!up() || at() !== '') return false;
   const before = await call('spirit.debug', { debug: {} });
@@ -257,7 +257,7 @@ test.run('an object argument is read as JSON: debug debug={"on":...} sets the no
   const p = await run(['debug', 'debug={"on":' + want + '}']);
   const after = await call('spirit.debug', { debug: {} });
   return (!!answered(p) && after.body.debug === want) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js and calls the node twice' });
 // The bundle table is a branch of its own since goal/G49.21, spirit.bundle, its verbs add and get with no op.
 test.run('a number argument is read as a number: at spirit.bundle, get id=<the id add answered>', 0.4, async function () {
   if (!up()) return false;
@@ -268,13 +268,13 @@ test.run('a number argument is read as a number: at spirit.bundle, get id=<the i
   if (!made || typeof made.id !== 'number') return false;
   const got = answered(await go('get id=' + made.id));
   return (!!got && got.label === 'zzConsole' && got.id === made.id) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js four times' });
 test.run('a verb the node refuses shows the refusal as a JSON error, and the path stays: get id=987654 at spirit.bundle', 0.4, async function () {
   if (!up() || at() !== 'bundle') return false;
   const p = await go('get id=987654');
   const o = json(p.out);
   return (refused(p, 'bundle') && o.ok === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js as a child process' });
 test.run('a yes/no argument is read as true or false: at spirit.contact, search keep=true answers', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
@@ -283,7 +283,7 @@ test.run('a yes/no argument is read as true or false: at spirit.contact, search 
   const o = answered(await go('search keep=true'));
   await go('path <<');
   return (!!o && Array.isArray(o.items)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js four times' });
 // "a 256 rolling command history": 300 lines given, the newest 256 kept, the oldest gone.
 test.run('the command history rolls at 256: after 300 more lines it holds 256, the newest last', 0.4, async function () {
   if (!up()) return false;
@@ -293,7 +293,7 @@ test.run('the command history rolls at 256: after 300 more lines it holds 256, t
   await run([], lines.join('\n') + '\n');
   const h = history();
   return (!!h && h.length === 256 && h[h.length - 2] === 'path app' && at() === '') || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it feeds console.js 300 lines in one process' });
 
 // ── THE WAIT (goal/G48.6) ──────────────────────────────────────────────────────────────────────────────────────────────
 // The box: "an array of wait events will be maintained in spirit/state/console/node.json", with "wait", "wait add
@@ -334,13 +334,13 @@ test.run('wait with no wait-row configured is refused and ends 1', 0.4, async fu
   const p = await go('wait');
   // Refused as a wait with nothing to wait on, not as a command the console does not know.
   return (p.ended && p.code === 1 && p.out.indexOf('no-such-command') === -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js twice' });
 test.run('wait add api=zzwait.ping x=1 is then shown by wait list', 0.4, async function () {
   if (!up()) return false;
   await go('wait add ' + PING);
   const p = await go('wait list');
   return (p.ended && p.out.indexOf(PING) !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js twice' });
 test.run('the first wait starts at the newest row: a match that came before it does not wake it, and it times out', 0.4, async function () {
   if (!up()) return false;
   await go('wait timeout ' + TIMEOUT_S);
@@ -349,7 +349,7 @@ test.run('the first wait starts at the newest row: a match that came before it d
   const p = await waitWith();
   W.waitMs = Date.now() - t0;
   return timedOut(p) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 test.run('wait timeout 3 ends a wait with nothing coming after about 3 s, with a code of its own', 0.4, function () {
   return (typeof W.waitMs === 'number' && W.waitMs >= TIMEOUT_S * 1000 && W.waitMs < TIMEOUT_S * 1000 + 15000) || false;
 }, test.limit.quick);
@@ -357,34 +357,34 @@ test.run('a delivered call matching api=zzwait.ping x=1 wakes the wait: one JSON
   if (!up()) return false;
   const p = await waitWith(function () { arrive({ zzwait: { ping: { x: 1 } } }); });
   return woke(p, PING) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a wait in console.js, woken a second in' });
 test.run('the row one wait read does not wake the next', 0.4, async function () {
   if (!up()) return false;
   return timedOut(await waitWith()) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 test.run('a delivered call of zzwait.ping with x=2 does not wake it', 0.4, async function () {
   if (!up()) return false;
   return timedOut(await waitWith(function () { arrive({ zzwait: { ping: { x: 2 } } }); })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 test.run('an outgoing call of zzwait.ping with x=1 does not wake it', 0.4, async function () {
   if (!up()) return false;
   return timedOut(await waitWith(function () { arrive({ zzwait: { ping: { x: 1 } } }, 'out'); })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 test.run('a match that came while no wait ran wakes the next wait', 0.4, async function () {
   if (!up()) return false;
   arrive({ zzwait: { ping: { x: 1 } } });
   return woke(await waitWith(), PING) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a wait in console.js' });
 const bundle = function (bys) { return JSON.stringify(bys.map(function (by, i) { return { run: 'zzrun', n: i + 1, row: { by: by, text: 'line ' + (i + 1) } }; })); };
 test.run('a listener\'s bundle is matched on each entry\'s row: api=zzwait.listener by=andy wakes on a bundle holding one', 0.4, async function () {
   if (!up()) return false;
   await go('wait add ' + LISTEN);
   return woke(await waitWith(function () { arrive({ zzwait: { listener: { json: bundle(['bob', 'andy', 'bob']) } } }); }), LISTEN) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a wait in console.js, woken a second in' });
 test.run('a bundle whose entries are all by bob does not wake api=zzwait.listener by=andy', 0.4, async function () {
   if (!up()) return false;
   return timedOut(await waitWith(function () { arrive({ zzwait: { listener: { json: bundle(['bob', 'bob']) } } }); })) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 test.run('one wait at a time: a second wait while one runs is refused and ends 1', 0.4, async function () {
   if (!up()) return false;
   const first = run(['wait']);
@@ -393,7 +393,7 @@ test.run('one wait at a time: a second wait while one runs is refused and ends 1
   const one = await first;
   // The first a real wait, ended by its timeout; the second refused as a second wait, not as an unknown command.
   return (timedOut(one) && second.ended && second.code === 1 && second.out.indexOf('no-such-command') === -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 // A WAIT WRITES ITS POINTER ALONE (goal/G48.8, cw's fix, 200159f0: "it read the whole state once at its start and wrote it
 // back when it moved"): a wait-row added while a wait runs is still there once that wait has ended.
 test.run('a wait-row added while a wait runs is still in wait list once that wait has ended', 0.4, async function () {
@@ -408,13 +408,13 @@ test.run('a wait-row added while a wait runs is still in wait list once that wai
   const kept = p.ended && p.out.indexOf('api=zzwait.later z=1') !== -1;
   await go('wait remove api=zzwait.later z=1');
   return (timedOut(one) && kept) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a 3 s wait to time out' });
 test.run('wait remove takes the stored string out of wait list', 0.4, async function () {
   if (!up()) return false;
   await go('wait remove ' + PING);
   const p = await go('wait list');
   return (p.ended && p.out.indexOf(PING) === -1 && p.out.indexOf(LISTEN) !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js twice' });
 
 // THE VERB'S FUNCTION (goal/G48.8, wsl: "at spirit.app, active key=desk active=true is refused, branch[verb] is not a
 // function"; Andy: "cw, fix the console. push it"): a branch whose api.js names a function for a verb (spirit.app: active is
@@ -427,4 +427,4 @@ test.run('at spirit.app, "active key=spirit.app.icons active=true" answers ok, t
   await go('path <<');
   const o = json(p.out);
   return (p.ended && p.code === 0 && !!o && o.ok === true) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs console.js four times' });

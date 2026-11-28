@@ -37,4 +37,4 @@ test.run('on a node with testicle switched on, the server it loads answers its D
       .then(function (r) { return r.status === 200; }, function () { return false; });
   }, 60000);
   return !!ok || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and asks its verb' });

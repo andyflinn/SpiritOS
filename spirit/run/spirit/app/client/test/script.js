@@ -73,7 +73,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   W.up = true;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 test.run('the app search and the app detail load', 0.2, async function () {
   if (!W.up) return false;
   const loaded = await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return Promise.all([spirit.requireScript("spirit/element/search/app/script.js"), spirit.requireScript("spirit/element/search/app/detail/script.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
@@ -127,7 +127,7 @@ test.run('before the job the tiles draw apps, no run-only one among them', 0.2, 
   const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));
   W.watching = true;
   return before.length > 0 && only.every(function (a) { return before.indexOf(a.label) === -1; }) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it draws the tiles on the page and waits for them' });
 
 // the world: the node's apps job replaces the rows the page holds
 test.run('a new app.label for agent is taken', 0.2, async function () {
@@ -146,7 +146,7 @@ test.run('the apps job reached the page, and agent\'s held row now says its new 
   await sleep(1500);
   W.seen = JSON.parse(await W.chrome.evaluate('JSON.stringify(window.seen)'));
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the apps job to reach the page' });
 
 // the box: "app/data.js drops run and runOnly"
 test.run('the apps job wrote publishData\'s row', 0.2, function () {
@@ -194,7 +194,7 @@ test.run('with no list on the page, a second apps job reached it', 0.2, async fu
   await sleep(800);
   W.after = await held();
   return wrote2.status === 200 && replaced2 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sends a second apps job and waits for it' });
 test.run('publishData\'s row in the app cache, as the apps job left it, keeps run and runOnly', 0.2, function () {
   if (!W.after) return false;
   const r = W.after[idOf('publishData')] || {};
@@ -213,8 +213,8 @@ test.run('agent\'s detail shows Activate', 0.2, async function () {
 test.run('Publish Data\'s detail shows no Activate', 0.2, async function () {
   if (!W.after) return false;
   return await noActivate(idOf('publishData'), 'Publish Data');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the detail and waits 1.5 s' });
 test.run('Push Origin\'s detail shows no Activate', 0.2, async function () {
   if (!W.after) return false;
   return await noActivate(idOf('pushOrigin'), 'Push Origin');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the detail and waits 1.5 s' });

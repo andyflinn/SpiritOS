@@ -25,7 +25,7 @@ test.run('Chrome is on this machine', 0.2, function () {
 test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('the page measures its header', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
@@ -35,7 +35,7 @@ test.run('the page measures its header', 0.2, async function () {
   const s = await W.page.evaluate('window.pinned()').catch(function () { return ''; });
   try { W.m = JSON.parse(s); } catch (e) { W.m = null; }
   return !!W.m || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the page in Chrome and waits for it' });
 // RIGHT UNDER THE TITLE BAR (Andy: "a giant gap between the shells title bar and it's first row of buttons"): the
 // header is the first thing in its app's pane, at the pane's top, which starts under the title bar.
 test.run('the header sits at the top of its app\'s pane, right under the title bar', 0.2, function () {

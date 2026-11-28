@@ -68,7 +68,7 @@ test.run('a post is handed hints, and the body that leaves for the relay is kept
       .map(function (b) { return b.args; })[0] || null;
   } catch (e) { return false; } finally { try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   return !!posted || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it posts through a peer post with a 500 ms wait' });
 test.run('a post carries no hints', 0.2, function () {
   if (!posted) return false;
   return posted.hints === undefined || false;

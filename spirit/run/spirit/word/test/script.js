@@ -356,7 +356,7 @@ test.run('a browser opens the page of a scratch node, for the asks below', 0.2, 
   await page.evaluate('window.spirit.readyPromise.then(function () { return true; })').catch(function () { return false; });
   await H.sleep(2500);
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens it in Chrome' });
 
 // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
 // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:
@@ -387,7 +387,7 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
   try { got = JSON.parse(asked); } catch (e) { got = { threw: true }; }
   onPage = got;
   return (!!got && !got.threw && got.appSees === 'zzword' && got.under === 'zzword') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reloads the page and waits on its word asks' });
 function sentWord() { return (onPage && onPage.sent) || []; }
 test.run('of 80 checks along 8 paths, none asks for a word.json the file list does not hold', 0.2, function () {
   const other = sentWord().filter(function (b) { return !/spirit\/app\/word\.json/.test(b); });

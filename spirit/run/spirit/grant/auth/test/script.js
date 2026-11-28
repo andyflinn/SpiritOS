@@ -557,7 +557,7 @@ test.run('a <name>Bundles.json in an app folder makes no bundle at boot', 0.2, a
   a1 = boot(); await settleBoot();
   all1 = ((await call(a1, 'bundle', { op: 'search', text: '' })).items || []).map(parsed);
   return (!all1.some(function (x) { return x && (x.owner === 'probe' || x.label === 'Probe agent'); })) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it boots the auth store on a scratch node.db' });
 
 test.run('a boot writes no bundles.json record anywhere', 0.2, async function () {
   if (!auth) return false;
@@ -747,7 +747,7 @@ test.run('a bundle branch naming a verb the server no longer serves is gone afte
   await new Promise(function (r) { setTimeout(r, 200); });
   staleLeft = (await branchesOf(again, staleB.id)).map(function (x) { return x.verb; });
   return (staleLeft.indexOf('rule.add') === -1) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it boots the auth store twice on a scratch db' });
 test.run('its branch of a verb the server serves stays', 0.2, function () {
   if (!staleLeft) return false;
   return (staleLeft.indexOf('chat.add') !== -1) ? true : false;
@@ -776,7 +776,7 @@ test.run('at start the node gives desk, a server, a bundle enableRemote owned by
   ownFirst = createApiAuth({ rootDir: ownRoot, tree: function () { return Promise.resolve(ownTree); } });
   await settle();
   return (await enableRemoteOf(ownFirst, 'desk')).length === 1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it boots the auth store on a scratch node.db' });
 test.run('desk\'s enableRemote holds one branch, all of desk, naming no verb', 0.2, async function () {
   if (!ownFirst) return false;
   const b = (await enableRemoteOf(ownFirst, 'desk'))[0];
@@ -808,7 +808,7 @@ test.run('desk\'s enableRemote with a branch per verb, as an earlier node made i
   const list = await enableRemoteOf(ownAgain, 'desk');
   if (list.length !== 1) return false;
   return JSON.stringify(await shapeOf(ownAgain, list[0])) === JSON.stringify(['desk/']) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it boots the auth store again on its node.db' });
 
 test.after(function () {
   for (const d of [root, bootRoot, fsRoot, staleRoot, ownRoot]) { try { if (d) fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ } }

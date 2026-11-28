@@ -289,7 +289,7 @@ test.run('a scratch node comes up for the bundle lines', 0.2, async function () 
   B.base = 'http://127.0.0.1:' + port;
   B.up = !!(await H.until(function () { return home('api').then(function (r) { return r.status === 200; }); }, 60000));
   return B.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and waits for it' });
 test.run('a Chrome page opens for the bundle lines', 0.2, async function () {
   if (!B.up) return false;
   const where = H.findChrome();
@@ -420,7 +420,7 @@ test.run('zzOne pressed again opens no second tab, and its tab is active', 0.2, 
   await H.sleep(800);
   const again = await tabNamed('zzOne');
   return again.length === 1 && again[0].on ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a tile and waits 800 ms' });
 
 // goal/G41.32: the close button takes the tab away, the bundle stays
 test.run('the close button takes the zzOne tab away', 0.2, async function () {
@@ -671,7 +671,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
     R.s = scratch();
     R.N = await wboot(R.s.run);
     return R.N.up || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
 
   // the box, 2: intrinsic "as spirit/app apps say it": the node says so
   test.run('the node lists Files as intrinsic', 0.2, async function () {
@@ -708,7 +708,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
     if (!R.page) return false;
     const made = await R.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); var p; try { p = spirit.requireScript("spirit/app/' + NAME + '/element.js"); } catch (e) { return false; } return Promise.resolve(p).then(function (E) { if (!E || typeof E.create !== "function") return false; var m = E.create(b, {}); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var drew = b.innerHTML.length > 0; m.destroy(); b.remove(); return drew ? "ok" : false; }); }, function () { b.remove(); return false; }); }())');
     return made === 'ok' || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it loads the element in Chrome and draws it' });
 
   // the box, 3: "both show in the shell as before: a tile each, and each opens as it did"
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
@@ -734,7 +734,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
     await H.sleep(1500);
     const grText = await T('text()');
     return R.grOpen && !/not configured|could not be loaded/i.test(grText) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.5 s for the panel to draw' });
   test.run('over the tiles one bar is in view, 🔒 Grants', 0.2, async function () {
     if (!R.page) return false;
     const grBars = await T('bars()');

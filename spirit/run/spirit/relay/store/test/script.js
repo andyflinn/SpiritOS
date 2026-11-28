@@ -427,7 +427,7 @@ test.run('a roll filled and emptied leaves relay.db its full size', 0.2, functio
   W.full = s.bytes();
   s.transaction(function () { for (let i = 0; i < 2000; i++) s.members.remove('fill-' + i); });
   return s.members.count() === 0 && W.full > 500000 && s.bytes() === W.full;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it writes and deletes 2000 rows on disc' });
 test.run('compact refuses when less than twice the file is free, and says so', 0.4, function () {
   if (!W.small) return false;
   const out = relayStore.compact(W.small, 0);
@@ -439,7 +439,7 @@ test.run('compact shrinks the file of an emptied roll and answers before, after 
   const out = relayStore.compact(W.small, 1e9);
   return out.ok === true && out.before === W.full && out.after < W.full / 4 && out.after === fs.statSync(dbFile(W.small)).size &&
     typeof out.ms === 'number' && out.ms >= 0;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it vacuums the relay.db file on disc' });
 test.run('compact with no free figure given runs, and closes every cached store first', 0.4, function () {
   if (!W.store) return false;
   const old = W.store;

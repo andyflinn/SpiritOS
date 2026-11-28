@@ -64,7 +64,7 @@ test.run('spirit/console/loop/script.js exists', 0.2, function () {
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode({});
   return (!!W.node && W.node.up) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 // The loop's state file, planted at start below, goes at end: a lab copy keeps it between runs.
 // So does terminal.js, which b4607b92 wrote to the copy's root before the data URL.
 const dropState = function () {
@@ -89,35 +89,35 @@ test.run('the loop starts at the root with the prompt "spirit: "', 0.4, async fu
   W.t = open();
   const ok = await H.until(function () { return Promise.resolve(plain(W.t.out).indexOf('spirit: ') !== -1); }, 20000);
   return (!!ok && !W.t.ended) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts the console loop and waits for its prompt' });
 // "if the prompt is \"spirit\" and the user in the loop types \"path app\", then ... the prompt with be \"spirit.app: \""
 test.run('"path app" typed at "spirit: " makes the prompt "spirit.app: "', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
   return !!(await type(W.t, 'path app', 'spirit.app: ')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types into the loop and waits for its prompt' });
 // "the path in state will become \"app.agent\" and the prompt will show \"spirit.app.agent: \""
 test.run('"path agent" typed at "spirit.app: " makes the prompt "spirit.app.agent: " and the path in state app.agent', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
   const ok = await type(W.t, 'path agent', 'spirit.app.agent: ');
   return (!!ok && at() === 'app.agent') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types into the loop and waits for its prompt' });
 // "a path navigation to a path that doesn't exist under run://spirit/ is refused with an error, and the prompt remains as it is."
 test.run('"path nope" is refused, and the prompt stays "spirit.app.agent: "', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
   const ok = await type(W.t, 'path nope', 'spirit.app.agent: ');
   return (!!ok && at() === 'app.agent') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types into the loop and waits for its prompt' });
 test.run('"path <" typed at "spirit.app.agent: " makes the prompt "spirit.app: "', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
   return !!(await type(W.t, 'path <', 'spirit.app: ')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types into the loop and waits for its prompt' });
 // The history now holds, as typed from the root, "path app" and "path app.agent". At spirit.app the second is offered as
 // "path agent", translated back into the loop's scope; "path app" (app.app there) and "path app.agent" as logged are not.
 test.run('at "spirit.app: " the up key offers "path agent", the logged "path app.agent" translated back', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
   W.atApp = await offers(W.t, 'spirit.app: ', 4);
   return W.atApp.indexOf('path agent') !== -1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses the up key 4 times, 0.7 s each' });
 test.run('at "spirit.app: " the up key never offers "path app.agent" or "path app", which cannot be used from there', 0.4, function () {
   return (!!W.atApp && W.atApp.length > 0 && W.atApp.indexOf('path app.agent') === -1 && W.atApp.indexOf('path app') === -1) || false;
 }, test.limit.quick);
@@ -126,19 +126,19 @@ test.run('"path <<" makes the prompt "spirit: " again', 0.4, async function () {
   W.t.kid.stdin.write('\x15');
   const ok = await type(W.t, 'path <<', 'spirit: ');
   return (!!ok && at() === '') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types into the loop and waits for its prompt' });
 // spirit/node/ is gone since goal/G49.23 (box v22 Part 2): another branch, spirit.bundle, where neither path can be used,
 // and the node's verbs, card among them, are the spirit branch's, at the root.
 test.run('then "path bundle" makes the prompt "spirit.bundle: "', 0.4, async function () {
   if (!W.t || W.t.ended) return false;
   W.atNode = !!(await type(W.t, 'path bundle', 'spirit.bundle: ')) && at() === 'bundle';
   return W.atNode || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types into the loop and waits for its prompt' });
 test.run('at "spirit.bundle: " the up key offers neither "path agent" nor "path app.agent": they cannot be used from there', 0.4, async function () {
   if (!W.t || W.t.ended || !W.atNode) return false;
   const seen = await offers(W.t, 'spirit.bundle: ', 6);
   return (seen.indexOf('path agent') === -1 && seen.indexOf('path app.agent') === -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses the up key 6 times, 0.7 s each' });
 // goal/G48.3, Andy: "a successfully run command must be logged in state and be available for re-use with the up-key on the
 // keyboad, the up key isn't for navigation only, it's for every command that is successful."
 test.run('at "spirit: ", the spirit branch, a verb that ran, "card", is offered again by the up key', 0.4, async function () {
@@ -149,7 +149,7 @@ test.run('at "spirit: ", the spirit branch, a verb that ran, "card", is offered 
   await type(W.t, 'nope', 'spirit: ');
   W.afterCard = await offers(W.t, 'spirit: ', 4);
   return W.afterCard.indexOf('card') !== -1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it types 3 lines and presses up 4 times, 0.7 s each' });
 test.run('a command that failed, "nope", is not offered by the up key', 0.4, function () {
   return (!!W.afterCard && W.afterCard.length > 0 && W.afterCard.indexOf('nope') === -1) || false;
 }, test.limit.quick);

@@ -54,7 +54,7 @@ test.run('a scratch node identity is asked fifty times, saved anew and asked aga
   const r = spawnSync(process.execPath, ['-e', src, root], { cwd: RUN, encoding: 'utf8', timeout: 60000 });
   try { seen = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { seen = null; }
   return !!seen || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the identity reads in a child process' });
 test.run('asked fifty times, the identity is read from disc once', 0.2, function () {
   if (!seen) return false;
   return seen.fifty === 1 || false;

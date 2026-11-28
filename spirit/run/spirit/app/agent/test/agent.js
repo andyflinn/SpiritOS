@@ -80,7 +80,7 @@ function filesUnder(dir) {
       c = null;
     N = await boot(s.run); live.push(N.child);
     return (N.up) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   test.run('a Chrome page opens on the node and has its spirit', 0.2, async function () {
     if (STOP) return false;
     if (!N.up) { STOP = true; return false; }
@@ -93,7 +93,7 @@ function filesUnder(dir) {
       return until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     };
     return (await open()) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens a page in Chrome and waits for spirit' });
   // ── the box: active is its one switch; before it nothing runs ──
   test.run('before the agent is activated, no server job of it runs', 0.2, async function () {
     if (STOP) return false;
@@ -131,7 +131,7 @@ function filesUnder(dir) {
     await selector('tiles');
     await sleep(1500);
     return ((await shown()).indexOf('Agent') === -1) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.5 s for the tiles to draw' });
   // ── the box: "Activate in the appSelector, and the server starts." ──
   test.run('the agent\'s row has an Activate button, and it is pressed', 0.2, async function () {
     if (STOP) return false;
@@ -267,7 +267,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
 
     closed = await c.evaluate('(function () { var b = document.querySelector("#zzBox .app-container-close"); if (!b) return false; b.click(); return true; }())');
     return (closed && await until(function () { return c.evaluate('Array.prototype.every.call(document.querySelectorAll("#zzBox [data-tool=provider]"), function (e) { return !e.getClientRects().length; })'); }, 8000)) ? true : false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it presses close and waits for the app to hide' });
   test.run('the closed app opens again from its tile', 0.2, async function () {
     if (STOP) return false;
     return (await openTile()) ? true : false;
@@ -298,7 +298,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
     await selector('tiles');
     await sleep(1500);
     return ((await shown()).indexOf('Agent') === -1) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.5 s for the tiles to draw' });
   // ── the box: "its rows are there, from the same spirit/state/app/agent/data/": through a restart, active again ──
   test.run('a restarted node starts the active agent\'s server', 0.2, async function () {
     if (STOP) return false;
@@ -308,12 +308,12 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
     if (N) await stop(N.child);
     N = await boot(s.run); live.push(N.child);
     return (N.up && await serverUp(N.base)) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it restarts the scratch node' });
   test.run('after the restart, the agent\'s tile opens the app', 0.2, async function () {
     if (STOP) return false;
     await open();
     return (await openTile()) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it reloads the page and opens the tile' });
   test.run('the provider row made before the restart is there', 0.2, async function () {
     if (STOP) return false;
     await tool('provider');

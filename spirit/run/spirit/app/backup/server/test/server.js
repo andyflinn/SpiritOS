@@ -110,7 +110,7 @@ test.run('the backup server ran once and said so', 0.2, async function () {
   const homes = [W.homeCfg, path.join(W.fakeHome, '.SpiritOS')];
   W.copied = [].concat.apply([], homes.map(function (h) { return filesUnder(path.join(h, 'backups')); }));
   return / (wrote |checked)/.test(out) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the backup server as a process' });
 
 // The box: "it copies only its own state folder"
 test.run('another process\'s state, spirit/state/app/desk/data/marker.json, is copied', 0.2, function () {

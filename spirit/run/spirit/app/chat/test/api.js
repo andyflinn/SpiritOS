@@ -62,7 +62,7 @@ test.run('on a scratch node with the chat app switched on, the chat server answe
   await X.call('spirit.app.active', { key: 'spirit.app.chat', active: true });
   const up = await H.until(function () { return X.call('spirit.app.chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return up ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and waits for chat' });
 
 // ── the node finds it as the branch spirit.app.chat, its folder in dots (goal/G49.19) ──
 test.run('asked for the interface of the branch spirit.app.chat, the node answers spirit/app/chat/api.js word for word', 0.2, async function () {

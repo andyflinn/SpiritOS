@@ -264,7 +264,7 @@ test.run('the library\'s 15 files, licence included, stand in spirit/element/cod
   L.inRun = L.tracked.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).map(function (f) { return f.slice('spirit/run/'.length); });
   const lib = L.inRun.filter(function (f) { return f.indexOf('spirit/element/codeMirror/') === 0; });
   return (lib.indexOf('spirit/element/codeMirror/lib/codemirror.js') !== -1 && lib.indexOf('spirit/element/codeMirror/LICENSE') !== -1 && lib.length === 15) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it lists the tracked tree with git ls-files' });
 // WHO NAMES THE LIBRARY'S FOLDER (goal/G49.15, box v16: "the vendored codeMirror will be loaded by face.html with a script
 // tag", which ends G43.5's "only access to codeMirror library is through the element!"): face.html, which loads it, and
 // fileSystem.js's one list of vendored folders; no other product file, the element included.
@@ -274,7 +274,7 @@ test.run('no product file but face.html and fileSystem.js names the library\'s f
     return fs.existsSync(path.join(REPO, f)) && /element\/codeMirror\//.test(fs.readFileSync(path.join(REPO, f), 'utf8').split('\n').map(function (l) { const cut = l.search(/(^|[^:'"])\/\//); return cut === -1 ? l : l.slice(0, cut + 1); }).join('\n'));
   });
   return (L.tracked.length > 100 && !asking.length) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reads every tracked product file' });
 test.run('a scratch node comes up with a Chrome page on it', 0.2, async function () {
   const chrome = H.findChrome();
   if (!chrome) return false;
@@ -286,19 +286,19 @@ test.run('a scratch node comes up with a Chrome page on it', 0.2, async function
   const ready = await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   await H.sleep(2500);
   return !!ready || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and opens Chrome' });
 test.run('the page starts with CodeMirror on it, from face.html\'s script tags', 0.2, async function () {
   if (!L.page || L.page.error) return false;
   try { L.at = JSON.parse(await L.page.evaluate('JSON.stringify({ library: typeof window.CodeMirror })')); } catch (e) { L.at = {}; }
   return L.at.library === 'function' || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('the element draws from that folder, with its sheet, its marks and its search keys', 0.2, async function () {
   if (!L.page || L.page.error) return false;
   await L.page.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/codeMirror.js")).then(function () { return true; }, function () { return false; })');
   try { L.cm = JSON.parse(await L.page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { L.cm = {}; }
   L.fromHere = await L.page.evaluate('performance.getEntriesByType("resource").map(function (r) { return r.name; }).filter(function (u) { return /codemirror/i.test(u); }).join(" ")').catch(function () { return ''; });
   return (L.cm.drawn === true && L.cm.marks === 1 && L.cm.cssLoaded === true && L.cm.search === true) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the element and draws it in Chrome' });
 test.run('the page asked the library\'s new place only', 0.2, function () {
   return (/spirit\/element\/codeMirror\/lib\/codemirror\.js/.test(L.fromHere) && !/shell\/node_modules/.test(L.fromHere)) || false;
 }, test.limit.quick);

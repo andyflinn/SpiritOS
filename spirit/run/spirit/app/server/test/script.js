@@ -75,7 +75,7 @@ test.run('on a relay it hands no answer', 0.2, function () {
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return (!!W.node && W.node.up) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node' });
 // search.json: "a bounded list of {key: the app's folder name, label}; a label is the row as JSON".
 test.run('search with no q answers the node\'s apps as {ok, items, more}, each label its row as JSON under the item\'s key', 0.2, async function () {
   const r = await ask(NAME + '.search', {});

@@ -76,7 +76,7 @@ test.run('a scratch node comes up, its own key read from its card and its relays
   const r = await ask('spirit.contact.search', { relay: true });
   W.relays = ((r.body && r.body.items) || []).map(function (i) { return (parsed(i.label) || {}).url; }).filter(Boolean);
   return (!!W.own && W.relays.length > 0) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and asks its contacts' });
 // acquire.json: "Add a key to your contacts (publicKey), with the label it came with (publicLabel) or none, recording where it
 // was found (url, or else this node's first listed relay); the relay is asked nothing. Answers 201 {publicKey, publicLabel,
 // keep}. Refused 400 without a publicKey, for a publicLabel that breaks the name rule, or for this node's own key".
@@ -103,8 +103,8 @@ test.run('acquire of this node\'s own key is refused 400', 0.8, async function (
 test.run('post to a peer no relay can reach is refused 503', 0.2, async function () {
   const r = await ask(NAME + '.post', { to: AWAY, text: JSON.stringify({ zz: 1 }) });
   return (r.status === 503 && !!r.body && !!r.body.error) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'the node tries its relays before it refuses' });
 test.run('post via a relay that does not name the peer is refused 503', 0.2, async function () {
   const r = await ask(NAME + '.post', { to: AWAY, text: JSON.stringify({ zz: 1 }), via: W.relays[0] || 'https://zz.example' });
   return (r.status === 503 && !!r.body && !!r.body.error) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'the node tries the relay before it refuses' });

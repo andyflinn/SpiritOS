@@ -94,7 +94,7 @@ test.run('in a process of its own, a refusal is defined, then defined again', 0.
   const r = spawnSync(process.execPath, ['-e', src], { cwd: RUN, encoding: 'utf8', timeout: 30000 });
   try { defined = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { defined = null; }
   return !!defined || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a node child process' });
 test.run('define adds an entry with the next id, its first sentence its text, the rest defaulted', 0.2, function () {
   if (!defined) return false;
   const e = defined.e || {};

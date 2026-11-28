@@ -49,7 +49,7 @@ test.run('a scratch node comes up, and its api is read', 0.2, async function () 
   if (!W.node.up) return false;
   W.tree = (await ask(W.node.base, 'api', {})).body;
   return (!!W.tree && typeof W.tree === 'object') || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and asks its api' });
 test.run('the node serves spirit.bundle with its four verbs', 0.2, function () {
   const b = W.tree && W.tree[TABLE];
   return (!!b && ['add', 'delete', 'get', 'search'].every(function (v) { return !!b[v]; })) || false;

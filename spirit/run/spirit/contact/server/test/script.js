@@ -80,7 +80,7 @@ test.run('a scratch relay and a scratch node come up, the node\'s own key read f
   if (!W.relay || !W.relay.up || !W.node || !W.node.up) return false;
   W.own = String(((await ask('spirit.card', {})).body || {}).publicKey || '');
   return !!W.own || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch relay and a scratch node' });
 // add.json: "Put a relay on this node's list by its url, under your own label for it, once its card answers: {ok, url,
 // relayKey}. ... 502 when the relay gives no card".
 test.run('add puts the scratch relay on the list by its url once its card answers, {ok, url, relayKey}, its key the relay\'s', 0.2, async function () {
@@ -184,7 +184,7 @@ test.run('claim on the relay\'s row answers the relay\'s own answer under its st
   if (!W.relayKey) return false;
   const r = await ask(NAME + '.claim', { key: W.relayKey, name: 'zzseat' });
   return (!!r.status && r.status !== 404 && r.status !== 503 && !!r.body && typeof r.body.mine === 'boolean') || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'the node asks the scratch relay and waits' });
 test.run('claim with a key naming no relay row is refused 503', 0.2, async function () {
   return ((await ask(NAME + '.claim', { key: PERSON, name: 'zzseat' })).status === 503) || false;
 }, test.limit.quick);
@@ -200,7 +200,7 @@ test.run('join by email at a relay that sends no mail is the relay\'s own refusa
   if (!W.relayKey) return false;
   const r = await ask(NAME + '.join', { key: W.relayKey, email: 'zz@example.com' });
   return (r.status >= 400 && r.status !== 400 && r.status !== 404 && !!r.body && !!r.body.error) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'the node asks the scratch relay and waits' });
 test.run('join with a key naming no relay row is refused 400', 0.2, async function () {
   return ((await ask(NAME + '.join', { key: PERSON, email: 'zz@example.com' })).status === 400) || false;
 }, test.limit.quick);

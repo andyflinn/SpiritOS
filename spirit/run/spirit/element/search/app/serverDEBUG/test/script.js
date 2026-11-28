@@ -91,7 +91,7 @@ test.run('a scratch node comes up', 0.2, async function () {
   s = scratch();
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 
 // the box: a server app, activated, runs (the world for what follows)
 test.run('once its app is activated, the server answers', 0.2, async function () {
@@ -137,7 +137,7 @@ test.run('the server, killed, comes back', 0.2, async function () {
   process.kill(pid, 'SIGKILL');
   await until(function () { return Promise.resolve(!alive(pid)); }, 5000);
   return (await until(function () { return call(N.base, ID + '.pid', {}).then(function (r) { return r.status === 200 && r.body && r.body.pid > 0 && r.body.pid !== pid; }); }, 30000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it kills the server and waits for it back' });
 test.run('the server comes back with DEBUG on, as kept', 0.2, async function () {
   if (!nodeUp()) return false;
   return (((await call(N.base, ID + '.DEBUG', {})).body) || {}).debug === true ? true : false;
@@ -149,7 +149,7 @@ test.run('the server starts with DEBUG on after the node restarts too', 0.2, asy
   if (!N.up) return false;
   await until(function () { return call(N.base, ID + '.pid').then(function (r) { return r.status === 200; }); }, 30000);
   return (((await call(N.base, ID + '.DEBUG', {})).body) || {}).debug === true ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it restarts the node and waits for the server' });
 test.run('with DEBUG switched off, node.json says debug false', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, ID + '.DEBUG', { on: false });
@@ -163,7 +163,7 @@ test.run('a Chrome page opens the face shell, and it has its spirit', 0.2, async
   c = await chromePage(where);
   if (c.error) return false;
   return (await open()) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face page in Chrome' });
 test.run('serverDEBUG.js loads through spirit.requireScript and puts its create on spirit.element.search.app.serverDEBUG', 0.2, async function () {
   if (!c || c.error) return false;
   loaded = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/serverDEBUG/script.js"); }).then(function () { return !!(spirit.element.search.app.serverDEBUG && spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
@@ -176,7 +176,7 @@ test.run('for Contacts, which has no server, the DEBUG row shows nothing and tak
   await make('spirit.app.contact');
   await sleep(2000);
   return hidden(await view('spirit.app.contact')) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 2 s to see nothing drawn' });
 
 // the box: "hides while its server is not running"
 test.run('for Zz Debug with its server switched off, the DEBUG row shows nothing', 0.2, async function () {
@@ -186,7 +186,7 @@ test.run('for Zz Debug with its server switched off, the DEBUG row shows nothing
   await make(ID);
   await sleep(2000);
   return hidden(await view(ID)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it stops the server, then waits 2 s' });
 test.run('once its app is activated again, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
   await call(N.base, 'spirit.app.active', { key: ID, active: true });

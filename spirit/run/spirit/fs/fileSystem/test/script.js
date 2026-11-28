@@ -152,7 +152,7 @@ const P = {};
 test.run('a scratch node comes up', 0.2, async function () {
   P.N = await scratchNode();
   return P.N.up ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.after(function () {
   const N = P.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }

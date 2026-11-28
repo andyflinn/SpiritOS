@@ -216,7 +216,7 @@ test.run('a quiet face stream carries a beat each second: no gap of more than 1.
   let worst = 0;
   for (let i = 1; i < marks.length; i++) worst = Math.max(worst, marks[i] - marks[i - 1]);
   return worst <= 1500 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it listens to the face stream for 4 seconds' });
 
 // Every verb the families declare, from their own declarations.
 const allFamilies = function () {
@@ -426,7 +426,7 @@ test.run('every verb of every branch reaches the door, unsealed and sealed', 0.2
     }
   }
   return !shut || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sends every verb of every branch, twice' });
 const THROUGH = { call: 'relay.face', args: { url: MINE, name: 'zz' } };
 const FACE_POST = { call: 'peer.post', args: { to: 'RELAYKEY', text: JSON.stringify({ body: { face: 'zz' } }) } };
 test.run('when starred, an unsealed relay.face on the relay it is called through reaches the door', 0.2, async function () {
@@ -585,18 +585,18 @@ test.run('the node says its key', 0.2, async function () {
   fs.writeFileSync(path.join(run, 'spirit/app/zzStar/zzStar.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
   S.savedAt = path.join(run, SAVED);
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and asks its card' });
 
 // A RELAY OF SOMEBODY ELSE'S, A FACE THIS NODE ASKED FOR.
 test.run('a real relay comes up', 0.2, async function () {
   const R = S.R = await scratchFaceRelay({ members: [] });
   S.relays.push(R);
   return R.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch face relay' });
 test.run('the node joins it by its mail and sets a face', 0.2, async function () {
   if (!S.me || !S.R || !S.R.up) return false;
   return (await join(S.N, S.R) && await setFace(S.N, S.R, 'harbour')) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it joins the relay and sets a face on it' });
 test.run('the face logs in by the mailed token', 0.2, async function () {
   if (!S.me || !S.R || !S.R.up) return false;
   S.L = await logIn(S.R, 'harbour');
@@ -639,7 +639,7 @@ test.run('spirit.job.create of /bin/sh is still refused, starred or not', 0.8, a
   const sh = await face({ call: 'spirit.job.create', args: { command: '/bin/sh', args: JSON.stringify(['-c', 'echo x > ' + shMark]) } });
   await sleep(WAIT_MS);
   return (sh.status >= 400 && sh.status < 500 && !fs.existsSync(shMark)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 1.5 s to see no job ran' });
 test.run('spirit.contact.faceable from the face is refused even here, and the star stays', 0.8, async function () {
   if (!loggedIn()) return false;
   const self = await face({ call: 'spirit.contact.faceable', args: { key: S.R.relayKey, faceable: false } });
@@ -695,7 +695,7 @@ test.run('a relay for the stream is joined and a face is set on it', 0.2, async 
   S.relays.push(St);
   S.ok4 = !!St.up && await join(S.N, St) && await setFace(S.N, St, 'stream');
   return S.ok4 || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a relay, joins it and sets a face' });
 test.run('the face logs in', 0.2, async function () {
   if (!S.S || S.ok4 !== true) return false;
   S.LS = await logIn(S.S, 'stream');
@@ -724,7 +724,7 @@ test.run('the stream opens and carries the node\'s file tree', 0.2, async functi
   S.q.on('error', function () { /* the stream ends with the relay */ });
   S.q.end(opening);
   return (await until(function () { return hears('spirit.fs'); }, 8000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the relay stream to carry the tree' });
 test.run('when starred, a job runs and is deleted at home', 0.2, async function () {
   if (!streamUp()) return false;
   S.j1b = await runOne();
@@ -808,14 +808,14 @@ test.run('a relay whose owner mark is this node\'s key is joined and a face is s
   if (ok2 && !(await O.becomeOwned(S.me))) ok2 = false;
   S.ok2 = ok2;
   return ok2 || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a relay, joins it and sets a face' });
 test.run('the relay has sent this node its owner\'s report', 0.2, async function () {
   if (!S.O || S.ok2 !== true) return false;
   let report = null;
   await until(function () { return home(S.N.base, 'spirit.contact.get', { key: S.O.relayKey }).then(function (a) { report = a.body && a.body.report; return !!(report && Object.keys(report).length); }); }, 20000);
   S.report = !!(report && Object.keys(report).length);
   return S.report || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the relay to send its report' });
 test.run('the face logs in there', 0.2, async function () {
   if (!S.O || S.ok2 !== true) return false;
   S.L2 = await logIn(S.O, 'mine');
@@ -835,7 +835,7 @@ test.run('a third relay is joined and no face is asked for', 0.2, async function
   S.relays.push(D);
   S.ok3 = !!D.up && await join(S.N, D);
   return S.ok3 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a third relay and joins it' });
 test.run('the relay has made a face this node never asked for, and logged in to it', 0.2, async function () {
   if (!S.D || S.ok3 !== true) return false;
   // The dishonest relay: it gives the member a face on its own, so it can send this node face events.
@@ -843,7 +843,7 @@ test.run('the relay has made a face this node never asked for, and logged in to 
   await sleep(300);
   S.L3 = await logIn(S.D, 'forged');
   return !!S.L3.sid || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits and logs in to the forged face' });
 function forgedRefused(q) {
   return async function () {
     if (!S.L3 || !S.L3.sid) return false;
@@ -862,7 +862,7 @@ test.run('no job ran through any of this', 0.8, async function () {
   if (!S.mark) return false;
   await sleep(WAIT_MS);
   return !fs.existsSync(S.mark) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 1.5 s to see no job ran' });
 
 // ── THE STARAPPS PART, once faceHome-starApps.js ────────────────────────────────────────────────────────────────────────
 // A STAR SHOWS EVERY APP (goal/G41.33, Q9; spec: ./script.md; Andy, of "Should a star show every app on the face, Text Editor and Media Viewer
@@ -952,7 +952,7 @@ test.run('a real node has a real face, logged in', 0.2, async function () {
   if (!(await on(SPIRIT.dottedPath('spirit/app/text'))) || !(await on(SPIRIT.dottedPath('spirit/app/media')))) return false;
   A.F = await faceOf(A.N, A.R);
   return !!A.F.sid || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and relay and logs in' });
 test.run('the browser holds the login', 0.2, async function () {
   if (!A.F || !A.F.sid) return false;
   const where = findChrome();
@@ -968,7 +968,7 @@ test.run('at home the desktop shows Text Editor and Media Viewer', 0.2, async fu
   if (!browsing()) return false;
   A.atHome = await desktop(A.chrome, A.N.base + '/');
   return (A.atHome.indexOf('Text Editor') !== -1 && A.atHome.indexOf('Media Viewer') !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the home desktop in Chrome, waits 6 s' });
 
 // THE STAR OFF, NOTHING (goal/G43.18, box v29: "A face is whole, or there is none"): the face is taken away, so its page
 // draws no app of the home desktop at all.
@@ -985,7 +985,7 @@ test.run('every app on the home desktop is on the starred face', 0.2, async func
   A.starred = await desktop(A.chrome, A.FACE);
   const gap = missing(A.atHome, A.starred);
   return (A.starred.length > 0 && !gap.length) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face desktop in Chrome, waits 6 s' });
 
 // An app it shows opens.
 test.run('the tile of an app it shows is there to press', 0.2, async function () {
@@ -999,7 +999,7 @@ test.run('pressing that tile throws nothing in the page', 0.2, async function ()
   await sleep(DRAWN_MS / 2);
   const threw = A.chrome.heard.slice(A.pageErrors || 0).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; });
   return (A.opened === true && !threw.length) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 3 s for the pressed tile to draw' });
 
 // The star off: nothing again.
 test.run('the star is taken off at home', 0.2, async function () {
@@ -1010,7 +1010,7 @@ test.run('the star is taken off at home', 0.2, async function () {
 test.run('with the star off again, the face draws none of the apps of the home desktop', 0.8, async function () {
   if (!browsing()) return false;
   return noApp(await desktop(A.chrome, A.FACE)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the face desktop in Chrome, waits 6 s' });
 
 // FACEABLE IS NEVER ASKED FROM A FACE, UNDER ITS NEW NAME (goal/G49.22, box v16: the contact branch in the new shape, "all
 // verbs do the fucking same shit they did before"): the face's door refuses spirit.contact.faceable as it refused contact.faceable.

@@ -275,7 +275,7 @@ test.run('Chrome is on this machine', 0.2, function () {
 test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   CH.node = await H.scratchNode();
   return (CH.node.up && CH.node.debug) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('the page measures a workBench in each container', 0.2, async function () {
   if (!CH.chrome || !CH.node || !CH.node.up) return false;
   CH.page = await H.chromePage(CH.chrome);
@@ -289,7 +289,7 @@ test.run('the page measures a workBench in each container', 0.2, async function 
     if (!CH.m[c]) nothing.push(c);
   }
   return !nothing.length || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the page in Chrome and waits for it' });
 test.run('in a plain block box of 300 pixels the workBench stays inside the box, and nothing outside scrolls', 0.2, function () {
   const m = CH.m.block;
   if (!m) return false;

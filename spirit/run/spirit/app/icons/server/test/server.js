@@ -42,7 +42,7 @@ test.run('a scratch node of its own comes up with Icons switched on', 0.2, async
   W.node = await scratchNode({ servers: ['spirit.app.icons'] });
   W.up = !!(W.node.up && W.node.root);
   return W.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node with Icons on' });
 test.run('the system set is read, and twelve glyphs it does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
@@ -183,7 +183,7 @@ test.run('each of eight adds sent at once answers added', 0.2, async function ()
   const answers = await Promise.all(eight.map(function (g, i) { return icon({ op: 'add', glyph: g, keywords: JSON.stringify(['at', 'once' + i]) }); }));
   W.s8 = json(W.SET);
   return answers.every(function (r) { return r.body && r.body.added === true; }) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sends eight adds to the node at once' });
 test.run('all eight are in the set, none lost to another\'s write', 0.2, function () {
   if (!W.eight) return false;
   const s8 = W.s8;

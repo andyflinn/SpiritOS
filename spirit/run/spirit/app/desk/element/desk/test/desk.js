@@ -447,7 +447,7 @@ test.run('the List draws its filter buttons', 0.2, async function () {
   const o = await read1('window.opened()');
   if (o.found === true) F1.o = o;
   return o.found === true || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 test.run('[Current Goal Only] is the only filter on by default', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.current === true && o.goals === false && o.closed === false) || false; }, test.limit.quick);
 test.run('the first search asks for the current goal alone', 0.2, function () { if (noF1()) return false; const o = F1.o; return (!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false) || false; }, test.limit.quick);
 test.run('the page shows the current goal and its item when it opens', 0.2, function () { if (noF1()) return false; const o = F1.o; return (o.currentGoal === true && o.openItem === true) || false; }, test.limit.quick);
@@ -455,20 +455,20 @@ test.run('pressing [Goals Only] turns [Current Goal Only] off', 0.2, async funct
   if (noF1()) return false;
   const g = F1.g = await read1('window.press("goalsOnly")');
   return (g.goals === true && g.current === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a filter and waits 800 ms' });
 test.run('with [Goals Only] on, the search asks for every goal', 0.2, function () { const g = F1.g; if (!g) return false; return (!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false) || false; }, test.limit.quick);
 test.run('with [Goals Only] on, the List shows the goals and no item', 0.2, function () { const g = F1.g; if (!g) return false; return (g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false) || false; }, test.limit.quick);
 test.run('pressing [Current Goal Only] turns [Goals Only] off', 0.2, async function () {
   if (noF1()) return false;
   const c = F1.c = await read1('window.press("current")');
   return (c.current === true && c.goals === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a filter and waits 800 ms' });
 test.run('with [Current Goal Only] on, the List shows the current goal alone', 0.2, function () { const c = F1.c; if (!c) return false; return (c.openItem === true && c.olderGoal === false && c.olderItem === false) || false; }, test.limit.quick);
 test.run('pressing [Current Goal Only] again turns both filters off', 0.2, async function () {
   if (noF1()) return false;
   const off = F1.off = await read1('window.press("current")');
   return (off.current === false && off.goals === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a filter and waits 800 ms' });
 test.run('with both filters off, the List shows every goal\'s items', 0.2, function () {
   stop(F1);
   const off = F1.off;
@@ -503,7 +503,7 @@ test.run('a goal and two items are put on the scratch desk', 0.2, async function
   F2.two = await call(ID + '.item.add', { goal: g.id, title: 'Second opened item' });
   F2.ready = !!g.id && !!F2.one.id && !!F2.two.id;
   return F2.ready || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node, opens Chrome, sets a goal' });
 test.run('the first item\'s row is in the List', 0.2, async function () {
   if (noF2()) return false;
   const page = F2.page;
@@ -522,7 +522,7 @@ test.run('the second item\'s row is in the List', 0.2, async function () {
   if (noF2()) return false;
   await F2.page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); b.querySelector('.app-container-close').click(); return true; })()");
   return (await open2('Second opened item')) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it closes a box and opens an item in Chrome' });
 test.run('after it was closed, the second item opens with its own details, not its title bar alone', 0.2, async function () {
   if (noF2()) return false;
   await H.until(function () { return shown2().then(function (s) { return s.drawn && s.text.indexOf(F2.two.id) !== -1; }); }, H.WAIT);
@@ -551,7 +551,7 @@ test.run('the first item, opened again, is shown as it was left, in its own laye
   const newAsks = (await asked2()).slice(from).filter(function (x) { return /\.(item\.get|item\.box|item\.chat|item\.checks)$/.test(x.call) && x.id === F2.one.id; }).length;
   stop(F2);
   return (again.drawn && again.text.indexOf(F2.one.id) !== -1 && again.layers === 2 && newAsks === 0) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it closes a box and reopens an item in Chrome' });
 
 // ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk
@@ -576,7 +576,7 @@ test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, 
   const before = await state3();
   F3.ready = !!g.id && !!it.id && before.status === 'done';
   return F3.ready || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node, opens Chrome, sets a goal' });
 test.run('the List draws the done item\'s Close', 0.2, async function () {
   if (noF3()) return false;
   const page = F3.page;
@@ -593,7 +593,7 @@ test.run('after each Close in the List is pressed once, the item is still done a
   await new Promise(function (r) { setTimeout(r, 1500); });
   const after = await state3();
   return after.status === 'done' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses each Close and waits 1.5 s' });
 test.run('each Close in the List then stands armed, waiting for the second press', 0.2, async function () {
   if (!F3.drawn) return false;
   const armed = JSON.parse(await F3.page.evaluate('JSON.stringify(' + CLOSES + '.map(function (b) { return b.hasAttribute("data-armed"); }))'));

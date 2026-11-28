@@ -45,7 +45,7 @@ test.run('a scratch node comes up, with Chrome on its face page', 0.2, async fun
     return parsed(await chrome.evaluate('JSON.stringify((function () { var f = window.__root.querySelector("button[id$=field]"); var p = f && document.getElementById(f.id.replace(/field$/, "popup")); return [].map.call(p ? p.querySelectorAll("tr[data-key]") : [], function (r) { return r.getAttribute("data-key"); }); })())')) || [];
   };
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('the icon selector is made on the page', 0.2, async function () {
   if (!rows) return false;
   left = glyphs[0];
@@ -53,7 +53,7 @@ test.run('the icon selector is made on the page', 0.2, async function () {
     ' return window.spirit.requireScript("spirit/element/search/icon/script.js"); }).then(function () { var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:400px;z-index:99999";' +
     ' window.__root = window.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function () { return null; });
   return made === 'made' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the selector into the page from the node' });
 test.run('it reads the icon set file and no other, through spirit.fs.api.loadFile', 0.2, async function () {
   if (made !== 'made') return false;
   await until(function () { return chrome.evaluate('window.__asks.length > 0'); }, 8000);
@@ -62,7 +62,7 @@ test.run('it reads the icon set file and no other, through spirit.fs.api.loadFil
   // The page's own reads of other files stand beside it (the boot reads join's state).
   const asks = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
   return JSON.stringify(asks) === JSON.stringify([SET]) ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for the page to read the icon set' });
 test.run('it offers every icon of that file', 0.2, function () {
   if (!offered) return false;
   want = glyphs.filter(function (g) { return g !== left; });
@@ -82,14 +82,14 @@ test.run('it draws no list of its own, because its popup is the icons list\'s dr
   if (made !== 'made') return false;
   const own = await chrome.evaluate('window.__root.querySelectorAll(".icon-selector-row, .icon-selector-list").length');
   return own === 0 ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);
 // A pick: its value is the glyph, and one change bubbles.
 test.run('a pick makes its value that glyph, with one bubbling change', 0.2, async function () {
   if (made !== 'made') return false;
   const pickedNow = await chrome.evaluate('(function () { var n = 0; window.__root.parentNode.addEventListener("change", function () { n += 1; }); var f = window.__root.querySelector("button[id$=field]"); var p = document.getElementById(f.id.replace(/field$/, "popup")); var r = p.querySelector("tr[data-key]"); var g = r.getAttribute("data-key"); r.click(); return new Promise(function (res) { setTimeout(function () { res(JSON.stringify({ value: window.__root.value, want: g, changes: n })); }, 300); }); })()');
   const pv = parsed(pickedNow) || {};
   return pv.value && pv.value === pv.want && pv.changes === 1 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it picks and waits 300 ms for the change' });
 
 // The box: "A page reads the file once". A fresh page, the list and the selector made at the same moment, the set not yet there.
 // the box: "A page reads the file once"
@@ -103,9 +103,9 @@ test.run('a selector and two lists made together read the icon set file once', 0
   await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);
   const once = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
   return once.length === 1 ? true : false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it reloads the page and waits for the rows' });
 test.run('the selector made together with the lists has every icon of the file', 0.2, async function () {
   if (!rows) return false;
   const n = (await rows()).length;
   return n === glyphs.length ? true : false;
-}, test.limit.slow);
+}, test.limit.quick);

@@ -81,7 +81,7 @@ test.run('the world: a copy of the tree asks its own node half to save and delet
   const r = spawnSync(process.execPath, ['-e', script], { cwd: root, encoding: 'utf8', timeout: 20000 });
   try { W.o = JSON.parse(r.stdout.slice(r.stdout.indexOf('{"save"'))); } catch (e) { W.o = null; }
   return !!W.o;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it copies the tree and runs a child process' });
 test.run('save writes the file and answers 204', 0.2, function () {
   const o = W.o; if (!o) return false;
   let text = null;

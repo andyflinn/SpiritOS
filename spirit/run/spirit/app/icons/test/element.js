@@ -64,7 +64,7 @@ test.run('a scratch node comes up with Icons switched on, and a Chrome page open
   W.chrome = await chromePage(findChrome());
   W.up = !!(W.node.up && !W.chrome.error && W.node.root);
   return W.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('the system set is read, and four glyphs it does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
@@ -180,7 +180,7 @@ test.run('Remove is an armingButton: a first press arms it', 0.2, async function
   await sleep(1200);
   W.wasArmed = await armed();
   return W.wasArmed ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses Remove and waits 1.2 s' });
 test.run('the first press of Remove removes nothing', 0.2, function () {
   if (!W.drew) return false;
   return W.fresh[0] in inSet() || false;
@@ -220,7 +220,7 @@ test.run('a second page shows the set', 0.2, async function () {
   const m2 = await mount(other);
   W.second = m2 === 'made' && !!(await until(function () { return rows(other).then(function (t) { return t.indexOf(W.sys) !== -1; }); }, 10000));
   return W.second || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a second page in Chrome and waits' });
 test.run('the other page shows the second new glyph, added on the first, with no reload', 0.2, async function () {
   if (!W.second) return false;
   await W.other.evaluate('window.__posts = []; true');

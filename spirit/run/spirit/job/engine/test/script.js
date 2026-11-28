@@ -111,7 +111,7 @@ test.run('a scratch node comes up with its planted server and one-shot app switc
   if (!J.node.up) return false;
   J.run = path.join(J.node.root, 'spirit', 'run');
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node with two app servers' });
 test.after(function () {
   stop(J.node);
   try { if (J.marks) fs.rmSync(J.marks, { recursive: true, force: true }); } catch (e) { /* scratch */ }
@@ -121,17 +121,17 @@ test.after(function () {
 test.run('/bin/sh with a command line is refused with a code', 0.8, async function () {
   RC.sh = await refusedCase('/bin/sh with a command line', mark('sh'), { command: '/bin/sh', args: ['-c', 'echo pwned > ' + mark('sh')] });
   return refused('sh');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('/bin/sh with a command line never ran', 0.8, function () { return neverRan('sh'); }, test.limit.quick);
 test.run('sh, found on the path, is refused with a code', 0.8, async function () {
   RC.sh2 = await refusedCase('sh, found on the path', mark('sh2'), { command: 'sh', args: ['-c', 'echo pwned > ' + mark('sh2')] });
   return refused('sh2');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('sh, found on the path, never ran', 0.8, function () { return neverRan('sh2'); }, test.limit.quick);
 test.run('this node\'s own executable given code to run with -e is refused with a code', 0.8, async function () {
   RC.dashE = await refusedCase('this node\'s own executable given code to run (-e)', mark('dashE'), { command: process.execPath, args: ['-e', script(mark('dashE'))] });
   return refused('dashE');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('this node\'s own executable given code to run with -e never ran', 0.8, function () { return neverRan('dashE'); }, test.limit.quick);
 
 // this node's executable, on a script that is not its process, is refused
@@ -140,20 +140,20 @@ test.run('a script outside spirit/app is refused with a code', 0.8, async functi
   fs.writeFileSync(outside, script(mark('outside')));
   RC.outside = await refusedCase('a script outside spirit/app', mark('outside'), { command: process.execPath, args: [outside] });
   return refused('outside');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a script outside spirit/app never ran', 0.8, function () { return neverRan('outside'); }, test.limit.quick);
 test.run('a path climbing out of spirit/app is refused with a code', 0.8, async function () {
   plant('zz-climbed.js', mark('climbed'));
   RC.climbed = await refusedCase('a path climbing out of spirit/app', mark('climbed'), { command: process.execPath, args: ['spirit/app/zzserve/../../../zz-climbed.js'] });
   return refused('climbed');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a path climbing out of spirit/app never ran', 0.8, function () { return neverRan('climbed'); }, test.limit.quick);
 test.run('an app whose json does not say node run true is refused with a code', 0.8, async function () {
   plant('spirit/app/zzNotRun/zzNotRun.js', mark('notRun'));
   fs.writeFileSync(path.join(J.run, 'spirit/app/zzNotRun/zzNotRun.json'), JSON.stringify({ identity: { label: 'zz' } }));
   RC.notRun = await refusedCase('an app whose json does not say node run true', mark('notRun'), { command: process.execPath, args: ['spirit/app/zzNotRun/zzNotRun.js'] });
   return refused('notRun');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('an app whose json does not say node run true never ran', 0.8, function () { return neverRan('notRun'); }, test.limit.quick);
 
 // what this node may start still starts
@@ -165,20 +165,20 @@ test.run('an app\'s own spirit/app/<name>/<name>.js, its json saying node run tr
   const inc = await call({ command: process.execPath, args: ['spirit/app/zzRun/zzRun.js'] });
   await sleep(WAIT_MS);
   return inc.status === 201 && fs.existsSync(mark('run')) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the app list, then 1.5 s for the run' });
 // A PAGE SENDS PLAIN node (the app detail's run, spirit/element/search/app/detail/script.js:68): job.js reads it as this
 // node's own executable. The run before has ended, so the id is free again.
 test.run('plain node with a node run app starts, as Run sends it', 0.2, async function () {
   const plainNode = await call({ command: 'node', args: ['spirit/app/zzRun/zzRun.js'] });
   await sleep(WAIT_MS);
   return plainNode.status >= 200 && plainNode.status < 300 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a job and waits 1.5 s for it to run' });
 // A SECOND SCRIPT IN AN APP FOLDER IS NEVER STARTED (goal/G43.20, the box).
 test.run('a second script in a node run app\'s folder is refused with a code', 0.8, async function () {
   const helper = plant('spirit/app/zzRun/zzHelper.js', mark('helper'));
   RC.helper = await refusedCase("a second script in a node run app's folder", mark('helper'), { command: process.execPath, args: [helper] });
   return refused('helper');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a second script in a node run app\'s folder never ran', 0.8, function () { return neverRan('helper'); }, test.limit.quick);
 // RH1 OPEN AGAIN (goal/G47.1, Andy's daily re-review): "A commit added a check that only looks at how the first argument
 // ends, and anyone who can call jobs.create can get arbitrary code past it. The fix is to require that argument to be
@@ -195,13 +195,13 @@ test.run('a spirit/server/app/script.js outside this node\'s tree, given before 
   fs.writeFileSync(fake, script(mark('fakeOutside')));
   RC.fakeOutside = await refusedCase('a spirit/server/app/script.js outside this node\'s tree', mark('fakeOutside'), { command: process.execPath, args: [fake, ownRunApp()] });
   return refused('fakeOutside');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a spirit/server/app/script.js outside this node\'s tree, given before a node run app, never ran', 0.8, function () { return neverRan('fakeOutside'); }, test.limit.quick);
 test.run('a spirit/server/app/script.js planted inside an app folder of this node, given before a node run app, is refused with a code', 0.8, async function () {
   const fake = plant('spirit/app/zzRun/spirit/server/app/script.js', mark('fakeInside'));
   RC.fakeInside = await refusedCase('a spirit/server/app/script.js planted inside an app folder', mark('fakeInside'), { command: process.execPath, args: [fake, ownRunApp()] });
   return refused('fakeInside');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a spirit/server/app/script.js planted inside an app folder of this node, given before a node run app, never ran', 0.8, function () { return neverRan('fakeInside'); }, test.limit.quick);
 // RH1 CARRIED OVER (goal/G48.5, the box: "the node starts a server process only as its own spirit/server/script.js, then --app, then
 // the script; any other server.js as the first argument is refused", "the start check carries over exactly ... (RH1)").
@@ -211,19 +211,19 @@ test.run('this node\'s own spirit/server/script.js, then --app, then a node run 
   const r = await call({ command: process.execPath, args: [own, '--app', app] });
   await sleep(WAIT_MS);
   return (r.status === 201 && fs.existsSync(mark('runAgain'))) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a job and waits 1.5 s for it to run' });
 test.run('a spirit/server/script.js outside this node\'s tree, then --app, then a node run app, is refused with a code', 0.8, async function () {
   const fake = path.join(J.marks, 'elsewhere2', 'spirit', 'server', 'script.js');
   fs.mkdirSync(path.dirname(fake), { recursive: true }); fs.writeFileSync(fake, script(mark('fakeServerOut')));
   RC.fakeServerOut = await refusedCase('a spirit/server/script.js outside this node\'s tree', mark('fakeServerOut'), { command: process.execPath, args: [fake, '--app', ownRunApp()] });
   return refused('fakeServerOut');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a spirit/server/script.js outside this node\'s tree, then --app, then a node run app, never ran', 0.8, function () { return neverRan('fakeServerOut'); }, test.limit.quick);
 test.run('a spirit/server/script.js planted inside an app folder of this node, then --app, then a node run app, is refused with a code', 0.8, async function () {
   const fake = plant('spirit/app/zzRun/spirit/server/script.js', mark('fakeServerIn'));
   RC.fakeServerIn = await refusedCase('a spirit/server/script.js planted inside an app folder', mark('fakeServerIn'), { command: process.execPath, args: [fake, '--app', ownRunApp()] });
   return refused('fakeServerIn');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 test.run('a spirit/server/script.js planted inside an app folder of this node, then --app, then a node run app, never ran', 0.8, function () { return neverRan('fakeServerIn'); }, test.limit.quick);
 
 // GOAL/G41.33. THE BOX: "Console output goes to null by default, at the source, for every process. Only DEBUG turns it
@@ -354,7 +354,7 @@ test.run('switched off, a call to the one-shot app answers app-not-served', 0.2,
   await sleep(WAIT_MS);
   const offCall = J.iconVerbs && J.iconVerbs.length ? await door(appId('zzshot') + '.' + J.iconVerbs[0], {}) : { text: '' };
   return /app-not-served/.test(offCall.text) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 1.5 s for the switch-off to land' });
 test.run('switched off, the one-shot app is not in the api tree', 0.2, async function () {
   return (await branches()).indexOf(appId('zzshot')) === -1 ? true : false;
 }, test.limit.quick);
@@ -377,7 +377,7 @@ test.run('with node mount missing, the one-shot app is served', 0.2, async funct
     await door('spirit.app.active', { key: appId('zzshot'), active: true });
     return (await until(function () { return branches().then(function (b) { return b.indexOf(appId('zzshot')) !== -1; }); }, 10000)) ? true : false;
   } finally { fs.writeFileSync(shotJson, kept); }
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it switches the app off and on, 1.5 s apart' });
 
 // the attacker: what is not a one-shot app is never run as one
 const notOneShot = async function (name, files) {
@@ -402,17 +402,17 @@ const scriptNeverRan = function (k) { return NO[k] ? (NO[k].neverRan ? true : fa
 test.run('an app with api.js and no data.js is not served', 0.2, async function () {
   NO.noData = await notOneShot('zzNoData', { api: true, data: false });
   return notServed('noData');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants an app and waits 3 s for the node' });
 test.run('the script of an app with api.js and no data.js never ran', 0.8, function () { return scriptNeverRan('noData'); }, test.limit.quick);
 test.run('an app with data.js and no api.js is not served', 0.2, async function () {
   NO.noApi = await notOneShot('zzNoApi', { api: false, data: true });
   return notServed('noApi');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants an app and waits 3 s for the node' });
 test.run('the script of an app with data.js and no api.js never ran', 0.8, function () { return scriptNeverRan('noApi'); }, test.limit.quick);
 test.run('an app with both api.js and data.js, never switched on, is not served', 0.2, async function () {
   NO.off = await notOneShot('zzOff', { api: true, data: true, on: false });
   return notServed('off');
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants an app and waits 3 s for the node' });
 test.run('the script of an app with both api.js and data.js, never switched on, never ran', 0.8, function () { return scriptNeverRan('off'); }, test.limit.quick);
 
 // The sections below, each folded in from a file of its own, run in order after the checks above.
@@ -448,13 +448,13 @@ test.run('the scratch node for the job routes comes up', 0.2, async function () 
   if (!RT.node.up) return false;
   RT.run = path.join(RT.node.root, 'spirit', 'run');
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.after(function () { if (RT.node && RT.node.child) RT.node.child.kill(); });
 test.run('the planted app server is switched on', 0.2, async function () {
   const on = await rask('spirit.app.active', { key: appId('zzserve'), active: true });
   await H.sleep(5000);
   return on.status === 200 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it switches a server on and waits 5 s' });
 test.run('the node lists five or more jobs', 0.2, async function () {
   const list = await rask('spirit.job.search', { q: '' });
   RT.ids = ((list.body && list.body.items) || []).map(function (i) { return String(i.key); });
@@ -532,7 +532,7 @@ test.run('two starts at once: one gets in, the other is refused (the pending one
   const both = await Promise.all([rask('spirit.job.create', { command: process.execPath, args: [RT.runApp] }), rask('spirit.job.create', { command: process.execPath, args: [RT.runApp] })]);
   RT.taken = both.filter(function (r) { return r.status >= 200 && r.status < 300; });
   return RT.taken.length === 1 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 5 s for the run before to end' });
 
 // "a new run takes the id over and runs on"
 test.run('after its run ended, a new run is the same id, spirit.app.zzRun, running again', 0.2, async function () {
@@ -549,14 +549,14 @@ test.run('ten starts at the same moment: exactly one gets in', 0.2, async functi
   const ten = await Promise.all(Array.from({ length: 10 }, function () { return rask('spirit.job.create', { command: process.execPath, args: [RT.runApp] }); }));
   const tenIn = ten.filter(function (r) { return r.status >= 200 && r.status < 300; });
   return tenIn.length === 1 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 4.5 s for the run before to end' });
 test.run('a cancelled run app\'s next start takes the same id over', 0.2, async function () {
   const cancelled = await rask('spirit.job.cancel', { id: 'spirit.app.zzRun' });
   await H.sleep(800);
   const afterCancel = await rask('spirit.job.create', { command: process.execPath, args: [RT.runApp] });
   await rask('spirit.job.cancel', { id: 'spirit.app.zzRun' });
   return cancelled.status >= 200 && cancelled.status < 300 && afterCancel.status >= 200 && afterCancel.status < 300 && (afterCancel.body || {}).id === 'spirit.app.zzRun' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it cancels a job and waits for the node' });
 
 // the attacker: a run app's route reached by a crooked path, a link, a second script, a json that only looks right
 test.run('every crooked way to a run app\'s route is refused', 0.8, async function () {
@@ -661,7 +661,7 @@ test.run('the node starts on a tree with no run:/process folder', 0.2, async fun
   SL.base = 'http://127.0.0.1:' + SL.port;
   const up = await H.until(function () { return sask('api', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return up ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a node on a scratch tree' });
 test.after(async function () {
   try { if (SL.child) SL.child.kill(); } catch (e) { /* gone */ }
   await H.sleep(500);
@@ -749,7 +749,7 @@ test.run('after an app server is switched off and on, the state layout holds wit
   await sask('spirit.app.active', { key: appId(one), active: true });
   await answersApi(one);
   return layoutHolds();
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it switches a server off and on and waits for it' });
 
 // the attacker: the node killed and started again on the same tree
 test.run('the node comes back after a kill', 0.2, async function () {
@@ -758,7 +758,7 @@ test.run('the node comes back after a kill', 0.2, async function () {
   SL.child = LABH.startNodeOn(SL.run, SL.port);
   const back = await H.until(function () { return sask('api', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return back ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it kills the node and waits for it to come back' });
 test.run('every switched-on app server starts again after the kill', 0.2, async function () {
   const again = [];
   for (const name of SL.servers) { if (await answersApi(name)) again.push(name); }
@@ -780,7 +780,7 @@ test.run('no folder appeared at the run root after the bad names', 0.2, async fu
   await H.sleep(2000);
   const outside = fs.readdirSync(SL.run).filter(function (n) { return ['relay-state', 'process', 'x'].indexOf(n) !== -1; });
   return !outside.length ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 2 s for any folder to appear' });
 test.run('after the bad names, the state layout holds with nothing out of place', 0.2, function () { return layoutHolds(); }, test.limit.quick);
 
 // the attacker: an app's folder taken away while it runs
@@ -790,7 +790,7 @@ test.run('the node still answers with an app server\'s folder gone under it', 0.
   await H.sleep(4000);
   const alive = await sask('api', {});
   return alive.status === 200 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it removes an app folder and waits 4 s' });
 test.run('with backup\'s app folder gone, the state layout holds with nothing out of place', 0.2, function () { return layoutHolds(); }, test.limit.quick);
 
 // ── THE VENDORED LIBRARIES PART ──
@@ -975,7 +975,7 @@ function mountPart() {
     elsewhere = path.join(s.root, 'other', 'spirit', 'app', NAME, NAME + '.js');
     N = await boot(s.run); live.push(N.child);
     return N.up || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   test.run('the throwaway app is a row of the app branch', 0.2, async function () {
     return (!noNode() && !!(await rowOf(N.base, MODULE))) || false;
   }, test.limit.quick);
@@ -985,7 +985,7 @@ function mountPart() {
     if (noNode()) return false;
     await sleep(1500);
     return !(await liveJob(N.base, MODULE)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.5 s for a server that must not start' });
   test.run('the script of an app that is not active did not run', 0.2, function () {
     return (!noNode() && !fs.existsSync(started())) || false;
   }, test.limit.quick);
@@ -1010,7 +1010,7 @@ function mountPart() {
     await call(N.base, 'spirit.app.active', { key: appId('always'), active: false });
     await sleep(3000);
     return (answers(await pingOf(N.base, 'always')) && alive(alwaysPid)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it switches the server off and waits 3 s' });
 
   // goal/G43.20, the box: "spirit.job.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose
   // <name>.json says node run true; anything else is refused"
@@ -1019,13 +1019,13 @@ function mountPart() {
     const inactive = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
     return (refused(inactive) && !fs.existsSync(ranHelper)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
   test.run('its server script, its json saying node mount, not node run, is refused too, and does not run', 0.8, async function () {
     if (noNode()) return false;
     const inactiveMain = await startIt('spirit/app/' + NAME + '/' + NAME + '.js');
     await sleep(1500);
     return (refused(inactiveMain) && !fs.existsSync(started())) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
   // Outside the two places: a script of the shell, a file at the top of spirit/app, the same path in another tree, and a way out by dots.
   test.run('the scripts outside the two places are planted', 0.2, function () {
     if (!s) return false;
@@ -1043,10 +1043,10 @@ function mountPart() {
     await sleep(1000);
     return (refused(r) && !fs.existsSync(ranElsewhere)) || false;
   };
-  test.run('a script of the shell is refused, and does not run', 0.8, function () { return outside('shell/planted.js'); }, test.limit.slow);
-  test.run('a file at the top of spirit/app is refused, and does not run', 0.8, function () { return outside('spirit/app/planted.js'); }, test.limit.slow);
-  test.run('the same path in another tree is refused, and does not run', 0.8, function () { return outside(elsewhere); }, test.limit.slow);
-  test.run('a way out of an app\'s folder is refused, and does not run', 0.8, function () { return outside('spirit/app/' + NAME + '/../../../shell/planted.js'); }, test.limit.slow);
+  test.run('a script of the shell is refused, and does not run', 0.8, function () { return outside('shell/planted.js'); }, test.limit.slow, { why: 'it asks the node, then waits 1 s for a run' });
+  test.run('a file at the top of spirit/app is refused, and does not run', 0.8, function () { return outside('spirit/app/planted.js'); }, test.limit.slow, { why: 'it asks the node, then waits 1 s for a run' });
+  test.run('the same path in another tree is refused, and does not run', 0.8, function () { return outside(elsewhere); }, test.limit.slow, { why: 'it asks the node, then waits 1 s for a run' });
+  test.run('a way out of an app\'s folder is refused, and does not run', 0.8, function () { return outside('spirit/app/' + NAME + '/../../../shell/planted.js'); }, test.limit.slow, { why: 'it asks the node, then waits 1 s for a run' });
 
   // the box: "It starts one only if its <name>.json says node.mount true and spirit/state/<name>/node.json says active true"
   test.run('an app with node.mount false is activated', 0.2, async function () {
@@ -1058,7 +1058,7 @@ function mountPart() {
     if (noNode()) return false;
     await sleep(3000);
     return !(await liveJob(N.base, 'spirit.app.quiet')) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 3 s for a server that must not start' });
   test.run('the quiet app\'s verb is not answered', 0.2, async function () {
     return (!noNode() && !answers(await pingOf(N.base, 'quiet'))) || false;
   }, test.limit.quick);
@@ -1099,7 +1099,7 @@ function mountPart() {
     if (!s) return false;
     const keptNone = await kept('noSuchFamily');
     return !keptNone || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a follower that waits 6 s for a row' });
   test.run('a client gets back what it kept of the new branch', 0.2, async function () {
     if (!s) return false;
     // The new branch by its id, spirit.app.probe (goal/G49.19).
@@ -1200,7 +1200,7 @@ function mountPart() {
     process.kill(Number(first.pid), 'SIGKILL');
     await until(function () { return Promise.resolve(!alive(Number(first.pid))); }, 5000);
     return (await until(function () { return pingOf(N.base).then(function (r) { return answers(r) && Number(r.body.pid) !== Number(first.pid); }); }, 30000)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it kills the server and waits for its restart' });
   test.run('active stays true in node.json through the kill and restart', 0.2, function () {
     if (!s) return false;
     const j2 = nodeJson() || {};
@@ -1213,7 +1213,7 @@ function mountPart() {
     const activeHelper = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
     return (refused(activeHelper) && !fs.existsSync(ranHelper)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it asks the node, then waits 1.5 s for a run' });
 
   // a page binds it by its name, and its api.js loads its data.js, on a page and in a process (the box: "A page changes
   // nothing. It binds a family by its name, and the node finds the folder."; "data.js sits beside <name>.js ... and the
@@ -1293,7 +1293,7 @@ function mountPart() {
     if (noNode()) return false;
     await sleep(3000);
     return (!answers(await pingOf(N.base)) && !alive(before)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 3 s for a server that must not return' });
   test.run('its row stays in the list, active false', 0.2, async function () {
     if (noNode()) return false;
     const offRow = await rowOf(N.base, MODULE);
@@ -1316,7 +1316,7 @@ function mountPart() {
     await stop(N.child);
     N = await boot(s.run); live.push(N.child);
     return (N.up && await upAgain(N.base)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it restarts the node and waits for the server' });
   test.run('after the node restarts, active stays true', 0.2, function () {
     if (!s) return false;
     return (nodeJson() || {}).active === true || false;
@@ -1334,7 +1334,7 @@ function mountPart() {
     await until(function () { return Promise.resolve(N.child.exitCode !== null || N.child.signalCode !== null); }, 5000);
     N = await boot(s.run); live.push(N.child);
     return (N.up && await until(function () { return pingOf(N.base).then(function (r) { return answers(r) && Number(r.body.pid) !== cutPid; }); }, 30000)) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it kills and restarts the node and its server' });
   // THE FAKE APP AT spirit/fake/, KNOWN BY ITS PATH ALONE (goal/G49.19, box v13).
   const FAKE = 'spirit.fake';
   test.run('the app planted at spirit/fake/ is a row of the app branch under spirit.fake', 0.2, async function () {
@@ -1346,7 +1346,7 @@ function mountPart() {
     await call(N.base, 'spirit.app.active', { key: FAKE, active: true });
     fakeJob = await until(function () { return liveJob(N.base, FAKE); }, 30000);
     return !!fakeJob || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it switches a server on and waits for its job' });
   test.run('its verb is answered as spirit.fake.ping', 0.2, async function () {
     if (noNode()) return false;
     // A server that just started answers once it listens, as the probe's checks wait for theirs (upAgain).
@@ -1357,7 +1357,7 @@ function mountPart() {
     // Read from the node's job list, as liveJob reads it, until the payload it publishes again and again is the job's.
     const heard = await until(function () { return jobsOf(N.base).then(function (all) { return all.some(function (j) { return j.id === FAKE && !!j.app && j.app.fake === 'streamed'; }); }); }, 15000);
     return !!heard || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the server to stream its row' });
   test.run('nothing of it goes by a name: no job spirit.app.fake, and spirit.job.get of fake finds none', 0.2, async function () {
     if (!fakeJob) return false;
     const bare = await call(N.base, 'spirit.job.get', { key: 'fake' });
@@ -1379,7 +1379,7 @@ function mountPart() {
     const notStarted = N.up && !fs.existsSync(started()) && !(await liveJob(N.base, MODULE));
     await stop(N.child);
     return notStarted || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it restarts the node and waits 3 s' });
 }
 mountPart();
 

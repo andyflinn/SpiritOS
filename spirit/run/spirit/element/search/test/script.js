@@ -1219,7 +1219,7 @@ async function keptPart() {
     WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
   test.run('a list of five rows is drawn with a filter, a selector, two sortable columns and a search field, and each row is marked', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/' });
@@ -1234,7 +1234,7 @@ async function keptPart() {
       '  selectors: [{ name: "who", element: K.who, test: function (row) { return !K.who.value || row.who === K.who.value ? 1 : 0; } }] }); ' +
       'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : null; }); }, function () { return null; })');
     return ok() || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens the face page and loads the search' });
 
   // the box: "a sort or new words move them"
   test.run('a sort by name moves the same five row elements into the order of their names', 0.2, async function () {
@@ -1245,7 +1245,7 @@ async function keptPart() {
     const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
     const order = shown.slice().sort(function (x, y) { return FIVE_KEYS.indexOf(x) - FIVE_KEYS.indexOf(y); });
     return (!notSame.length && shown.length === 5 && (JSON.stringify(shown) === JSON.stringify(order) || JSON.stringify(shown) === JSON.stringify(order.slice().reverse()))) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it sorts and waits 300 ms for the rows to move' });
   test.run('a sort the other way moves the same five row elements back, reversed', 0.2, async function () {
     if (!ok()) return false;
     const before = await ev('return K.shown();');
@@ -1254,12 +1254,12 @@ async function keptPart() {
     const shown = await ev('return K.shown();');
     const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
     return (!notSame.length && JSON.stringify(shown) === JSON.stringify(before.slice().reverse())) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it sorts and waits 300 ms for the rows to move' });
   test.run('the rows are sorted by name, a to f', 0.2, async function () {
     if (!ok()) return false;
     for (let i = 0; i < 2; i++) { const s = await ev('return K.shown();'); if (s[0] === 'a') return true; await ev('return K.sort("name");'); await sleep(300); }
     return false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it may sort twice, waiting 300 ms each' });
 
   // the box: "a new record adds its one row at its place"
   test.run('a new record adds its one row, and the five row elements already drawn stay the same', 0.2, async function () {
@@ -1268,7 +1268,7 @@ async function keptPart() {
     await sleep(300);
     const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
     return !notSame.length || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it adds a record and waits 300 ms for its row' });
   test.run('the new record\'s row shows at its place, cat between bob and dan', 0.2, async function () {
     if (!ok()) return false;
     const shown = await ev('return K.shown();');
@@ -1288,7 +1288,7 @@ async function keptPart() {
     const t = await ev('return K.text("d");');
     const notSame = await ev('return K.same(["d"]);');
     return (/33/.test(String(t)) && !notSame.length) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it changes a record and waits 300 ms for the row' });
   test.run('a changed record leaves every other row element the same', 0.2, async function () {
     if (!ok()) return false;
     const notSame = await ev('return K.same(["a", "b", "c", "e", "f"]);');
@@ -1302,7 +1302,7 @@ async function keptPart() {
     await sleep(300);
     const shown = await ev('return K.shown();');
     return JSON.stringify(shown) === JSON.stringify(['a', 'd', 'f']) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it presses the filter and waits 300 ms' });
   test.run('a filter hides rows without taking them out, so the six row elements are the same and the hidden ones are still in the page', 0.2, async function () {
     if (!ok()) return false;
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
@@ -1315,7 +1315,7 @@ async function keptPart() {
     const shown = await ev('return K.shown();');
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it presses the filter and waits 300 ms' });
   test.run('with y chosen in the selector, only y\'s rows show and every row element is the same', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.pickWho("y"); return true;');
@@ -1323,7 +1323,7 @@ async function keptPart() {
     const shown = await ev('return K.shown();');
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return (JSON.stringify(shown) === JSON.stringify(['b', 'c', 'e']) && !notSame.length) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it picks in the selector and waits 300 ms' });
   test.run('with the selector unselected, every row shows again in the same row elements', 0.2, async function () {
     if (!ok()) return false;
     await ev('K.pickWho(""); return true;');
@@ -1331,7 +1331,7 @@ async function keptPart() {
     const shown = await ev('return K.shown();');
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it clears the selector and waits 300 ms' });
 
   // the box: "a sort or new words move them"
   test.run('typing "eve" moves eve\'s row first, the same element', 0.2, async function () {
@@ -1341,7 +1341,7 @@ async function keptPart() {
     const shown = await ev('return K.shown();');
     const notSame = await ev('return K.same(["e"]);');
     return (shown[0] === 'e' && !notSame.length) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it types words and waits 600 ms for the rows' });
   test.run('with words typed, every row element kept is the same', 0.2, async function () {
     if (!ok()) return false;
     const notSame = await ev('return K.same(K.shown());');
@@ -1354,7 +1354,7 @@ async function keptPart() {
     const shown = await ev('return K.shown();');
     const notSame = await ev('return K.same(["a", "b", "c", "d", "e", "f"]);');
     return (JSON.stringify(shown) === JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f']) && !notSame.length) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it clears the words and waits 600 ms for the rows' });
 
   // the box: "never redraws its list"
   test.run('in all of this the list never redrew, its table being the one first drawn', 0.2, async function () {
@@ -1408,7 +1408,7 @@ async function bubblePart() {
     WORLDS.push(function () { return free(); });
     page = null;
     return (node.up && node.debug) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   test.run('a Chrome page opens on the scratch node', 0.2, async function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
@@ -1425,7 +1425,7 @@ async function bubblePart() {
     m = null;
     try { m = JSON.parse(s); } catch (e) { m = null; }
     return (!!m && !!m.made) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens the laid-out page in Chrome' });
   test.run('in a pane the 🗜 and the 🔎 are the icon element of spirit/element/icon/script.js', 0.2, function () {
     if (!chrome) return false;
     if (!node || !node.up || !node.debug) return false;
@@ -1558,7 +1558,7 @@ async function popupPart() {
     WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
   test.run('three search dropdowns of 40 rows, each in a 48 px box cutting off its overflow, a block over the space below the first two', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/' });
@@ -1597,7 +1597,7 @@ async function popupPart() {
     await press('a');
     a1 = await look('a');
     return (a1.open) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.4 s for the list to open' });
   test.run('the first dropdown\'s field stays where it was, in its box', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
@@ -1640,7 +1640,7 @@ async function popupPart() {
     await chrome.evaluate('(function () { var e = document.elementFromPoint(window.innerWidth - 5, 5) || document.body; e.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); e.click(); }()); true');
     await sleep(500);
     return (!(await look('a')).open) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.1 s for the list to open and close' });
   test.run('a dropdown low in the window opens its list inside the window, seen', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     if (made !== 'made') return false;
@@ -1704,7 +1704,7 @@ async function tilesPart() {
     WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
   const js = function (s) { return chrome.evaluate(s); };
   test.run('the search element loads on the page', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
@@ -1757,7 +1757,7 @@ async function tilesPart() {
     if (!node || !node.up || !chrome || chrome.error) return false;
     try { inTiles = await contained('tiles'); inList = await contained('pane'); } catch (e) { return false; }
     return (!!inTiles && !!inList) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it draws two boxes in Chrome, 500 ms each' });
   test.run('as tiles, nothing of the list is drawn below its box', 0.2, function () {
     if (!inTiles) return false;
     return inTiles.lowest <= inTiles.boxBottom + 1 || false;
@@ -1796,7 +1796,7 @@ async function tilesPart() {
     await type('');
     const ts = await sideBySide();
     return (ts.length === 3 && ts.every(function (t) { return t.top === ts[0].top; })) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it types twice, waiting 500 ms each' });
   test.run('the tiles face has one search field', 0.2, function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     return (plain.inputs === 1) ? true : false;
@@ -1877,7 +1877,7 @@ async function tilesPart() {
     await press('Enter');
     picked1 = JSON.parse(await js('JSON.stringify(window.__picked)'));
     return (picked1.length === 1) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it types and presses four keys, waiting each' });
   test.run('a further Right and Enter picks the next tile', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await press('ArrowRight');
@@ -2073,14 +2073,14 @@ async function reconnectPart() {
     const linked = await until(function () { return chrome.evaluate('window.__r.up === true'); }, 15000);
     asked0 = await chrome.evaluate('window.__r.asked');
     return (!!first && !!linked) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a node, opens Chrome, waits for the stream' });
   test.run('when the node restarts under the search and the stream is back, the search asks once more by itself, nothing typed', 0.8, async function () {
     if (made !== 'made') return false;
     await node.restart();
     if (!node.up) return false;
     const again = await until(function () { return chrome.evaluate('window.__r.asked > ' + asked0); }, 15000);
     return !!again || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it restarts the node and waits for the search' });
   test.run('the new answer is merged, so the row the search held and the row it brought are both drawn', 0.8, async function () {
     if (made !== 'made') return false;
     const text = String(await chrome.evaluate('document.body.innerText'));

@@ -312,7 +312,7 @@ test.run('the file never grows past its cap: the oldest log rows go, never the o
   s.close();
   return (!over && hashes.indexOf('big0') === -1 && hashes.indexOf('big109') !== -1 && count < 110 &&
     newest === 1 && first === 1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it writes 22 MB of log rows to a scratch store' });
 
 // ── replay ──
 test.run('ms takes a number as is, an ISO time as its milliseconds, and anything else as 0', 0.4, function () {

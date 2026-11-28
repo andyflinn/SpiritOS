@@ -85,7 +85,7 @@ function noNode() { return !(W.node && W.node.up); }
 test.run('the scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return W.node.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.after(function () {
   try { if (W.home) fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   const node = W.node || {};

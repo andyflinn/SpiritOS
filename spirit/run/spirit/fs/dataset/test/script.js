@@ -83,7 +83,7 @@ test.run('spirit/fs/dataset/script.js exists', 0.2, function () {
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode({});
   return (!!W.node && W.node.up) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 const up = function () { return !!W.node && W.node.up; };
 
 // ── one entry, the dataset behind it ──
@@ -92,7 +92,7 @@ test.run('a child process that requires spirit/fs/dataset/script.js alone holds 
   W.kid = caller();
   const whole = await until(function () { return !!W.last && W.last.ready && W.last.rows && W.last.rows.count > 100; }, 30000);
   return whole || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for a child process to hold the tree' });
 
 // ── the two flags on every row ──
 test.run('spirit/app/desk, holding api.js and data.js, is a row with api true', 0.4, function () {
@@ -134,13 +134,13 @@ test.run('a folder that gains api.js and data.js turns api true in the caller\'s
   W.dir = dir;
   const on = await until(function () { const r = row('spirit/zzfsflag'); return !!r && r.api === true; }, 15000);
   return on || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the watcher to see the new files' });
 test.run('the same folder losing its data.js turns api false again', 0.4, async function () {
   if (!W.dir) return false;
   fs.rmSync(path.join(W.dir, 'data.js'), { force: true });
   const off = await until(function () { const r = row('spirit/zzfsflag'); return !!r && r.api === false; }, 15000);
   return off || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the watcher to see the file gone' });
 
 // ── the node's own side, and what stays out of spirit.js ──
 test.run('job.js keeps no tree of its own: no fsTree in its code', 0.4, function () {
@@ -162,11 +162,11 @@ test.run('spirit.js knows nothing of fs streaming: it names neither followStream
 test.run('a node process\'s dataset holds spirit/server/script.js, which no page may be served', 0.2, async function () {
   if (!up() || !W.kid) return false;
   return (await until(function () { return !!row('spirit/server/script.js'); }, 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the child processs dataset row' });
 test.run('a node process\'s dataset holds the node\'s own state folder, spirit/state', 0.2, async function () {
   if (!up() || !W.kid) return false;
   return (await until(function () { return !!row('spirit/state'); }, 10000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the child process dataset row' });
 const P = {};
 test.after(function () { try { if (P.chrome && P.chrome.kid) P.chrome.kid.kill(); } catch (e) { /* gone */ } });
 const PAGE_ROWS = "(function () { try { var V = window.spirit.client.viewAt(null, 'spirit.fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/script.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
@@ -180,7 +180,7 @@ test.run('a page on the node holds the whole servable tree in the spirit.fs fami
   await P.chrome.evaluate("window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise.then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function () { return true; }, function () { return true; }) : false");
   for (let i = 0; i < 100; i++) { P.rows = await pageRows(); if (P.rows && P.rows.ready && P.rows.desk) break; await H.sleep(300); }
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.count > 100) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a page in Chrome and waits for the tree' });
 // goal/G49.25: the one server's code, as spirit/server/node/script.js was before.
 test.run('a page\'s dataset holds no spirit/server/script.js', 0.2, function () {
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.server === false) || false;

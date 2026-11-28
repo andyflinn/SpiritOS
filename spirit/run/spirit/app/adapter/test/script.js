@@ -74,7 +74,7 @@ test.run('the scratch node and its zzbig server come up', 0.2, async function ()
   W.base = 'http://127.0.0.1:' + port;
   W.up = await H.until(function () { return post(ID + '.big', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return W.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and waits for zzbig' });
 test.after(async function () {
   try { if (W.child) W.child.kill(); } catch (e) { /* gone */ }
   await H.sleep(500);
@@ -102,7 +102,7 @@ test.run('the process list finds the permanent zzbig.js running, once', 0.2, asy
   if (noNode()) return false;
   await H.sleep(1500);
   return runsOf(W.s.root, NAME).length === 1 || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 1.5 s, then lists the processes' });
 test.run('icons is switched on and no permanent process runs icons.js', 0.2, function () {
   if (noNode()) return false;
   return runsOf(W.s.root, 'icons').length === 0 || false;
@@ -120,7 +120,7 @@ test.run('the api tree holds the permanent row, zzbig, beside icons, as today', 
 test.run('the run that answered the tree has ended', 0.2, async function () {
   if (noNode()) return false;
   return (await H.until(function () { return Promise.resolve(runsOf(W.s.root, 'icons').length === 0); }, 3000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the icons run to end' });
 
 // The box, 9: "one run per app at a time: calls to the same one-shot app wait their turn".
 test.run('of six trees asked at once, each holds the icons branch', 0.2, async function () {
@@ -130,7 +130,7 @@ test.run('of six trees asked at once, each holds the icons branch', 0.2, async f
   await H.sleep(300);
   W.watched = await watch.stop();
   return many.every(function (r) { return r.status === 200 && !!(r.body && r.body['spirit.app.icons']); }) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it asks the node six trees at once' });
 test.run('runs of icons.js were seen while the trees were answered', 0.2, function () {
   if (!W.watched) return false;
   const { seen, pids } = W.watched;
@@ -143,7 +143,7 @@ test.run('there are never two runs of icons.js at once', 0.2, function () {
 test.run('no run of icons.js is left running after the six trees', 0.2, async function () {
   if (noNode()) return false;
   return (await H.until(function () { return Promise.resolve(runsOf(W.s.root, 'icons').length === 0); }, 3000)) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the icons runs to end' });
 
 // ── THE NODE RUNS NO APP CODE; appServer CHECKS, IN THE APP'S PROCESS (goal/G43.32) ──
 // Andy: "isolation, we don't want the NODE to run the validation, because we want the node kept safe from "foreign"

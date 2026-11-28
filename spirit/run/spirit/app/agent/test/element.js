@@ -506,7 +506,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
     P = null;
     await until(function () { return home('spirit.app.agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
     return (!!(P && P.body && P.body.id)) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node and sets a provider' });
   test.run('a model, a persona and a job are added', 0.2, async function () {
     if (STOP) return false;
     if (!(P && P.body && P.body.id)) { STOP = true; return false; }
@@ -537,7 +537,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);
     appOpen = await c.evaluate('!!document.querySelector("[data-tool=provider]")');
     return (appOpen) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens the Agent app in Chrome' });
   // ── a tabContainer stands in the centre, from the start ──
   test.run('with nothing opened, a tabContainer stands in the centre', 0.2, async function () {
     if (STOP) return false;
@@ -625,7 +625,7 @@ async function tabOpens(kind, row) {
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     stacked = await c.evaluate('window.__live');
     return (stacked === 0) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it presses a row three times, 250 ms apart' });
   // ── the tabs stay when the left tool changes ──
   test.run('showing another tool closes none of the open tabs', 0.2, async function () {
     if (STOP) return false;

@@ -113,7 +113,7 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   // Its testicle answers once its app server runs, a moment after the node.
   N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and waits for testicle' });
 test.run('tests of alpha and beta are set, each in its own suite and in one general suite', 0.2, async function () {
   if (!N || !N.up) return false;
   GEN = s.gen;
@@ -124,7 +124,7 @@ test.run('tests of alpha and beta are set, each in its own suite and in one gene
   }
   planted = out.every(function (r) { return r.status === 200; });
   return planted || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets four test rows on the node' });
 test.run('the face page has its spirit', 0.2, async function () {
   if (!N || !N.up) return false;
   const where = findChrome();
@@ -133,7 +133,7 @@ test.run('the face page has its spirit', 0.2, async function () {
   if (c.error) return false;
   await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it opens the face page in Chrome' });
 test.run('it loads alone through spirit.requireScript and mounts with create, handed a container, a script and a pick, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
@@ -141,7 +141,7 @@ test.run('it loads alone through spirit.requireScript and mounts with create, ha
   if (loaded !== 'loaded') return false;
   made = await mount('zzBox', { script: A });
   return made === 'made' || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it loads the list in the page and mounts it' });
 
 // the box: "So suite.search takes the production file and answers that file's suite rows only, each suite once, with its
 // filename and its status"
@@ -150,7 +150,7 @@ test.run('it lists the script\'s own suite rows: its own test and the general su
   const want = [A + '|' + AS, A + '|' + GEN];
   const ok = await until(function () { return view('zzBox').then(function (v) { const k = keysOf(v); return want.every(function (x) { return k.indexOf(x) !== -1; }); }); }, 15000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the rows to be drawn' });
 test.run('it lists no suite row of another script', 0.2, async function () {
   if (notMounted()) return false;
   const k = keysOf(await view('zzBox'));
@@ -186,7 +186,7 @@ test.run('a row pressed is handed to pick, by its key', 0.2, async function () {
   await sleep(300);
   const got = await c.evaluate('window.__picked');
   return (Array.isArray(got) && got.indexOf(k) !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses a row and waits 300 ms' });
 
 // the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once"
 test.run('with no script, it lists every suite, each once: the general suite of both scripts once', 0.2, async function () {
@@ -207,7 +207,7 @@ test.run('with no script, it lists every suite, each once: the general suite of 
   const k2 = keysOf(await view('zzAll'));
   const gens = k2.filter(function (x) { return x === '|' + GEN; });
   return (shown.length > 0 && new Set(shown).size === shown.length && !!own && new Set(k1).size === k1.length && !!gen && gens.length === 1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts a second list and waits for its rows' });
 
 // "The server publishes every row it writes, so a suite written for the file shows by itself"
 test.run('a script with no suite row yet says no suite concerns it', 0.2, async function () {
@@ -216,14 +216,14 @@ test.run('a script with no suite row yet says no suite concerns it', 0.2, async 
   if (m !== 'made') return false;
   const ok = await until(function () { return view('zzGamma').then(function (v) { return !!v && /No suite concerns this file\./.test(v.text); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts a list and waits for its words' });
 test.run('a suite row written for the script shows by itself', 0.2, async function () {
   if (notMounted()) return false;
   const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: C, suite: CS, test: 'gamma runs', verified: true, severity: 0.2 });
   if (r.status !== 200) return false;
   const ok = await until(function () { return view('zzGamma').then(function (v) { return keysOf(v).indexOf(C + '|' + CS) !== -1; }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it sets a row on the node and waits for the draw' });
 // box v143: "all of testicle's elements must subscribe to the data they display": a row already drawn follows its suite
 // row as the server rewrites it, with no press and no new mount.
 const statusIn = function (id, key) { return view(id).then(function (v) { const r = ((v && v.rows) || []).filter(function (x) { return x.key === key; })[0]; return r ? r.cells[2] : null; }); };
@@ -233,7 +233,7 @@ test.run('a drawn row follows its suite row: when a success is reported for it, 
   if (r.status !== 200) return false;
   const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'green'; }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reports a success and waits for the row' });
 test.run('when a failure is reported after that success, the same row shows "still red" by itself', 0.4, async function () {
   if (notMounted()) return false;
   const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: C, suite: CS, success: false });
@@ -241,7 +241,7 @@ test.run('when a failure is reported after that success, the same row shows "sti
   const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'still red'; }); }, 10000);
   const k = keysOf(await view('zzGamma')).filter(function (x) { return x === C + '|' + CS; });
   return (!!ok && k.length === 1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it reports a failure and waits for the row' });
 
 // "face, placeholder, all, pick   handed to the search as they are"
 test.run('as a dropdown, it shows its placeholder in its field', 0.2, async function () {
@@ -250,7 +250,7 @@ test.run('as a dropdown, it shows its placeholder in its field', 0.2, async func
   if (m !== 'made') return false;
   const ok = await until(function () { return view('zzDrop').then(function (v) { return !!v && /pick a suite/.test(v.field || ''); }); }, 10000);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it mounts a dropdown and waits for its field' });
 
 test.run('destroy leaves its container empty', 0.2, async function () {
   if (notMounted()) return false;

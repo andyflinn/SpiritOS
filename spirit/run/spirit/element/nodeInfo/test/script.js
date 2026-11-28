@@ -760,7 +760,7 @@ function rotatePart() {
     c = null;
     N = await boot(s.run);
     return (N.up) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   test.run('the scratch node answers its card', 0.2, async function () {
     if (!N || !N.up) return false;
     card0 = await call(N.base, 'spirit.card', {});
@@ -865,7 +865,7 @@ function rotatePart() {
     if (!infoOpen) return false;
     await sleep(800);
     return (layerButton && (await rotations()) === 0) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 800 ms to see that nothing rotates' });
   test.run('the layer\'s ✕ shows Info again, with the dialog out of view', 0.2, async function () {
     if (!N || !N.up) return false;
     if (!where) return false;

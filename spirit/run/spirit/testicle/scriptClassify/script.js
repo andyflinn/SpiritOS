@@ -283,7 +283,7 @@ function classify(rel, broken) {
     try { await tell(Object.assign({ script: rel }, k, (node && Array.isArray(node.requires)) ? { requires: JSON.stringify(node.requires) } : {})); } catch (e) { return false; }
     return true;
   // Each load inside the scratch node is cut at LOAD_MS.
-  }, test.limit.long, { script: rel });
+  }, test.limit.long, { script: rel, why: 'it loads the script on a scratch node and a page' });
 }
 const broken = SCRIPTS.filter(function (rel) { return !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)) && !compiles(rel); });
 const toLoad = SCRIPTS.filter(function (rel) { return broken.indexOf(rel) === -1 && !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)); });

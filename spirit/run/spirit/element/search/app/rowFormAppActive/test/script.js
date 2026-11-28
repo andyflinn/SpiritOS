@@ -29,7 +29,7 @@ test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async f
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens Chrome' });
 test.run('it loads through spirit.requireScript and is placed on the spirit object at its path, spirit.element.search.app.rowFormAppActive', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/rowFormAppActive/script.js"); }).then(function () { return !!(spirit.element.search.app.rowFormAppActive && spirit.element.search.app.rowFormAppActive.create); }, function () { return false; })');
@@ -56,7 +56,7 @@ test.run('for Contacts, intrinsic, it shows nothing and takes no space', 0.2, as
   await sleep(2000);
   const c0 = await view('spirit.app.contact');
   return c0.text === '' && c0.height === 0 ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits 2 s to see nothing drawn' });
 
 // for an app that is not intrinsic: Activate, then Deactivate
 test.run('for the Agent, off, it says Activate and the app\'s label', 0.2, async function () {

@@ -39,7 +39,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens it in Chrome' });
 // goal/G49.23: no spirit.required; what spirit.requireScript placed stands on the spirit object itself (spirit.element.<path>, the store at spirit.client).
 test.run('it loads through spirit.requireScript, at spirit.element.monitor.job.delay, with a create', 0.2, async function () {
   if (!W.page) return false;
@@ -70,7 +70,7 @@ test.run('its value is the 99th percentile of the event loop delay of the node, 
   let shown = '';
   const ok = await until(function () { return js('(function () { var S = window.spirit, d = S.job.client.job("spirit").data.stats; var want = ' + EXPECTED + '; var v = window.__box.querySelector(".value").textContent; return v === want ? v : ""; })()').then(function (v) { shown = v; return !!v; }); }, 10000);
   return ok && SHAPE.test(String(shown)) ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the spirit job stats to stream in' });
 // spirit/testicle/general/browser/pageRules/script.js: "a change written into what it watches redraws it": the row written again, its stats unchanged.
 test.run('a change written into the spirit job\'s row writes its value again at once', 0.4, async function () {
   if (!W.made) return false;

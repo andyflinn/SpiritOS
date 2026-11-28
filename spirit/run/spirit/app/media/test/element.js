@@ -70,7 +70,7 @@ test.run('a scratch node comes up', 0.2, async function () {
   const N = await boot(W.s.run); W.child = N.child;
   W.N = N;
   return N.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a Chrome page opens', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
   const where = findChrome();

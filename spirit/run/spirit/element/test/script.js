@@ -77,7 +77,7 @@ test.after(stopAll);
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     W1.up = true;
     return true;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it starts a scratch node and opens Chrome' });
   let made, text;
   test.run('it loads through spirit.requireScript and mounts as a pane', 0.2, async function () {
     if (!W1.up) return false;
@@ -91,7 +91,7 @@ test.after(stopAll);
     if (!W1.up) return false;
     const found = await until(function () { return text().then(function (t) { return t.indexOf(identity.label) !== -1; }); }, 8000);
     return (found) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the page to show the label' });
   test.run('the list shows its icon', 0.2, async function () {
     if (!W1.up) return false;
     const html = await chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")');
@@ -115,12 +115,12 @@ test.after(stopAll);
     if (!W1.up) return false;
     const picked = await until(function () { return chrome.evaluate('window.changes >= 1 && !!window.sel.row && window.sel.value !== ""'); }, 3000);
     return (picked) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the page to say change' });
   test.run('a press shows that app\'s detail', 0.2, async function () {
     if (!W1.up) return false;
     const detail = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!(spirit.element.search.app.detail) && !!h && String(h.textContent).indexOf(' + JSON.stringify(identity.label) + ') !== -1; }())'); }, 3000);
     return (detail) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the detail to show on the page' });
 
   test.run('typed words that fit nothing rank it at nothing: the shared list cuts no row', 0.2, async function () {
     if (!W1.up) return false;
@@ -129,7 +129,7 @@ test.after(stopAll);
     await chrome.evaluate('(function () { var i = document.querySelector("#under-test input"); if (!i) return; i.value = "zzqqxxvvkk"; i.dispatchEvent(new Event("input", { bubbles: true })); }())');
     const ranked = await until(function () { return chrome.evaluate('(function () { var b = document.querySelector("#under-test .list-rank div div"); return !!b && b.style.width === "0%"; }())'); }, 4000);
     return (ranked) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the page to rank the typed words' });
 
   // WHO PAINTS, LISTENS (Andy, G41.32): "every row's data ... must update instantly".
   test.run('a change on the disk paints on the page, no reload', 0.2, async function () {
@@ -142,14 +142,14 @@ test.after(stopAll);
     fs.writeFileSync(disk, JSON.stringify(was));
     const follows = await until(function () { return text().then(function (t) { return t.indexOf('Changed On Disk') !== -1; }); }, 8000);
     return (follows) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for a disk change to paint on the page' });
   test.run('the open detail paints the change as well', 0.2, async function () {
     if (!W1.up) return false;
     // THE DETAIL OPEN IS PAINTED TOO (Andy, G41.32: "wherever it's visible"): it is the row element's own watch that does it, which no list redraw covers.
     await chrome.evaluate('(function () { var all = document.querySelectorAll("#under-test tr, #under-test .list-row"); for (var i = 0; i < all.length; i++) if (String(all[i].textContent).indexOf("Changed On Disk") !== -1) { all[i].click(); return true; } return false; }())');
     const both = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!h && String(h.textContent).indexOf("Changed On Disk") !== -1; }())'); }, 8000);
     return (both) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the open detail to repaint' });
   test.run('destroy empties its container', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.evaluate('(function () { var c = document.querySelector("#under-test .app-container-close"); if (c) c.click(); return !!c; }())');
@@ -184,7 +184,7 @@ test.after(stopAll);
     await mount({ face: 'pane', toggle: true });
     both = await until(function () { return inFaces().then(function (t) { return t.indexOf(monitorLabel) !== -1 && t.indexOf(serverLabel) !== -1; }); }, 8000);
     return (both) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the pane to list both apps' });
   const buttonOf = function (label) { return 'var r = ' + rowOf(label) + '; if (!r) return false; var bs = r.querySelectorAll("button"); if (bs.length !== 1) return false; var b = bs[0]; var all = r.querySelectorAll("*"); var last = null; for (var i = 0; i < all.length; i++) { if (all[i].getClientRects().length && !all[i].children.length) last = all[i]; } if (!(last === b || b.contains(last))) return false; '; };
   // The switch's words, which stand beside its 🟢/🔴 button (rowFormAppActive, goal/G43.15).
   const says = function (label) { return chrome.evaluate('(function () { ' + buttonOf(label) + 'var w = r.querySelector(".shell-row-form-span"); return (w || b).textContent.trim(); }())'); };
@@ -192,25 +192,25 @@ test.after(stopAll);
     if (!W1.up) return false;
     said = await until(function () { return says(monitorLabel).then(function (t) { return /^activate\b/i.test(t); }); }, 8000);
     return (said) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the button to say Activate' });
   // the box: "The node writes spirit/state/<key>/node.json and republishes its 'apps' job, whose rows gain active. The list follows by itself."
   test.run('a press writes active true to spirit/state/app/hearing/node.json', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; var b = r && r.querySelector("button"); if (b) b.click(); return !!b; }())');
     written = await until(function () { return Promise.resolve((function () { try { return JSON.parse(fs.readFileSync(stateFile('hearing'), 'utf8')).active === true; } catch (e) { return false; } }())); }, 5000);
     return (written) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the node to write node.json' });
   // goal/G49.23: the app rows read from the app branch's client, spirit.app.client, never from the store by a short name.
   test.run('the stream brings active to the row without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
     rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.active === true; }())'); }, 5000);
     return (rowActive) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the stream to bring active' });
   test.run('the button follows and says Deactivate', 0.2, async function () {
     if (!W1.up) return false;
     flipped = await until(function () { return says(monitorLabel).then(function (t) { return /^deactivate\b/i.test(t); }); }, 5000);
     return (flipped) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the button to say Deactivate' });
   test.run('a search seated over it does not lose active', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.client.seatRows(spirit.app.client.branch, got.items); return true; })');
@@ -231,7 +231,7 @@ test.after(stopAll);
     await openPanel();
     up = await until(function () { return chrome.evaluate('!!' + panel); }, 5000);
     return (up) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the panel to open on the page' });
   test.run('it covers the whole container, and the list is out of sight', 0.2, async function () {
     if (!W1.up) return false;
     covers = await chrome.evaluate('(function () { var p = ' + panel + '; if (!p) return false; var a = p.getBoundingClientRect(), b = document.getElementById("faces").getBoundingClientRect(); if (Math.abs(a.width - b.width) > 2 || Math.abs(a.height - b.height) > 2) return false; var r = ' + rowOf(monitorLabel) + '; return r && r.offsetParent !== null ? false : "covers"; }())');
@@ -280,7 +280,7 @@ test.after(stopAll);
     await chrome.evaluate('spirit.app.iconApp({ key: "spirit.app.hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
     newIcon = await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🧪') !== -1; }); }, 5000);
     return (newIcon) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the stream to bring the new icon' });
   test.run('it lands in spirit/state/app/hearing/node.json', 0.2, async function () {
     return (stateOf().icon === '🧪') ? true : false;
   }, test.limit.quick);
@@ -296,7 +296,7 @@ test.after(stopAll);
     await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🦻') !== -1; }); }, 5000);
     r1 = l[2] || none;
     return (r1.icon.indexOf('✏') !== -1 && r1.words.indexOf('Label') !== -1 && r1.input === monitorLabel && r1.button === 'Change') ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the icon set back to reach the page' });
 
   // row 2: "if active: [🟢] "Deactivate <app-label> "face" ..." [🔴]", "if inactive: [🔴] "Activate ..." [🟢]"
   // The words name what it mounts, read from hearing.json after the row is drawn: judged once that read has had its time,
@@ -307,19 +307,19 @@ test.after(stopAll);
     r2seen = await waitForm(3, r2ok);
     r2 = (await forms())[3] || none;
     return (r2seen && r2ok(r2)) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the third form to be drawn' });
   test.run('a press turns the third form to 🔴, the words Activate Hearing face, and 🟢, and writes active false to node.json', 0.2, async function () {
     if (!W1.up) return false;
     await press(3);
     wentOff = await waitForm(3, function (x) { return x.icon.indexOf('🔴') !== -1 && x.words === 'Activate ' + monitorLabel + ' face' && x.button === '🟢'; });
     return (wentOff && stateOf().active === false) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the press to turn the form off' });
   test.run('a press back turns it on', 0.2, async function () {
     if (!W1.up) return false;
     await press(3);
     wentOn = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' face'; });
     return (wentOn && stateOf().active === true) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the press to turn the form on' });
 
   // Row 3, the Allow row, went (goal/G43.18, box v29: "the Allow row of the app detail and its element ... are deleted").
   // goal/G43.18: no Allow row: "<name>.json alone says whether an app may be a shell"
@@ -335,7 +335,7 @@ test.after(stopAll);
     await press(2);
     renamed = await until(function () { return Promise.resolve(stateOf().label === 'Renamed'); }, 5000);
     return (renamed) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the node to write the label' });
   test.run('the changed label is not written to hearing.json', 0.2, async function () {
     if (!disk) return false;
     return (fs.readFileSync(disk, 'utf8') === fileBefore) ? true : false;
@@ -344,12 +344,12 @@ test.after(stopAll);
     if (!W1.up) return false;
     inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.label === "Renamed"; }())'); }, 5000);
     return (inRow) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the stream to bring the new label' });
   test.run('the title bar and the rows of the panel say the new label', 0.2, async function () {
     if (!W1.up) return false;
     follows = await until(function () { return forms().then(function (x) { return !!x[0] && !!x[3] && x[0].words === 'Renamed' && x[3].words === 'Deactivate Renamed face'; }); }, 5000);
     return (follows) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the panel to say the new label' });
   test.run('the app itself does not open', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
@@ -357,13 +357,13 @@ test.after(stopAll);
     await until(function () { return Promise.resolve(stateOf().label === monitorLabel); }, 5000);
     await until(function () { return chrome.evaluate('(function () { var r = spirit.app.client.rows()["spirit.app.hearing"]; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
     return (!/Uptime|waiting/i.test(await chrome.evaluate('String((' + panel + ' || {}).innerText || "")'))) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the label set back to reach the page' });
   test.run('its x brings the list back', 0.2, async function () {
     if (!W1.up) return false;
     const shut = await closePanel();
     backAgain = shut && await until(function () { return chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; return !!r && r.offsetParent !== null; }())'); }, 4000);
     return (backAgain) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the panel to close and the list' });
 
   // ""face" only displays if shell.mount==true", ""server" only displays if node.mount==true", ""and" is only displayed of both are true"
   const rewrite = function (shellMount, nodeMount) { const j = JSON.parse(fileBefore); j.shell = Object.assign({}, j.shell, { mount: shellMount }); j.node = Object.assign({}, j.node, { mount: nodeMount }); fs.writeFileSync(disk, JSON.stringify(j)); };
@@ -373,7 +373,7 @@ test.after(stopAll);
     await openPanel();
     const bothWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' face and server'; });
     return (bothWords) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the panel to name both mounts' });
   test.run('with both mounts true the panel has no Allow row', 0.2, async function () {
     if (!W1.up) return false;
     return ((await forms()).length === 4) ? true : false;
@@ -385,7 +385,7 @@ test.after(stopAll);
     await openPanel();
     const serverWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' server'; });
     return (serverWords) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the panel to name the server' });
   test.run('with shell.mount false the panel has no Allow row', 0.2, async function () {
     if (!W1.up) return false;
     try {
@@ -394,7 +394,7 @@ test.after(stopAll);
       await closePanel();
       fs.writeFileSync(disk, fileBefore);
     }
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the panel to close' });
 
   // the box: "in :tiles mode, only activated apps will appear."
   test.run('the toggle shows tiles, a tile for the active Hearing and none for Starter', 0.2, async function () {
@@ -402,25 +402,25 @@ test.after(stopAll);
     await chrome.evaluate('(function () { var t = document.querySelector("#faces .list-toggle"); if (t) t.click(); return !!t; }())');
     const onlyActive = await until(function () { return chrome.evaluate('!!' + tileOf(monitorLabel) + ' && !' + tileOf(serverLabel)); }, 5000);
     return (onlyActive) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tiles to show on the page' });
   test.run('mounted as tiles from the start, it shows the same tiles', 0.2, async function () {
     if (!W1.up) return false;
     await mount({ face: 'tiles' });
     const direct = await until(function () { return chrome.evaluate('!!' + tileOf(monitorLabel) + ' && !' + tileOf(serverLabel)); }, 5000);
     return (direct) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tiles mounted anew to show' });
   test.run('an app made active appears as a tile without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.evaluate('spirit.app.activeApp({ key: "spirit.app.starter", active: true })');
     const arrives = await until(function () { return chrome.evaluate('!!' + tileOf(serverLabel)); }, 5000);
     return (arrives) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the stream to bring the tile' });
   test.run('an app made inactive leaves', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.evaluate('spirit.app.activeApp({ key: "spirit.app.starter", active: false })');
     const leaves = await until(function () { return chrome.evaluate('!' + tileOf(serverLabel)); }, 5000);
     return (leaves) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the stream to take the tile away' });
 
   // the box: "in :tiles mode, appSelector icons will 'launch'", "its open and close move into appSelector"
   test.run('a tile opens its app inside, through its main element, spirit/app/monitor/element.js', 0.2, async function () {
@@ -428,7 +428,7 @@ test.after(stopAll);
     await chrome.evaluate('(function () { var t = ' + tileOf(monitorLabel) + '; if (t) t.click(); return !!t; }())');
     const opened = await until(function () { return chrome.evaluate('(function () { var p = ' + inPanel('.app-container-pane') + '; return !!p && /Uptime|waiting/i.test(String(p.innerText)); }())'); }, 10000);
     return (opened) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the app to open in its panel' });
   test.run('a launched app\'s title bar is the same rowForm as the title bar of all panels', 0.2, async function () {
     if (!W1.up) return false;
     const launchedBar = await chrome.evaluate('(function () { var f = ' + inPanel('.shell-row-form') + '; if (!f) return false; var b = f.lastElementChild; return b && b.tagName === "BUTTON" && String(f.textContent).indexOf(' + JSON.stringify(monitorLabel) + ') !== -1 ? "form" : false; }())');
@@ -443,7 +443,7 @@ test.after(stopAll);
     } finally {
       await chrome.evaluate('(function () { var c = document.getElementById("faces"); if (window.fs.destroy) window.fs.destroy(); if (c) c.remove(); return true; }())');
     }
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tiles to come back' });
   }
   // ── NO TILE WITHOUT shell.mount, AND A FACE FOR EVERY ONE THAT SAYS IT (goal/G43.20) ──
   // Andy: "all, MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!", and "where is your test that scans the app
@@ -480,7 +480,7 @@ test.after(stopAll);
     loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () { return "loaded"; }, function () { return false; })');
     W1.loaded = loaded === 'loaded';
     return (loaded === 'loaded') ? true : false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it reloads the face page in Chrome' });
 
   // EVERY APP ACTIVE, planted and the tree's: what keeps a tile away below can only be shell.mount. Each app's row and key is its
   // id, spirit.app.<name>, its switch in spirit.statePath of its folder (goal/G49.17, goal/G49.19).
@@ -500,7 +500,7 @@ test.after(stopAll);
     runs = Object.keys(PLANT).filter(function (k) { return PLANT[k].run; });
     W1.rows = true;
     return true;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it waits for the node to make every app active' });
   // Each app written out, the planted ones and the tree's without shell.mount true, so that each check has a plain title.
   test.run('zzmounted is an active row', 0.2, async function () {
     if (!W1.rows) return false;
@@ -560,7 +560,7 @@ test.after(stopAll);
     LABELS = Object.keys(PLANT).map(function (k) { return PLANT[k].label; });
     await mount({ face: 'tiles' });
     return look('tiles');
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tiles to draw, then 800 ms more' });
   test.run('on the tiles from the start, zzmountfalse, whose shell.mount is false, shows no tile', 0.2, async function () {
     return planted('tiles', 'zzmountfalse');
   }, test.limit.quick);
@@ -590,11 +590,11 @@ test.after(stopAll);
     await until(function () { return chrome.evaluate('String(document.getElementById("faces").innerText).indexOf(' + JSON.stringify(PLANT.zzmounted.label) + ') !== -1'); }, 8000);
     flipped = await chrome.evaluate('(function () { var bs = document.getElementById("faces").querySelectorAll("button"); for (var i = 0; i < bs.length; i++) if (String(bs[i].textContent).indexOf("\u25A6") !== -1) { bs[i].click(); return true; } return false; }())');
     return (flipped === true) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the pane to list the planted app' });
   test.run('on the tiles reached by the toggle, the app that says shell.mount true shows its tile', 0.2, async function () {
     if (flipped !== true) return false;
     return look('toggled tiles');
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tiles to draw, then 800 ms more' });
   test.run('on the tiles reached by the toggle, zzmountfalse, whose shell.mount is false, shows no tile', 0.2, async function () {
     return planted('toggled tiles', 'zzmountfalse');
   }, test.limit.quick);
@@ -622,7 +622,7 @@ test.after(stopAll);
     if (!W1.rows) return false;
     await mount();
     return look('the app app\'s tiles');
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tiles to draw, then 800 ms more' });
   test.run('on the app app\'s own tiles, zzmountfalse, whose shell.mount is false, shows no tile', 0.2, async function () {
     return planted('the app app\'s tiles', 'zzmountfalse');
   }, test.limit.quick);
@@ -657,21 +657,21 @@ test.after(stopAll);
     fs.writeFileSync(file, JSON.stringify(j, null, 2));
     const left = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) === -1; }); }, 8000);
     return (left) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tile to leave the page' });
   test.run('with its shell part gone, its tile does not come back', 0.2, async function () {
     if (!j) return false;
     delete j.shell;
     fs.writeFileSync(file, JSON.stringify(j, null, 2));
     await sleep(1500);
     return ((await drawn()).indexOf(PLANT.zzmounted.label) === -1) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits 1.5 s to see no tile comes back' });
   test.run('saying shell.mount true again brings its tile back', 0.2, async function () {
     if (!j) return false;
     j.shell = { true: false, mount: true, tile: true };
     fs.writeFileSync(file, JSON.stringify(j, null, 2));
     const back = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) !== -1; }); }, 8000);
     return (back) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the tile to come back' });
   }
 }
 
@@ -715,7 +715,7 @@ test.after(stopAll);
     N = await boot(s.run);
     LIVE.push({ N: N });
     return (N.up) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   test.run('a Chrome page opens', 0.2, async function () {
     if (!N || !N.up) return false;
     const where = findChrome();
@@ -741,7 +741,7 @@ test.after(stopAll);
     if (!W3.up) return false;
     W3.opened = !!(await open());
     return W3.opened || false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it opens the face page and waits 4 s' });
   test.run('the page loads spirit/element/script.js, the one shell', 0.2, async function () {
     if (!W3.opened) return false;
     first = await loaded();
@@ -795,14 +795,14 @@ test.after(stopAll);
     await c4.evaluate('(function () { window.__zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { if (o && o.body) window.__zzAsked.push(String(o.body)); } catch (e) {} return f.apply(this, arguments); }; return true; }())');
     W4.up = !!served && !!CHAT && !!TESTICLE && !!STARTER;
     return W4.up || false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it starts a scratch node and opens Chrome' });
   test.run('Chat, an app with a server, opens with the shared search dropdown in its title bar', 0.2, async function () {
     if (!W4.up) return false;
     if (!(await pressTile(CHAT))) return false;
     await sleep(3000);
     W4.bar = await barOf(CHAT);
     return W4.bar === 'dropdown' || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens a tile and waits 3 s for its bar' });
   test.run('the dropdown is filled by remote, asked of chat\'s server with no argument', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && /chat/.test(String(j.call || '')) && !(j.args && j.args.id); }) || false;
@@ -820,13 +820,13 @@ test.after(stopAll);
     const label = c ? String(c.label || '') : '';
     if (!label) return false;
     return (await fieldText()).indexOf(label) !== -1 || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it asks the chat server for remote from the page' });
   // goal/G49.23, box v22 Part 1 (cw's 66e1d112a, b313ce7eb): the store hands out no family by name; the published remote row
   // stands on the app's branch as its require hands it back, on its reads (its client, or its data for an old-shape api.js).
   test.run('chat\'s published remote row reaches the remote of the chat branch\'s reads, naming the same current', 0.2, async function () {
     if (W4.bar !== 'dropdown' || !W4.real || !W4.real.current) return false;
     return (await until(function () { return c4.evaluate('spirit.requireScript("spirit/app/chat/api.js").then(function (f) { var t = f && (f.client || f.data); return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }, function () { return false; })'); }, 15000)) ? true : false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it waits for the remote row to reach the page' });
   test.run('a remote row landing in spirit.client[\'spirit.app.chat\'].remote is what the field then names', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     const fake = { current: 'K-ZZELSEWHERE', items: [{ key: 'K-ZZELSEWHERE', label: 'zz Elsewhere' }], more: false };
@@ -836,7 +836,7 @@ test.after(stopAll);
     // The node's own row back, for what follows.
     if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.client.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
     return shown.indexOf('zz Elsewhere') !== -1 || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it hands the page a row and waits 1 s' });
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     // The dropdown's own rows, inside the title bar's row form (cw: the tiles under the open layer have data-key rows too).
@@ -846,7 +846,7 @@ test.after(stopAll);
     await c4.evaluate('(function () { var f = ' + inBar + '; var r = f && f.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
     await sleep(1500);
     return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && !!(j.args && j.args.id); }) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens the dropdown and picks, 1.5 s each' });
   // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
   // selection, the setting remains on \"WSL ANDY VSCode\""): the field names the server remote answers as current, and a
   // switch the node refuses says why in the bar. The refusal is the node's answer, stood in for at the page's fetch.
@@ -860,7 +860,7 @@ test.after(stopAll);
     const text = await c4.evaluate('(function () { var f = ' + barForm() + '; return f ? String(f.textContent || "") : ""; }())');
     await c4.evaluate('(function () { if (window.__zzFetch) window.fetch = window.__zzFetch; return true; }())');
     return text.indexOf('zz no grant on the sibling') !== -1 || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it opens the dropdown and picks, 1.5 s each' });
   test.run('Starter, an app with no server, opens with no dropdown in its title bar', 0.2, async function () {
     if (!W4.up) return false;
     await c4.send('Page.navigate', { url: N4.base + '/' });
@@ -869,7 +869,7 @@ test.after(stopAll);
     if (!(await pressTile(STARTER))) return false;
     await sleep(3000);
     return (await barOf(STARTER)) === 'plain' || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it reloads the page and opens a tile, 3 s each' });
   // AN APP THAT REFUSES CLIENT MODE HAS NO REMOTE (goal/G49.8, box v3: "the shell draws no remote in that app's title bar";
   // testicle's manifest sets node.remote false): Testicle, though it has a server, opens with no dropdown.
   test.run('Testicle, whose manifest refuses client mode, opens with no dropdown in its title bar', 0.4, async function () {
@@ -880,5 +880,5 @@ test.after(stopAll);
     if (!(await pressTile(TESTICLE))) return false;
     await sleep(3000);
     return (await barOf(TESTICLE)) === 'plain' || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it reloads the page and opens a tile, 3 s each' });
 }

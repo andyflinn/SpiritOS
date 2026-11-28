@@ -34,7 +34,7 @@ test.run('a scratch node comes up on a copy of the tree of its own', 0.2, async 
   if (!(W.N.up && !!W.N.root)) return false;
   W.run = path.join(W.N.root, 'spirit', 'run');
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node with the desk server' });
 test.after(async function () {
   const N = W.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }

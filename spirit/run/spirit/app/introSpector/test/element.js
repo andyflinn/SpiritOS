@@ -77,7 +77,7 @@ test.run('a scratch node comes up with a Chrome page open on its face', 0.2, asy
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   W.page = true;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 
 // spirit.app.introSpector.element.create(container, { open }) -> { destroy }
 test.run('the element registers itself on the spirit object, and its create answers an object with a destroy', 0.2, async function () {

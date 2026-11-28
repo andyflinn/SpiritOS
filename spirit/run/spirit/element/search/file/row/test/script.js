@@ -281,34 +281,34 @@ test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words 
   await page.evaluate('Promise.all([window.spirit.requireScript("spirit/app/script.js"), window.spirit.requireScript("spirit/contact/script.js")]).then(function () { return true; }, function () { return false; })');
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens the page in Chrome' });
 test.run('spirit/app, reserved and held by the spirit object as spirit.app, is light blue', 0.2, async function () {
   if (!row) return false;
   const app = await row('spirit/app');
   return app.app === 'lightblue' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('its path element spirit always has the colour of a word that holds, light blue', 0.2, async function () {
   if (!row) return false;
   const app = await row('spirit/app');
   return app.spirit === 'lightblue' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('spirit/element is light blue', 0.2, async function () {
   if (!row) return false;
   const element = await row('spirit/element');
   return element.element === 'lightblue' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 // Andy's commit d278c3e6, "identity": contact is no hard-coded word now.
 test.run('spirit/contact, a word by its word.js that the page holds as spirit.contact, is light blue', 0.2, async function () {
   if (!row) return false;
   const contact = await row('spirit/contact');
   return contact.contact === 'lightblue' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 // goal/G49.23: the app branch's interface is spirit/app/script.js (goal/G49.20), no longer api.js; script is one of word.js's words.
 test.run('a file inside carries the colours on its path elements too, and the file script.js, a word with no spirit.app.script, is light purple', 0.2, async function () {
   if (!row) return false;
   const inside = await row('spirit/app/script.js', 'file');
   return inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['script.js'] === 'lightpurple' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).
 // goal/G49.23: client is one of word.js's words now (Andy's 29893dfab), and the store stands at spirit.client, so spirit/client
 // is light blue; spirit/hub, which no word names, is the plain folder. spirit/hub.js is spirit/contact/hub/script.js, whose name is a
@@ -317,24 +317,24 @@ test.run('spirit/hub is not reserved and has no colour', 0.2, async function () 
   if (!row) return false;
   const plain = await row('spirit/hub');
   return plain.hub === 'none' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('spirit/iconSet.json is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;
   const plainFile = await row('spirit/iconSet.json', 'file');
   return plainFile['iconSet.json'] === 'none' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('outside spirit/ no word holds, so shell/app has no colour', 0.2, async function () {
   if (!row) return false;
   const elsewhere = await row('shell/app', 'folder');
   return elsewhere.app === 'none' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('spirit/job, a reserved folder with no spirit.processJob, is light purple where red was', 0.2, async function () {
   if (!row) return false;
   put('spirit/job/keep.txt', 'a folder for the word job');
   const job = await row('spirit/job');
   del('spirit/job/keep.txt');
   return job.job === 'lightpurple' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 
 // goal/G43.4: "the colors will follow word.json changes live."
 test.run('the folder spirit/app/thing, no word, has no colour', 0.2, async function () {
@@ -342,19 +342,19 @@ test.run('the folder spirit/app/thing, no word, has no colour', 0.2, async funct
   put('spirit/app/thing/keep.txt', 'a folder');
   const before = await row('spirit/app/thing');
   return before.thing === 'none' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('when word.json gains the word, the same row goes light purple with no reload, there being no spirit.app.thing', 0.2, async function () {
   if (!row) return false;
   put('spirit/app/word.json', JSON.stringify({ thing: true }));
   const red = await row('spirit/app/thing');
   return red.thing === 'lightpurple' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('with spirit.app.thing on the object, the row is light blue', 0.2, async function () {
   if (!row) return false;
   await page.evaluate('window.setObject(true); window.fresh("spirit/app/thing")');
   const blue = await row('spirit/app/thing');
   return blue.thing === 'lightblue' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });
 test.run('when word.json is gone, the row loses its colour with no reload', 0.2, async function () {
   if (!row) return false;
   await page.evaluate('window.setObject(false)');
@@ -362,4 +362,4 @@ test.run('when word.json is gone, the row loses its colour with no reload', 0.2,
   const gone = await row('spirit/app/thing');
   del('spirit/app/thing/keep.txt');
   return gone.thing === 'none' ? true : false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'the page waits 1.5 s for the row to paint' });

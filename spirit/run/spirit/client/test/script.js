@@ -490,7 +490,7 @@ test.run('on a page, a branch fed past 4 MB by the stream keeps its newest rows 
   const bytes = kept.reduce(function (n, k) { return n + Buffer.byteLength(JSON.stringify(P.get('big/' + k))); }, 0);
   PAGE_CAP.kept = kept;
   return (kept.length > 0 && kept.length < PAGE_ROWS && kept.indexOf(String(PAGE_ROWS - 1)) !== -1 && kept.indexOf('0') === -1 && bytes <= 4 * 1024 * 1024) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it feeds 5200 rows of 1 KB through a page copy' });
 test.run('on a page, a row its branch sheds is told as a delete', 0.4, function () {
   if (!PAGE_CAP.P) return false;
   return PAGE_CAP.gone.some(function (at) { return /\/big\/0$/.test(String(at)); }) || false;
@@ -516,7 +516,7 @@ test.run('on a page, a branch\'s probability decides what goes: past 4 MB its lo
   const kept = Object.keys(P.whole.viewAt(NODE, 'zzweighed').branch('rows') || {});
   const high = kept.filter(function (k) { return Number(k) % 10 === 0; }).length;
   return (kept.length < PAGE_ROWS && high === PAGE_ROWS / 10 && kept.indexOf('0') !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it feeds 5200 rows of 1 KB through a page copy' });
 
 // THE CACHES PART, once data-caches.js.
 // Once spirit/run/spirit/test/data-caches.js.
@@ -757,7 +757,7 @@ test.run('a scratch node\'s page in Chrome answers what spirit.client holds', 0.
   if (got.threw) return false;
   F.got = got;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens it in Chrome' });
 test.after(function () {
   if (F.page && F.page.kid) F.page.kid.kill();
   if (F.node && F.node.child) F.node.child.kill();

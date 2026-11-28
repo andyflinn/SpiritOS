@@ -78,7 +78,7 @@ test.run('a scratch node of its own comes up with a Chrome page on its face', 0.
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   W.page = true;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and opens a page in Chrome' });
 
 // spirit.app.job.element.create(container, { open }) -> { destroy }
 test.run('it registers its element on the spirit object at its path, and its create answers destroy', 0.2, async function () {

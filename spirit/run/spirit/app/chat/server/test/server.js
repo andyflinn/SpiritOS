@@ -61,7 +61,7 @@ test.run('a scratch node of its own comes up for this suite', 0.2, async functio
     return { status: r.status, body: b, text: t };
   };
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 
 // ── switched on, it serves the branch chat ──
 test.run('switched on, the server answers spirit.app.chat.chats.search', 0.2, async function () {

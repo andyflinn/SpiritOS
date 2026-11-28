@@ -71,7 +71,7 @@ test.run('a scratch node comes up, its own key read from its card', 0.2, async f
   W.own = String(((await ask('spirit.card', {})).body || {}).publicKey || '');
   W.path = W.declared.length ? NAME + '.' + W.declared[0] : '';
   return (!!W.own && !!W.path) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and asks its card' });
 // get.json: "Whether a member's key is granted one api path ...: {allowed}."
 test.run('get of a path the key is not granted answers {allowed: false}', 0.2, async function () {
   const r = await ask(NAME + '.get', { key: MEMBER, path: W.path });

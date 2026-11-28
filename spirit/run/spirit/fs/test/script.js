@@ -109,7 +109,7 @@ test.run('the world: a run root with no node, and a process asking its spirit.fs
   const r = spawnSync(process.execPath, ['-e', script], { cwd: root, encoding: 'utf8', timeout: 20000 });
   try { LOCAL.o = JSON.parse(r.stdout); } catch (e) { LOCAL.o = null; }
   return !!LOCAL.o && !LOCAL.o.threw;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it copies the tree and runs a child process' });
 test.run('with no node, the spirit.fs branch\'s stat answers a promise of {size, mtimeMs, birthtimeMs} from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   const v = o.stat && o.stat.ok;
@@ -205,7 +205,7 @@ function askNode(call, args) {
   return fetch(NODE.n.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
     .then(function (r) { return r.text().then(function (t) { let b = null; try { b = JSON.parse(t); } catch (e) { b = null; } return { status: r.status, body: b }; }); }, function () { return { status: 0, body: null }; });
 }
-test.run('a scratch node comes up', 0.2, async function () { NODE.n = await H.scratchNode(); return (!!NODE.n && NODE.n.up) || false; }, test.limit.long);
+test.run('a scratch node comes up', 0.2, async function () { NODE.n = await H.scratchNode(); return (!!NODE.n && NODE.n.up) || false; }, test.limit.long, { why: 'it starts a scratch node' });
 test.run('the node answers spirit.fs.stat of spirit/script.js', 0.2, async function () {
   if (!NODE.n || !NODE.n.up) return false;
   const r = await askNode('spirit.fs.stat', { path: 'spirit/script.js' });

@@ -36,7 +36,7 @@ test.run('Chrome is on this machine', 0.2, function () {
 test.run('a scratch node comes up with its DEBUG on and testicle on', 0.2, async function () {
   W.node = await H.scratchNode({ servers: ['spirit.app.testicle'] });
   return (W.node.up && W.node.debug) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('a page loads the element by itself, and the panel is mounted', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
@@ -45,7 +45,7 @@ test.run('a page loads the element by itself, and the panel is mounted', 0.2, as
   W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.app && window.spirit.app.testicle && window.spirit.app.testicle.element.settingsPanel)').then(function (v) { return v === true; }); }, H.WAIT);
   if (W.ok) { await ev(HANDS); await ev('window.zz.mount()'); }
   return !!W.ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens a page in Chrome' });
 test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
@@ -62,20 +62,20 @@ test.run('its switch shows the node\'s preference, interactive at the start', 0.
   if (!W.ok) return false;
   const ok = await H.until(function () { return ev('window.zz.text()').then(function (t) { return /interactive/.test(String(t)); }); }, H.WAIT);
   return !!ok || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it waits for the switch to show the node' });
 test.run('a press sends the other mode, so the node is auto and the switch follows the stream', 0.4, async function () {
   if (!W.ok) return false;
   if (!(await ev('window.zz.press()'))) return false;
   const node = await H.until(function () { return ask('spirit.app.testicle.preferences', {}).then(function (r) { return interactive(r) === false; }); }, H.WAIT);
   const shown = await H.until(function () { return ev('window.zz.text()').then(function (t) { return /auto/.test(String(t)); }); }, H.WAIT);
   return (!!node && !!shown) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses and waits for node and stream' });
 test.run('a second press sends interactive back', 0.4, async function () {
   if (!W.ok) return false;
   if (!(await ev('window.zz.press()'))) return false;
   const node = await H.until(function () { return ask('spirit.app.testicle.preferences', {}).then(function (r) { return interactive(r) === true; }); }, H.WAIT);
   return !!node || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it presses and waits for the node to change' });
 test.run('its box keeps what it holds inside, its overflow not visible', 0.2, async function () {
   if (!W.ok) return false;
   const o = await ev('getComputedStyle(document.querySelector("#zzP .testicle-config")).overflowY');

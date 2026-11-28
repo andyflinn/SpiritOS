@@ -35,7 +35,7 @@ test.run('Chrome is on this machine', 0.2, function () {
 test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
   W.node = await H.scratchNode();
   return (W.node.up && W.node.debug) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.run('the page lays out its forms', 0.2, async function () {
   if (!W.chrome || !W.node || !W.node.up) return false;
   W.page = await H.chromePage(W.chrome);
@@ -45,7 +45,7 @@ test.run('the page lays out its forms', 0.2, async function () {
   const s = await W.page.evaluate('window.laid()').catch(function () { return ''; });
   try { m = JSON.parse(s); } catch (e) { m = null; }
   return !!m || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it opens the page in Chrome and waits for it' });
 test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();

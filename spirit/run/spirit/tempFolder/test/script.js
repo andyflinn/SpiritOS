@@ -114,7 +114,7 @@ test.run('a spot whose process has ended is removed by the next hand-out', 0.2, 
   if (!dir || !fs.existsSync(dir)) return false;
   made.push(T2.tempFolder('zzLeft/other'));
   return !fs.existsSync(dir) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a child process and waits for its end' });
 test.run('a spot whose process still runs stays through another hand-out', 0.2, async function () {
   const T2 = S.requireScript('spirit/tempFolder/script.js');
   const kid = childMakes('zzLeft/alive', true);
@@ -124,7 +124,7 @@ test.run('a spot whose process still runs stays through another hand-out', 0.2, 
     made.push(T2.tempFolder('zzLeft/another'));
     return fs.existsSync(dir) || false;
   } finally { try { kid.kill(); } catch (e) { /* gone */ } made.push(dir); }
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a child process and waits for its spot' });
 test.run('a process\'s own spot stays through its own next hand-out', 0.2, function () {
   const T2 = S.requireScript('spirit/tempFolder/script.js');
   const mine = T2.tempFolder('zzLeft/mine');
@@ -163,7 +163,7 @@ test.run('a hand-out in a fresh process sweeps three planted roots of other node
   const r = CP.spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); const d = spirit.requireScript('spirit/tempFolder/script.js').tempFolder('zzSweepAll/one'); process.stdout.write(d);"], { cwd: RUN, encoding: 'utf8', timeout: 20000 });
   if (r.stdout) made.push(r.stdout);
   return (r.status === 0 && !!r.stdout) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs a hand-out in a child process' });
 test.run('a spot of a dead process in another node\'s root is removed, and that root with it once no live owner is left', 0.2, function () {
   return (!!PLANT.dead && !fs.existsSync(PLANT.dead.spot) && !fs.existsSync(PLANT.dead.root)) || false;
 }, test.limit.quick);

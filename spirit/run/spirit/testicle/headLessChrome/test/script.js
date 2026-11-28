@@ -83,7 +83,7 @@ test.run('scratchNode hands out a lab node: its tree lies under repo://lab/node/
   await a.ended;
   if (!W.first || W.first === 'waiting' || W.first.error) return false;
   return under(W.first.root, LAB_NODES) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it waits for lab to hand out a node' });
 test.run('no copy of the tree is made for the lab node in the temp folder', 0.4, function () {
   if (!W.first || W.first.error) return false;
   return W.copies === 0 || false;
@@ -123,7 +123,7 @@ test.run('lab resets a node before each test: a file a test left in its spirit/s
     if (n.root === l.root) return !fs.existsSync(path.join(n.run, 'spirit', 'state', 'zzLeftByATest.txt')) || false;
   }
   return false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it asks lab for nodes up to seven times' });
 // goal/G47.1, Q6, Andy: "Shall lab hold 6 personal nodes instead of 3, since testicle.js starves on 3 while my testicle
 // classifies?" "YES."
 const PERSONAL = ['personal1', 'personal2', 'personal3', 'personal4', 'personal5', 'personal6'];
@@ -148,20 +148,20 @@ test.run('scratchTree takes one lab node and no more, and a node asked after it 
   const r = await inChild('const fs = require("fs"); const t = H.scratchTree(); const locks = fs.readdirSync(' + JSON.stringify(LAB_NODES) + ').filter(function (n) { if (!/^personal\\d+\\.lock$/.test(n)) return false; try { return fs.readFileSync(require("path").join(' + JSON.stringify(LAB_NODES) + ', n), "utf8").trim() === String(process.pid); } catch (e) { return false; } }); H.scratchNode({ start: false }).then(function (n) { console.log("@@" + JSON.stringify({ tree: t.root, locks: locks.length, node: n.root })); process.exit(0); });', 120000);
   if (!r || r === 'waiting' || r.error) return false;
   return (r.locks === 1 && under(r.tree, LAB_NODES) && under(r.node, LAB_NODES) && r.tree !== r.node) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'a child process takes a lab tree and a node' });
 test.run('startNodeOn starts a node on a tree lab handed out, and refuses a run it did not hand out', 0.4, async function () {
   const r = await inChild('const t = H.scratchTree(); let refused = ""; try { H.startNodeOn(' + JSON.stringify(RUN) + ', 1); } catch (e) { refused = e.message; }' +
     ' H.freePort().then(function (port) { const c = H.startNodeOn(t.run, port); return H.until(function () { return fetch("http://127.0.0.1:" + port + "/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: {} }) }).then(function (x) { return x.status === 200; }); }, 60000).then(function (up) { c.kill(); console.log("@@" + JSON.stringify({ up: up, refused: refused })); process.exit(0); }); });', 120000);
   if (!r || r === 'waiting' || r.error) return false;
   return (r.up === true && /no lab node/.test(r.refused)) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'a child process starts a node on a lab tree' });
 // Its tree judged by the spirit object's own file, spirit/script.js (goal/G49.23: spirit/server.js is gone, the node is spirit/server/script.js).
 test.run('freeTree frees the lab node and deletes nothing: its tree is still there, its lock gone', 0.4, async function () {
   const r = await inChild('const t = H.scratchTree(); const lock = require("path").join(' + JSON.stringify(LAB_NODES) + ', t.name + ".lock"); const held = require("fs").existsSync(lock); H.freeTree({ root: t.root, run: t.run });' +
     ' console.log("@@" + JSON.stringify({ held: held, lock: require("fs").existsSync(lock), tree: require("fs").existsSync(require("path").join(t.run, "spirit", "script.js")) })); setTimeout(function () { process.exit(0); }, 200);', 120000);
   if (!r || r === 'waiting' || r.error) return false;
   return (r.held === true && r.lock === false && r.tree === true) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'a child process takes and frees a lab tree' });
 test.run('no lab node is left locked once its holders ended', 0.2, async function () {
   await sleep(500);
   // The node testicle handed this run (SPIRIT_MOUNT_RUN, under lab/node/<name>) is held by testicle's world for the whole
@@ -187,7 +187,7 @@ test.run('with a git lock left in lab\'s repo and no git running, lab still hand
   const gone = !fs.existsSync(at);
   unplant();
   return (!!r && r !== 'waiting' && !r.error && !!r.name && gone) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'a child process asks lab for a tree' });
 test.run('with a git lock left in every personal node\'s repo and no git running, lab still hands one out, and that node\'s lock is gone', 0.4, async function () {
   const P = require(path.join(REPO, 'lab', 'labNodes.js')).POOLS;
   const names = (P && P.node) || [];
@@ -197,7 +197,7 @@ test.run('with a git lock left in every personal node\'s repo and no git running
   const gone = !!r && !!r.name && !fs.existsSync(path.join(LAB_GIT, 'worktrees', r.name, 'index.lock'));
   unplant();
   return (gone && r !== 'waiting' && !r.error) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'a child process asks lab for a tree' });
 // A TEST'S CHROME ENDS WITH THE TEST (goal/G47.1, Q9, wsl: "Shall a test's headless Chrome end when its test ends, even a
 // test that is killed?" Andy: "anything that leaves 77 useless chromes running must be fixed."). A child opens a page with chromePage, says its Chrome's pid, and ends: by itself, or killed.
 function chromeChild(end) {
@@ -228,8 +228,8 @@ const chromeGone = async function (end) {
   if (!gone) { try { process.kill(r.pid, 'SIGKILL'); } catch (e) { /* gone */ } }
   return gone || false;
 };
-test.run('a test that ends leaves no Chrome of its own running', 0.4, function () { return chromeGone('exit'); }, test.limit.long);
-test.run('a test that is killed leaves no Chrome of its own running', 0.4, function () { return chromeGone('kill'); }, test.limit.long);
+test.run('a test that ends leaves no Chrome of its own running', 0.4, function () { return chromeGone('exit'); }, test.limit.long, { why: 'a child process opens Chrome, ends, and is watched' });
+test.run('a test that is killed leaves no Chrome of its own running', 0.4, function () { return chromeGone('kill'); }, test.limit.long, { why: 'a child process opens Chrome and is killed' });
 // A NODE AND A CHROME HANDED TO A TEST (goal/G47.1, Q10, wsl: "For testicle's 10 UI test files, shall each stay its own file
 // and share one node and one Chrome that testicle hands them (1) ...?" Andy: "i pick 10.1: \"one test per file\"."). A test
 // handed both, the node in SPIRIT_MOUNT_BASE and its tree in SPIRIT_MOUNT_RUN (a node answers no verb with its tree), the
@@ -245,7 +245,7 @@ test.run('a node and a Chrome are ready to hand on', 0.2, async function () {
   HANDED.chrome = await H.sharedChrome(H.findChrome());
   if (HANDED.chrome.error) return false;
   return true;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node and a shared Chrome' });
 test.after(async function () { try { if (HANDED.chrome && HANDED.chrome.close) HANDED.chrome.close(); } catch (e) { /* gone */ } try { if (HANDED.node && HANDED.node.release) await HANDED.node.release(); } catch (e) { /* gone */ } });
 // testicle's branch on the wire is its id, spirit.app.testicle (goal/G49.19).
 test.run('handed a node and a Chrome, scratchNode and chromePage start neither, and answer the handed ones with the tree and servers', 0.4, async function () {
@@ -283,7 +283,7 @@ test.run('handed a node and a Chrome, scratchNode and chromePage start neither, 
   if (!r.served) return false;
   if (!r.page || String(r.port) !== String(HANDED.chrome.port)) return false;
   return true;
-}, test.limit.long);
+}, test.limit.long, { why: 'a child process asks a node and a page, watched' });
 // "the tests that start relays (scratchRelay, scratchFaceRelay) use lab's two relays, reset like the nodes"
 // ASKED FROM INSIDE A LAB NODE (cw, on G47.1: "run from inside a lab node, headLessChrome now brings the node it hands out
 // into line with the tree it runs in (what differs copied, what that tree lacks removed)"; the classifier asks from testicle's
@@ -305,11 +305,11 @@ test.run('asked from inside a lab node\'s tree, scratchNode hands out another no
   if (!fs.existsSync(path.join(n.run, 'spirit', 'zzFromLabTree.js'))) return false;
   if (fs.existsSync(path.join(n.run, 'spirit', 'word', 'script.js'))) return false;
   return true;
-}, test.limit.long);
+}, test.limit.long, { why: 'it asks lab for a node, then one inside it' });
 test.run('scratchRelay hands out one of lab\'s two relays, under repo://lab/node/; two asked at once are two different relays', 0.4, async function () {
   const a = ask('relay', 3000), b = ask('relay', 3000);
   const ra = await within(a.got, 120000), rb = await within(b.got, 120000);
   await Promise.all([a.ended, b.ended]);
   if ([ra, rb].some(function (r) { return !r || r === 'waiting' || r.error; })) return false;
   return (under(ra.root, LAB_NODES) && under(rb.root, LAB_NODES) && ra.root !== rb.root) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it asks lab for two relays at once' });

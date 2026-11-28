@@ -87,7 +87,7 @@ test.run('the same question refuses spirit.contact.faceable, so it can refuse', 
 test.run('the scratch node comes up', 0.2, async function () {
   W.node = await scratchNode();
   return W.node.up || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it starts a scratch node' });
 test.after(function () {
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
@@ -178,7 +178,7 @@ test.run('a folder named after the branch\'s verb is no app', 0.2, async functio
   const stands = await until(function () { return ask(W.node.base, 'spirit.app.search', {}).then(function (r) { return holds(rows(r), 'Verb Named Label'); }); }, 2500);
   fs.rmSync(verbNamed, { recursive: true, force: true });
   return !stands || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants a folder and waits for the app list' });
 test.run('a second folder with its own .json is found: the list follows the tree', 0.2, async function () {
   if (noNode()) return false;
   const plugin = scratchApp('zzplugin');
@@ -186,7 +186,7 @@ test.run('a second folder with its own .json is found: the list follows the tree
   fs.writeFileSync(path.join(plugin, 'zzplugin.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Zz Plugin Label' } }));
   const seen = await until(function () { return ask(W.node.base, 'spirit.app.search', {}).then(function (r) { return holds(rows(r), 'Zz Plugin Label'); }); }, 5000);
   return seen || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants a folder and waits for the app list' });
 test.run('a folder without its own .json is not one', 0.2, async function () {
   if (noNode()) return false;
   fs.mkdirSync(scratchApp('zzbare'), { recursive: true });
@@ -221,14 +221,14 @@ test.run('an app with api.js and no data.js has a row with api false', 0.2, asyn
   fs.writeFileSync(path.join(dir, 'api.js'), "'use strict';\nmodule.exports = { verbs: {} };\n");
   const listed = await until(function () { return apiOf(idOf('zzapiflag')).then(function (a) { return a !== undefined; }); }, 5000);
   return (listed && (await apiOf(idOf('zzapiflag'))) === false) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it plants an app and waits for the app list' });
 test.run('once its data.js comes, the same row says api true', 0.2, async function () {
   if (noNode()) return false;
   fs.writeFileSync(path.join(scratchApp('zzapiflag'), 'data.js'), "'use strict';\n");
   const flipped = await until(function () { return apiOf(idOf('zzapiflag')).then(function (a) { return a === true; }); }, 5000);
   fs.rmSync(scratchApp('zzapiflag'), { recursive: true, force: true });
   return flipped || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it writes data.js and waits for the app list' });
 
 // ── app.active (goal/G43.9) ──
 // The box: "spirit.app gains a verb: "active"", "app.active { key, active } sets it; only the owner may."
