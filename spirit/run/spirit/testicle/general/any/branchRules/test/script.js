@@ -88,7 +88,7 @@ test.run('a planted app branch whose manifest names a kind is red', 0.4, async f
     await new Promise(function (r) { H.proxy.listen(0, '127.0.0.1', r); });
     H.base = 'http://127.0.0.1:' + H.proxy.address().port;
     return true;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   test.run('the rule is run on two scripts in two branches, handed that node as testicle hands one', 0.2, async function () {
     if (!H.base) return false;
     const env = Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: H.base, SPIRIT_MOUNT_RUN: H.node.run, SPIRIT_RULE_MODULES: 'spirit/testicle/general/any/branchRules' });
@@ -101,7 +101,7 @@ test.run('a planted app branch whose manifest names a kind is red', 0.4, async f
       kid.on('exit', function () { clearTimeout(timer); resolve(out); });
     });
     return /Test completed/.test(H.out) || false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it runs the node runner on two scripts' });
   test.run('the scratch node of each script\'s run comes up', 0.4, function () {
     const up = H.out.split('\n').filter(function (l) { return /a scratch node comes up for this suite ✅\s*$/.test(l); }).length;
     return up === SCRIPTS.length || false;

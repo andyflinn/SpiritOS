@@ -104,7 +104,7 @@ test.run('the general test is run on six elements, the hang among them, and watc
   W.tested = {};
   if (base) for (const f of ELEMENTS) W.tested[f] = await newestTested(base, f);
   return true;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs the browser runner on six elements' });
 
 // box v144: "spirit/test/script-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
 // the whole run"

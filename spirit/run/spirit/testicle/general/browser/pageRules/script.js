@@ -867,7 +867,7 @@ function oneFile(P) {
       const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
       // Its pass as the report says it: the check's title, then the pass mark (spirit/testicle/testReport/script.js, ICON.SUCCESS).
       return said.split('\n').some(function (l) { return l.indexOf(p.check + ' \u2705') !== -1; }) || false;
-    }, test.limit.long);
+    }, test.limit.long, { why: 'it runs its own test in a child process' });
   }
   else {
     test.run('a change written into what it watches redraws it', 0.4, function () {

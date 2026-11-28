@@ -206,7 +206,7 @@ function appRules(all) {
         if (sorted(Object.keys(offered)) !== sorted(want)) return false;
       }
       return true;
-    }, test.limit.slow);
+    }, test.limit.slow, { why: 'it loads each app api.js through the node fs' });
   }
 }
 

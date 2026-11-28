@@ -91,7 +91,7 @@ function checks(scriptPath, tools) {
       const env = path.join(E.run, 'spirit', 'state', 'environment.json');
       if (!fs.existsSync(env)) { fs.mkdirSync(path.dirname(env), { recursive: true }); fs.writeFileSync(env, JSON.stringify({ PORT: Number(new URL(E.node.base).port) })); }
       return fs.existsSync(path.join(E.run, 'spirit', 'script.js')) || false;
-    }, test.limit.slow);
+    }, test.limit.slow, { why: 'it starts a scratch node on a copy of the tree' });
     test.after(async function () {
       if (E.node && E.node.child) { try { E.node.child.kill(); } catch (e) { /* gone */ } await new Promise(function (r) { setTimeout(r, 300); }); }
       if (E.root) try { SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(E); } catch (e) { /* scratch */ }
@@ -115,7 +115,7 @@ function checks(scriptPath, tools) {
         else if (!r.placed) E.nodeBad.push(f);
       }
       return E.nodeLoaded.length > 0 || false;
-    }, test.limit.long);
+    }, test.limit.long, { why: 'it spawns node to require each product script' });
     test.run('on the node, every script that loads answers at once and stands at spirit.<path minus spirit>', 0.4, function () {
       if (!E.nodeLoaded) return false;
       return (E.nodeLoaded.length > 0 && !E.nodeBad.length) || false;
@@ -131,7 +131,7 @@ function checks(scriptPath, tools) {
     if (r.program) return true;
     if (r.promise) return false;
     return r.placed || false;
-  }, test.limit.slow, { script: rel });
+  }, test.limit.slow, { script: rel, why: 'it spawns node to require the script' });
 }
 
 // The names its checks look for: none (goal/G49.27, Andy: "All, cw's way").

@@ -64,8 +64,8 @@ test.run('it applies to the tree, given no file, and to no one script handed', 0
 test.run('a planted script that stands at its place loads on a page and keeps the rule', 0.4, async function () {
   V.keeps = await verdict(KEEPS);
   return (V.keeps[LOADS] === true && V.keeps[RULE_TITLE] === true) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a node and loads the script in Chrome' });
 test.run('a planted script that takes itself off its place loads on a page and is red', 0.4, async function () {
   V.breaks = await verdict(BREAKS);
   return (V.breaks[LOADS] === true && V.breaks[RULE_TITLE] === false) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a node and loads the script in Chrome' });

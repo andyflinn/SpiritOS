@@ -112,7 +112,7 @@ test.run('the general test runs on six elements with the hung script among them,
   W.tested = {};
   if (base) for (const f of ELEMENTS) W.tested[f] = await newestTested(base, f);
   return true;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs the browser runner on six elements' });
 
 // box v144: "spirit/test/script-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
 // the whole run"
@@ -195,7 +195,7 @@ test.run('a change written into a row of true or false fields alone redraws the 
   kid.stderr.on('data', function (d) { out += d; });
   await new Promise(function (r) { kid.on('close', r); });
   return out.split('\n').some(function (l) { return l.indexOf('a change written into what it watches redraws it \u2705') !== -1; }) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs the browser runner on a planted element' });
 
 // IT DOES NOT POLLUTE THE WINDOW NAMESPACE (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"):
 // three planted elements, alike but for what they leave on the window: a top-level var, a top-level const, and the same
@@ -223,10 +223,10 @@ async function judged(src) {
 }
 test.run('an element that declares a var outside any function is judged red for polluting the window', 0.4, async function () {
   return (await judged(planted('var zzLeakVar = 1;', false))) === 'red' || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs the browser runner on a planted element' });
 test.run('an element that declares a const outside any function is judged red for polluting the window', 0.4, async function () {
   return (await judged(planted('const zzLeakConst = 1;', false))) === 'red' || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs the browser runner on a planted element' });
 test.run('the same element with every name inside its one function is judged green', 0.4, async function () {
   return (await judged(planted('', true))) === 'green' || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it runs the browser runner on a planted element' });

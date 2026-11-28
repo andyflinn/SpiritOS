@@ -250,27 +250,27 @@ test.run('there are suites to judge', 0.2, function () {
 test.run('every suite says its tests through test.run', 0.2, function () {
   const none = results.filter(function (x) { return !x.r.titles.length; });
   return !none.length || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('no suite keeps an old way of saying a check', 0.2, function () {
   const old = results.filter(function (x) { return x.r.old.length; });
   return !old.length || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('every title is one plain string, nothing built into it', 0.2, function () {
   const built = results.filter(function (x) { return x.r.built.length; });
   return !built.length || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('no suite says one title twice', 0.2, function () {
   const twice = results.filter(function (x) { return x.r.twice.length; });
   return !twice.length || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('every test gives its severity, a number from 0.0 to 1.0', 0.2, function () {
   const bad = results.filter(function (x) { return x.r.severity.length; });
   return !bad.length || false;
-}, test.limit.slow);
+}, test.limit.quick);
 test.run('every test gives its time limit, one of the reporter\'s named limits', 0.2, function () {
   const bad = results.filter(function (x) { return x.r.limit.length; });
   return !bad.length || false;
-}, test.limit.slow);
+}, test.limit.quick);
 }
 
 // No name its checks look for is skipped in its files (goal/G49.27, Andy: "All, cw's way"): it forbids none by name.

@@ -444,7 +444,7 @@ if (served.length) {
   test.run('a scratch node comes up for this suite', 0.2, async function () {
     if (!N.node) N.node = tools.node.node || (tools.node.node = await H.scratchNode({ shared: true }));
     return N.node.up || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   // An app's branch is served once its server runs (the owner's app.active); the node's own are served by the node.
   if (switched.length) {
     test.run('its app is switched on', 0.2, async function () {
@@ -472,7 +472,7 @@ if (served.length) {
       const g = placed[b.api] || { threw: true };
       return (!g.threw && g.placed && !g.unbound.length && g.same) ? true : false;
     });
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it spawns node to require each api.js' });
   // <branch>: on a node
   test.run('the node\'s api tree holds its branch', 0.4, async function () {
     if (!up()) return false;
@@ -558,7 +558,7 @@ if (served.length) {
         if (!(seen === asks.length && !wrong)) ok = false;
       }
       return ok;
-    }, test.limit.slow);
+    }, test.limit.slow, { why: 'it sends every broken call to the node over http' });
   }
 
   // EACH data.js FETCHED BY ITS PATH (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript, data.js exactly

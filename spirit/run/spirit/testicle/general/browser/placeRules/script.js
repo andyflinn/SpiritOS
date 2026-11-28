@@ -82,7 +82,7 @@ function every(tools) {
   test.run('a scratch node comes up with its DEBUG on', 0.2, async function () {
     E.node = await scratchNode(Object.assign({ shared: true, before: tools.before }, SERVERS));
     return (E.node.up && E.node.debug) || false;
-  }, test.limit.slow);
+  }, test.limit.slow, { why: 'it starts a scratch node' });
   const nodeUp = function () { return !!E.node && E.node.up && E.node.debug; };
 
   // every product script, placed on the spirit object where it is required
@@ -119,7 +119,7 @@ function every(tools) {
     try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
     return E.pageLoaded.length > 0 || false;
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it loads each product script on a page in Chrome' });
   test.run('every product script that loads on a page stands on the spirit object under its own path', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.pageLoaded.length > 0 && !E.pageBad.length) || false;
@@ -152,7 +152,7 @@ function every(tools) {
       if (!(reds === 0 && greens > 0)) red.push(true);
     }
     return listed(red);
-  }, test.limit.long);
+  }, test.limit.long, { why: 'it runs the browser runner on each page module' });
 
   test.after(async function () {
     if (E.page) { try { if (E.page.kid) E.page.kid.kill(); } catch (e) { /* gone */ } }

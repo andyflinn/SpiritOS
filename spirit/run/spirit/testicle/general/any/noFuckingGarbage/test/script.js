@@ -105,7 +105,7 @@ test.run('a scratch tree is made of the tracked files and the planted scripts, i
   const listed = execSync('git ls-files -- spirit/run/spirit/zzGarbage', { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
   const planted = Object.keys(TREE_PLANT).filter(function (f) { return f.indexOf('spirit/zzGarbage/') === 0; });
   return (planted.length === 4 && listed.length === planted.length) || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it copies every tracked file into a scratch tree' });
 
 // the box: "in one check, "every production script has its own test", severity 0.2"; the check is this module's since
 // goal/G49.27, step 2a.
@@ -121,21 +121,21 @@ test.run('over the whole tree, with a script missing its own test, the check is 
   if (!run) return false;
   const l = lineOf('');
   return (!!l && l.red) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the none runner over the whole scratch tree' });
 test.run('handed spirit.js, it judges the whole tree the same', 0.2, function () {
   if (!run) return false;
   const l = lineOf('spirit/script.js');
   return (!!l && l.red) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the none runner over the whole scratch tree' });
 
 // the box: "handed one script, that one, by the same check"
 test.run('handed a script with its own test, the check is green', 0.2, function () {
   if (!run) return false;
   const l = lineOf(HAS);
   return (!!l && !l.red) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the none runner in the scratch tree' });
 test.run('handed a script with no own test, the check is red, under that script', 0.2, function () {
   if (!run) return false;
   const l = lineOf(LACKS);
   return (!!l && l.red && l.script.indexOf(LACKS) !== -1) || false;
-}, test.limit.slow);
+}, test.limit.slow, { why: 'it runs the none runner in the scratch tree' });

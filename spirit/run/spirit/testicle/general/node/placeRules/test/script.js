@@ -48,7 +48,7 @@ test.run('the module judges the two planted scripts in one copy of the tree', 0.
     }
   } finally { for (const fn of afters) { try { await fn(); } catch (e) { /* scratch */ } } }
   return kept.filter(function (k) { return k.title !== RULE_TITLE; }).length === 1 || false;
-}, test.limit.long);
+}, test.limit.long, { why: 'it starts a scratch node and requires two scripts' });
 
 test.run('it hands out appliesTo, its resource node, own true, its forbids and checks', 0.4, function () {
   return (typeof RULE.appliesTo === 'function' && RULE.resource === 'node' && RULE.own === true && Array.isArray(RULE.forbids) && typeof RULE.checks === 'function') || false;
