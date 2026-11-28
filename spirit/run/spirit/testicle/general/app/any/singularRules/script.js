@@ -46,6 +46,15 @@ function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); }
 const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' })
   .split('\n').filter(Boolean).map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(isFile);
 
+// OVER THE WHOLE TREE, A CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+// testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule. Handed a
+// file, the same check as one test, its red under the file handed, as before. files() answers the list, or null when there is
+// too little to judge.
+function overTree(title, severity, files, judge, limit) {
+  if (!ARGS[0]) return test.over(title, severity, files, judge, limit);
+  return test.run(title, severity, function () { const list = files(); return (!!list && list.every(judge)) || false; }, limit);
+}
+
 // ── 0. job AND event, SINGULAR ──────────────────────────────────────────────────────────────────────────────────────
 // Andy, the box: "\"jobs\" and it's face spirit/app/jobs/ will be renamed, \"job\" (singular) and the same will happen for
 // \"events\", which will be renamed \"event\"". The decided: the seven verbs renamed, and every file and folder named so.
@@ -62,10 +71,7 @@ function verbsOf(file, want) {
 const OLD_NAME_CALL = /['"`](jobs|events)\.(search|get|create|cancel|delete|subscribe|publish|list|update)\b|\bspirit\.(jobs|events)\b|\bS\.(jobs|events)\b|\bs\.(jobs|events)\b/;
 function rule0() {
   // Rule 0: job and event, singular.
-  test.run('no file or folder is named jobs or events', 0.4, function () {
-    const plural = TREE.filter(function (f) { return /(^|\/)(jobs|events)(\/|[-.])/.test(f); });
-    return !plural.length ? true : false;
-  }, test.limit.quick);
+  overTree('no file or folder is named jobs or events', 0.4, function () { return TREE; }, function (f) { return !/(^|\/)(jobs|events)(\/|[-.])/.test(f); }, test.limit.quick);
   test.run('the job branch, spirit/job/, holds api.js and data.js', 0.4, function () {
     return (isFile('spirit/job/script.js') && isFile('spirit/job/client/script.js')) ? true : false;
   }, test.limit.quick);
@@ -83,12 +89,9 @@ function rule0() {
   }, test.limit.quick);
   // A call by its old name: 'jobs.<verb>' or 'events.<verb>' in a string, or spirit.jobs / spirit.events, in any product file.
   // (A constant: its quote characters inside a test's body would be read as strings by the title rule's parser.)
-  test.run('no product file calls a verb by its old name, jobs.* or events.*, nor spirit.jobs or spirit.events', 0.4, function () {
-    const calls = TREE.filter(function (f) { return /\.(js|html)$/.test(f) && !/\/test\//.test(f) && !/\/(chokidar|readdirp)\//.test(f); }).filter(function (f) {
-      return OLD_NAME_CALL.test(unforbidden(f, code(f)));
-    });
-    return !calls.length ? true : false;
-  }, test.limit.quick);
+  overTree('no product file calls a verb by its old name, jobs.* or events.*, nor spirit.jobs or spirit.events', 0.4, function () {
+    return TREE.filter(function (f) { return /\.(js|html)$/.test(f) && !/\/test\//.test(f) && !/\/(chokidar|readdirp)\//.test(f); });
+  }, function (f) { return !OLD_NAME_CALL.test(unforbidden(f, code(f))); }, test.limit.quick);
 }
 rule0();
 }

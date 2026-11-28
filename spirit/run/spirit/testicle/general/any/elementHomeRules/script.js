@@ -147,45 +147,39 @@ function strayElementReaches(rel) {
 }
 // THE LOADER PLACES ELEMENTS (goal/G43.32; goal/G49.9: a script sets module.exports and the loader places it): no element
 // script puts itself on spirit.element or spirit.elements by hand (goal/G49.23: no spirit.required).
-function placedByHand() {
-  return productScripts().filter(function (f) {
-    if (f === 'spirit/script.js') return false;
-    const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
-    return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
-  });
+function placedByHand(f) {
+  if (f === 'spirit/script.js') return false;
+  const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
+  return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
 }
 function every() {
   const E = {};
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule. A list
+  // too short to judge is no list, a red under the runner, as the floor in it was.
+  const floor = function (list, n) { return list && list.length > n ? list : null; };
   // elements are placed by the loader alone
-  test.run('no product script puts an element on spirit.element or spirit.elements by hand', 0.4, function () {
-    const hand = placedByHand();
-    return !hand.length || false;
+  test.over('no product script puts an element on spirit.element or spirit.elements by hand', 0.4, productScripts, function (f) {
+    return !placedByHand(f);
   }, test.limit.quick);
   // Decided 6: an app's element is placed like every element, "the shell, the app selector, the file opener and the desk
   // find it there"; so nothing reads an element at the old place, spirit.elements.<name>, any more.
-  test.run('no product script reads or writes the old spirit.elements: every element is found at its path on the spirit object', 0.4, function () {
-    const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(unforbidden(f, fs.readFileSync(path.join(RUN, f), 'utf8')), true)); });
-    return !old.length || false;
+  test.over('no product script reads or writes the old spirit.elements: every element is found at its path on the spirit object', 0.4, productScripts, function (f) {
+    return !/\.elements\b/.test(codeOf(unforbidden(f, fs.readFileSync(path.join(RUN, f), 'utf8')), true));
   }, test.limit.quick);
   // the element move: no file names an element's old homes, none reaches through spirit.element for what the tree lacks
   test.run('the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
     E.elementFiles = elementRuleFiles();
     return E.elementFiles.length > 100 || false;
   }, test.limit.quick);
-  test.run('no code, test or document names shell/js', 0.4, function () {
-    const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return linesMatching(f, OLD_ELEMENT_PATH); }));
-    return (all.length > 100 && !hits.length) || false;
+  test.over('no code, test or document names shell/js', 0.4, function () { return floor(E.elementFiles, 100); }, function (f) {
+    return !linesMatching(f, OLD_ELEMENT_PATH).length;
   }, test.limit.slow, { why: 'it reads every tracked file of the tree' });
-  test.run('no code reaches an element through spirit.elements', 0.4, function () {
-    const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_ELEMENT_HOME, true); }));
-    return (all.length > 100 && !hits.length) || false;
+  test.over('no code reaches an element through spirit.elements', 0.4, function () { return floor(E.elementFiles, 100); }, function (f) {
+    return !codeLinesMatching(f, OLD_ELEMENT_HOME, true).length;
   }, test.limit.slow, { why: 'it reads every tracked file of the tree' });
-  test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
-    const all = E.elementFiles || [];
-    const stray = [].concat.apply([], all.map(strayElementReaches));
-    return (all.length > 100 && !stray.length) || false;
+  test.over('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () { return floor(E.elementFiles, 100); }, function (f) {
+    return !strayElementReaches(f).length;
   }, test.limit.slow, { why: 'it reads every tracked file of the tree' });
 }
 

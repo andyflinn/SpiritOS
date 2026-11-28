@@ -26,7 +26,7 @@ function plantRepo(side, rel, text) { return write(path.join(ROOT, side, rel), t
 // What checks says for one path, kept and not reported; the verdict of one title, true, false, or null when it was not said.
 async function verdict(side, scriptPath, title) {
   const kept = [];
-  const T = { limit: test.limit, run: function (t, severity, body) { kept.push({ title: t, body: body }); }, after: function () {}, forScript: function (s, fn) { fn(); }, hold: function () {}, release: function () {}, comment: function () {} };
+  const T = { limit: test.limit, run: function (t, severity, body) { kept.push({ title: t, body: body }); }, over: function (t, severity, files, judge) { kept.push({ title: t, body: async function () { const l = typeof files === 'function' ? await files() : files; if (!Array.isArray(l)) return false; for (const f of l) { let v = false; try { v = await judge(f); } catch (e) { v = false; } if (v !== true) return false; } return true; } }); }, after: function () {}, forScript: function (s, fn) { fn(); }, hold: function () {}, release: function () {}, comment: function () {} };
   RULE.checks(scriptPath, { test: T, run: runOf(side), spirit: SPIRIT, node: { node: null }, forbids: {} });
   const one = kept.filter(function (t) { return t.title === title; })[0];
   if (!one) return null;

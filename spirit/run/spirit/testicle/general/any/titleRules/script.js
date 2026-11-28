@@ -138,19 +138,20 @@ function blankStrings(code) {
 // relatively central constants"): its name; a number of its own, or anything else: null.
 function namedLimit(arg) { const m = /^test\.limit\.(quick|slow|long)$/.exec(String(arg || '').trim()); return m ? m[1] : null; }
 function plainNumber(arg) { const a = String(arg || '').trim(); return /^\d+(\.\d+)?$|^\.\d+$/.test(a) ? Number(a) : null; }
-// Every test in a suite's code, one test.run(title, severity, body, limitMs) each (goal/G47.2): { line, text (the title as
-// written), value (when plain), severity, limit (when number literals) }.
+// Every test in a suite's code, one test.run(title, severity, body, limitMs) each (goal/G47.2), or one test.over(title,
+// severity, files, judge, limitMs), a whole-tree check over a list of files (goal/G49.27, testReport's test.over), its limit
+// after its judge: { line, text (the title as written), value (when plain), severity, limit (when number literals) }.
 function testsOf(src) {
   const code = blankComments(src);
   const bare = blankStrings(code);
   const out = [];
-  const re = /\btest\.run\s*\(/g;
+  const re = /\btest\.(run|over)\s*\(/g;
   let m;
   while ((m = re.exec(bare))) {
     const at = m.index + m[0].length - 1;
     const args = argsAt(code, at);
     if (args[0] === undefined) continue;
-    out.push({ line: code.slice(0, at).split('\n').length, text: args[0].slice(0, 120), value: plainValue(args[0]), severity: plainNumber(args[1]), limit: namedLimit(args[3]) });
+    out.push({ line: code.slice(0, at).split('\n').length, text: args[0].slice(0, 120), value: plainValue(args[0]), severity: plainNumber(args[1]), limit: namedLimit(args[m[1] === 'over' ? 4 : 3]) });
   }
   return out;
 }
@@ -210,13 +211,18 @@ const PLANTED = [
   "test.run('a limit of its own number', 0.2, function () { return true; }, 1000);",
   "// test.run('a comment is no test', 0.2, function () { return true; }, test.limit.quick);",
   "test.run('the count is one', 0.2, function () { return true; }, test.limit.quick);",
+  "test.over('a check over files', 0.2, files, function (f) { return f.length > 0; }, test.limit.slow, { why: 'it walks files' });",
   "function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }",
   "test.reportSuccessFailureCount();",
 ].join('\n');
 const P = judge(PLANTED);
 const values = P.titles.map(function (t) { return t.value; });
 test.run('it finds every test of a planted suite, and none in a comment', 0.2, function () {
-  return P.titles.length === 13 || false;
+  return P.titles.length === 14 || false;
+}, test.limit.quick);
+test.run('a test.over is read as a test, its time limit the one after its judge', 0.2, function () {
+  const over = P.titles.filter(function (t) { return t.value === 'a check over files'; })[0];
+  return (!!over && over.severity === 0.2 && over.limit === 'slow') || false;
 }, test.limit.quick);
 test.run('a quoted string and a plain template are plain titles', 0.2, function () {
   return (values[0] === 'the count is one' && values[1] === 'the field is shown' && values[2] === 'the row is drawn') || false;
@@ -247,30 +253,48 @@ const results = SUITES.map(function (f) { let src = ''; try { src = fs.readFileS
 test.run('there are suites to judge', 0.2, function () {
   return SUITES.length > 0 || false;
 }, test.limit.quick);
-test.run('every suite says its tests through test.run', 0.2, function () {
-  const none = results.filter(function (x) { return !x.r.titles.length; });
-  return !none.length || false;
-}, test.limit.quick);
-test.run('no suite keeps an old way of saying a check', 0.2, function () {
-  const old = results.filter(function (x) { return x.r.old.length; });
-  return !old.length || false;
-}, test.limit.quick);
-test.run('every title is one plain string, nothing built into it', 0.2, function () {
-  const built = results.filter(function (x) { return x.r.built.length; });
-  return !built.length || false;
-}, test.limit.quick);
-test.run('no suite says one title twice', 0.2, function () {
-  const twice = results.filter(function (x) { return x.r.twice.length; });
-  return !twice.length || false;
-}, test.limit.quick);
-test.run('every test gives its severity, a number from 0.0 to 1.0', 0.2, function () {
-  const bad = results.filter(function (x) { return x.r.severity.length; });
-  return !bad.length || false;
-}, test.limit.quick);
-test.run('every test gives its time limit, one of the reporter\'s named limits', 0.2, function () {
-  const bad = results.filter(function (x) { return x.r.limit.length; });
-  return !bad.length || false;
-}, test.limit.quick);
+// What each rule finds a suite breaking, by its result (judge, above).
+const breaks = {
+  noTest: function (r) { return !r.titles.length; },
+  oldCall: function (r) { return r.old.length > 0; },
+  built: function (r) { return r.built.length > 0; },
+  twice: function (r) { return r.twice.length > 0; },
+  badSeverity: function (r) { return r.severity.length > 0; },
+  badLimit: function (r) { return r.limit.length > 0; },
+};
+// OVER THE WHOLE TREE EACH A CHECK OVER THE SUITES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red"
+// set a testicle row for the failing script and itself as the suite?"): a red row under each suite that breaks the rule.
+// Asked for a script, a suite or a folder, one check each as before, its red under the script asked.
+const resultOf = {};
+results.forEach(function (x) { resultOf[x.file] = x.r; });
+const suitesJudged = function () { return SUITES; };
+if (!asked) {
+  test.over('every suite says its tests through test.run', 0.2, suitesJudged, function (f) { return !breaks.noTest(resultOf[f]); }, test.limit.quick);
+  test.over('no suite keeps an old way of saying a check', 0.2, suitesJudged, function (f) { return !breaks.oldCall(resultOf[f]); }, test.limit.quick);
+  test.over('every title is one plain string, nothing built into it', 0.2, suitesJudged, function (f) { return !breaks.built(resultOf[f]); }, test.limit.quick);
+  test.over('no suite says one title twice', 0.2, suitesJudged, function (f) { return !breaks.twice(resultOf[f]); }, test.limit.quick);
+  test.over('every test gives its severity, a number from 0.0 to 1.0', 0.2, suitesJudged, function (f) { return !breaks.badSeverity(resultOf[f]); }, test.limit.quick);
+  test.over('every test gives its time limit, one of the reporter\'s named limits', 0.2, suitesJudged, function (f) { return !breaks.badLimit(resultOf[f]); }, test.limit.quick);
+} else {
+  test.run('every suite says its tests through test.run', 0.2, function () {
+    return !results.some(function (x) { return breaks.noTest(x.r); }) || false;
+  }, test.limit.quick);
+  test.run('no suite keeps an old way of saying a check', 0.2, function () {
+    return !results.some(function (x) { return breaks.oldCall(x.r); }) || false;
+  }, test.limit.quick);
+  test.run('every title is one plain string, nothing built into it', 0.2, function () {
+    return !results.some(function (x) { return breaks.built(x.r); }) || false;
+  }, test.limit.quick);
+  test.run('no suite says one title twice', 0.2, function () {
+    return !results.some(function (x) { return breaks.twice(x.r); }) || false;
+  }, test.limit.quick);
+  test.run('every test gives its severity, a number from 0.0 to 1.0', 0.2, function () {
+    return !results.some(function (x) { return breaks.badSeverity(x.r); }) || false;
+  }, test.limit.quick);
+  test.run('every test gives its time limit, one of the reporter\'s named limits', 0.2, function () {
+    return !results.some(function (x) { return breaks.badLimit(x.r); }) || false;
+  }, test.limit.quick);
+}
 }
 
 // No name its checks look for is skipped in its files (goal/G49.27, Andy: "All, cw's way"): it forbids none by name.

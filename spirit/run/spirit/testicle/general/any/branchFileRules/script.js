@@ -107,21 +107,25 @@ function every() {
   let ELEMENT_FILES = null;
   Object.defineProperty(E, 'elementFiles', { get: function () { if (ELEMENT_FILES === null) { try { ELEMENT_FILES = elementRuleFiles(); } catch (e) { ELEMENT_FILES = undefined; } } return ELEMENT_FILES; } });
   // The floor two lower since goal/G49.23 (box v22 Part 2): spirit/node/data.js and spirit/event/data.js went with their branches.
-  test.run('every api.js beside a data.js requires that data.js', 0.4, function () {
-    const data = branchDataFiles(E.elementFiles);
-    return (data.length > 8 && data.every(function (d) { return dataRequiresOf(d.replace(/data\.js$/, 'api.js')).indexOf(d) !== -1; })) || false;
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule. A list
+  // too short to judge is no list, a red under the runner, as the floor below it was.
+  const floor = function (list, n) { return list && list.length > n ? list : null; };
+  const products = function () { return (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); }); };
+  test.over('every api.js beside a data.js requires that data.js', 0.4, function () {
+    const data = floor(branchDataFiles(E.elementFiles), 8);
+    return data && data.map(function (d) { return d.replace(/data\.js$/, 'api.js'); });
+  }, function (api) { return dataRequiresOf(api).indexOf(api.replace(/api\.js$/, 'data.js')) !== -1; }, test.limit.quick);
+  let data = [];
+  test.over('no product file but its api.js requires a branch data.js', 0.4, function () {
+    data = floor(branchDataFiles(E.elementFiles), 8);
+    return data && floor(products(), 100);
+  }, function (f) {
+    return !dataRequiresOf(f).some(function (d) { return data.indexOf(d) !== -1 && f !== d.replace(/data\.js$/, 'api.js'); });
   }, test.limit.quick);
-  test.run('no product file but its api.js requires a branch data.js', 0.4, function () {
-    const data = branchDataFiles(E.elementFiles);
-    const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
-    const strays = product.filter(function (f) { return dataRequiresOf(f).some(function (d) { return data.indexOf(d) !== -1 && f !== d.replace(/data\.js$/, 'api.js'); }); });
-    return (data.length > 8 && product.length > 100 && !strays.length) || false;
-  }, test.limit.quick);
-  test.run('no product file loads a branch file by the branch name: each is required by its full path', 0.4, function () {
-    const product = (E.elementFiles || []).filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f); });
-    const hits = [].concat.apply([], product.map(function (f) { return codeLinesMatching(f, BY_NAME_LOADER); }));
-    return (product.length > 100 && !hits.length) || false;
-  }, test.limit.quick);
+  test.over('no product file loads a branch file by the branch name: each is required by its full path', 0.4, function () {
+    return floor(products(), 100);
+  }, function (f) { return !codeLinesMatching(f, BY_NAME_LOADER).length; }, test.limit.quick);
 }
 
 function oneFile() {

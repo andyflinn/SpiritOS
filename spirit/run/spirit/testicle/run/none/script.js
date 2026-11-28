@@ -93,6 +93,8 @@ function threw(dir, t) {
 function reporterFor(dir, t) {
   const own = Object.create(t);
   own.run = function (title, severity, body, limit, opts) { return t.run(title, severity, body, limit, Object.assign({}, opts || {}, { module: dir })); };
+  // A whole-tree check over a list of files (goal/G49.27, testReport's test.over), its module named the same way.
+  own.over = function (title, severity, files, judge, limit, opts) { return t.over(title, severity, files, judge, limit, Object.assign({}, opts || {}, { module: dir })); };
   return own;
 }
 

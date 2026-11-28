@@ -175,6 +175,33 @@ function reportToTesticle(rec, verb, after) {
   } catch (e) { /* the lines are printed whatever the node says */ }
 }
 
+// A SCRIPT TESTICLE TAKES A ROW UNDER (goal/G49.27, test.over: a failing file it would refuse is no row of its own, so its red
+// is not lost): testicle.set's rule, spirit/app/testicle/server/server.js, its handler and there() and ignored(): a .js, not in a
+// folder named test (a test-system tool with a script row of its own is taken there too, which the reporter cannot know, so
+// it counts as refused), no '..', no part state, app-state or .git, not vendored, and a file on disc under the run.
+let vendoredFolders = null;
+function vendored(rel) {
+  if (!vendoredFolders) {
+    // Loaded as the reporter loads the spirit object (reportToTesticle): the suite's own spirit and window kept.
+    const before = new Set(loadedNow());
+    const own = globalThis.spirit, ownWindow = globalThis.window;
+    globalThis.spirit = undefined; globalThis.window = undefined;
+    let real = null;
+    try { real = require(path.join(__dirname, '..', '..', 'script.js')); vendoredFolders = real.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS; }
+    finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
+    loadedNow().forEach(function (k) { if (!before.has(k)) reporterOwn.add(k); });
+  }
+  return vendoredFolders.holds(path.join(RUN_ROOT, rel));
+}
+function takesRow(rel) {
+  const r = String(rel || '');
+  if (!/\.js$/.test(r) || path.isAbsolute(r) || r.indexOf('..') !== -1) return false;
+  if (path.posix.basename(path.posix.dirname(r)) === 'test') return false;
+  if (r.split('/').some(function (part) { return part === 'state' || part === 'app-state' || part === '.git'; })) return false;
+  try { if (vendored(r)) return false; } catch (e) { return false; }
+  try { return require('fs').statSync(path.join(RUN_ROOT, r)).isFile(); } catch (e) { return false; }
+}
+
 // THE REPORTER'S OWN TIMERS, kept as this file loads: a suite may replace the global setTimeout to speed its own waits
 // (a suite once did), and a test's time limit must not shrink with it.
 const ownTimeout = setTimeout;
@@ -220,6 +247,38 @@ test.run = function (title, severity, body, limitMs, opts) {
   const ruleModule = opts && typeof opts.module === 'string' ? opts.module : '';
   const why = opts && typeof opts.why === 'string' ? opts.why.trim() : '';
   queue.push({ title: title, severity: severity, body: body, limit: limitMs, why: why, script: own, module: ruleModule });
+  start();
+  wake();
+};
+// A WHOLE-TREE CHECK OVER A LIST OF FILES (goal/G49.27; Andy, Desk G49.27: "why cannot a "whole-tree-red" set a testicle row
+// for the failing script and itself as the suite?"; the shape wsl gave and cw reviewed, "the shape is right"):
+//   test.over(title, severity, files, judge, limit, opts)   files a list of run-relative paths, or a function answering one
+//                                              (it may be async); judge(file) answers true or false for each (it may be
+//                                              async), a throw false for that file. Each file it answers false for is a red
+//                                              row of its own: that file as the script, the suite as always, the title as it
+//                                              is; none false, one green row under the script as a test.run would report.
+// The whole walk is one test in time: one limit, one opts.why (a limit past quick needs it, as test.run's). A walk that throws,
+// hangs or says no why, or a files function that answers no list, is one red under the script, as a test.run would be. Only a failing file costs a report of its own
+// (each report under a new script makes the run wait for that script's success).
+test.over = function (title, severity, files, judge, limitMs, opts) {
+  const own = opts && typeof opts.script === 'string' && opts.script ? opts.script : forScript;
+  const ruleModule = opts && typeof opts.module === 'string' ? opts.module : '';
+  const why = opts && typeof opts.why === 'string' ? opts.why.trim() : '';
+  const t = { title: title, severity: severity, limit: limitMs, why: why, script: own, module: ruleModule, over: true, judge: judge };
+  t.body = typeof judge !== 'function' ? null : async function () {
+    const list = typeof files === 'function' ? await files() : files;
+    // No list (a floor not reached: too few files to judge): a red under the script, at its severity.
+    if (!Array.isArray(list)) return false;
+    const failing = [];
+    for (const f of list) {
+      let v = false;
+      try { v = await judge(f); } catch (e) { v = false; }
+      if (v !== true) failing.push(String(f));
+    }
+    t.failing = failing;
+    return failing.length === 0;
+  };
+  queue.push(t);
   start();
   wake();
 };
@@ -323,6 +382,8 @@ async function runAll() {
   // script's tests of its second module come after the next script's): its success goes out again once those are said, held
   // false from its first red on.
   const since = Object.create(null);
+  // The scripts entered only by a whole-tree check's red rows (test.over): leaving one holds the run for nothing.
+  const byOver = Object.create(null);
   const succeeded = function (script) {
     if (ONLY !== null || (reported[script] && !since[script])) return;
     reported[script] = true;
@@ -346,7 +407,8 @@ async function runAll() {
     // A SCRIPT DONE (goal/G47.1, box v129-131): the first test of another script ends the one before, whose success goes
     // out as that test starts, before it runs (a run stopped while it waits must find the one before already reported). A run
     // with a title (--test) ran part of its suite and reports no success at all.
-    if (doing !== null && doing !== script) { succeeded(doing); await reportChain; }
+    // A script entered only by a whole-tree check's red rows (test.over, below) holds the run for none of it.
+    if (doing !== null && doing !== script) { succeeded(doing); if (!byOver[doing]) await reportChain; }
     // THE SCRIPT, AS A HEADING, where it changes: the script is part of the testicle row's key (script, suite, title), so
     // the lines under it are its tests, each its title and its mark.
     if (doing !== script) { doing = script; if (!(script in held)) held[script] = true; line(script); }
@@ -364,19 +426,45 @@ async function runAll() {
     seen[once] = true;
     const v = t.verdict || { pass: false };
     const severity = v.crash ? 0.7 : (sev >= 0 && sev <= 1 ? sev : 0.7);
-    // Its line: the title and its mark, nothing else.
-    if (v.pass) { test.successCount++; line(title + ' ' + ICON.SUCCESS); }
-    else {
-      test.failureCount++; line(title + ' ' + ICON.ERROR);
-      if (t.module) process.stderr.write(ICON.ERROR + ' ' + script + ' | ' + t.module + ' | ' + title + '\n');
-    }
-    if (!v.pass) held[script] = false;
-    if (!v.pass && v.crash) reasonOf[script] = (v.hung || reasonOf[script] === 'hung') ? 'hung' : 'crashed';
     // ITS OWN BLOCK'S HASH (goal/G49.6, box v18: "each result row keeps the hash of its own test's block, the source of its
-    // function"): the analyze tool tells a changed test from a changed suite by it.
+    // function"): the analyze tool tells a changed test from a changed suite by it; a test.over's, its judge's.
     // Its first 32 hex digits, a word (testicle.set's rule for it: at most 32 bytes).
-    const testHash = require('crypto').createHash('sha256').update(String(t.body)).digest('hex').slice(0, 32);
-    reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity, testHash: testHash });
+    const testHash = require('crypto').createHash('sha256').update(String(t.over ? t.judge : t.body)).digest('hex').slice(0, 32);
+    // One row: its line, the title and its mark, nothing else, under its script's heading; and its report.
+    const row = function (rowScript, pass, rowSeverity) {
+      if (pass) { test.successCount++; line(title + ' ' + ICON.SUCCESS); }
+      else {
+        test.failureCount++; line(title + ' ' + ICON.ERROR);
+        if (t.module) process.stderr.write(ICON.ERROR + ' ' + rowScript + ' | ' + t.module + ' | ' + title + '\n');
+      }
+      if (!pass) held[rowScript] = false;
+      reportToTesticle({ script: rowScript, suite: SUITE_FILE, test: title, verified: !!pass, severity: rowSeverity, testHash: testHash });
+    };
+    // A WHOLE-TREE CHECK'S REDS, ONE ROW PER FAILING FILE (goal/G49.27, test.over; Andy's Go on the box: every row keeps the
+    // suite file as its suite, the red rows differing only by their script, the failing file): a walk that reached its verdict
+    // in time and said its why, with files failing, reports each under that file, the script switched as for any test of
+    // another script; anything else is one row under the test's own script, as a test.run's.
+    const perFile = !!t.over && !v.pass && !v.crash && Array.isArray(t.failing) && t.failing.length > 0;
+    // A FAILING FILE TESTICLE WOULD REFUSE (takesRow, above; the coordinator: "so no red gets lost") is no row of its own: the
+    // walk then says one red under the test's own script, its title as it is, as it did before test.over.
+    const ownRows = perFile ? t.failing.filter(takesRow) : [];
+    const refused = perFile && ownRows.length < t.failing.length;
+    if (refused) row(script, false, severity);
+    if (!perFile) {
+      if (!v.pass && v.crash) reasonOf[script] = (v.hung || reasonOf[script] === 'hung') ? 'hung' : 'crashed';
+      row(script, v.pass, severity);
+    } else {
+      // ITS SUCCESS SENT, THE RUN NOT HELD FOR IT (goal/G49.27: the whole-tree runner with 226 red rows took 152 s where it took
+      // 10, each switch waiting a report's round trip, its tries too): each script's success still goes out only after its
+      // own reports have landed (succeeded); no run of testicle's waits on the order of these, which no job of it hands.
+      for (const f of ownRows) {
+        if (doing !== f) { succeeded(doing); doing = f; if (!(f in held)) { held[f] = true; byOver[f] = true; } line(f); }
+        since[f] = (since[f] || 0) + 1;
+        if (seen[f + '|' + title]) { dupTitles[f] = true; held[f] = false; }
+        seen[f + '|' + title] = true;
+        row(f, false, severity);
+      }
+    }
     // EVERY RESULT REACHES TESTICLE THE MOMENT ITS TEST IS DONE (goal/G49.5; Andy: "the testicle server gets a report
     // IMMEDIATELY after completion of a test"): it is sent now, and goes out at once, never behind another report; the next
     // test no longer waits for it to land (goal/G49.8, Andy: "do it"), so 41 checks no longer cost 41 round trips.

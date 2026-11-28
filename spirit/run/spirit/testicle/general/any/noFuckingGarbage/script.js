@@ -146,13 +146,15 @@ if (WHOLE) {
 // folder, there is no script to judge, and the check is not made.
 const isProduction = function (rel) { return /\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel) && exists(rel); };
 const ownTestOf = function (rel) { return rel.replace(/([^/]+)\.js$/, 'test/$1.js'); };
+// EACH OF THESE A CHECK OVER ITS SCRIPTS (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+// testicle row for the failing script and itself as the suite?"): a red row under each script that breaks the rule, the one
+// handed when handed one; none to judge is no list, a red under the runner, as before.
+const scriptsJudged = function () {
+  const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
+  return scripts.length ? scripts : null;
+};
 if (WHOLE || MODULE) {
-  test.run('every production script has its own test', 0.2, function () {
-    const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
-    if (!scripts.length) return false;
-    const missing = scripts.filter(function (rel) { return !exists(ownTestOf(rel)); });
-    return !missing.length || false;
-  }, test.limit.quick);
+  test.over('every production script has its own test', 0.2, scriptsJudged, function (rel) { return exists(ownTestOf(rel)); }, test.limit.quick);
 }
 
 // THE SCRIPT.JS NAME (goal/G49.5, "before we start": "a new test is added to script-sibling-general: \"a product script is
@@ -161,11 +163,7 @@ if (WHOLE || MODULE) {
 // product scripts"). Red on purpose, over the whole tree, until the last ./<name>.js has become ./<name>/script.js: no name
 // is left out, api.js and data.js included. Handed one script, that one; handed a file in a test folder, not made.
 if (WHOLE || MODULE) {
-  test.run('a product script is called <name>/script.js', 0.81, function () {
-    const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
-    if (!scripts.length) return false;
-    return scripts.every(function (rel) { return path.posix.basename(rel) === 'script.js'; }) || false;
-  }, test.limit.quick);
+  test.over('a product script is called <name>/script.js', 0.81, scriptsJudged, function (rel) { return path.posix.basename(rel) === 'script.js'; }, test.limit.quick);
 }
 
 // THE ANSWER OF spirit.requireScript IS THE DOOR (goal/G49.9, box v5: "a general test in script-sibling-general: \"a script
@@ -184,12 +182,12 @@ const readsRequired = function (rel) {
 // with its strings; written whole, the expression was its own red): the same expression, \.required\b.
 const READS_REQUIRED = new RegExp('\\.' + ['requ', 'ired'].join('') + '\\b');
 if (WHOLE || MODULE) {
-  test.run('a script reaches another only through what spirit.requireScript hands back', 0.81, function () {
-    const scripts = (WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed])
-      .filter(function (rel) { return PLACERS.indexOf(rel) === -1; });
-    if (!scripts.length) return PLACERS.indexOf(handed) !== -1 || false;
-    return !scripts.some(readsRequired) || false;
-  }, test.limit.quick);
+  test.over('a script reaches another only through what spirit.requireScript hands back', 0.81, function () {
+    const scripts = (scriptsJudged() || []).filter(function (rel) { return PLACERS.indexOf(rel) === -1; });
+    // Handed a placer, nothing is judged and it holds; over the whole tree, none to judge is no list.
+    if (!scripts.length) return PLACERS.indexOf(handed) !== -1 ? [] : null;
+    return scripts;
+  }, function (rel) { return !readsRequired(rel); }, test.limit.quick);
 }
 
 // THE THREE KINDS OF GENERAL TEST (goal/G47.1, box v94, 2: "there will be, from now on only 3 types of general tests, at any
@@ -197,17 +195,23 @@ if (WHOLE || MODULE) {
 // "existing general tests fold into the appropriate of the 3 new general test name-formats"). A general test is a script in
 // a test folder named <file>-child-... or <file>-sibling-...; each one read is one of the three, its .md beside it the same.
 const KINDS = /^[^/]+-(child|sibling)-(general|node|browser)\.(js|md)$/;
-test.run('every general test is <file>-<child | sibling>-<general | node | browser>.js, and no other', 0.4, function () {
-  if (!judged || !judged.length) return false;
-  const general = judged.filter(function (rel) { return /-(child|sibling)-/.test(path.posix.basename(rel)); });
-  const other = general.filter(function (rel) { return !KINDS.test(path.posix.basename(rel)); });
-  return !other.length || false;
-}, test.limit.quick);
-
-test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
-  if (!judged || !judged.length) return false;
-  return !judged.some(garbage);
-}, test.limit.quick);
+const wrongKind = function (rel) { return /-(child|sibling)-/.test(path.posix.basename(rel)) && !KINDS.test(path.posix.basename(rel)); };
+// Over the whole tree each a check over the test files read (test.over, above): a red row under each file that breaks it.
+// Handed a module or a file, one check as before, its red under the file handed.
+if (WHOLE) {
+  const judgedList = function () { return judged && judged.length ? judged : null; };
+  test.over('every general test is <file>-<child | sibling>-<general | node | browser>.js, and no other', 0.4, judgedList, function (rel) { return !wrongKind(rel); }, test.limit.quick);
+  test.over('every file in a test folder matches a production file: none is garbage', 0.4, judgedList, function (rel) { return !garbage(rel); }, test.limit.quick);
+} else {
+  test.run('every general test is <file>-<child | sibling>-<general | node | browser>.js, and no other', 0.4, function () {
+    if (!judged || !judged.length) return false;
+    return !judged.some(wrongKind) || false;
+  }, test.limit.quick);
+  test.run('every file in a test folder matches a production file: none is garbage', 0.4, function () {
+    if (!judged || !judged.length) return false;
+    return !judged.some(garbage);
+  }, test.limit.quick);
+}
 }
 
 // No name its checks look for is skipped in its files (goal/G49.27, Andy: "All, cw's way"): it forbids none by name.

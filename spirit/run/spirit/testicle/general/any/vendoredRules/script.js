@@ -123,19 +123,22 @@ function every() {
   Object.defineProperty(E, 'elementFiles', { get: function () { if (ELEMENT_FILES === null) { try { ELEMENT_FILES = elementRuleFiles(); } catch (e) { ELEMENT_FILES = undefined; } } return ELEMENT_FILES; } });
   // no run://node_modules (goal/G43.25; moved here from spirit/job/engine/test/script.js, goal/G47.1). Andy: "can we hide those suckers in
   // spirit/jobs/ for now? without the damn node_modules container?". Over the whole repository, install/ too.
-  test.run('no tracked file of the repository names spirit/run/node_modules', 0.4, function () {
-    const naming = gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })
-      .filter(function (f) { return OLD_NODE_MODULES.test(unforbidden(f, fs.readFileSync(path.join(REPO, f), 'utf8'))); });
-    return !naming.length || false;
-  }, test.limit.quick);
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule, a file of
+  // the run by its path in the run (the path testicle keys a row by), any other by its path in the repository.
+  const asRun = function (f) { return f.indexOf('spirit/run/') === 0 ? f.slice('spirit/run/'.length) : f; };
+  const inRepo = {};
+  test.over('no tracked file of the repository names spirit/run/node_modules', 0.4, function () {
+    return gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })
+      .map(function (f) { inRepo[asRun(f)] = f; return asRun(f); });
+  }, function (f) { return !OLD_NODE_MODULES.test(unforbidden(inRepo[f], fs.readFileSync(path.join(REPO, inRepo[f]), 'utf8'))); }, test.limit.quick);
   test.run('.gitignore holds no exception for spirit/run/node_modules', 0.4, function () {
     return !/run\/node_modules/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8')) || false;
   }, test.limit.quick);
-  test.run('no code skips node_modules by its own name: every walker reads fileSystem.js\'s VENDORED_FOLDERS', 0.4, function () {
-    const all = E.elementFiles || [];
-    const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OWN_NODE_MODULES_SKIP); }));
-    return (all.length > 100 && !hits.length) || false;
-  }, test.limit.quick);
+  test.over('no code skips node_modules by its own name: every walker reads fileSystem.js\'s VENDORED_FOLDERS', 0.4, function () {
+    const all = E.elementFiles;
+    return all && all.length > 100 ? all : null;
+  }, function (f) { return !codeLinesMatching(f, OWN_NODE_MODULES_SKIP).length; }, test.limit.quick);
 }
 
 function oneFile() {

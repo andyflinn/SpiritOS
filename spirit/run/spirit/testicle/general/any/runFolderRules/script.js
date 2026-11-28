@@ -59,10 +59,11 @@ const rel = full ? path.relative(RUN, full).split(path.sep).join('/') : arg;
 // modules even mention "spirit/run/process/"". Even mention: the module's whole text is read, its comments too.
 const PROCESS_NAMED = /spirit\/run\/process\b|run:\/\/?process\b/;
 function namesProcess(f) { try { return PROCESS_NAMED.test(unforbidden(f, fs.readFileSync(path.join(RUN, f), 'utf8'))); } catch (e) { return false; } }
-function processNamers() {
+// The tracked files the process rule reads: code, tests and vendored code left out.
+function processFiles() {
   const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
-    return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)) && namesProcess(f);
+    return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f));
   });
 }
 // RUN://TEST/ MOVES INTO RUN://SPIRIT/TEST/ (goal/G43.32, the box). Andy: "we'll move the contents of run://test/   into
@@ -87,10 +88,12 @@ function every() {
     E.tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && !/(^|\/)test\//.test(f); });
     return E.tracked.length > 0 || false;
   }, test.limit.quick);
-  test.run('none of them names spirit/run/process or run://process, in code or comment', 0.4, function () {
-    const named = processNamers();
-    return (!!E.tracked && E.tracked.length > 0 && !named.length) || false;
-  }, test.limit.quick);
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule; nothing
+  // read is no list, a red under the runner, as before.
+  test.over('none of them names spirit/run/process or run://process, in code or comment', 0.4, function () {
+    return E.tracked && E.tracked.length > 0 ? processFiles() : null;
+  }, function (f) { return !namesProcess(f); }, test.limit.quick);
 
   // run://test/ is moved into run://spirit/test/
   test.run('run://test/ holds no tracked file', 0.4, function () {
@@ -104,11 +107,9 @@ function every() {
     });
     return E.files.length > 0 || false;
   }, test.limit.quick);
-  test.run('none of them names the old run://test/, in code, comment or document', 0.4, function () {
-    const files = E.files || [];
-    const naming = files.filter(function (f) { try { return OLD_NAMED.test(unforbidden(f, fs.readFileSync(path.join(RUN, f), 'utf8'))); } catch (e) { return false; } });
-    return (files.length > 0 && !naming.length) || false;
-  }, test.limit.quick);
+  test.over('none of them names the old run://test/, in code, comment or document', 0.4, function () {
+    return E.files && E.files.length > 0 ? E.files : null;
+  }, function (f) { try { return !OLD_NAMED.test(unforbidden(f, fs.readFileSync(path.join(RUN, f), 'utf8'))); } catch (e) { return true; } }, test.limit.quick);
   // run://spirit/test/'s tools are not tests
   test.run('testModule.js lists tests', 0.2, function () {
     const moduleAt = [path.join(RUN, 'spirit', 'testicle', 'testModule', 'script.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];

@@ -91,10 +91,9 @@ test.run('there is a module to judge', 0.2, function () {
   return reach.length > 0 || false;
 }, test.limit.quick);
 // <file>: its searches match the whole row.
-test.run('it hands every search the row whole', 0.4, function () {
-  if (!reach || !reach.length) return false;
-  return reach.every(function (f) { return judge(path.join(RUN, f)); });
-}, test.limit.quick);
+// A CHECK OVER THE MODULES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a testicle row for
+// the failing script and itself as the suite?"): a red row under each module that breaks it, the one handed when handed one.
+test.over('it hands every search the row whole', 0.4, function () { return reach && reach.length ? reach : null; }, function (f) { return judge(path.join(RUN, f)); }, test.limit.quick);
 }
 
 // No name its checks look for is skipped in its files (goal/G49.27, Andy: "All, cw's way"): it forbids none by name.

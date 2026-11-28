@@ -33,6 +33,15 @@ function isDir(rel) { try { return fs.statSync(path.join(RUN, rel)).isDirectory(
 const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' })
   .split('\n').filter(Boolean).map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(isFile);
 
+// OVER THE WHOLE TREE, A CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+// testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule. Handed a
+// file, the same check as one test, its red under the file handed, as before. files() answers the list, or null when there is
+// too little to judge.
+function overTree(title, severity, files, judge, limit) {
+  if (!ARGS[0]) return test.over(title, severity, files, judge, limit);
+  return test.run(title, severity, function () { const list = files(); return (!!list && list.every(judge)) || false; }, limit);
+}
+
 // ── THE APP APP (the box, decided) ──────────────────────────────────────────────────────────────────────────────────
 function appApp() {
   // Since goal/G49.4 (box v15: "spirit/app/app will be deleted", "spirit/element/script.js becomes the hard-coded only shell")
@@ -53,15 +62,14 @@ appApp();
 // NO APP IS A SHELL ANY MORE (goal/G49.4, box v15; Andy: "the app manifests shell:true goes, and all the logic that goes
 // with it"): no app's <name>.json carries shell.true. Its shell.mount and shell.tile stay, which give an app its face and
 // its tile; and spirit/app/app/, the shell app, is gone (Andy: "spirit/app/app will be deleted.").
-test.run('no app manifest carries shell.true; mount and tile stay its own', 0.2, function () {
+overTree('no app manifest carries shell.true; mount and tile stay its own', 0.2, function () {
   const apps = path.join(RUN, 'spirit', 'app');
   let names = [];
-  try { names = fs.readdirSync(apps, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }); } catch (e) { return false; }
-  const manifests = names.filter(function (n) { return fs.existsSync(path.join(apps, n, n + '.json')); });
-  const carrying = manifests.filter(function (n) {
-    try { const j = JSON.parse(fs.readFileSync(path.join(apps, n, n + '.json'), 'utf8')); return !!j.shell && Object.prototype.hasOwnProperty.call(j.shell, 'true'); } catch (e) { return true; }
-  });
-  return (manifests.length > 10 && carrying.length === 0) || false;
+  try { names = fs.readdirSync(apps, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }); } catch (e) { return null; }
+  const manifests = names.filter(function (n) { return fs.existsSync(path.join(apps, n, n + '.json')); }).map(function (n) { return path.relative(RUN, path.join(apps, n, n + '.json')).split(path.sep).join('/'); });
+  return manifests.length > 10 ? manifests : null;
+}, function (f) {
+  try { const j = JSON.parse(fs.readFileSync(path.join(RUN, f), 'utf8')); return !(!!j.shell && Object.prototype.hasOwnProperty.call(j.shell, 'true')); } catch (e) { return false; }
 }, test.limit.quick);
 test.run('spirit/app/app/, the shell app, is gone: the one shell is spirit/element/script.js', 0.2, function () {
   return (!fs.existsSync(path.join(RUN, 'spirit', 'app', 'app')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'script.js'))) || false;

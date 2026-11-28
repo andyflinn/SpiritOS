@@ -103,6 +103,23 @@ const GENERAL_TWO = [
   "test.forScript('probe/twice.js', function () { test.run('a rule per script', 0.4, function () { return false; }, 1000); });",
 ].join('\n');
 
+// A WHOLE-TREE CHECK OVER A LIST OF FILES (goal/G49.27; Andy: "why cannot a "whole-tree-red" set a testicle row for the failing
+// script and itself as the suite?"; the shape, cw reviewed: test.over(title, severity, files, judge, limit, opts), each file the
+// judge answers false for a red row of its own under that file, none for a file it answers true for; none false, one green
+// row under the suite's own script; a judge that throws is false for that file; the walk one test in time, one limit, one why).
+const OVER = [
+  "'use strict';",
+  "const test = " + REPORTER_FROM(2) + ";",
+  "test.over('over, two of three files fail', 0.4, ['probe/probe.js', 'probe/twice.js', 'probe/third.js'], function (f) { return f === 'probe/probe.js'; }, test.limit.quick);",
+  "test.over('over, every file holds', 0.4, function () { return ['probe/probe.js', 'probe/twice.js']; }, async function (f) { await null; return true; }, test.limit.quick);",
+  "test.over('over, a judge that throws', 0.4, ['probe/probe.js', 'probe/twice.js'], function (f) { if (f === 'probe/twice.js') throw new Error(); return true; }, test.limit.quick);",
+  "test.over('over, a longer limit with no why', 0.4, ['probe/probe.js'], function () { return true; }, test.limit.slow);",
+  "test.over('over, a longer limit that says why', 0.4, ['probe/probe.js'], function () { return true; }, test.limit.slow, { why: 'it walks a planted list' });",
+  "test.over('over, a list that is no list', 0.4, function () { return null; }, function () { return true; }, test.limit.quick);",
+  "test.over('over, a file testicle refuses fails', 0.4, ['probe/notes.md', 'probe/test/probe.js', 'probe/probe.js'], function (f) { return false; }, test.limit.quick);",
+  "test.over('over, a walk past its limit', 0.4, ['probe/probe.js', 'probe/twice.js'], function () { const end = Date.now() + 700; while (Date.now() < end) { /* busy */ } return true; }, test.limit.quick);",
+].join('\n');
+
 function scratchTree(port) {
   const root = ownTemp('g472-report-');
   const run = path.join(root, 'run');
@@ -128,6 +145,10 @@ function scratchTree(port) {
   put('probe/test/twice.js', TWICE);
   put('probe/twice.js', "'use strict';\n");
   put('probe/test/stopped.js', STOPPED);
+  put('probe/over.js', "'use strict';\n");
+  put('probe/notes.md', '# notes\n');
+  put('probe/third.js', "'use strict';\n");
+  put('probe/test/over.js', OVER);
   // A general test is named <name>-sibling-<what>.js beside ./<name>.js: spirit/script.js is in the copy.
   put('spirit/test/script-sibling-zzProbeRules.js', GENERAL);
   put('spirit/test/script-sibling-zzProbeTwo.js', GENERAL_TWO);
@@ -344,6 +365,46 @@ test.run('a general test reports the first script\'s success at the time it know
   const first = o.findIndex(function (x) { return x.verb === 'success' && x.args.script === 'probe/probe.js'; });
   const second = o.findIndex(function (x) { return x.verb === 'set' && x.args.script === 'probe/twice.js'; });
   return (first !== -1 && second !== -1 && first < second) || false;
+}, test.limit.quick);
+
+// ── A WHOLE-TREE CHECK OVER A LIST OF FILES (goal/G49.27, test.over; OVER above) ──
+const overOf = function (title) { return ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'probe/test/over.js' && s.test === title; }); };
+const rowsSay = function (title, want) {
+  const got = overOf(title).map(function (s) { return s.script + ' ' + s.verified; }).sort();
+  return JSON.stringify(got) === JSON.stringify(want.slice().sort());
+};
+test.run('a suite of whole-tree checks over lists of files runs', 0.2, async function () {
+  W.over = await runSuite(W.tree.run, 'probe/test/over.js');
+  return /Test completed\./.test(W.over.out) || false;
+}, test.limit.slow, { why: 'it runs a planted suite as a process' });
+test.run('test.over reports one red row under each file its judge answers false for, and none for a file it holds', 0.4, function () {
+  return rowsSay('over, two of three files fail', ['probe/twice.js false', 'probe/third.js false']) || false;
+}, test.limit.quick);
+test.run('test.over whose judge holds every file reports one green row under the suite\'s own script', 0.4, function () {
+  return rowsSay('over, every file holds', ['probe/over.js true']) || false;
+}, test.limit.quick);
+test.run('test.over counts a judge that throws as false for that file', 0.4, function () {
+  return rowsSay('over, a judge that throws', ['probe/twice.js false']) || false;
+}, test.limit.quick);
+test.run('test.over given a longer limit and no why is red, and with its why is green', 0.4, function () {
+  return (rowsSay('over, a longer limit with no why', ['probe/over.js false']) && rowsSay('over, a longer limit that says why', ['probe/over.js true'])) || false;
+}, test.limit.quick);
+test.run('test.over whose files answer no list is one red under the suite\'s own script, at its severity', 0.4, function () {
+  const r = overOf('over, a list that is no list');
+  return (rowsSay('over, a list that is no list', ['probe/over.js false']) && r[0].severity === 0.4) || false;
+}, test.limit.quick);
+// A FILE TESTICLE WOULD REFUSE AS A ROW'S SCRIPT (not a .js, in a test folder, or outside the run: testicle.set's rule) is no
+// row of its own: the walk says one red under the suite's own script for it, so the red stays seen; a file it takes keeps its own.
+test.run('test.over reports a failing file testicle refuses as one red under the suite\'s own script, and a file it takes under that file', 0.4, function () {
+  return rowsSay('over, a file testicle refuses fails', ['probe/over.js false', 'probe/probe.js false']) || false;
+}, test.limit.quick);
+test.run('test.over times its whole walk under its one limit: a walk past it is a red under the suite\'s own script', 0.4, function () {
+  return rowsSay('over, a walk past its limit', ['probe/over.js false']) || false;
+}, test.limit.quick);
+test.run('test.over prints each failing file\'s row under that file, and counts each red row', 0.4, function () {
+  const out = String((W.over && W.over.out) || '').split('\n').map(function (l) { return l.replace(/^\*+\s*/, '').trim(); });
+  const at = out.indexOf('probe/third.js');
+  return (at !== -1 && out[at + 1] === 'over, two of three files fail ❌' && /✅:2\s+❌:8/.test(W.over.out)) || false;
 }, test.limit.quick);
 
 // ── ONE TEST ALONE ──

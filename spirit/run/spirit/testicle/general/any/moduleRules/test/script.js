@@ -26,7 +26,7 @@ const BREAKS = plant('spirit/zz/breaks/script.js', "const fs = require('fs');\nm
 const RULE_TITLE = 'it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.requireScript';
 async function verdict(scriptPath, title) {
   const kept = [];
-  const T = { limit: test.limit, run: function (t, severity, body) { kept.push({ title: t, body: body }); }, after: function () {}, forScript: function (s, fn) { fn(); }, hold: function () {}, release: function () {}, comment: function () {} };
+  const T = { limit: test.limit, run: function (t, severity, body) { kept.push({ title: t, body: body }); }, over: function (t, severity, files, judge) { kept.push({ title: t, body: async function () { const l = typeof files === 'function' ? await files() : files; if (!Array.isArray(l)) return false; for (const f of l) { let v = false; try { v = await judge(f); } catch (e) { v = false; } if (v !== true) return false; } return true; } }); }, after: function () {}, forScript: function (s, fn) { fn(); }, hold: function () {}, release: function () {}, comment: function () {} };
   RULE.checks(scriptPath, { test: T, run: PLANT, spirit: SPIRIT, node: { node: null }, forbids: {} });
   const one = kept.filter(function (t) { return t.title === title; })[0];
   if (!one) return null;

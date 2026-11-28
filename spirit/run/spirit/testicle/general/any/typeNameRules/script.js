@@ -62,42 +62,45 @@ if (!String(ARGS[0] || '')) {
       .filter(function (f) { return /\.json$/.test(f) && !/(^|\/)test\//.test(f) && !(vendored && vendored.holds(f)) && shFs.existsSync(shPath.join(SH.run, f)); });
   };
   const rawText = function (f) { try { return shFs.readFileSync(shPath.join(SH.run, f), 'utf8'); } catch (e) { return ''; } };
-  test.run('no product script or .json names a type by a dotted name, spirit.type.<...>', 0.6, function () {
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule; too few
+  // to judge is no list, a red under the runner, as the floor in each was.
+  test.over('no product script or .json names a type by a dotted name, spirit.type.<...>', 0.6, function () {
     const files = productCode().concat(productJson());
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return /['"`]spirit\.type\.[A-Za-z]/.test(unforbidden(f, /\.json$/.test(f) ? rawText(f) : codeText(f))); }) || false;
-  }, test.limit.quick);
-  test.run('every argument of a verb\'s .json names its type file by its full path, spirit/type/<...>/script.js, and that file is there', 0.6, function () {
-    let verbs = 0;
-    const bad = productJson().filter(function (f) {
-      let j = null;
-      try { j = JSON.parse(rawText(f)); } catch (e) { return false; }
-      if (!j || typeof j.request !== 'object' || Array.isArray(j.request) || j.request === null) return false;
-      verbs++;
-      return !Object.keys(j.request).every(function (a) {
-        const rule = String(j.request[a]).replace(/\?$/, '');
-        return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule) && shFs.existsSync(shPath.join(SH.run, rule));
-      });
+    return files.length < 100 ? null : files;
+  }, function (f) { return !/['"`]spirit\.type\.[A-Za-z]/.test(unforbidden(f, /\.json$/.test(f) ? rawText(f) : codeText(f))); }, test.limit.quick);
+  // A verb's .json: its request an object of arguments; null for any other .json.
+  const requestOf = function (f) {
+    let j = null;
+    try { j = JSON.parse(rawText(f)); } catch (e) { return null; }
+    return !j || typeof j.request !== 'object' || Array.isArray(j.request) || j.request === null ? null : j.request;
+  };
+  test.over('every argument of a verb\'s .json names its type file by its full path, spirit/type/<...>/script.js, and that file is there', 0.6, function () {
+    const verbs = productJson().filter(function (f) { return requestOf(f) !== null; });
+    return verbs.length >= 20 ? verbs : null;
+  }, function (f) {
+    const request = requestOf(f);
+    return Object.keys(request).every(function (a) {
+      const rule = String(request[a]).replace(/\?$/, '');
+      return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule) && shFs.existsSync(shPath.join(SH.run, rule));
     });
-    return (verbs >= 20 && !bad.length) || false;
   }, test.limit.quick);
   // EVERY ARGUMENT OF A BRANCH IS A TYPE (goal/G49.21, box v25; Andy: "as always, and a permanent rule: a branche's script.js
   // file must use spirit.type.* for ALL argument validation"): each verb of every new-shape branch's script.js (a folder holding
   // script.js and client/script.js) names, for each argument, a type script by its path, spirit/type/... or an app's own
   // <app>/type/... (goal/G49.20), never a word of its own like 'text?'.
-  test.run('every argument of every branch\'s verbs is a type script by its path', 0.4, function () {
+  test.over('every argument of every branch\'s verbs is a type script by its path', 0.4, function () {
     // goal/G49.23: the store is spirit/client/script.js, beside the spirit object, spirit/script.js, which is no branch and has no verbs.
     const files = productCode().filter(function (f) { return /\/script\.js$/.test(f) && f !== 'spirit/script.js' && shFs.existsSync(shPath.join(SH.run, f.replace(/script\.js$/, 'client/script.js'))); });
-    if (files.length < 3) return false;
-    return files.every(function (f) {
-      let m = null;
-      try { m = require(shPath.join(SH.run, f)); } catch (e) { return false; }
-      const verbs = m && m.verbs;
-      if (!verbs || typeof verbs !== 'object') return false;
-      return Object.keys(verbs).every(function (v) {
-        return Object.keys(verbs[v] || {}).every(function (a) { return /^spirit\/(.+\/)?type\/.+\/script\.js\??$/.test(String(verbs[v][a])); });
-      });
-    }) || false;
+    return files.length < 3 ? null : files;
+  }, function (f) {
+    let m = null;
+    try { m = require(shPath.join(SH.run, f)); } catch (e) { return false; }
+    const verbs = m && m.verbs;
+    if (!verbs || typeof verbs !== 'object') return false;
+    return Object.keys(verbs).every(function (v) {
+      return Object.keys(verbs[v] || {}).every(function (a) { return /^spirit\/(.+\/)?type\/.+\/script\.js\??$/.test(String(verbs[v][a])); });
+    });
   }, test.limit.quick);
 }
 }

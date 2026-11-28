@@ -30,7 +30,7 @@ const BREAKS = plant('spirit/zz/test/orphan.js', "'use strict';\n");
 const RULE_TITLE = 'every file in a test folder matches a production file: none is garbage';
 async function verdict(scriptPath, title) {
   const kept = [];
-  const T = { limit: test.limit, run: function (t, severity, body) { kept.push({ title: t, body: body }); }, after: function () {}, forScript: function (s, fn) { fn(); }, hold: function () {}, release: function () {}, comment: function () {} };
+  const T = { limit: test.limit, run: function (t, severity, body) { kept.push({ title: t, body: body }); }, over: function (t, severity, files, judge) { kept.push({ title: t, body: async function () { const l = typeof files === 'function' ? await files() : files; if (!Array.isArray(l)) return false; for (const f of l) { let v = false; try { v = await judge(f); } catch (e) { v = false; } if (v !== true) return false; } return true; } }); }, after: function () {}, forScript: function (s, fn) { fn(); }, hold: function () {}, release: function () {}, comment: function () {} };
   RULE.checks(scriptPath, { test: T, run: PLANT, spirit: SPIRIT, node: { node: null } });
   for (const t of kept) {
     let v = null;
@@ -111,7 +111,8 @@ test.run('a scratch tree is made of the tracked files and the planted scripts, i
 // goal/G49.27, step 2a.
 test.run('the rule holds the check "every production script has its own test", at severity 0.2', 0.2, function () {
   const src = fs.readFileSync(RULE_FILE, 'utf8');
-  return /test\.run\(\s*'every production script has its own test'\s*,\s*0\.2\s*,/.test(src) || false;
+  // A check over its scripts since goal/G49.27 (testReport's test.over): a red row under each script missing its test.
+  return /test\.over\(\s*'every production script has its own test'\s*,\s*0\.2\s*,/.test(src) || false;
 }, test.limit.quick);
 
 // the box: "Over the whole tree (handed nothing, or spirit.js) it judges every production script", "red while any

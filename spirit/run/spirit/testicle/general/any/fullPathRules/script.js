@@ -57,23 +57,23 @@ if (!String(ARGS[0] || '')) {
     try { t = shFs.readFileSync(shPath.join(SH.run, f), 'utf8'); } catch (e) { return ''; }
     return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   };
-  test.run('every spirit.requireScript argument in product code is one path written out whole, never joined from pieces', 0.6, function () {
+  // EACH A WHOLE-TREE CHECK OVER THE PRODUCT CODE (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set
+  // a testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule; fewer
+  // than 100 files is no list, a red under the runner, as the floor in each was.
+  test.over('every spirit.requireScript argument in product code is one path written out whole, never joined from pieces', 0.6, function () {
     const files = productCode();
-    if (files.length < 100) return false;
-    const joined = files.filter(function (f) {
-      const c = codeText(f);
-      const re = /requireScript\s*\(([^()]*(?:\([^()]*\))?[^()]*)\)/g;
-      let m;
-      while ((m = re.exec(c))) { if (/['"`]\s*\+|\+\s*['"`]|\$\{/.test(m[1])) return true; }
-      return false;
-    });
-    return !joined.length || false;
+    return files.length < 100 ? null : files;
+  }, function (f) {
+    const c = codeText(f);
+    const re = /requireScript\s*\(([^()]*(?:\([^()]*\))?[^()]*)\)/g;
+    let m;
+    while ((m = re.exec(c))) { if (/['"`]\s*\+|\+\s*['"`]|\$\{/.test(m[1])) return false; }
+    return true;
   }, test.limit.quick);
-  test.run('no server serves an address from another file: serveCommon has no PAGE_FILES and no pageFile, and nothing calls one', 0.6, function () {
+  test.over('no server serves an address from another file: serveCommon has no PAGE_FILES and no pageFile, and nothing calls one', 0.6, function () {
     const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return /\bPAGE_FILES\b|\bpageFile\s*\(/.test(unforbidden(f, codeText(f))); }) || false;
-  }, test.limit.quick);
+    return files.length < 100 ? null : files;
+  }, function (f) { return !(/\bPAGE_FILES\b|\bpageFile\s*\(/.test(unforbidden(f, codeText(f)))); }, test.limit.quick);
   // THE FULL PATH, AND THE ONLY WAY (goal/G49.13; Andy: "WSL, YOU WRITE A FUCKING TEST THAT ENSURES THAT PRODUCT FILES DO SUPPLY THE
   // FULL PATH in spirit.requireScript() and that's the ONLY WAY to require modules."). A full path: a run-root path written out as one
   // string, 'spirit/<...>.js' (or .css, .json). It may reach requireScript through a helper's parameter, at any place in its
@@ -195,56 +195,51 @@ if (!String(ARGS[0] || '')) {
     }
     return bad;
   };
-  test.run('every spirit.requireScript in product code is handed a full path, \'spirit/<...>.js\', written out as one string or held whole in a name', 0.6, function () {
+  test.over('every spirit.requireScript in product code is handed a full path, \'spirit/<...>.js\', written out as one string or held whole in a name', 0.6, function () {
     const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return unfull(f).length > 0; }) || false;
-  }, test.limit.quick);
-  test.run('spirit.requireScript is the only way a product script requires a module of the tree: its one plain require is the spirit object, the rest are node\'s own', 0.6, function () {
+    return files.length < 100 ? null : files;
+  }, function (f) { return !(unfull(f).length > 0); }, test.limit.quick);
+  test.over('spirit.requireScript is the only way a product script requires a module of the tree: its one plain require is the spirit object, the rest are node\'s own', 0.6, function () {
     const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
-    if (files.length < 100) return false;
-    return !files.some(function (f) {
-      const c = codeText(f);
-      const re = /(?<![\w$.])require\s*\(\s*([^)]*)\)/g;
-      let m;
-      while ((m = re.exec(c))) {
-        const a = m[1].trim();
-        if (/^(['"])(node:)?[a-z_][\w/]*\1$/.test(a) && !/^(['"])\.|\//.test(a.slice(1))) continue;
-        const lit = /^(['"])([^'"]+)\1$/.exec(a);
-        if (lit && shPath.resolve(shPath.dirname(shPath.join(SH.run, f)), lit[2]) === shPath.join(SH.run, 'spirit', 'script.js')) continue;
-        if (/^path\.join\(\s*[A-Za-z_$][\w$]*\s*,\s*['"]spirit['"]\s*,\s*['"]script\.js['"]\s*\)$/.test(a)) continue;
-        return true;
-      }
+    return files.length < 100 ? null : files;
+  }, function (f) {
+    const c = codeText(f);
+    const re = /(?<![\w$.])require\s*\(\s*([^)]*)\)/g;
+    let m;
+    while ((m = re.exec(c))) {
+      const a = m[1].trim();
+      if (/^(['"])(node:)?[a-z_][\w/]*\1$/.test(a) && !/^(['"])\.|\//.test(a.slice(1))) continue;
+      const lit = /^(['"])([^'"]+)\1$/.exec(a);
+      if (lit && shPath.resolve(shPath.dirname(shPath.join(SH.run, f)), lit[2]) === shPath.join(SH.run, 'spirit', 'script.js')) continue;
+      if (/^path\.join\(\s*[A-Za-z_$][\w$]*\s*,\s*['"]spirit['"]\s*,\s*['"]script\.js['"]\s*\)$/.test(a)) continue;
       return false;
-    }) || false;
+    }
+    return true;
   }, test.limit.quick);
   // NO WORD MADE INTO A BRANCH PATH (goal/G49.13; Andy: "WSL, AND NO FUCKING PATH TRANSLATORS FROM SINGLE BRANCH-WORD TO FUCKING BRANCH
   // PATH EITHER!!!!!!!!!!!!!!!"): anywhere in product code, not only in a requireScript, no path is made by joining 'spirit/' or
   // 'spirit/app/' with a name, nor by path.join of 'spirit' (and 'app') with one; a branch is always held by its full path.
   const WORD_TO_PATH = /['"`]spirit\/(?:app\/)?['"`]\s*\+|path\.join\([^)]*['"]spirit['"]\s*,\s*(?:['"]app['"]\s*,\s*)?(?!['"])[A-Za-z_$][\w$.()]*/;
-  test.run('no product script makes a branch path from a single word: nothing joins spirit/ or spirit/app/ with a name', 0.6, function () {
+  test.over('no product script makes a branch path from a single word: nothing joins spirit/ or spirit/app/ with a name', 0.6, function () {
     const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return codeText(f).split('\n').some(function (l) { return WORD_TO_PATH.test(l); }); }) || false;
-  }, test.limit.quick);
+    return files.length < 100 ? null : files;
+  }, function (f) { return !(codeText(f).split('\n').some(function (l) { return WORD_TO_PATH.test(l); })); }, test.limit.quick);
   // NO DOTTED NAME MADE INTO A PATH (goal/G49.13; Andy: "WHAT A FUCKING CHEAT, AND WHAT ABOUT THOSE DYNAMICALLY CREATED TYPE
   // SCRIPTS????????"): a type named spirit.type.string.label, or a branch named by dots, is never turned into a file path by
   // .split('.') and .join('/'); a file is always held by its full path.
-  test.run('no product script turns a dotted name into a path: no .split(\'.\') joined with \'/\'', 0.6, function () {
+  test.over('no product script turns a dotted name into a path: no .split(\'.\') joined with \'/\'', 0.6, function () {
     const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return /\.split\(\s*['"]\.['"]\s*\)(?:\.slice\([^)]*\))?\.join\(\s*['"]\/['"]\s*\)/.test(codeText(f)); }) || false;
-  }, test.limit.quick);
-  test.run('no product script builds a path to a type file or a script.js from pieces: no spirit/type/ joined with a name, no \'script.js\' appended or joined on', 0.6, function () {
+    return files.length < 100 ? null : files;
+  }, function (f) { return !(/\.split\(\s*['"]\.['"]\s*\)(?:\.slice\([^)]*\))?\.join\(\s*['"]\/['"]\s*\)/.test(codeText(f))); }, test.limit.quick);
+  test.over('no product script builds a path to a type file or a script.js from pieces: no spirit/type/ joined with a name, no \'script.js\' appended or joined on', 0.6, function () {
     const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) {
-      const c = codeText(f);
-      return /['"`]spirit\/type\/['"`]?\s*\+/.test(c) || /`[^`]*spirit\/type\/[^`]*\$\{/.test(c) ||
-        /path\.join\([^)]*['"]type['"]\s*,/.test(c) ||
-        /\+\s*['"]\/?script\.js['"]/.test(c) || /`[^`]*\$\{[^}]*\}\/script\.js`/.test(c) ||
-        /path\.join\([^)]*,\s*['"]script\.js['"]\s*\)/.test(c);
-    }) || false;
+    return files.length < 100 ? null : files;
+  }, function (f) {
+    const c = codeText(f);
+    return !(/['"`]spirit\/type\/['"`]?\s*\+/.test(c) || /`[^`]*spirit\/type\/[^`]*\$\{/.test(c) ||
+      /path\.join\([^)]*['"]type['"]\s*,/.test(c) ||
+      /\+\s*['"]\/?script\.js['"]/.test(c) || /`[^`]*\$\{[^}]*\}\/script\.js`/.test(c) ||
+      /path\.join\([^)]*,\s*['"]script\.js['"]\s*\)/.test(c));
   }, test.limit.quick);
   test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
     let t = '';
@@ -260,28 +255,26 @@ if (!String(ARGS[0] || '')) {
   // spirit object, which holds statePath, no product script makes a state path of its own: no 'spirit/state/' joined with a
   // name, no path.join of 'spirit' and 'state' with one. A fixed file of the node's own (spirit/state/identity.json) is no
   // translation and stays written out.
-  test.run('no product script but the spirit object makes a state path from a name: each asks spirit.statePath', 0.6, function () {
+  test.over('no product script but the spirit object makes a state path from a name: each asks spirit.statePath', 0.6, function () {
     const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
-    if (files.length < 100) return false;
-    return !files.some(function (f) {
-      let c = codeText(f);
-      // A file outside spirit/ keeps its whole path under spirit/state/ for its sidecar: where those belong is for later
-      // (goal/G49.17, Andy: "all oos for now"). Only that one expression is let through.
-      if (f === 'spirit/fs/fileSystem/script.js') c = c.replace("spirit.statePath(p) : 'spirit/state/' + p)", '');
-      return /['"`]spirit\/state\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]spirit['"]\s*,\s*['"]state['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c);
-    }) || false;
+    return files.length < 100 ? null : files;
+  }, function (f) {
+    let c = codeText(f);
+    // A file outside spirit/ keeps its whole path under spirit/state/ for its sidecar: where those belong is for later
+    // (goal/G49.17, Andy: "all oos for now"). Only that one expression is let through.
+    if (f === 'spirit/fs/fileSystem/script.js') c = c.replace("spirit.statePath(p) : 'spirit/state/' + p)", '');
+    return !(/['"`]spirit\/state\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]spirit['"]\s*,\s*['"]state['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c));
   }, test.limit.quick);
   // AN APP IS KNOWN BY ITS PATH, NEVER BUILT FROM A NAME (goal/G49.19, box v13: "An app's path comes from one source: the fs
   // cache's app rows ... Never \"spirit/app/\" + a name"; Andy: "all translation from name to path or back is NOT PERMITTED in
   // SpiritOS"; "yes, i need the pages fixed in this item, too"): no product script, node side or page, joins 'spirit/app/'
   // with a name, nor path.joins 'app' with one.
-  test.run('no product script builds an app\'s path from a name: no \'spirit/app/\' + a name, no path.join of \'app\' with one', 0.6, function () {
+  test.over('no product script builds an app\'s path from a name: no \'spirit/app/\' + a name, no path.join of \'app\' with one', 0.6, function () {
     const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) {
-      const c = codeText(f);
-      return /['"`]spirit\/app\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]app['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c);
-    }) || false;
+    return files.length < 100 ? null : files;
+  }, function (f) {
+    const c = codeText(f);
+    return !(/['"`]spirit\/app\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]app['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c));
   }, test.limit.quick);
 }
 }

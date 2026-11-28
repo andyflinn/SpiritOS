@@ -53,44 +53,30 @@ if (!String(ARGS[0] || '')) {
     return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   };
   const rawText = function (f) { try { return shFs.readFileSync(shPath.join(SH.run, f), 'utf8'); } catch (e) { return ''; } };
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule; fewer
+  // than 100 product scripts, or a condition on the tree itself unmet, is no list, a red under the runner, as before.
+  const products = function () { const files = productCode(); return files.length < 100 ? null : files; };
   // NO fieldRules (goal/G49.13; Andy: "AND WHAT THE FLYING FUCK IS fieldRules still doing in the tree????????", and "The UI
   // elements need to know which spirit/type their fields are and require that type"): the type files replaced it.
-  test.run('spirit/fieldRules/ is gone, and no product script names it', 0.6, function () {
-    const files = productCode();
-    if (files.length < 100) return false;
-    return (!shFs.existsSync(shPath.join(SH.run, 'spirit', 'fieldRules')) && !files.some(function (f) { return /fieldRules/.test(unforbidden(f, rawText(f))); })) || false;
-  }, test.limit.quick);
+  test.over('spirit/fieldRules/ is gone, and no product script names it', 0.6, function () {
+    return shFs.existsSync(shPath.join(SH.run, 'spirit', 'fieldRules')) ? null : products();
+  }, function (f) { return !/fieldRules/.test(unforbidden(f, rawText(f))); }, test.limit.quick);
   // NO BUILD STAMP IN THE PRODUCT (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!"): spirit/buildStamp/
   // is gone, and no product script names it.
-  test.run('spirit/buildStamp/ is gone, and no product script names it', 0.6, function () {
-    const files = productCode();
-    if (files.length < 100) return false;
-    return (!shFs.existsSync(shPath.join(SH.run, 'spirit', 'buildStamp')) && !files.some(function (f) { return /buildStamp/.test(unforbidden(f, rawText(f))); })) || false;
-  }, test.limit.quick);
-  test.run('no product script requires spirit/client/packet.js; the spirit object requires spirit/peer/packet/script.js', 0.2, function () {
-    const files = productCode();
-    if (files.length < 100) return false;
-    return (!files.some(function (f) { return unforbidden(f, codeText(f)).indexOf('spirit/client/packet.js') !== -1; }) && /require(Script|One)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js'))) || false;
-  }, test.limit.quick);
+  test.over('spirit/buildStamp/ is gone, and no product script names it', 0.6, function () {
+    return shFs.existsSync(shPath.join(SH.run, 'spirit', 'buildStamp')) ? null : products();
+  }, function (f) { return !/buildStamp/.test(unforbidden(f, rawText(f))); }, test.limit.quick);
+  test.over('no product script requires spirit/client/packet.js; the spirit object requires spirit/peer/packet/script.js', 0.2, function () {
+    return /require(Script|One)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js')) ? products() : null;
+  }, function (f) { return unforbidden(f, codeText(f)).indexOf('spirit/client/packet.js') === -1; }, test.limit.quick);
   // faceable goes by its new name: none names the old contact.faceable any more (and since goal/G49.25 it is granted as any
   // verb, no owner-only check; Andy: "they go now").
-  test.run('no product script names faceable by its old name, contact.faceable, only spirit.contact.faceable', 0.2, function () {
-    const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return /['"]contact\.faceable['"]/.test(unforbidden(f, codeText(f))); }) || false;
-  }, test.limit.quick);
-  test.run('no product script names the relabel verb or the auth peer verb', 0.2, function () {
-    const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) { const c = unforbidden(f, codeText(f)); return /\brelabel\b/.test(c) || /['"]peer['"]\s*:\s*\{\s*request/.test(c); }) || false;
-  }, test.limit.quick);
+  test.over('no product script names faceable by its old name, contact.faceable, only spirit.contact.faceable', 0.2, products, function (f) { return !(/['"]contact\.faceable['"]/.test(unforbidden(f, codeText(f)))); }, test.limit.quick);
+  test.over('no product script names the relabel verb or the auth peer verb', 0.2, products, function (f) { const c = unforbidden(f, codeText(f)); return !(/\brelabel\b/.test(c) || /['"]peer['"]\s*:\s*\{\s*request/.test(c)); }, test.limit.quick);
   // processJob "is required by its path, spirit/job/processJob/script.js, by every caller ... The spirit object keeps no copy
   // and no member of it" (goal/G49.19); its callers' requires are spirit/testicle/general/any/movedFileRules/script.js's.
-  test.run('no product script reaches processJob as a member: none names .processJob', 0.4, function () {
-    const files = productCode();
-    if (files.length < 100) return false;
-    return !files.some(function (f) { return /\.processJob\b/.test(unforbidden(f, codeText(f))); }) || false;
-  }, test.limit.quick);
+  test.over('no product script reaches processJob as a member: none names .processJob', 0.4, products, function (f) { return !(/\.processJob\b/.test(unforbidden(f, codeText(f)))); }, test.limit.quick);
   const fs = require('fs');
   const path = require('path');
   const RUN = tools.run;
@@ -99,10 +85,7 @@ function gitIn(cwd, args) { return require('child_process').execFileSync('git', 
   // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/grantsPanel/test/script.js,
   // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
   // problem.": no <verb>.warning.txt is left in the repository.
-  test.run('no <verb>.warning.txt is left', 0.4, function () {
-    const warns = gitIn(REPO, ['ls-files']).filter(function (f) { return /\.warning\.txt$/.test(f); });
-    return !warns.length || false;
-  }, test.limit.quick);
+  test.over('no <verb>.warning.txt is left', 0.4, function () { return gitIn(REPO, ['ls-files']); }, function (f) { return !/\.warning\.txt$/.test(f); }, test.limit.quick);
   // NO TRACKED FILE NAMES THE DELETED VERIFIER (goal/G47.1, box v101, the cycle that deletes the desk's verifier: no tracked
   // file names it). Over the whole repository, the files outside spirit/run too, by path and by content, in any case. The name
   // is built here, so this file names it nowhere itself.
@@ -110,23 +93,28 @@ function gitIn(cwd, args) { return require('child_process').execFileSync('git', 
   // API/ node. of course this must be 'spirit'"; the rename "about thirty product files that name a route, the relay host docs
   // and bash/card-ask.js, all in one push"). Over the whole repository, code, docs, host scripts and tests alike, nothing names
   // the node's old door or an old relay route under api. The words are built here, so this file names them nowhere itself.
-  test.run('no tracked file names a route under /api/: not the node\'s door, not one of the relay\'s routes', 0.4, function () {
+  // The repository's tracked files, each by its path in the run when it lies there (the path testicle keys a row by), else by
+  // its path in the repository; and those of them git grep finds, so each file is judged by the one grep.
+  const top = function () { return require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN, encoding: 'utf8' }).trim(); };
+  const asRun = function (f) { return f.indexOf('spirit/run/') === 0 ? f.slice('spirit/run/'.length) : f; };
+  const repoFiles = function () { return require('child_process').execFileSync('git', ['ls-files'], { cwd: top(), encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean); };
+  const grepped = function (args) {
+    let hits = '';
+    try { hits = require('child_process').execFileSync('git', ['grep', '-l'].concat(args), { cwd: top(), encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = String((e && e.stdout) || ''); }
+    return new Set(hits.split('\n').filter(Boolean).map(asRun));
+  };
+  let apiHits = new Set();
+  test.over('no tracked file names a route under /api/: not the node\'s door, not one of the relay\'s routes', 0.4, function () {
     const old = '/' + ['api', ''].join('/');
-    const top = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN, encoding: 'utf8' }).trim();
-    let hits = '';
-    try { hits = require('child_process').execFileSync('git', ['grep', '-l', '-I', '-E', old.replace(/\//g, '\\/') + '(spirit|relay/)'], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = String((e && e.stdout) || ''); }
-    const files = hits.split('\n').filter(Boolean).filter(function (f) { return !/codeMirror\/|chokidar\/|readdirp\//.test(f); });
-    return files.length === 0 || false;
-  }, test.limit.slow, { why: 'it greps every tracked file of the repository' });
-  test.run('no tracked file names the deleted verifier, by path or by content', 0.4, function () {
-    const word = ['desk', 'Verify'].join('');
-    const top = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN, encoding: 'utf8' }).trim();
-    let hits = '';
-    try { hits = require('child_process').execFileSync('git', ['grep', '-l', '-i', '-I', word], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = String((e && e.stdout) || ''); }
-    const named = require('child_process').execFileSync('git', ['ls-files'], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return f.toLowerCase().indexOf(word.toLowerCase()) !== -1; });
-    const all = hits.split('\n').filter(Boolean).concat(named).filter(function (f, i, a) { return a.indexOf(f) === i; });
-    return all.length === 0 || false;
-  }, test.limit.slow, { why: 'it greps every tracked file of the repository' });
+    apiHits = grepped(['-I', '-E', old.replace(/\//g, '\\/') + '(spirit|relay/)']);
+    return repoFiles().map(asRun).filter(function (f) { return !/codeMirror\/|chokidar\/|readdirp\//.test(f); });
+  }, function (f) { return !apiHits.has(f); }, test.limit.slow, { why: 'it greps every tracked file of the repository' });
+  const word = ['desk', 'Verify'].join('');
+  let verifierHits = new Set();
+  test.over('no tracked file names the deleted verifier, by path or by content', 0.4, function () {
+    verifierHits = grepped(['-i', '-I', word]);
+    return repoFiles().map(asRun);
+  }, function (f) { return !verifierHits.has(f) && f.toLowerCase().indexOf(word.toLowerCase()) === -1; }, test.limit.slow, { why: 'it greps every tracked file of the repository' });
 }
 }
 

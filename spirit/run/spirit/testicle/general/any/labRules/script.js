@@ -62,14 +62,17 @@ if (!String(ARGS[0] || '')) {
     return !named.length || false;
   }, test.limit.quick);
   // Every node a test uses is handed out by scratchNode (headLessChrome.js, the one helper that starts spirit/server/script.js).
-  test.run('no test starts spirit/server/script.js itself: every node a test uses comes from scratchNode', 0.4, function () {
-    const own = trackedAll().filter(function (f) { return /^spirit\/run\/.*\/test\/[^/]+\.js$/.test(f) && !/\/test\/headLessChrome\.js$/.test(f) && !/\/test\/test\/headLessChrome\.js$/.test(f); });
-    const starting = own.filter(function (f) {
-      let c = ''; try { c = fs.readFileSync(path.join(top(), f), 'utf8'); } catch (e) { return false; }
-      c = c.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-      return /spawn\s*\([^;]*['"]spirit\/server\/script\.js['"]/.test(c) || /spawn\s*\([^;]*path\.join\([^;]*['"]server\.js['"]/.test(c);
-    });
-    return !starting.length || false;
+  // A WHOLE-TREE CHECK OVER THE TEST FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each test file that starts a node itself,
+  // by its path in the run (the path testicle keys a row by).
+  const root = top();
+  test.over('no test starts spirit/server/script.js itself: every node a test uses comes from scratchNode', 0.4, function () {
+    return trackedAll().filter(function (f) { return /^spirit\/run\/.*\/test\/[^/]+\.js$/.test(f) && !/\/test\/headLessChrome\.js$/.test(f) && !/\/test\/test\/headLessChrome\.js$/.test(f); })
+      .map(function (f) { return f.slice('spirit/run/'.length); });
+  }, function (f) {
+    let c = ''; try { c = fs.readFileSync(path.join(root, 'spirit', 'run', f), 'utf8'); } catch (e) { return true; }
+    c = c.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+    return !(/spawn\s*\([^;]*['"]spirit\/server\/script\.js['"]/.test(c) || /spawn\s*\([^;]*path\.join\([^;]*['"]server\.js['"]/.test(c));
   }, test.limit.slow, { why: 'it reads every tracked test file' });
 }
 }

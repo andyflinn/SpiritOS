@@ -111,13 +111,13 @@ function every() {
   let painting = [];
   try { painting = painters(); } catch (e) { painting = []; }
   if (painting.length) {
-    test.run('it paints icons, and loads the icon element or hands them to one that does', 0.4, function () {
-      return !painting.some(function (f) {
-        const src = fs.readFileSync(path.join(RUN, f), 'utf8');
-        // A file that hands its glyphs to the one-row form (goal/G41.27) paints them through it: rowForm loads the icon element
-        // itself (rule/26).
-        return src.indexOf('spirit/element/icon/script.js') === -1 && src.indexOf('spirit/element/rowForm/script.js') === -1;
-      });
+    // A WHOLE-TREE CHECK OVER THE PAINTERS (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+    // testicle row for the failing script and itself as the suite?"): a red row under each that loads neither.
+    test.over('it paints icons, and loads the icon element or hands them to one that does', 0.4, painting, function (f) {
+      const src = fs.readFileSync(path.join(RUN, f), 'utf8');
+      // A file that hands its glyphs to the one-row form (goal/G41.27) paints them through it: rowForm loads the icon element
+      // itself (rule/26).
+      return src.indexOf('spirit/element/icon/script.js') !== -1 || src.indexOf('spirit/element/rowForm/script.js') !== -1;
     }, test.limit.quick);
   }
 }

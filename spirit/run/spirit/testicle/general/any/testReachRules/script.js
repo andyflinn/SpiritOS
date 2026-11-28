@@ -125,10 +125,12 @@ if (!arg) {
     return read().length > 100 || false;
   }, test.limit.quick);
 }
-test.run('no production module loads or requires a test file', 0.4, function () {
+// A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a testicle
+// row for the failing script and itself as the suite?"): a red row under each file that breaks the rule.
+test.over('no production module loads or requires a test file', 0.4, function () {
   if (!judged) read();
-  return judged.every(function (rel) { return reaches(rel).length === 0; });
-}, test.limit.quick);
+  return judged;
+}, function (rel) { return reaches(rel).length === 0; }, test.limit.quick);
 }
 
 // No name its checks look for is skipped in its files (goal/G49.27, Andy: "All, cw's way"): it forbids none by name.

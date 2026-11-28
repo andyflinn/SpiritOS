@@ -225,10 +225,12 @@ function every() {
   const E = {};
   let ELEMENT_FILES = null;
   Object.defineProperty(E, 'elementFiles', { get: function () { if (ELEMENT_FILES === null) { try { ELEMENT_FILES = elementRuleFiles(); } catch (e) { ELEMENT_FILES = undefined; } } return ELEMENT_FILES; } });
-  test.run('every spirit.requireScript of a written path names a file that exists', 0.4, function () {
-    const all = E.elementFiles || [];
-    const missing = [].concat.apply([], all.map(missingRequires));
-    return (all.length > 100 && !missing.length) || false;
+  // EACH A WHOLE-TREE CHECK OVER ITS FILES (goal/G49.27, testReport's test.over; Andy: "why cannot a "whole-tree-red" set a
+  // testicle row for the failing script and itself as the suite?"): a red row under each file that breaks the rule. A list
+  // of 100 files or fewer is no list, a red under the runner, as the floor in each was.
+  const floor = function (list) { return list && list.length > 100 ? list : null; };
+  test.over('every spirit.requireScript of a written path names a file that exists', 0.4, function () { return floor(E.elementFiles); }, function (f) {
+    return !missingRequires(f).length;
   }, test.limit.quick);
 
   // every product script: use strict, spirit first, the tree only through spirit.requireScript
@@ -236,27 +238,24 @@ function every() {
     E.scripts = productScripts();
     return E.scripts.length > 100 || false;
   }, test.limit.quick);
-  test.run('all of them hold the shape', 0.4, function () {
-    const all = E.scripts || [];
-    const broken = all.filter(shapeBreaks);
-    return (all.length > 100 && !broken.length) || false;
+  test.over('all of them hold the shape', 0.4, function () { return floor(E.scripts); }, function (f) {
+    return !shapeBreaks(f);
   }, test.limit.quick);
 
   // every product script: spirit.js required first, every require path a child, a sibling or an ancestor's file
+  const ruleOf = {};
   test.run('the product scripts are read for the module rules', 0.2, function () {
     const all = productScripts();
     E.ruled = all.map(function (f) { return { f: f, r: moduleRules(path.join(RUN, f)) }; });
+    E.ruled.forEach(function (x) { ruleOf[x.f] = x.r; });
     return all.length > 100 || false;
   }, test.limit.quick);
-  test.run('every one takes spirit.js first, or is page code', 0.4, function () {
-    const ruled = E.ruled || [];
-    const late = ruled.filter(function (x) { return x.r.early; });
-    return (ruled.length > 100 && !late.length) || false;
+  const ruledFiles = function () { return floor((E.ruled || []).map(function (x) { return x.f; })); };
+  test.over('every one takes spirit.js first, or is page code', 0.4, ruledFiles, function (f) {
+    return !ruleOf[f].early;
   }, test.limit.quick);
-  test.run('none of their require paths breaks the require rule', 0.4, function () {
-    const ruled = E.ruled || [];
-    const astray = ruled.filter(function (x) { return x.r.bad.length; });
-    return (ruled.length > 100 && !astray.length) || false;
+  test.over('none of their require paths breaks the require rule', 0.4, ruledFiles, function (f) {
+    return !ruleOf[f].bad.length;
   }, test.limit.quick);
 }
 
