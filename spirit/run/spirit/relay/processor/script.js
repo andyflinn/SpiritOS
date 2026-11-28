@@ -2604,7 +2604,7 @@ function createRelay(rootDir, deps) {
   //   Andy, 2026-10-20: "the relay will reply to api queries for ALL members, not just the owner", in the same shape
   //   as the node's api ("why would i do that, if not to give the relay-api the same shape as the nodes api?").
   //
-  // The body 'api' answers { relay: { <verb>: { description, request, reply } } }, cut to what the caller holds: a
+  // The body 'api' answers { 'spirit.relay': { <verb>: { description, request, reply } } }, cut to what the caller holds: a
   // member the member bundle's own verbs, the owner every verb. Each entry is read from the verb's file in relaySelf/; a file
   // declares no reply, so reply is {}.
   function relayApi(owner) {
@@ -2617,7 +2617,9 @@ function createRelay(rootDir, deps) {
         reply: file.reply && typeof file.reply === 'object' ? file.reply : {},
       };
     });
-    return { relay: out };
+    // UNDER THE BRANCH'S OWN NAME, as a node answers its branches (goal/G49.25, box v25: spirit.relay "implemented properly as a
+    // system branch"; Andy: "the relays relay brach was supposed to be like a node branch"): spirit.relay, each verb its own.
+    return { 'spirit.relay': out };
   }
 
   function answerSelfInner(hash, text, who) {
