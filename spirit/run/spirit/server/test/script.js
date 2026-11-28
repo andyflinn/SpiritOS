@@ -1189,3 +1189,11 @@ test.run('spirit/relaySelf/ is gone, and each file it held stands in spirit/rela
 test.run('relayAuth, relayRequest and relayUrl stay in the trunk', 0.4, function () {
   return ['relayAuth', 'relayRequest', 'relayUrl'].every(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'script.js')); }) || false;
 }, test.limit.quick);
+
+// ── SEARCH'S TWO SCRIPTS IN THEIR FOLDERS (goal/G49.26, box v12; Andy: "all, go!") ── "spirit/search/string.js -->
+// spirit/search/string/script.js", "spirit/search/object.js --> spirit/search/object/script.js".
+[['spirit/search/string.js', 'spirit/search/string/script.js'], ['spirit/search/object.js', 'spirit/search/object/script.js']].forEach(function (m) {
+  test.run(m[0] + ' moved to ' + m[1] + ', and no product script requires the old path', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, m[1])) && !fs.existsSync(path.join(RUN, m[0])) && productHits(['-F', "'" + m[0] + "'"]).length === 0) || false;
+  }, test.limit.slow);
+});
