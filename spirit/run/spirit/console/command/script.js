@@ -350,10 +350,13 @@ function waitCommand(s, words, line) {
   if (oldest && Date.parse(oldest.at) > Date.parse(s.since)) notes.push({ shed: true, since: s.since, oldest: oldest.at });
   // A WAIT WRITES ITS POINTER ALONE (the wait-rows changed while it ran stay as they were changed): the state is read
   // again when the pointer is written, and only since, and the history line once something matched, change in it.
+  // A STATE FILE HELD OPEN ELSEWHERE IS NO END OF THE WAIT (Windows answers EBUSY or EPERM while another process, the node's own
+  // watcher among them, has the file open): that one write is skipped. Between matches the pointer lives on in s.since and is written
+  // at the next look; after a match the line comes again at the next wait, never lost.
   const movePointer = function (since, withLine) {
     const now = state();
     now.since = since;
-    if (withLine) logged(now, line); else save(now);
+    try { if (withLine) logged(now, line); else save(now); } catch (e) { if (!e || (e.code !== 'EBUSY' && e.code !== 'EPERM')) throw e; }
   };
   return new Promise(function (resolve) {
     function look() {
