@@ -31,7 +31,7 @@ const test = tools.test;
 const FORBIDS = tools.forbids || {};
 function unforbidden(rel, text) {
   const r = String(rel || '').replace(/^spirit\/run\//, '');
-  const own = Object.keys(FORBIDS).filter(function (dir) { return r === dir + '/script.js' || r.indexOf(dir + '/test/') === 0; })[0];
+  const own = Object.keys(FORBIDS).filter(function (dir) { return (require('path').posix.dirname(r) === dir && require('path').posix.basename(r) === 'script.js') || r.indexOf(dir + '/test/') === 0; })[0];
   if (!own) return text;
   let t = String(text);
   FORBIDS[own].forEach(function (n) { t = t.split(n).join(String(n).replace(/[^\n]/g, ' ')); });
@@ -262,7 +262,7 @@ if (!String(ARGS[0] || '')) {
     let c = codeText(f);
     // A file outside spirit/ keeps its whole path under spirit/state/ for its sidecar: where those belong is for later
     // (goal/G49.17, Andy: "all oos for now"). Only that one expression is let through.
-    if (f === 'spirit/fs/fileSystem/script.js') c = c.replace("spirit.statePath(p) : 'spirit/state/' + p)", '');
+    if (f === 'spirit/fs/fileSystem/script.js') c = c.replace(/spirit\.statePath\(p\) : 'spirit\/state\/' \+ p\)/, '');
     return !(/['"`]spirit\/state\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]spirit['"]\s*,\s*['"]state['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c));
   }, test.limit.quick);
   // AN APP IS KNOWN BY ITS PATH, NEVER BUILT FROM A NAME (goal/G49.19, box v13: "An app's path comes from one source: the fs

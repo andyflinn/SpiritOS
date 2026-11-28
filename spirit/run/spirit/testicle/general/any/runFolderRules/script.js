@@ -32,7 +32,7 @@ const test = tools.test;
 const FORBIDS = tools.forbids || {};
 function unforbidden(rel, text) {
   const r = String(rel || '').replace(/^spirit\/run\//, '');
-  const own = Object.keys(FORBIDS).filter(function (dir) { return r === dir + '/script.js' || r.indexOf(dir + '/test/') === 0; })[0];
+  const own = Object.keys(FORBIDS).filter(function (dir) { return (require('path').posix.dirname(r) === dir && require('path').posix.basename(r) === 'script.js') || r.indexOf(dir + '/test/') === 0; })[0];
   if (!own) return text;
   let t = String(text);
   FORBIDS[own].forEach(function (n) { t = t.split(n).join(String(n).replace(/[^\n]/g, ' ')); });
@@ -70,12 +70,10 @@ function processFiles() {
 // run://spirit/test/ first.", on Q2: "We need special rules for run://spirit/test/  it will be where run://spirit/app/test/
 // finds it's main tools.", and his concluding point: "this move will free the run:// folder namespace and SpiritOS will
 // only take up 1 name ("spirit") in it. .gitignore will be updated to ignore the run:/ folder except for run://spirit/".
-// The old folder's name is built, never written, so this file and its .md are the only ones that may name it, and the
-// scan leaves those two out.
+// The old folder's name is built, never written; this module names it in its comments, so its names are its forbids
+// (below), which the scan skips in this module's own files only.
 const OLD_TEST = 'spirit/run/' + 'test/';
 const OLD_NAMED = new RegExp(OLD_TEST.replace(/\//g, '\\/') + '|run:\\/\\/?' + 'test\\/');
-// The tools of run://spirit/test/: tools, not tests (Q2).
-const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
 function gitIn(cwd, args) { return require('child_process').execFileSync('git', args, { cwd: cwd, encoding: 'utf8' }).split('\n').filter(Boolean); }
 function ignoredByGit(rel) {
   try { require('child_process').execFileSync('git', ['check-ignore', '-q', '--no-index', rel], { cwd: REPO, stdio: 'ignore' }); return true; }
@@ -112,12 +110,14 @@ function every() {
   }, function (f) { try { return !OLD_NAMED.test(unforbidden(f, fs.readFileSync(path.join(RUN, f), 'utf8'))); } catch (e) { return true; } }, test.limit.quick);
   // run://spirit/test/'s tools are not tests
   test.run('testModule.js lists tests', 0.2, function () {
-    const moduleAt = [path.join(RUN, 'spirit', 'testicle', 'testModule', 'script.js'), path.join(RUN, 'test', 'testModule.js')].filter(function (p) { return fs.existsSync(p); })[0];
-    E.listed = moduleAt ? require(moduleAt).testsFor('').map(function (t) { return t.test; }) : [];
+    // The tests of the run judged (its root), listed by the one testModule, by its path (spirit.requireScript).
+    E.listed = fs.existsSync(path.join(RUN, 'spirit/testicle/testModule/script.js')) ? SPIRIT.requireScript('spirit/testicle/testModule/script.js').testsFor('', { root: RUN }).map(function (t) { return t.test; }) : [];
     return E.listed.length > 0 || false;
   }, test.limit.quick);
   test.run('testModule.js lists none of testReport.js, testModule.js and headLessChrome.js as a test', 0.4, function () {
     const all = E.listed || [];
+    // The tools of run://spirit/test/: tools, not tests (Q2).
+    const TOOLS = ['testReport.js', 'testModule.js', 'headLessChrome.js'];
     const toolsListed = all.filter(function (t) { return TOOLS.indexOf(path.posix.basename(t)) !== -1 && /^(spirit\/)?test\/[^/]+$/.test(t); });
     return (all.length > 0 && !toolsListed.length) || false;
   }, test.limit.quick);
@@ -157,5 +157,5 @@ else if (full) oneFile();
 }
 
 // The names its checks look for (goal/G49.27, Andy: "All, cw's way"): the name rules skip exactly these, in this module's own files.
-const FORBIDS_NAMES = ['spirit/run/process', 'run://process', 'run:/process'];
+const FORBIDS_NAMES = ['spirit/run/process', 'run://process', 'run:/process', 'spirit/run/test/', 'run://test/', 'run:/test/'];
 module.exports = { appliesTo: appliesTo, resource: 'none', own: false, forbids: FORBIDS_NAMES, checks: checks };

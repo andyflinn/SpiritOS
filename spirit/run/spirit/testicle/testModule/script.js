@@ -18,11 +18,11 @@
 // It names tests and runs none: testicle runs each entry as its own suite, a general one with its file
 // as the argument. Run from the command line it prints one entry a line, "<test>" or "<test> <file>".
 
+const S = require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 
 const RUN = path.join(__dirname, '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'script.js'));
 // Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
 // one list, goal/G43.25).
 const SKIP = ['state', 'app-state', '.git'];

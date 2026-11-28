@@ -46,15 +46,17 @@ function found(root, load) {
   (function into(rel) {
     let names = [];
     try { names = fs.readdirSync(path.join(at, rel), { withFileTypes: true }); } catch (e) { return; }
-    if (rel !== GENERAL && names.some(function (d) { return d.isFile() && d.name === 'script.js'; })) dirs.push(rel);
+    // The module's file as the walk finds it, its folder's own script.js.
+    const own = rel === GENERAL ? null : names.filter(function (d) { return d.isFile() && d.name === 'script.js'; })[0];
+    if (own) dirs.push({ dir: rel, file: rel + '/' + own.name });
     names.filter(function (d) { return d.isDirectory() && d.name !== 'test'; }).map(function (d) { return d.name; }).sort()
       .forEach(function (n) { into(rel + '/' + n); });
   }(GENERAL));
   const only = String(process.env.SPIRIT_RULE_MODULES || '').replace(/\/+$/, '');
-  return dirs.sort().filter(function (dir) { return !only || dir === only || dir.indexOf(only + '/') === 0; }).map(function (dir) {
+  return dirs.sort(function (a, b) { return a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0; }).filter(function (d) { const dir = d.dir; return !only || dir === only || dir.indexOf(only + '/') === 0; }).map(function (d) {
     let m = null;
-    try { m = pull(dir + '/script.js'); } catch (e) { m = null; }
-    return { dir: dir, module: m && typeof m.checks === 'function' && typeof m.appliesTo === 'function' ? m : null };
+    try { m = pull(d.file); } catch (e) { m = null; }
+    return { dir: d.dir, module: m && typeof m.checks === 'function' && typeof m.appliesTo === 'function' ? m : null };
   });
 }
 // EACH MODULE'S FORBIDDEN NAMES, BY ITS FOLDER (goal/G49.27; Andy: "All, cw's way"): the name rules skip exactly these, and only

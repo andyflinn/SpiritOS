@@ -101,9 +101,11 @@ function oneFile() {
       const t = typedAttaches(full);
       const c = fieldCode(full);
       if (!t.rules.length) return false;
+      // Every path it hands spirit.requireScript written out as one string, quoted ' or ".
+      const written = (c.match(/requireScript\((['"])[^'"]*\1\)/g) || []).map(function (q) { return q.slice(15, -2); });
       return t.rules.every(function (r) {
         const p = String(r).replace(/\?$/, '');
-        return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(p) && (c.indexOf("requireScript('" + p + "')") !== -1 || c.indexOf('requireScript("' + p + '")') !== -1);
+        return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(p) && written.indexOf(p) !== -1;
       }) || false;
     }, test.limit.quick);
   }

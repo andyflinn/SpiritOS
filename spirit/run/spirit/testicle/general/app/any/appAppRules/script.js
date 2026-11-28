@@ -51,9 +51,10 @@ function appApp() {
     return !gone.length ? true : false;
   }, test.limit.quick);
   test.run('the app branch is intrinsic, its six parts (changeAppIcon to serverDEBUG) standing in spirit/element/search/app/', 0.4, function () {
-    const parts = ['changeAppIcon', 'changeAppLabel', 'detail', 'rowFormAppActive', 'rowFormToggle', 'serverDEBUG'];
     // goal/G49.23: each part is a folder of its own now, its script at <part>/script.js.
-    const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '/script.js'); });
+    const parts = ['spirit/element/search/app/changeAppIcon/script.js', 'spirit/element/search/app/changeAppLabel/script.js', 'spirit/element/search/app/detail/script.js',
+      'spirit/element/search/app/rowFormAppActive/script.js', 'spirit/element/search/app/rowFormToggle/script.js', 'spirit/element/search/app/serverDEBUG/script.js'];
+    const missing = parts.filter(function (p) { return !isFile(p); });
     return !missing.length ? true : false;
   }, test.limit.quick);
 }
@@ -72,7 +73,7 @@ overTree('no app manifest carries shell.true; mount and tile stay its own', 0.2,
   try { const j = JSON.parse(fs.readFileSync(path.join(RUN, f), 'utf8')); return !(!!j.shell && Object.prototype.hasOwnProperty.call(j.shell, 'true')); } catch (e) { return false; }
 }, test.limit.quick);
 test.run('spirit/app/app/, the shell app, is gone: the one shell is spirit/element/script.js', 0.2, function () {
-  return (!fs.existsSync(path.join(RUN, 'spirit', 'app', 'app')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'script.js'))) || false;
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'app', 'app')) && fs.existsSync(path.join(RUN, 'spirit/element/script.js'))) || false;
 }, test.limit.quick);
 }
 

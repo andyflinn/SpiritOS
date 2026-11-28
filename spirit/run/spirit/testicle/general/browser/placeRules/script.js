@@ -13,7 +13,7 @@ const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // The face's tag-run scripts, spirit.js's FACE list as spirit.js writes it.
 const FACE_SCRIPTS = (function () {
-  const m = /var FACE = \[([^\]]*)\]/.exec(fs.readFileSync(path.join(RUN, 'spirit', 'script.js'), 'utf8'));
+  const m = /var FACE = \[([^\]]*)\]/.exec(fs.readFileSync(path.join(RUN, 'spirit/script.js'), 'utf8'));
   return m ? (m[1].match(/'[^']+'/g) || []).map(function (q) { return q.slice(1, -1); }) : [];
 }());
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
@@ -97,7 +97,7 @@ function every(tools) {
     const page = E.page = await chromePage(chrome);
     if (!page || page.error) return false;
     E.pageLoaded = []; E.pageBad = []; E.noFactory = []; E.nodeOnly = [];
-    E.elements = [];
+    E.elementScripts = [];
     for (const f of E.req) {
       await page.send('Page.navigate', { url: E.node.base + '/' });
       await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, WAIT);
@@ -114,7 +114,7 @@ function every(tools) {
       // injects itself as its FACE list are run by their tag, not required, so nothing asks them for anything and the loader
       // places none; the list is spirit.js's own, read from it, never named here.
       if (!r.placed && FACE_SCRIPTS.indexOf(f) === -1) E.pageBad.push(f);
-      if (isElementScript(f, r)) { E.elements.push(f); if (!r.factory || !r.same) E.noFactory.push(f); }
+      if (isElementScript(f, r)) { E.elementScripts.push(f); if (!r.factory || !r.same) E.noFactory.push(f); }
     }
     try { if (page.kid) page.kid.kill(); } catch (e) { /* gone */ }
     try { if (page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
@@ -126,7 +126,7 @@ function every(tools) {
   }, test.limit.quick);
   test.run('every element script\'s module.exports, a factory with a create, stands on the spirit object under its own path', 0.4, function () {
     if (!E.pageLoaded) return false;
-    return (E.elements.length > 0 && !E.noFactory.length) || false;
+    return (E.elementScripts.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
 
   // Each page module in a run of its own, so each is recorded under its own module (spirit/testicle/testReport/script.js).

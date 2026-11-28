@@ -6,13 +6,14 @@
 // (spirit/testicle/general/browser/pageRules/script.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
 // (spirit/DEBUG/test/script.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
 
+const SPIRIT = require('../../script.js');
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
 // CHROME PROFILES FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): each under a route of
 // this file's own, spirit/test/headLessChrome, named by a random suffix (never a process id), so a profile its watcher removes
 // after the test has ended is no suite's leftover.
-const tempFolder = require('../../tempFolder/script.js').tempFolder;
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 const PROFILES = 'spirit/test/headLessChrome';
 const { spawn, execSync } = require('child_process');
 
@@ -222,7 +223,7 @@ async function scratchNode(o) {
   (opts.servers || []).forEach(function (name) {
     // Its switch where the node reads it, the app's state folder by spirit.statePath (goal/G49.17). A server is named by its
     // id, its folder in dots (goal/G49.19: spirit.app.desk), and its folder is that id in slashes, never built from a word.
-    const S = require('../../script.js');
+    const S = SPIRIT;
     const dir = path.join(run, ...S.statePath(S.slashedPath(name)).split('/'));
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
@@ -287,8 +288,7 @@ function freeTree(x) {
 // on when o.debug, until it answers. Never a live relay.
 // A file node loads before the one server (-r), written into the lab tree's own state folder, which lab resets: what a scratch
 // relay's child did before requiring the old relay server itself.
-function relayPreload(run, name, code) {
-  const file = path.join(run, 'spirit', 'state', name);
+function relayPreload(file, code) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, '\'use strict\';\n' + code + '\n');
   return file;
@@ -298,7 +298,7 @@ async function scratchRelay(o) {
   const lab = await LAB.handOut('relay');
   const root = lab.root;
   const run = lab.run;
-  const auth = require(path.join(run, 'spirit', 'relayAuth', 'script.js'));
+  const auth = require(path.join(run, 'spirit/relayAuth/script.js'));
   auth.nameIdentity(run, 'relay');
   const owner = opts.owner || auth.generateIdentity('owner');
   auth.writeOwner(run, owner.publicKey);
@@ -308,7 +308,7 @@ async function scratchRelay(o) {
   // THE ONE SERVER, STARTED AS A RELAY (goal/G49.25, box v16: "spirit/server/script.js is THE server, for node and relay alike";
   // "spirit.server.relay goes."): node runs spirit/server/script.js --relay itself, since it starts a server only when it is the
   // file node was started with; its DEBUG set first by a file node loads before it (-r), in the lab tree's state folder.
-  const pre = relayPreload(run, 'zzScratchRelay.js', 'require(require("path").resolve("spirit/script.js")).debugLog(' + (opts.debug ? 'true' : 'false') + ');');
+  const pre = relayPreload(path.join(run, 'spirit/state/zzScratchRelay.js'), 'require(require("path").resolve("spirit/script.js")).debugLog(' + (opts.debug ? 'true' : 'false') + ');');
   const child = spawn(process.execPath, ['-r', pre, 'spirit/server/script.js', '--relay', '--port', String(port)], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
@@ -329,7 +329,7 @@ async function scratchFaceRelay(o) {
   const lab = await LAB.handOut('relay');
   const root = lab.root;
   const run = lab.run;
-  const auth = require(path.join(run, 'spirit', 'relayAuth', 'script.js'));
+  const auth = require(path.join(run, 'spirit/relayAuth/script.js'));
   auth.nameIdentity(run, 'relay');
   // Its owner: o.ownerKey, a real node's key that this relay then calls its owner, or a stranger made here.
   auth.writeOwner(run, opts.ownerKey || auth.generateIdentity('owner').publicKey);
@@ -354,7 +354,7 @@ async function scratchFaceRelay(o) {
     // A dishonest relay: it gives a member a face the member never asked for (setFace, below).
     ' process.on("message", function (m) { if (m && m.setFace) { store.members.setFace(m.setFace[0], m.setFace[1], m.setFace[2]); process.send({ faceSet: m.setFace[1] }); } });' +
     ' process.send({ ready: out }); }';
-  const pre = relayPreload(run, 'zzScratchFaceRelay.js', code);
+  const pre = relayPreload(path.join(run, 'spirit/state/zzScratchFaceRelay.js'), code);
   const start = function () { return spawn(process.execPath, ['-r', pre, 'spirit/server/script.js', '--relay', '--port', String(port)], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) }); };
   let child = start();
   lab.started(child.pid);

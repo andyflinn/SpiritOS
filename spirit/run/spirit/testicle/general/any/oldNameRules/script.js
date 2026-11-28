@@ -31,7 +31,7 @@ const test = tools.test;
 const FORBIDS = tools.forbids || {};
 function unforbidden(rel, text) {
   const r = String(rel || '').replace(/^spirit\/run\//, '');
-  const own = Object.keys(FORBIDS).filter(function (dir) { return r === dir + '/script.js' || r.indexOf(dir + '/test/') === 0; })[0];
+  const own = Object.keys(FORBIDS).filter(function (dir) { return (require('path').posix.dirname(r) === dir && require('path').posix.basename(r) === 'script.js') || r.indexOf(dir + '/test/') === 0; })[0];
   if (!own) return text;
   let t = String(text);
   FORBIDS[own].forEach(function (n) { t = t.split(n).join(String(n).replace(/[^\n]/g, ' ')); });
@@ -68,7 +68,7 @@ if (!String(ARGS[0] || '')) {
     return shFs.existsSync(shPath.join(SH.run, 'spirit', 'buildStamp')) ? null : products();
   }, function (f) { return !/buildStamp/.test(unforbidden(f, rawText(f))); }, test.limit.quick);
   test.over('no product script requires spirit/client/packet.js; the spirit object requires spirit/peer/packet/script.js', 0.2, function () {
-    return /require(Script|One)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js')) ? products() : null;
+    return /(?:requireScript|requireOne)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js')) ? products() : null;
   }, function (f) { return unforbidden(f, codeText(f)).indexOf('spirit/client/packet.js') === -1; }, test.limit.quick);
   // faceable goes by its new name: none names the old contact.faceable any more (and since goal/G49.25 it is granted as any
   // verb, no owner-only check; Andy: "they go now").

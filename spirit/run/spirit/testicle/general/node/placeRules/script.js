@@ -90,7 +90,7 @@ function checks(scriptPath, tools) {
       E.run = path.join(E.root, 'spirit', 'run');
       const env = path.join(E.run, 'spirit', 'state', 'environment.json');
       if (!fs.existsSync(env)) { fs.mkdirSync(path.dirname(env), { recursive: true }); fs.writeFileSync(env, JSON.stringify({ PORT: Number(new URL(E.node.base).port) })); }
-      return fs.existsSync(path.join(E.run, 'spirit', 'script.js')) || false;
+      return fs.existsSync(path.join(E.run, 'spirit/script.js')) || false;
     }, test.limit.slow, { why: 'it starts a scratch node on a copy of the tree' });
     test.after(async function () {
       if (E.node && E.node.child) { try { E.node.child.kill(); } catch (e) { /* gone */ } await new Promise(function (r) { setTimeout(r, 300); }); }

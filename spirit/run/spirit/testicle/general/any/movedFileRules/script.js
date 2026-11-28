@@ -130,7 +130,7 @@ if (!String(ARGS[0] || '')) {
   // app server) ... The spirit object keeps no copy and no member of it"; "after the move the spirit object's publish requires
   // spirit/job/processJob/script.js for it".
   // The spirit object loads its own parts by requireOne, the function its requireScript is (spirit/script.js).
-  const requiresProcessJob = function (rel) { return /require(Script|One)\(\s*['"]spirit\/job\/processJob\/script\.js['"]\s*\)/.test(codeText(rel)) || false; };
+  const requiresProcessJob = function (rel) { return /(?:requireScript|requireOne)\(\s*['"]spirit\/job\/processJob\/script\.js['"]\s*\)/.test(codeText(rel)) || false; };
   test.run('spirit/app/testicle/server/server.js requires spirit/job/processJob/script.js by its path', 0.2, function () { return requiresProcessJob('spirit/app/testicle/server/server.js'); }, test.limit.quick);
   test.run('spirit/app/icons/server/server.js requires spirit/job/processJob/script.js by its path', 0.2, function () { return requiresProcessJob('spirit/app/icons/server/server.js'); }, test.limit.quick);
   test.run('spirit/app/publishData/publishData.js requires spirit/job/processJob/script.js by its path', 0.2, function () { return requiresProcessJob('spirit/app/publishData/publishData.js'); }, test.limit.quick);

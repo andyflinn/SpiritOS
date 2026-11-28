@@ -93,12 +93,12 @@ function moduleRulesAt(RUN, full) {
   const bare = codeOf(raw, true);
   const requires = [];
   // Plain requires only: spirit.requireScript(...) is the door the rule asks for, never a plain require.
-  const re = /(^|[^.\w$])require(?:Script)?\(\s*(['"])([^'"]+)\2\s*\)/y;
-  const at = /(^|[^.\w$])require(?:Script)?\(\s*(['"])[^'"]*\2\s*\)/g;
+  const re = /(^|[^.\w$])(?:require|requireScript)\(\s*(['"])([^'"]+)\2\s*\)/y;
+  const at = /(^|[^.\w$])(?:require|requireScript)\(\s*(['"])[^'"]*\2\s*\)/g;
   let m;
   while ((m = at.exec(bare))) { re.lastIndex = m.index; const lit = re.exec(code); if (lit) requires.push({ at: m.index, path: lit[3] }); }
   const own = path.basename(full, '.js');
-  const isSpirit = path.resolve(full) === path.join(RUN, 'spirit', 'script.js');
+  const isSpirit = path.resolve(full) === path.join(RUN, 'spirit/script.js');
   const first = requires[0];
   // A TEST IS NEVER PAGE CODE (goal/G49.23, a gap the own-test agent found): every test file runs in node, so a test that
   // names window still requires spirit.js first; only product code may be page code.
@@ -113,13 +113,13 @@ function moduleRulesAt(RUN, full) {
     // It sets the global spirit nowhere, or only after its first require.
     const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
     if (sets === -1 || (first && sets > first.at)) early = true;
-  } else if (path.resolve(path.dirname(full), first.path) !== path.join(RUN, 'spirit', 'script.js')) {
+  } else if (path.resolve(path.dirname(full), first.path) !== path.join(RUN, 'spirit/script.js')) {
     // It does not require spirit.js first.
     early = true;
   } else {
     // It requires another module plainly, not through spirit.requireScript(): only node's own modules are required plainly.
     const native = function (p) { return BUILTIN.indexOf(p) !== -1 || BUILTIN.indexOf(p.replace(/^node:/, '')) !== -1; };
-    const other = requires.slice(1).filter(function (r) { return !native(r.path) && path.resolve(path.dirname(full), r.path) !== path.join(RUN, 'spirit', 'script.js'); })[0];
+    const other = requires.slice(1).filter(function (r) { return !native(r.path) && path.resolve(path.dirname(full), r.path) !== path.join(RUN, 'spirit/script.js'); })[0];
     if (other) early = true;
   }
   const bad = requires.filter(function (r) {
@@ -164,7 +164,7 @@ function shapeBreaks(rel) {
   if (rel === 'spirit/script.js') return false;
   // Every plain require: the first takes spirit.js; any other names one of node's own modules.
   const bare = codeOf(src, true);
-  const re = /(^|[^.\w$])require(?:Script)?\s*\(/g;
+  const re = /(^|[^.\w$])(?:require|requireScript)\s*\(/g;
   let m;
   let first = true;
   while ((m = re.exec(bare))) {
@@ -173,7 +173,7 @@ function shapeBreaks(rel) {
     const lit = /^(['"])([^'"]*)\1$/.exec(arg);
     const named = lit ? lit[2] : '';
     // The spirit object by where it resolves, spirit/script.js since goal/G49.12's flag day, never by its file's name.
-    const spiritJs = (!!named && path.resolve(path.dirname(path.join(RUN, rel)), named) === path.join(RUN, 'spirit', 'script.js')) || /['"]spirit['"]\s*,\s*['"]script\.js['"]\s*\)\s*\)?$/.test(arg);
+    const spiritJs = (!!named && path.resolve(path.dirname(path.join(RUN, rel)), named) === path.join(RUN, 'spirit/script.js')) || /['"]spirit['"]\s*,\s*['"]script\.js['"]\s*\)\s*\)?$/.test(arg);
     if (spiritJs) { first = false; continue; }
     if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
     // Its first load is not spirit.js, or it loads a module plainly, not through spirit.requireScript.
@@ -199,7 +199,7 @@ function missingRequires(rel) {
   const asked = [];
   // spirit.requireScript, and any short name a file gives its spirit (S.requireScript, sp.requireScript): every <name>.require of a path written
   // as the tree's, spirit/... or run://spirit/...; node's own require of a relative path is not this rule's.
-  const one = /\b(?:[A-Za-z_$][\w$]*\s*\.\s*)?require(?:Script)?\s*\(\s*(['"])((?:run:\/\/|\/)?spirit\/[^'"\n]+)\1/g;
+  const one = /\b(?:[A-Za-z_$][\w$]*\s*\.\s*)?(?:require|requireScript)\s*\(\s*(['"])((?:run:\/\/|\/)?spirit\/[^'"\n]+)\1/g;
   let m = null;
   while ((m = one.exec(code))) asked.push({ p: m[2], at: m.index });
   const list = /\[((?:\s*['"][^'"\n]+\.(?:js|css|json|html)['"]\s*,?)+)\s*\]/g;

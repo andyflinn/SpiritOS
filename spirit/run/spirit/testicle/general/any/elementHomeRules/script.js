@@ -34,7 +34,7 @@ const test = tools.test;
 const FORBIDS = tools.forbids || {};
 function unforbidden(rel, text) {
   const r = String(rel || '').replace(/^spirit\/run\//, '');
-  const own = Object.keys(FORBIDS).filter(function (dir) { return r === dir + '/script.js' || r.indexOf(dir + '/test/') === 0; })[0];
+  const own = Object.keys(FORBIDS).filter(function (dir) { return (require('path').posix.dirname(r) === dir && require('path').posix.basename(r) === 'script.js') || r.indexOf(dir + '/test/') === 0; })[0];
   if (!own) return text;
   let t = String(text);
   FORBIDS[own].forEach(function (n) { t = t.split(n).join(String(n).replace(/[^\n]/g, ' ')); });
@@ -135,7 +135,7 @@ function strayElementReaches(rel) {
       const keys = m[1].split('.').map(function (k) { return k.trim(); }).filter(Boolean);
       // A folder's script.js stands at its folder's own name (goal/G49.9), spirit/element/script.js at spirit.element itself:
       // a single key after it is a member of that script.
-      let found = keys.length === 1 && fs.existsSync(path.join(RUN, 'spirit', 'element', 'script.js'));
+      let found = keys.length === 1 && fs.existsSync(path.join(RUN, 'spirit/element/script.js'));
       for (let n = keys.length; n > 0 && !found; n--) {
         const at = path.join.apply(path, [RUN, 'spirit', 'element'].concat(keys.slice(0, n)));
         found = fs.existsSync(at + '.js') || fs.existsSync(path.join(at, 'script.js')) || (n === keys.length && fs.existsSync(at) && fs.statSync(at).isDirectory());

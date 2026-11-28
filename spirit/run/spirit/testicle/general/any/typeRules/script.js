@@ -29,7 +29,7 @@ const test = tools.test;
 const FORBIDS = tools.forbids || {};
 function unforbidden(rel, text) {
   const r = String(rel || '').replace(/^spirit\/run\//, '');
-  const own = Object.keys(FORBIDS).filter(function (dir) { return r === dir + '/script.js' || r.indexOf(dir + '/test/') === 0; })[0];
+  const own = Object.keys(FORBIDS).filter(function (dir) { return (require('path').posix.dirname(r) === dir && require('path').posix.basename(r) === 'script.js') || r.indexOf(dir + '/test/') === 0; })[0];
   if (!own) return text;
   let t = String(text);
   FORBIDS[own].forEach(function (n) { t = t.split(n).join(String(n).replace(/[^\n]/g, ' ')); });
@@ -84,14 +84,15 @@ function unforbidden(rel, text) {
   // A <type>Select, EVERY ONE (goal/G48.4; Andy: "every <type>Select.js requires its <type>.js and takes \"\" plus whatever
   // <type>.js"): spirit/type/.../<type>Select/script.js, its sibling spirit/type/.../<type>/script.js beside it.
   const SELECTS = TARGETS.filter(function (rel) { return /Select$/.test(nameOf(rel)); });
-  const siblingOf = function (rel, end) { const n = nameOf(rel); return rel.replace(new RegExp(n + '/script\\.js$'), n.slice(0, -end.length) + '/script.js'); };
+  // Its folder's name less the end, the rest of its path as it is: .../<type>Select/script.js -> .../<type>/script.js.
+  const siblingOf = function (rel, end) { return rel.replace(new RegExp(end + '(/script\\.js)$'), '$1'); };
   const selects = function () { return SELECTS.length > 0 ? SELECTS : null; };
   const eachSelect = function (fn) { return function (rel) { const T = load(rel), B = load(siblingOf(rel, 'Select')); return !!T && !!B && fn(T, B, rel) === true; }; };
   const requiresSibling = function (rel, end) {
     const sib = siblingOf(rel, end);
     let code = '';
     try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; }
-    return at(sib) && code.indexOf(sib) !== -1 && /require(?:Script)?\(/.test(code);
+    return at(sib) && code.indexOf(sib) !== -1 && /(?:require|requireScript)\(/.test(code);
   };
   if (!asked || /Select$/.test(nameOf(asked))) {
     // Q22 (Andy: "get rid of spirit.type.string.line", "description, 128 bytes for a search string is plenty").
@@ -100,7 +101,7 @@ function unforbidden(rel, text) {
     }, test.limit.quick);
     // Asked by its old name and its new one, so a gone type is never found only by the name nobody uses any more.
     test.run('spirit/type/string/line.js and lineSelect.js are gone', 0.4, function () {
-      return !['line', 'lineSelect'].some(function (n) { return at('spirit/type/string/' + n + '.js') || at('spirit/type/string/' + n + '/script.js'); }) || false;
+      return !(at('spirit/type/string/line.js') || at('spirit/type/string/line/script.js') || at('spirit/type/string/lineSelect.js') || at('spirit/type/string/lineSelect/script.js')) || false;
     }, test.limit.quick);
     test.over('no script of the tree names spirit.type.string.line or spirit.type.string.lineSelect', 0.4, function () {
       const files = require('child_process').execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /^spirit\/.+\.(js|json)$/.test(f) && !/(^|\/)test\//.test(f); });

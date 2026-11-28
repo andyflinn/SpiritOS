@@ -166,7 +166,7 @@ function oneFile() {
       const ON_BRANCH = /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/;
       const child = function () {
         if (!/\b(?:table|branch)\s*:\s*['"][\w.-]+['"]/.test(own)) return false;
-        const asked = own.match(/require(?:Script)?\(\s*['"](spirit\/[^'"]+\.js)['"]/g) || [];
+        const asked = own.match(/(?:require|requireScript)\(\s*['"](spirit\/[^'"]+\.js)['"]/g) || [];
         return asked.some(function (r) {
           const p = /['"]([^'"]+)['"]/.exec(r)[1];
           let c = ''; try { c = fs.readFileSync(path.join(RUN, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); } catch (e) { return false; }

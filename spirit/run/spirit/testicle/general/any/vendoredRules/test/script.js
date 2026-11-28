@@ -34,7 +34,7 @@ async function verdict(side, scriptPath, title) {
 }
 
 const KEEPS = plant('one', 'spirit/zzKeeps/script.js', '\'use strict\';\nmodule.exports = {};\n');
-const BREAKS = plant('one', 'spirit/zzBreaks/script.js', "'use strict';\n// it stood in " + ['spirit', 'run', 'node_modules'].join('/') + "\nmodule.exports = {};\n");
+const BREAKS = plant('one', 'spirit/zzBreaks/script.js', "'use strict';\n// it stood in spirit/run/node_modules\nmodule.exports = {};\n");
 
 test.run('it hands out appliesTo, its resource none, own false, its forbids and checks', 0.4, function () {
   return (typeof RULE.appliesTo === 'function' && RULE.resource === 'none' && RULE.own === false && Array.isArray(RULE.forbids) && typeof RULE.checks === 'function') || false;

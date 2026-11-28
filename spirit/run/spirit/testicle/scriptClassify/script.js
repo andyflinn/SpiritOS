@@ -15,16 +15,15 @@
 // Each script given (none given: every product script of the tree) is one test, "classifyable", reported for that script
 // (testReport's opts.script). Classified, it tells the node's testicle by testicle.script.classify {script, browserOnly,
 // nodeOnly} and passes; not classifyable, it fails, saying both loads' answers. testicle's server runs it by itself.
-require('../../script.js');
+const SPIRIT = require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { Worker } = require('worker_threads');
-const test = require('../testReport/script.js');
-const { until, freePort, findChrome, chromePage, WAIT } = require('../headLessChrome/script.js');
+const test = SPIRIT.requireScript('spirit/testicle/testReport/script.js');
+const { until, freePort, findChrome, chromePage, WAIT } = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 
 const RUN = path.join(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js');
 // "a load that is not complete in 3 seconds counts as crash/hang".

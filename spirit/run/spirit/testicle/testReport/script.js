@@ -144,7 +144,7 @@ function reportToTesticle(rec, verb, after) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', '..', 'script.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
+    try { real = require('../../script.js'); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.requireScript('spirit/app/testicle/api.js');
     // ITS FAILURE CAUGHT WHERE IT IS KEPT (the test review, fix 1: "testReport.js:137 stores the report promise with no handler, and
     // :209 charges the rejection to the running test"; with no node, three passing tests gave two greens and a red): a family
@@ -187,7 +187,7 @@ function vendored(rel) {
     const own = globalThis.spirit, ownWindow = globalThis.window;
     globalThis.spirit = undefined; globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', '..', 'script.js')); vendoredFolders = real.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS; }
+    try { real = require('../../script.js'); vendoredFolders = real.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS; }
     finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     loadedNow().forEach(function (k) { if (!before.has(k)) reporterOwn.add(k); });
   }
@@ -416,7 +416,8 @@ async function runAll() {
     const once = script + '|' + title;
     // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
     // A TITLE THAT BREAKS THE DESCRIPTION RULE too (goal/G47.4, the box: "test titles are constrained BY
-    // DESCRIPTION_MAX_BYTES, in spirit/fieldRules/script.js"): empty, invisible characters, or past its 128 bytes; refused, never cut.
+    // DESCRIPTION_MAX_BYTES", in the old rules file then, the description's type since goal/G49.13, TITLE_TYPE above): empty,
+    // invisible characters, or past its 128 bytes; refused, never cut.
     // TWO TESTS OF ONE TITLE, CUT OR NOT, FAIL THE SUITE, NOT A TEST (goal/G49.6; Andy: "that refusal has to be a suite level
     // failure. then you can have a new status for suites \"duplicate titles\"", "rule one wins": every test is still run and
     // reported as it ends): the suite's success for the script goes out false, its reason duplicateTitles.

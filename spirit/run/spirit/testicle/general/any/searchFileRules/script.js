@@ -51,7 +51,7 @@ function every() {
     const at = path.join(RUN, 'spirit', 'element', 'search');
     const top = fs.existsSync(at) ? fs.readdirSync(at, { withFileTypes: true }).filter(function (d) { return d.name !== 'test'; }) : [];
     // goal/G49.5: <name>.js became <name>/script.js, so the search element stands in its own folder, its script.js beside its parts.
-    const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !(fs.existsSync(path.join(at, d.name + '.js')) || fs.existsSync(path.join(at, d.name, 'script.js'))) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
+    const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !(fs.existsSync(path.join(at, d.name + '.js')) || fs.readdirSync(path.join(at, d.name)).indexOf('script.js') !== -1) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
     return (top.length > 0 && !odd.length) || false;
   }, test.limit.quick);
 }
