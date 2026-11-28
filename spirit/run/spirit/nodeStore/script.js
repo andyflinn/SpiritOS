@@ -129,6 +129,11 @@ function open(rootDir, opts) {
 
   fs.mkdirSync(path.join(rootDir, 'spirit', 'state'), { recursive: true });
   const db = new (driver().DatabaseSync)(dbPath(rootDir));
+  // A LOCK IS WAITED FOR 100 MS, NO MORE (goal/G49.27; Andy: "i want the fix to allow 100 milliseconds for a db lock, no more. If
+  // it takes longer, in a synchronous operation, we have a serious problem"): several processes open this one file (the node, its
+  // app servers, its console), and a read that met another's write failed at once with "database is locked" and took the node
+  // down (wsl's node, 2026-11-28). Set first, so the pragmas below wait too. Past 100 ms the read still fails, as the fault it is.
+  db.exec('PRAGMA busy_timeout = 100');
   db.exec('PRAGMA journal_mode = DELETE');
   db.exec('PRAGMA synchronous = FULL');
   db.exec('PRAGMA secure_delete = ON');

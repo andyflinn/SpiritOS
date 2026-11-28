@@ -142,7 +142,10 @@ function createApiDoor(opts) {
     // the queue already ranks by (fileTransfer goal/G1.3; Andy: "same for
     // responses."). Nothing new travels between peers.
     const how = kind === 'background' ? { kind: 'background' } : undefined;
-    return Promise.resolve(o.post(message.relay || '', message.fromKey, made.text, how)).catch(function (e) {
+    // THE POST IS MADE INSIDE THE CATCH (goal/G49.27, the crash fix Andy granted): post() reads the node's store before it returns
+    // a promise, and a read that threw there ("database is locked") escaped the catch below and ended the whole node. Made in a
+    // then, every failure of it, thrown or rejected, is this one answer logged as not sent; the node lives on.
+    return Promise.resolve().then(function () { return o.post(message.relay || '', message.fromKey, made.text, how); }).catch(function (e) {
       say('api door: the answer to ' + String(message.hash).slice(0, 8) + ' could not be sent: ' + e.message);
     });
   }
