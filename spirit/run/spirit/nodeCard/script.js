@@ -130,8 +130,7 @@ function cardFields(id) {
   };
 }
 
-// The owner this node's card names: owner.json's key, or '' when there is none or it names this node itself
-// (puppetMode.puppetIn's rule).
+// The owner this node's card names: owner.json's key, or '' when there is none or it names this node itself.
 function ownerOf(rootDir, id) {
   const owner = auth.loadOwner(String(rootDir || ''), function () {});
   return owner && id && owner !== String(id.publicKey || '') ? owner : '';

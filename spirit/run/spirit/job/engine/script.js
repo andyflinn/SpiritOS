@@ -467,8 +467,8 @@ function installJobs(port) {
   // allowed to read the files, they should have that stuff passted with
   // the spirit object that comes with the appServers passed interface."
   // ownerKey is owner.json's key as loadOwner reads it, or '' when the
-  // node owns itself or nobody owns it: no owner to ask (puppetMode's
-  // puppetIn rule, compared here against the key read above). spirit.js
+  // node owns itself or nobody owns it: no owner to ask (compared
+  // here against the key read above). spirit.js
   // puts them on spirit.nodeFacts as it is required (the port from
   // spirit/state/environment.json).
   // Read as a server starts: a server learns a changed owner when the node
