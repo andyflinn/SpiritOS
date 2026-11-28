@@ -29,8 +29,9 @@ test.run('job/script.js keeps no watcher: it names no chokidar, no folderFlags a
   const c = codeOf('spirit/job/engine/script.js');
   return (c.length > 0 && !/chokidar|folderFlags|startFsWatcherJob/.test(c)) || false;
 }, test.limit.quick);
-test.run('the node requires the watcher by its path, spirit/fs/server/script.js', 0.2, function () {
-  return codeOf('spirit/server/node/script.js').indexOf("spirit.requireScript('spirit/fs/server/script.js')") !== -1 || false;
+// The server, node and relay alike, since goal/G49.25 (box v16: "spirit/server/script.js is THE server").
+test.run('the server requires the watcher by its path, spirit/fs/server/script.js', 0.2, function () {
+  return codeOf('spirit/server/script.js').indexOf("spirit.requireScript('spirit/fs/server/script.js')") !== -1 || false;
 }, test.limit.quick);
 test.run('the watcher requires each flag condition by its path: spirit/fs/filter/api/, branch/, app/ and live/script.js', 0.2, function () {
   const c = codeOf('spirit/fs/server/script.js');
