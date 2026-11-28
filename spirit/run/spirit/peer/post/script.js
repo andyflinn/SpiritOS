@@ -592,11 +592,13 @@ function createPeerPost(opts) {
     rejectedBy(relayUrl, res.status, said || {});
   }
 
-  // Whether an outgoing text is a face application, and what it asked for, or null.
+  // Whether an outgoing text is a face application, and what it asked for, or null: the relay's own verb by its call,
+  // { call: "spirit.relay.face", args: { name, email } }, the one shape a relay is asked in (goal/G49.25; wsl's find).
   function faceAsked(text) {
-    var info = arrivals.envelopeOf(text) || arrivals.relayWordOf(text);
-    var face = info && info.body && info.body.face;
-    return face && typeof face === 'object' && typeof face.name === 'string' ? { name: face.name, email: String(face.email || '') } : null;
+    var asked = null;
+    try { asked = JSON.parse(String(text || '')); } catch (e) { asked = null; }
+    var face = asked && asked.call === 'spirit.relay.face' && asked.args && typeof asked.args === 'object' ? asked.args : null;
+    return face && typeof face.name === 'string' ? { name: face.name, email: String(face.email || '') } : null;
   }
 
   // An attempt is over. Either the intent survives to be tried again, or
