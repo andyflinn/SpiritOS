@@ -12,4 +12,5 @@ Andy, G43.17: *"Didn't i say remove ALL code referencing "admit" and "hold". it 
 ## The route caching goes (goal/G47.1, box v69)
 
 *"A post carries no hints: the node sends none, the hint signature goes"*. A peerPost on a scratch identity, its request
-a hand that keeps the body (sealing off): `post()` handed hints sends a body with no `hints` and no `hintSig`.
+a hand that keeps the body (sealing off): `post()` handed hints sends a body with no `hints` and no `hintSig`. Since
+goal/G49.25 (the relay's one door) the body leaves as `{ call: 'spirit.relay.post', args }`; the checks read its `args`.

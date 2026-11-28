@@ -57,13 +57,15 @@ async function faceOf(N, R) {
   let f = null;
   for (let i = 0; i < 10; i++) { f = await home(N.base, 'spirit.contact.face', { key: R.relayKey, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
-  await until(function () { return facePost(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
+  // goal/G49.25, the relay's one door: the face's state and login are spirit.relay.faceState and faceLogin at POST /spirit,
+  // where /face/api's state and login stood.
+  await until(function () { return facePost(R, '/spirit', { call: 'spirit.relay.faceState', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
-  await facePost(R, '/face/api', { call: 'login', args: { text: MAIL } });
+  await facePost(R, '/spirit', { call: 'spirit.relay.faceLogin', args: { text: MAIL } });
   await until(function () { return R.mailed.length > from; }, 5000);
   const token = R.mailed[from] && String(R.mailed[from].text).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];
   if (!token) return {};
-  const done = await facePost(R, '/face/api', { call: 'login', args: { text: token } });
+  const done = await facePost(R, '/spirit', { call: 'spirit.relay.faceLogin', args: { text: token } });
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
   return sid ? { sid: sid } : {};
 }

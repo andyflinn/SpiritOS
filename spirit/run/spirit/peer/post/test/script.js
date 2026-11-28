@@ -63,7 +63,9 @@ test.run('a post is handed hints, and the body that leaves for the relay is kept
       request: function (url, method, route, body) { bodies.push(body); return Promise.resolve({ status: 200, body: { ok: true } }); } });
     await Promise.race([Promise.resolve(pp.post('https://relay.example', auth.generateIdentity('peer').publicKey, 'hello', ['https://heard.example'])),
       new Promise(function (r) { setTimeout(r, 3000); })]);
-    posted = bodies.filter(function (b) { return b && b.text === 'hello'; })[0] || null;
+    // goal/G49.25, the relay's one door: the post leaves as { call: 'spirit.relay.post', args: <the body> }.
+    posted = bodies.filter(function (b) { return b && b.call === 'spirit.relay.post' && b.args && b.args.text === 'hello'; })
+      .map(function (b) { return b.args; })[0] || null;
   } catch (e) { return false; } finally { try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   return !!posted || false;
 }, test.limit.slow);

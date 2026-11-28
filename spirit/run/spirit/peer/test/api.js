@@ -6,7 +6,7 @@
 // The peer family: packets to peers, and acquiring one (goal/G32.1).
 // The interface is run as spirit.js runs the text api {family} answers (loadInterface: the text, with module and exports
 // alone), each call checked by spirit.js's own check (spirit.checkArgs, its rules spirit.ruleNames), the one the spirit object
-// runs before a call leaves. server.js is read as text only, to find the table the node mounts for the family.
+// runs before a call leaves. The table the node mounts for the family is the one spirit/peer/server/script.js hands it.
 
 const fs = require('fs');
 const path = require('path');
@@ -25,47 +25,17 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 const KEY = LOADER.requireScript('spirit/type/string/ID/script.js').defaultValue();
 const NOT_KEY = 'not-a-key';
 
-// THE TABLE THE NODE MOUNTS, read from server.js's text: loopbackVerbs.mount('<family>', <folder>, { '<verb>': { request:
-// { <argument>: ... }, ... } }). Strings and comments are stepped over, so a brace in them counts for nothing.
-function skip(src, i) {
-  const c = src[i];
-  if (c === '/' && src[i + 1] === '/') { const n = src.indexOf('\n', i); return n === -1 ? src.length : n; }
-  if (c === '/' && src[i + 1] === '*') { const n = src.indexOf('*/', i); return n === -1 ? src.length : n + 1; }
-  if (c === '\'' || c === '"' || c === '`') { let j = i + 1; while (j < src.length && src[j] !== c) { if (src[j] === '\\') j++; j++; } return j; }
-  return i;
-}
-// The keys of the object literal whose { is at open, each with where its value starts.
-function keysAt(src, open) {
-  const out = [];
-  let depth = 0; let expect = false;
-  for (let i = open; i < src.length; i++) {
-    const c = src[i];
-    if (depth === 1 && expect && !/\s/.test(c)) {
-      if (c === '/' && (src[i + 1] === '/' || src[i + 1] === '*')) { i = skip(src, i); continue; }
-      const m = /^(?:'([^']+)'|"([^"]+)"|([A-Za-z_$][\w$]*))\s*:\s*/.exec(src.slice(i, i + 200));
-      expect = false;
-      if (m) { out.push({ key: m[1] || m[2] || m[3], at: i + m[0].length }); i += m[0].length - 1; continue; }
-    }
-    const k = skip(src, i);
-    if (k !== i) { i = k; continue; }
-    if (c === '{' || c === '[' || c === '(') { depth++; if (depth === 1) expect = true; } else if (c === '}' || c === ']' || c === ')') { depth--; if (depth === 0) return out; } else if (c === ',' && depth === 1) expect = true;
-  }
-  return null;
-}
-function mounted(family) {
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8');
-  const head = 'loopbackVerbs.mount(\'' + family + '\',';
-  let at = src.indexOf(head);
-  if (at === -1) return null;
+// THE TABLE THE NODE MOUNTS (goal/G49.25: the branches load themselves; the peer branch's node work, the table the node mounts
+// under peer, is spirit/peer/server/script.js's verbs(node), where spirit/server/node/script.js's loopbackVerbs.mount('peer', ...)
+// stood): the table it hands a node, each verb with its request's arguments. Its handlers are not run, so node is empty.
+function mounted() {
+  const table = LOADER.requireScript('spirit/peer/server/script.js').verbs({});
+  if (!isPlain(table)) return null;
   const verbs = {};
-  for (; at !== -1; at = src.indexOf(head, at + 1)) {
-    // The third argument: the first { after the folder's path.join(...).
-    const open = src.indexOf('{', src.indexOf(')', at + head.length));
-    (keysAt(src, open) || []).forEach(function (v) {
-      const req = (keysAt(src, v.at) || []).filter(function (k) { return k.key === 'request'; })[0];
-      verbs[v.key] = req && src[req.at] === '{' ? (keysAt(src, req.at) || []).map(function (k) { return k.key; }) : null;
-    });
-  }
+  Object.keys(table).forEach(function (v) {
+    const req = table[v] && table[v].request;
+    verbs[v] = isPlain(req) ? Object.keys(req) : null;
+  });
   return verbs;
 }
 
@@ -93,8 +63,8 @@ test.run('it asks for its companion data.js, spirit/peer/data.js, and for nothin
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/peer/data.js' ? true : false;
 }, test.limit.quick);
-test.run('the node server, spirit/server/node/script.js, mounts the peer branch', 0.2, function () {
-  try { W.mounted = mounted('peer'); } catch (e) { return false; }
+test.run('the peer branch\'s node work, spirit/peer/server/script.js, hands the node a table of verbs', 0.2, function () {
+  try { W.mounted = mounted(); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
 
