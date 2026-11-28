@@ -32,11 +32,18 @@ const path = require('path');
 // spirit.required by others and not judged as ours.
 const BUILTIN = require('module').builtinModules;
 // Whether a / at the end of what is read so far opens a regex literal, not a division.
+// LOOKING BACK ONLY AS FAR AS IT NEEDS (goal/G49.27, the file runner's 4 minutes: trimming all that was read so far at every /
+// made reading a file cost the square of its length): back over the white space, then the one character or word before it.
 function regexStarts(before) {
-  const t = before.replace(/\s+$/, '');
-  if (!t) return true;
-  if (/[(,=:[!&|?{};+\-*%<>~^]$/.test(t)) return true;
-  return /(^|[^\w$.])(return|typeof|case|in|of|delete|void|throw|new|else|do)$/.test(t);
+  let i = before.length - 1;
+  while (i >= 0 && /\s/.test(before[i])) i--;
+  if (i < 0) return true;
+  if ('(,=:[!&|?{};+-*%<>~^'.indexOf(before[i]) !== -1) return true;
+  // A keyword ends here, and no letter, digit, $ or . stands right before it (so "rerun" or "x.do" is none).
+  const m = /(return|typeof|case|in|of|delete|void|throw|new|else|do)$/.exec(before.slice(Math.max(0, i - 9), i + 1));
+  if (!m) return false;
+  const at = i - m[0].length + 1;
+  return at === 0 || !/[\w$.]/.test(before[at - 1]);
 }
 // The code with its comments blanked, strings and line breaks kept; with bare, the strings' insides blanked too, every
 // offset the same, so a require written inside a string is found as none; with noRegex, only the regex literals' insides.
