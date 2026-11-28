@@ -51,8 +51,12 @@ function fsWrite(command) {
 function readRun(rootDir) {
   return function (rel) { try { return fs.readFileSync(path.join(rootDir, rel), 'utf8'); } catch (e) { return null; } };
 }
+// THE RELAY BRANCH IS A RELAY'S ONLY (goal/G49.25, box v16: "the fs watcher, when !spirit.IS_RELAY, will never mark spirit.relay as
+// a branch, and spirit.relay will not be exposed as such"): on a node spirit/relay carries neither branch mark.
+const RELAY_BRANCH = 'spirit/relay';
 function folderFlags(dir, has, read) {
-  return { api: FLAG_API(dir, has), branch: FLAG_BRANCH(dir, has), app: FLAG_APP(dir, has, read), live: FLAG_LIVE(dir, read) };
+  const relayHidden = !spirit.IS_RELAY && dir === RELAY_BRANCH;
+  return { api: !relayHidden && FLAG_API(dir, has), branch: !relayHidden && FLAG_BRANCH(dir, has), app: FLAG_APP(dir, has, read), live: FLAG_LIVE(dir, read) };
 }
 function sameFlags(a, row) {
   return a.api === (row.api === true) && a.branch === (row.branch === true) && a.app === (row.app === true) && a.live === (row.live === true);
@@ -272,7 +276,7 @@ function start(rootDir, jobs) {
 // THE spirit.fs BRANCH'S NODE WORK (goal/G49.25, Q5; Andy: "WHY THE FUCK WOULD IT NOT???" to "Does a branch's node work live at
 // spirit/<branch>/server/script.js, handing its verbs' answers to the scan"): verbs(node) -> { <verb>: { reply, handler } }, the
 // answers the node server held until this item, moved whole. serveCommon's scan mounts them under spirit.fs, each call checked by
-// spirit/fs/script.js first. node is what the node server hands every branch (spirit/server/node/script.js, branchNode). A relay
+// spirit/fs/script.js first. node is what the node server hands every branch (spirit/server/script.js, branchNode). A relay
 // answers none of them here: its file verbs are its processor's.
 //
 // THE GATE IS NOT IN HERE, and that is the point of this branch. Every one of these goes through fileSystem.js, which asks

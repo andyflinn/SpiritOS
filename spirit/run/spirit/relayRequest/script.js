@@ -38,7 +38,7 @@ require('../script.js');
 const http = require('http');
 const https = require('https');
 // The one body reader (goal/G16.6), serveCommon's (goal/G40.6).
-const readBody = spirit.requireScript('spirit/server/serveCommon/script.js').readBody;
+const readBody = spirit.requireScript('spirit/server/script.js').readBody;
 const limits = spirit.requireScript('spirit/limits/script.js');
 const assertRelayUrl = spirit.requireScript('spirit/relayUrl/script.js').assertRelayUrl;
 

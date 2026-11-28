@@ -4,7 +4,7 @@
 // at spirit/<branch>/server/script.js, handing its verbs' answers to the scan"): the answers the node server held until this item,
 // moved whole. serveCommon's scan mounts them under spirit.bundle, each call checked against spirit/bundle/script.js first.
 //
-//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/node/script.js,
+//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/script.js,
 //                  branchNode): here the owner's allow-table, spirit/grant/auth/script.js's, which takes one operation per verb.
 //                  A relay keeps no bundles: none there.
 //

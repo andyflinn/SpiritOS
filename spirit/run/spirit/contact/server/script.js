@@ -4,7 +4,7 @@
 // at spirit/<branch>/server/script.js, handing its verbs' answers to the scan"): the answers the node server held until this item,
 // moved whole. serveCommon's scan mounts them under spirit.contact, each call checked against spirit/contact/script.js first.
 //
-//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/node/script.js,
+//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/script.js,
 //                  branchNode): here the hub (spirit/hub/script.js), the router, built once the node is up and so asked for at each
 //                  call, the job table, the port, and the relay rows by key. A relay keeps no contacts: none there.
 //

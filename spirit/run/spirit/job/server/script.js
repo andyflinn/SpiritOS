@@ -4,7 +4,7 @@
 // spirit/<branch>/server/script.js, handing its verbs' answers to the scan"): the answers the node server held until this item,
 // moved whole. serveCommon's scan mounts them under spirit.job, each call checked against spirit/job/script.js first.
 //
-//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/node/script.js,
+//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/script.js,
 //                  branchNode): here its job table, its body reader and its refusals. A relay keeps no jobs: none there.
 //
 // THE LOCAL WAY TO A SERVER PROCESS (the jobs api verb) STOOD HERE until goal/G30.6. Andy, 2026-10-20: "jobs is for launching and

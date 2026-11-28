@@ -36,7 +36,7 @@ const createRelay = spirit.requireScript('spirit/relay/processor/script.js');
 // The build stamp for GET /api/version stood here; that route is closed
 // (goal/G22.6), and a relay's VERSION reaches its owner in relay-status;
 // the product reads no build stamp (goal/G49.13).
-const common = spirit.requireScript('spirit/server/serveCommon/script.js');
+const common = spirit.requireScript('spirit/server/script.js');
 const streamSink = spirit.requireScript('spirit/streamSink/script.js');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.
 const spiritErrors = spirit.requireScript('spirit/error/script.js');
@@ -384,7 +384,7 @@ if (process.env.INVOCATION_ID) setServiceCap(2 * CONFIG.ramLimitMB);
 // claimed, the relay is the box.
 spirit.requireScript('spirit/relayAuth/script.js').nameIdentity(ROOT_DIR, 'relay');
 // FIRST-RUN DEFAULTS (goal/G30.7): a first description and a first public label, by the node's own rule (serveCommon).
-try { spirit.requireScript('spirit/server/serveCommon/script.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
+try { spirit.requireScript('spirit/server/script.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
 catch (e) { /* a caption must never be the reason a relay will not boot */ }
 
 // THE BRANCHES, AS THE NODE LOADS THEM (goal/G49.25, box v10: "the both relay and node boot: serveCommon will load the spirit.fs

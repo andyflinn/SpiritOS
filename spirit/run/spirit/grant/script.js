@@ -4,7 +4,7 @@
 // a table interface)", "verbs: search, get, add, delete"; the same four on every auth table, Andy: "i would hope that your table
 // interfaces show some orthogonality"): who may call what on this node, one row per key and path. Every argument is checked by
 // its spirit.type (Andy, box v25: "a branche's script.js file must use spirit.type.* for ALL argument validation"). The node
-// mounts it as spirit.grant (spirit/server/node/script.js), its handlers spirit/grant/auth/script.js's.
+// mounts it as spirit.grant (spirit/server/script.js), its handlers spirit/grant/auth/script.js's.
 //   search {text?}       the grants whose key, label or path hold the words
 //   get {key, path}      whether that key holds that path: { allowed }
 //   add {key, path}      gives the key that path, a path the live tree serves

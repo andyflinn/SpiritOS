@@ -4,7 +4,7 @@
 // spirit/<branch>/server/script.js, handing its verbs' answers to the scan"): the answers the node server held until this item,
 // moved whole. serveCommon's scan mounts them under spirit.grant, each call checked against spirit/grant/script.js first.
 //
-//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/node/script.js,
+//   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/script.js,
 //                  branchNode): here the owner's allow-table, spirit/grant/auth/script.js's, and its answer wrapper. A relay keeps
 //                  no grants of this kind: none there.
 //
