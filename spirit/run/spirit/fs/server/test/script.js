@@ -523,11 +523,28 @@ test.run('as a relay, the tree marks spirit/relay as a branch', 0.2, function ()
   const r = AS.relay && AS.relay['spirit/relay'];
   return (!!r && r.branch === true) || false;
 }, test.limit.quick);
-// Andy, G49.25: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much weight." As a relay no folder
-// of the tree is marked an app, and no app folder (one the node marks an app) is marked a branch.
-test.run('as a relay, the tree marks no folder an app, and no app folder a branch', 0.2, function () {
+// Andy, G49.25: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much weight."; "when spirit.IS_RELAY
+// cgi-style servers like spirit.app.icon will still be allowed." A cgi-style app is the job engine's one-shot app (goal/G43.19:
+// api.js and data.js at its top, node mount false or missing); every other app is a server. Which is which is read from the
+// checkout's own folders, the same files the scratch copy holds.
+function manifestNodeMount(dir) {
+  const name = dir.slice(dir.lastIndexOf('/') + 1);
+  for (const f of [name + '.json', 'manifest.json']) {
+    try { const m = JSON.parse(fs.readFileSync(path.join(RUN, dir, f), 'utf8')); return !!(m && m.node && m.node.mount === true); } catch (e) { /* the next */ }
+  }
+  return false;
+}
+function oneShot(dir) { return !manifestNodeMount(dir) && !!AS.node[dir + '/api.js'] && !!AS.node[dir + '/data.js']; }
+function appDirs() { return Object.keys(AS.node || {}).filter(function (p) { return AS.node[p].kind === 'folder' && AS.node[p].app; }); }
+test.run('as a relay, an app server is marked neither an app nor a branch', 0.2, function () {
   if (!AS.node || !AS.relay) return false;
-  const apps = Object.keys(AS.node).filter(function (p) { return AS.node[p].kind === 'folder' && AS.node[p].app; });
-  if (apps.length < 3) return false;
-  return (Object.keys(AS.relay).every(function (p) { return !AS.relay[p].app; }) && apps.every(function (p) { return !AS.relay[p] || !AS.relay[p].branch; })) || false;
+  const servers = appDirs().filter(function (p) { return !oneShot(p); });
+  if (servers.length < 3) return false;
+  return servers.every(function (p) { const r = AS.relay[p]; return !r || (!r.app && !r.branch); }) || false;
+}, test.limit.quick);
+test.run('as a relay, a cgi-style app keeps the marks the node gives it', 0.2, function () {
+  if (!AS.node || !AS.relay) return false;
+  const shots = appDirs().filter(oneShot);
+  if (!shots.length) return false;
+  return shots.every(function (p) { const r = AS.relay[p], n = AS.node[p]; return !!r && r.app === n.app && r.api === n.api && r.branch === n.branch; }) || false;
 }, test.limit.quick);

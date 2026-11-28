@@ -51,4 +51,4 @@ held; every path outside spirit/ is held (box v12: *"it will still cache everyth
 
 spirit/relay, planted with the branch mark: as a node never marked a branch (box v16), as a relay marked one.
 
-As a relay no folder is marked an app, and no app folder a branch (Andy: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much weight.").
+As a relay an app server is marked neither an app nor a branch (Andy: "a node, when spirit.IS_RELAY will not mark app servers as app or branch, too much weight."); a cgi-style app, the job engine's one-shot app, keeps the marks the node gives it ("cgi-style servers like spirit.app.icon will still be allowed").
