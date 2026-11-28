@@ -571,7 +571,12 @@ async function chromePage(chrome) {
   const args = ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
     '--disable-breakpad', '--disable-crash-reporter', '--window-size=1280,800', 'about:blank'];
   const how = { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, env: env };
-  const kid = process.platform === 'linux' ? spawn('/bin/sh', ['-c', 'ulimit -c 0; exec "$0" "$@"', chrome].concat(args), how) : spawn(chrome, args, how);
+  // NO CRASH DUMP, EVER (goal/G49.27; Andy: "the test system is STILL littering all over the TEMP folders. my ubuntu choked today"): a
+  // test Chrome that crashed under WSL left a 682 GB dump in Windows' temp folder (wsl-crashes) and filled the C: drive. WSL's
+  // core_pattern is a pipe (|/wsl-capture-crash), and the kernel ignores a core limit of 0 for a pipe; a limit of exactly 1 byte is
+  // the one it honours there, skipping the dump (wsl, measured: an aborted process dumps without it, not with it). prlimit execs, so
+  // the pid stays Chrome's, and every child Chrome starts inherits the limit.
+  const kid = process.platform === 'linux' ? spawn(fs.existsSync('/usr/bin/prlimit') ? '/usr/bin/prlimit' : 'prlimit', ['--core=1', chrome].concat(args), how) : spawn(chrome, args, how);
   watchChrome(kid, profile);
   let err = '';
   kid.stderr.on('data', function (d) { err += String(d); });
