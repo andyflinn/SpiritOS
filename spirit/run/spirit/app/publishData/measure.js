@@ -76,13 +76,14 @@ async function labNode(lab) {
     release: async function () { await stop(child); got.release(); } };
 }
 
-// A LAB RELAY, its owner the node named, relayServer.js started on a free port until it answers.
+// A LAB RELAY, its owner the node named, the one server started as a relay (goal/G49.25: spirit/server/script.js --relay) on a
+// free port until it answers.
 async function labRelay(lab, ownerKey) {
   const got = await lab.handOut('relay');
   const auth = spirit.requireScript('spirit/relayAuth/script.js');
   auth.writeOwner(got.run, ownerKey);
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server/relay/script.js'], { cwd: got.run, stdio: 'ignore', windowsHide: true, env: Object.assign({}, process.env, { PORT: String(port) }) });
+  const child = spawn(process.execPath, ['spirit/server/script.js', '--relay', '--port', String(port)], { cwd: got.run, stdio: 'ignore', windowsHide: true });
   got.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, UP_MS);
