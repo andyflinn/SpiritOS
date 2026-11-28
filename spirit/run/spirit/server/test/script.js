@@ -108,7 +108,9 @@ test.run('spirit/server/script.js hands --app to spirit/server/app/script.js, an
 // into it."; "spirit.server.serveCommon goes: spirit/server/script.js takes ALL of its jobs"; "spirit.server.relay goes."
 function serverCode() {
   let t = ''; try { t = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8'); } catch (e) { return ''; }
-  return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  // Whole comment lines only (// and the lines of a /* */ block that start one): a /* inside a string or a glob must not
+  // cut the code after it.
+  return t.replace(/^\s*\/\*[\s\S]*?\*\/\s*$/gm, '').replace(/^\s*\/\/.*$/gm, '');
 }
 test.run('spirit/server/node/, spirit/server/relay/ and spirit/server/serveCommon/ hold no script.js: they went into spirit/server/script.js', 0.4, function () {
   return ['node', 'relay', 'serveCommon'].every(function (d) { return !fs.existsSync(path.join(RUN, 'spirit', 'server', d, 'script.js')); }) || false;
@@ -252,4 +254,22 @@ test.run('one door: no product script serves or calls a route under /spirit/rela
 }, test.limit.slow);
 test.run('no owner-verb list: no product script names OWNER_VERBS; the signature says who the owner is, the grants what each may call', 0.4, function () {
   return productHits(['-w', 'OWNER_VERBS']).length === 0 || false;
+}, test.limit.slow);
+// Box v20: "its five face routes (allowed, call, file, stream, api): no route of its own stays, its files aside"; "the face
+// allowed question stays a plain address, GET /face/allowed?domain=<name>, since Caddy can ask nothing else".
+test.run('one door for the faces too: no product script serves or calls /face/call, /face/file, /face/stream or /face/api', 0.4, function () {
+  return productHits(['-E', "['\"`]/face/(call|file|stream|api)\\b"]).length === 0 || false;
+}, test.limit.slow);
+test.run('the server still answers Caddy at GET /face/allowed', 0.4, function () {
+  return serverCode().indexOf("'/face/allowed'") !== -1 || false;
+}, test.limit.quick);
+// "The member verbs (card, face, removePeer, rename, search, and post, reply, stream, face answer, face stream) sit in one bundle";
+// "the relay's member verbs and owner verbs lists, and the gate that reads them" go.
+test.run('the relay branch hands out the member verbs card, face, removePeer, rename, search, post, reply and stream', 0.4, function () {
+  let b = null; try { b = require(path.join(RUN, 'spirit', 'relay', 'script.js')); } catch (e) { b = null; }
+  const v = (b && b.verbs) || {};
+  return ['card', 'face', 'removePeer', 'rename', 'search', 'post', 'reply', 'stream'].every(function (n) { return !!v[n]; }) || false;
+}, test.limit.quick);
+test.run('no member-verb list: no product script names MEMBER_VERBS', 0.4, function () {
+  return productHits(['-w', 'MEMBER_VERBS']).length === 0 || false;
 }, test.limit.slow);

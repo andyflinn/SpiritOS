@@ -29,3 +29,7 @@ The relay branch at the one door (Andy: "ONE, SINGLE, MOTHERFUCKING DOOR"; "the 
 spirit/relay/script.js hands out its verbs, its node work in spirit/relay/server/script.js; no product script serves or calls
 a route under /spirit/relay/; none names OWNER_VERBS. The member verbs passing the grant gate on a relay is asserted once the
 box names them.
+
+Box v20: no product script serves or calls /face/call, /face/file, /face/stream or /face/api; the server still answers
+Caddy at GET /face/allowed; the relay branch hands out card, face, removePeer, rename, search, post, reply and stream; no
+product script names MEMBER_VERBS. The member bundle at join and leave is asserted once the relay runs at the one door.
