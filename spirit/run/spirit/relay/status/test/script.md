@@ -1,4 +1,4 @@
-# spirit/relayStatus/script.js — its own test
+# spirit/relay/status/script.js — its own test
 
 What a relay tells its owner about itself, streamed to the owner node instead of a console (Andy). Owed since the rule
 *"every production script has its own test"* (goal/G47.1, box v72). A pure function from facts to a report; every

@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/relayLimits/script.js
+// spirit/run/spirit/relay/limits/script.js
 // WHAT THE BOX CAN ACTUALLY GIVE, AND WHAT A RELAY TAKES OF IT BY DEFAULT.
 //
 // ── WHY THIS IS A FILE AND NOT TWO LINES IN relayConfig ──────────────

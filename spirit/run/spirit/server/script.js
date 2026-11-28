@@ -2236,8 +2236,8 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const relayConfig = spirit.requireScript('spirit/relayConfig/script.js');
-const relayLimits = spirit.requireScript('spirit/relayLimits/script.js');
+const relayConfig = spirit.requireScript('spirit/relay/configHelper/script.js');
+const relayLimits = spirit.requireScript('spirit/relay/limits/script.js');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
 const fileSystem = spirit.requireScript('spirit/fs/fileSystem/script.js');
 const createRelay = spirit.requireScript('spirit/relay/processor/script.js');
@@ -2313,7 +2313,7 @@ function refuseToStart(why) {
 // no in-memory copy to fall back on. A Node too old to load the driver
 // (floor 22.13) cannot be a relay, and says so now rather than on the
 // first claim. The node never loads this module.
-const relayStore = spirit.requireScript('spirit/relayStore/script.js');
+const relayStore = spirit.requireScript('spirit/relay/store/script.js');
 if (!relayStore.available()) {
   refuseToStart('node:sqlite is not available in Node ' +
     process.version + ' — a relay needs 22.13 or later (relayStore.js)');
@@ -2683,9 +2683,9 @@ function relayDoor(req, res) {
   }, function () { refuse(400, { ok: false, code: 'bad-request', error: 'the body is not JSON' }); });
 }
 
-// { relay: { <verb>: { request, reply } } }, from relaySelf/<verb>.json, for DEBUG.js's garbageArguments.
+// { relay: { <verb>: { request, reply } } }, from spirit/relay/<verb>.json, for DEBUG.js's garbageArguments.
 function relayApiTree() {
-  const dir = path.join(__dirname, '..', 'relaySelf');
+  const dir = path.join(__dirname, '..', 'relay');
   const out = {};
   fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f); }).forEach(function (f) {
     let file = {};
@@ -2699,7 +2699,7 @@ const server = http.createServer((req, res) => {
   // NO LOOPBACK OR HOST GATE, which is the node's first line and not this one's: a relay is meant to be reached from the internet.
   // What stands in for that gate is the one door, each of its verbs gated by its own proof.
   // THE DEBUG TEST ROUTES FIRST (goal/G41.19, spirit/DEBUG/test/script.md): with DEBUG off they answer nothing. The relay's api tree
-  // is its verbs' own files in relaySelf/, as relay.js answers 'api' to the owner.
+  // is its verbs' own files in spirit/relay/, as relay.js answers 'api' to the owner.
   if (common.debugFirst(req, res, { kind: 'relay', api: relayApiTree })) return;
   // The home node's uploads to its face have no size cap (goal/G30.14, Andy's yes): piped through as they arrive, never held whole.
   const upload = req.method === 'POST' && UPLOADS.indexOf(String(req.headers['x-spirit-call'] || '')) !== -1;

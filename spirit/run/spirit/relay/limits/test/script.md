@@ -1,4 +1,4 @@
-# spirit/relayLimits/script.js — its own test
+# spirit/relay/limits/script.js — its own test
 
 What the box can actually give, and what a relay takes of it by default: one arithmetic for the installer and a relay's
 first start (Andy, 2026-09-22). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72).

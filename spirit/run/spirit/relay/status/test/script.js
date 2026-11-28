@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/relayStatus/test/script.js
-// The tests of spirit/relayStatus/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/relay/status/test/script.js
+// The tests of spirit/relay/status/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // What a relay tells its owner about itself: a pure function from facts to a report, every fact (the clock included)
 // handed in, so each check plants its own.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const S = SPIRIT.requireScript('spirit/relayStatus/script.js');
+const S = SPIRIT.requireScript('spirit/relay/status/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const NOW = Date.parse('2026-11-13T09:00:00.000Z');

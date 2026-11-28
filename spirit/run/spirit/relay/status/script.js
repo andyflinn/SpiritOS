@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/relayStatus/script.js
+// spirit/run/spirit/relay/status/script.js
 // WHAT A RELAY TELLS ITS OWNER ABOUT ITSELF.
 //
 // ── WHY ──────────────────────────────────────────────────────────────

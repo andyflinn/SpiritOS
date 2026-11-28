@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/relayDump/test/script.js
-// The tests of spirit/relayDump/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/relay/dump/test/script.js
+// The tests of spirit/relay/dump/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // What a relay holds, asked over SSH, read-only: run(rootDir, args, out) answers an exit code and says its lines through
@@ -9,17 +9,17 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder/script.js').tempFolder;
+const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayDump/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayDump'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const relayStore = S.requireScript('spirit/relayStore/script.js');
-const D = S.requireScript('spirit/relayDump/script.js');
+const relayStore = S.requireScript('spirit/relay/store/script.js');
+const D = S.requireScript('spirit/relay/dump/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function said(root, args) { const lines = []; const code = D.run(root, args, function (l) { lines.push(String(l)); }); return { code: code, lines: lines }; }

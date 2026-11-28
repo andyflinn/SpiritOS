@@ -177,7 +177,7 @@ function family(dir, opts) {
 // THE NODE'S ONE USE (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID spirit.fs
 // or spirit.api.desk ARE the path to all those files"): no branch of the node carries the FS set, so the node and its app
 // servers ask only for the verb files of a folder that name no declared verb. family() above stays the relay's, whose
-// relaySelf/ folder has no spirit.fs to be reached by.
+// spirit/relay/ folder has no spirit.fs to be reached by.
 function stale(dir, declared) { return readFolder(dir, declared || [], '').stale; }
 
 // claim(table, namespace, by, declarations) STOOD HERE (goal/G10.5). It signed a module's verbs up on the node's

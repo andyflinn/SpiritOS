@@ -37,7 +37,7 @@ require('../../script.js');
 const crypto = require('crypto');
 // On disc, and read by query (cycle 3). The same store relay.js holds, so
 // both see one connection.
-const relayStore = spirit.requireScript('spirit/relayStore/script.js');
+const relayStore = spirit.requireScript('spirit/relay/store/script.js');
 
 function load(rootDir) {
   return relayStore.open(rootDir).invites.all();

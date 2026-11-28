@@ -130,7 +130,7 @@ test.run('asked with the member\'s own email, the relay mails a login', 0.2, fun
     R.relay.join(bert.publicKey, 'bert@example.org', NODE, '');
     const code = ((/[?&]join=([A-Za-z0-9_-]+)/.exec((R.mails[R.mails.length - 1] || {}).text || '')) || [])[1] || '';
     R.relay.joinConfirm(bert.publicKey, code, '');
-    S.requireScript('spirit/relayStore/script.js').open(R.home).members.setFace(bert.publicKey, 'harbour', 'bert@example.org');
+    S.requireScript('spirit/relay/store/script.js').open(R.home).members.setFace(bert.publicKey, 'harbour', 'bert@example.org');
     R.later(2 * 60 * 1000);
     const before = R.mails.length;
     R.relay.faceLogin('harbour', 'bert@example.org');

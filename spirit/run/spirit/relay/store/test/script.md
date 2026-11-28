@@ -1,4 +1,4 @@
-# spirit/relayStore/script.js — its own test
+# spirit/relay/store/script.js — its own test
 
 The relay's data on disc: one sqlite file, `spirit/state/relay.db` under the relay's root, with two tables, `members`
 (the roll, by key) and `invites` (the waiting room). Disc is the only copy; every question is a query. Owed since the

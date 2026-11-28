@@ -1,20 +1,20 @@
 'use strict';
 
-// spirit/run/spirit/relayStore/test/script.js
-// The tests of spirit/relayStore/script.js, and of no other module, in this one file (spec: ./script.md). The relay's
+// spirit/run/spirit/relay/store/test/script.js
+// The tests of spirit/relay/store/script.js, and of no other module, in this one file (spec: ./script.md). The relay's
 // roll and waiting room on disc, in one sqlite file: each exported function and every store call a caller relies on,
 // on real relay.db files under scratch roots in the system's temporary folder, rows written and read back through the
 // module itself. No live node's state is touched.
 
-require('../../script.js');
+require('../../../script.js');
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder/script.js').tempFolder;
+const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayStore/' + name + tempAsked); }
 // ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G49.7, Andy's Windows red "it leaves no temp folder behind"; cw's hand-over): on
@@ -24,7 +24,7 @@ test.after(function () {
   try { relayStore.closeAll(); } catch (e) { /* none open */ }
   try { fs.rmSync(tempFolder.path('spirit/test/relayStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
-const relayStore = S.requireScript('spirit/relayStore/script.js');
+const relayStore = S.requireScript('spirit/relay/store/script.js');
 
 const W = { roots: [], home: null, store: null, ro: null, roError: null, uniqueError: null, small: null, full: 0 };
 function scratch() {

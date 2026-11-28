@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/relayLimits/test/script.js
-// The tests of spirit/relayLimits/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/relay/limits/test/script.js
+// The tests of spirit/relay/limits/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // What the box can give and what a relay takes of it by default: pure arithmetic (ceilings, defaults, the parsers) and
 // one probe (measure) whose every dependency is handed in, so a Linux box, a container and a Windows box are planted.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const L = S.requireScript('spirit/relayLimits/script.js');
+const L = S.requireScript('spirit/relay/limits/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const MB = 1024 * 1024;

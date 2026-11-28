@@ -1,4 +1,4 @@
-# spirit/relayDump/script.js — its own test
+# spirit/relay/dump/script.js — its own test
 
 What a relay holds, asked over SSH, read-only. Owed
 since the rule *"every production script has its own test"* (goal/G47.1, box v72). A relay.db is made on a scratch root

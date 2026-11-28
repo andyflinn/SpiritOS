@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/relayConfig/script.js
+// spirit/run/spirit/relay/configHelper/script.js
 // THE FIRST CONFIGURATION A RELAY HAS EVER HAD.
 //
 // Cycle 1 (design/principles/NODE-AND-RELAY.md, §8 and Decided). Until
@@ -49,7 +49,7 @@ require('../script.js');
 // computed, so the figures a relay runs on are always readable on the box
 // rather than implied by an absent file.
 
-var relayLimits = spirit.requireScript('spirit/relayLimits/script.js');
+var relayLimits = spirit.requireScript('spirit/relay/limits/script.js');
 
 // `text` is the file's contents, or null when there is no file.
 // `measured` is relayLimits.measure()'s answer — { totalMB, availableMB,

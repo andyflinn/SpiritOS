@@ -13,13 +13,13 @@ const limits = spirit.requireScript('spirit/limits/script.js');
 const peerRank = spirit.requireScript('spirit/relay/peerRank/script.js');
 const presence = spirit.requireScript('spirit/relay/presence/script.js');
 const routerTable = spirit.requireScript('spirit/router/script.js');
-const relayStatus = spirit.requireScript('spirit/relayStatus/script.js');
+const relayStatus = spirit.requireScript('spirit/relay/status/script.js');
 // The relay's data on disc (cycle 3): members and invites.
-const relayStore = spirit.requireScript('spirit/relayStore/script.js');
+const relayStore = spirit.requireScript('spirit/relay/store/script.js');
 const faceRoute = spirit.requireScript('spirit/relay/faceRoute/script.js');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
-const relayConfig = spirit.requireScript('spirit/relayConfig/script.js');
+const relayConfig = spirit.requireScript('spirit/relay/configHelper/script.js');
 // A relay is a peer with a key (0010), so posts addressed to it are
 // sealed like any other and it opens them with its own (cycle 10, R9).
 const seal = spirit.requireScript('spirit/seal/script.js');
@@ -28,7 +28,7 @@ const seal = spirit.requireScript('spirit/seal/script.js');
 const nodeCard = spirit.requireScript('spirit/nodeCard/script.js');
 // The ceilings the owner's read reports — what this box could give — from
 // the same module the installer and first start use.
-const relayLimits = spirit.requireScript('spirit/relayLimits/script.js');
+const relayLimits = spirit.requireScript('spirit/relay/limits/script.js');
 // THE BUILD STAMP STOOD HERE: the product reads no git and no stamp file of its tree (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!").
 
 // NO STORE-AND-FORWARD (decision 0006). Andy: "the ring was a lie all
@@ -2575,7 +2575,7 @@ function createRelay(rootDir, deps) {
   // is the relay's owner key; a key on the roll holds the member bundle (spirit/relay/server/script.js, MEMBER), on the roll and
   // off it with the key; a stranger reaches only the card ask and a claim (answerPublic), before this gate.
   //
-  // The relay's folder relaySelf/, beside this file (AGENTS.md and one description file per verb) is read through introSpector's FS
+  // The relay branch's folder spirit/relay/, above this file (AGENTS.md and one description file per verb) is read through introSpector's FS
   // verbs (goal/G30.4: the AGENTS verbs are gone). FS is an owner verb like the others below; members get nothing of
   // it (Andy, 2026-10-20: "don't build shit nobody asked for.").
   var RELAY_BRANCH = spirit.requireScript('spirit/relay/server/script.js');
@@ -2592,10 +2592,10 @@ function createRelay(rootDir, deps) {
       ? { ok: false, status: 403, code: 'not-granted', error: 'that verb is not open to you on this relay' }
       : { ok: false, status: 404, error: 'no such peer' };
   }
-  // A VERB'S DESCRIPTION, its file in relaySelf/ beside this one, read by the relay for its api answer; no verb reads that folder for
+  // A VERB'S DESCRIPTION, its file in spirit/relay/ above this one, read by the relay for its api answer; no verb reads that folder for
   // a caller (goal/G49.25, Andy: "THER's NO LONGER ANY FUCKING FS. verbs on spirit.relay").
   function verbFile(v) {
-    try { var o = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', '..', 'relaySelf', v + '.json'), 'utf8')); return o && typeof o === 'object' ? o : {}; }
+    try { var o = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', v + '.json'), 'utf8')); return o && typeof o === 'object' ? o : {}; }
     catch (e) { return {}; }
   }
 
@@ -2605,7 +2605,7 @@ function createRelay(rootDir, deps) {
   //   as the node's api ("why would i do that, if not to give the relay-api the same shape as the nodes api?").
   //
   // The body 'api' answers { 'spirit.relay': { <verb>: { description, request, reply } } }, cut to what the caller holds: a
-  // member the member bundle's own verbs, the owner every verb. Each entry is read from the verb's file in relaySelf/; a file
+  // member the member bundle's own verbs, the owner every verb. Each entry is read from the verb's file in spirit/relay/; a file
   // declares no reply, so reply is {}.
   function relayApi(owner) {
     var out = {};
@@ -3448,7 +3448,7 @@ function createRelay(rootDir, deps) {
   // is broadcast(), which walks every sink and cannot express a
   // recipient at all — it is how every other event on this stream
   // travels, so reaching for the familiar one would publish an owner's
-  // invites to every connected peer. spirit/relayStatus/test/script.js asserts
+  // invites to every connected peer. spirit/relay/status/test/script.js asserts
   // the negative half for exactly that reason.
   //
   // Silent when the owner is not connected. A relay does not queue and

@@ -1,17 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/relayConfig/test/script.js
-// The tests of spirit/relayConfig/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
+// spirit/run/spirit/relay/configHelper/test/script.js
+// The tests of spirit/relay/configHelper/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // The relay's configuration, bounded by the box: pure, text and a measured box in, { ok, config } or { ok: false, error }
 // out. The box is planted as relayLimits.measure() answers it.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const C = S.requireScript('spirit/relayConfig/script.js');
+const C = S.requireScript('spirit/relay/configHelper/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A box with 1 GB total, 600 MB available (ceiling 575), a disc of 20000 MB with 10000 free (ceiling 8976).

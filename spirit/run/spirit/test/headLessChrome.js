@@ -342,7 +342,7 @@ async function scratchFaceRelay(o) {
   const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay/processor/script.js")); const made = R.createRelay; const mails = []; let box = null;' +
     ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); if (process.send) process.send({ mail: m }); return Promise.resolve({ ok: true }); } })); setImmediate(seat); return box; };' +
     ' function seat() {' +
-    ' const auth = require(path.resolve("spirit/relayAuth/script.js")); const store = require(path.resolve("spirit/relayStore/script.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
+    ' const auth = require(path.resolve("spirit/relayAuth/script.js")); const store = require(path.resolve("spirit/relay/store/script.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
     ' const out = { relayKey: box.relayPublicKey(), members: {} };' +
     ' ' + JSON.stringify(names) + '.forEach(function (name) { const id = auth.generateIdentity(name); const mail = name + "@example.org";' +
     '  box.join(id.publicKey, mail, "http://127.0.0.1:1/face.html", ""); const code = /[?&]join=([A-Za-z0-9_-]+)/.exec(mails[mails.length - 1].text)[1]; box.joinConfirm(id.publicKey, code, "");' +

@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/relayStore/script.js
+// spirit/run/spirit/relay/store/script.js
 // THE RELAY'S DATA, ON DISC. RAM IS ITS CLIENT.
 //
 //   Andy: "storage is actually moved from RAM to DISC, and RAM must become

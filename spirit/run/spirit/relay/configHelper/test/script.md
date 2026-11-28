@@ -1,4 +1,4 @@
-# spirit/relayConfig/script.js — its own test
+# spirit/relay/configHelper/script.js — its own test
 
 The relay's configuration, `spirit/state/config.json`, bounded by the box (cycle 1, cycle 9). Owed since the rule
 *"every production script has its own test"* (goal/G47.1, box v72). Pure: text and a planted measurement in.

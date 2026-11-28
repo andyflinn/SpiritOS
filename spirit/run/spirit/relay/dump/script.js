@@ -1,17 +1,17 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/relayDump/script.js
+// spirit/run/spirit/relay/dump/script.js
 // WHAT A RELAY HOLDS, ASKED OVER SSH — read-only, until cycle 4's monitor.
 //
 // The relay's data is in spirit/state/relay.db (relayStore.js). This is
 // what an owner types to read it:
 //
-//   node spirit/relayDump/script.js                 counts: members, invites   (from spirit/run)
-//   node spirit/relayDump/script.js key <publicKey> one member
+//   node spirit/relay/dump/script.js                 counts: members, invites   (from spirit/run)
+//   node spirit/relay/dump/script.js key <publicKey> one member
 //
 // (Partners were counted here until the partner roll went, goal/G22.6.)
-//   node spirit/relayDump/script.js label <label>   who holds a label (at most 10)
+//   node spirit/relay/dump/script.js label <label>   who holds a label (at most 10)
 //
 // NEVER A WHOLE-ROLL PRINT. The roll is not served to anybody (0012
 // widened), and a dump that printed it would be the member list back again
@@ -22,7 +22,7 @@ require('../script.js');
 // throws. Safe beside a running relay.
 
 const path = require('path');
-const relayStore = spirit.requireScript('spirit/relayStore/script.js');
+const relayStore = spirit.requireScript('spirit/relay/store/script.js');
 const auth = spirit.requireScript('spirit/relayAuth/script.js');
 
 const LABEL_LIMIT = 10;
@@ -74,7 +74,7 @@ function run(rootDir, args, out) {
 }
 
 if (require.main === module) {
-  process.exitCode = run(path.join(__dirname, '..', '..'), process.argv.slice(2), console.log);
+  process.exitCode = run(path.join(__dirname, '..', '..', '..'), process.argv.slice(2), console.log);
 }
 
 module.exports = { run: run };
