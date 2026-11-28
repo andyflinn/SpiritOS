@@ -434,19 +434,19 @@ test.run('a manifest.json that is no JSON: no app', 0.2, function () { const r =
 
 // ── A RELAY'S CACHE (goal/G49.25, box v10: "if spirit.IS_RELAY, the fs cache will cache branch and app folders only"; Q6, "does
 // the cache hold only spirit/<branch>/ and spirit/app/<name>/ folders with what is under them", Andy: "spirit is always
-// loaded.") ── The watcher on this checkout's run folder, only read, twice: as a node (spirit.IS_RELAY false) and as a relay
+// loaded.") ── The watcher on a scratch copy of the run folder, one file planted outside spirit/, twice: as a node (spirit.IS_RELAY false) and as a relay
 // (true, set before it starts). Which folders are branches and apps is the node's tree's own flags (api, branch, app), never
 // named here. As a relay the tree holds spirit/'s own files, each trunk branch spirit/<name>/ and each app folder with all
-// under them, and nothing else; as a node it holds a file of a trunk folder that is neither.
-function treeAs(relay) {
+// under them, everything outside spirit/ (box v12), and nothing else; as a node it holds a file of a trunk folder that is neither.
+function treeAs(run, relay) {
   const src = [
     "const dir = process.argv[1];",
-    "require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
+    "require(" + JSON.stringify(path.join(run, 'spirit', 'script.js')) + ");",
     relay ? "spirit.IS_RELAY = true;" : "",
-    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
-    "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
+    "const jobs = require(" + JSON.stringify(path.join(run, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
+    "const W = require(" + JSON.stringify(path.join(run, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "const job = W.start(dir, jobs);",
-    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
+    "const F = require(" + JSON.stringify(path.join(run, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
     "const end = Date.now() + 40000;",
     "(function tick() {",
     "  if (!F.ready() && Date.now() < end) return setTimeout(tick, 200);",
@@ -456,19 +456,29 @@ function treeAs(relay) {
     "  job._stop(); process.stdout.write('\\nTREE ' + JSON.stringify(out) + '\\n', function () { process.exit(0); });",
     "})();",
   ].join('\n');
-  const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000, maxBuffer: 1 << 28 });
+  const r = spawnSync(process.execPath, ['-e', src, run], { cwd: run, encoding: 'utf8', timeout: 60000, maxBuffer: 1 << 28 });
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('TREE ') === 0; })[0];
   try { return line ? JSON.parse(line.slice(5)) : null; } catch (e) { return null; }
 }
 const AS = { node: null, relay: null, homes: [], plain: '' };
-// Whether p is spirit/'s own (the folder or a file right in it), or at or under one of the branch and app folders.
+// Whether p is outside spirit/ (box v12: "it will still cache everything outside of run://spirit/"), spirit/'s own (the
+// folder or a file right in it), or at or under one of the branch and app folders.
+function outside(p) { return p !== 'spirit' && p.indexOf('spirit/') !== 0; }
 function relayHolds(p) {
+  if (outside(p)) return true;
   if (p === 'spirit' || /^spirit\/[^/]+$/.test(p) && AS.node[p] && AS.node[p].kind === 'file') return true;
   return AS.homes.some(function (h) { return p === h || p.indexOf(h + '/') === 0; });
 }
 test.run('the watcher on the run folder hands its tree as a node and as a relay', 0.2, function () {
-  AS.node = treeAs(false);
-  AS.relay = treeAs(true);
+  // On a scratch copy of the tracked run folder, with one file planted outside spirit/ (the checkout holds none there).
+  const tree = LABH.scratchTree();
+  try {
+    const run = path.join(tree.root, 'spirit', 'run');
+    fs.mkdirSync(path.join(run, 'zzOutside'), { recursive: true });
+    fs.writeFileSync(path.join(run, 'zzOutside', 'kept.txt'), 'x');
+    AS.node = treeAs(run, false);
+    AS.relay = treeAs(run, true);
+  } finally { LABH.freeTree(tree); }
   if (!AS.node || !AS.relay) return false;
   AS.homes = Object.keys(AS.node).filter(function (p) {
     const h = AS.node[p];
@@ -485,6 +495,11 @@ test.run('as a node, the tree holds a file of a trunk folder that is no branch a
 }, test.limit.quick);
 test.run('as a relay, the tree holds spirit/script.js: spirit is always loaded', 0.2, function () {
   return (!!AS.relay && !!AS.relay['spirit/script.js']) || false;
+}, test.limit.quick);
+test.run('as a relay, the tree holds every path outside spirit/', 0.2, function () {
+  if (!AS.node || !AS.relay) return false;
+  const out = Object.keys(AS.node).filter(outside);
+  return (out.length > 0 && out.every(function (p) { return !!AS.relay[p]; })) || false;
 }, test.limit.quick);
 test.run('as a relay, the tree holds every path at or under each trunk branch and each app folder', 0.2, function () {
   if (!AS.node || !AS.relay || !AS.homes.length) return false;
