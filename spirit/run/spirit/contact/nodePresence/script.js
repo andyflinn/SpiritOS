@@ -245,8 +245,9 @@ function createPresence(opts) {
   function reconcile(url) {
     const relayKey = relayKeys.pinned(rootDir, url);
     if (!router || !relayKey) return Promise.resolve();
-    const packet = JSON.stringify({ v: 1, body: { search: { q: '*' } } });
-    return Promise.resolve().then(function () { return router.post(url, relayKey, packet); }).then(function (answer) {
+    // The relay's own verb by its name (goal/G49.25): spirit.relay.search.
+    const packet = JSON.stringify({ call: 'spirit.relay.search', args: { q: '*' } });
+    return Promise.resolve().then(function () { return router.post(url, relayKey, packet, { call: 'spirit.relay.search' }); }).then(function (answer) {
       let out = null;
       try { const parsed = JSON.parse(String((answer && answer.text) || '')); out = parsed && parsed.body ? parsed.body : parsed; } catch (e) { out = null; }
       if (!out || out.ok !== true || !Array.isArray(out.matches) || !byRelay[url]) return;
@@ -299,8 +300,9 @@ function createPresence(opts) {
     catch (e) { card = ''; }
     if (!card) return;
     try {
+      // The relay's own verb by its name (goal/G49.25): spirit.relay.card, this node's card handed over.
       const said = router.post(url, relayKey,
-        JSON.stringify({ app: 'relay', v: 1, body: { card: card } }));
+        JSON.stringify({ call: 'spirit.relay.card', args: { card: card } }), { call: 'spirit.relay.card' });
       if (said && typeof said.catch === 'function') said.catch(function () { /* the next connection tries again */ });
     } catch (e) { /* a relay that will not take it is not this node's problem */ }
   }

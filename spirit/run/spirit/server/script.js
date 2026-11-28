@@ -2663,6 +2663,9 @@ catch (e) { /* a caption must never be the reason a relay will not boot */ }
 // spirit.IS_RELAY is true here (a relay keeps no job table, so nothing of it is published); then every trunk branch it marks. A
 // branch's node work answers nothing on a relay but the spirit.relay branch's, its verbs (spirit/relay/server/script.js): what the
 // relay's server hands it is relayNode, and what it hands back is mounted in relayVerbs, each call checked by spirit/relay/script.js.
+// THE RELAY'S PORT, WRITTEN AS A NODE WRITES ITS OWN (goal/G49.19, spirit/state/environment.json): a relay is a node too, and the
+// spirit object a branch's script loads through reads its port there.
+common.writeEnvironment(ROOT_DIR, port);
 common.loadFs(ROOT_DIR, null);
 // THE HOME NODE'S UPLOADS (Q10, Andy: "i agree with your recommendation."): named in a header, X-Spirit-Call, the raw upload the
 // body, so it is never read whole and never held to the packet's bound.

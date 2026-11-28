@@ -12,7 +12,8 @@
 //   the home node     faceAnswer, faceFeed: its uploads to its face, named in a header, the raw upload the body (Q10)
 //   a face's browser  faceCall, faceEvents (its live stream), faceState, faceLogin, faceLogout (no faceFile: the GET it stood for had
 //                     no caller left; a face asks a file in its faceCall, { get }, sealed as every call)
-//   its own           card, claim, face, search, rename, removePeer, invite, revoke, config, debug, monitor, relayLabel, api: each
+//   its own           card, claim, join, joinConfirm, face, search, rename, removePeer, invite, revoke, config, debug, monitor,
+//                     relayLabel, api (join and joinConfirm: Andy, "EVERY relay verb is in a node-branch"): each
 //                     today's signed packet, { from, text, sig }, its text { call, args } naming the verb (Q11, Andy: "same as today.")
 //
 // ITS COMPANION client/script.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: every branch's script requires its
@@ -23,7 +24,8 @@ var SIG = 'spirit/type/string/signature/script.js';
 var TEXT = 'spirit/type/string/fileContent/script.js';
 var MS = 'spirit/type/number/integer/script.js?';
 // Today's signed packet, the arguments of every verb of its own.
-var PACKET = { from: KEY, text: TEXT, sig: SIG, budgetMs: MS };
+// to: the relay's own key, or none (a stranger addresses the relay with no key, since it does not know it yet).
+var PACKET = { from: KEY, to: KEY + '?', text: TEXT, sig: SIG, budgetMs: MS };
 module.exports = {
   verbs: {
     post: { from: KEY, to: KEY + '?', text: TEXT, sig: SIG, budgetMs: MS },
@@ -37,7 +39,7 @@ module.exports = {
     faceState: {},
     faceLogin: { text: TEXT },
     faceLogout: {},
-    card: PACKET, claim: PACKET, face: PACKET, search: PACKET, rename: PACKET, removePeer: PACKET, invite: PACKET,
+    card: PACKET, claim: PACKET, join: PACKET, joinConfirm: PACKET, face: PACKET, search: PACKET, rename: PACKET, removePeer: PACKET, invite: PACKET,
     revoke: PACKET, config: PACKET, debug: PACKET, monitor: PACKET, relayLabel: PACKET, api: PACKET,
   },
 };

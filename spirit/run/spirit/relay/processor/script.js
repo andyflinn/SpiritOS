@@ -2242,14 +2242,15 @@ function createRelay(rootDir, deps) {
   // { plain } or { refusal }; a refusal still leaves as an answer, as it
   // always did. A stranger's sealed claim opens the same way: sealed by the
   // key that signed the post, to this relay's key.
-  // A CALL BY ITS NAME (goal/G49.25, box v25: "its own, as today's signed packet", its text "{ call, args } naming the verb"; Q11,
-  // Andy: "same as today."): a text { call: "spirit.relay.<verb>", args } is the ask { v: 1, body: { <verb>: args } } every verb below
-  // reads, the card's its own value (args.card, or true for the card ask), the api ask the word api. Any other text is as it was.
-  function asCalled(plain) {
+  // A CALL BY ITS NAME, AND NO OTHER SHAPE (goal/G49.25, box v25: "its own, as today's signed packet", its text "{ call, args } naming
+  // the verb"; Q11, Andy: "same as today."; and "WHY IS THERE AN OLD AND A NEW SHAPE FOR FUCKING REQUESTS TO A RELAY???????"): a text
+  // { call: "spirit.relay.<verb>", args }, its verb the one called (named), is the ask { v: 1, body: { <verb>: args } } every verb
+  // below reads, the card's its own value (args.card, or true for the card ask), the api ask the word api. Any other text is no ask.
+  function asCalled(plain, named) {
     var parsed = null;
-    try { parsed = JSON.parse(String(plain || '')); } catch (e) { return plain; }
+    try { parsed = JSON.parse(String(plain || '')); } catch (e) { return null; }
     var m = parsed && typeof parsed.call === 'string' ? /^spirit\.relay\.([A-Za-z]+)$/.exec(parsed.call) : null;
-    if (!m) return plain;
+    if (!m || parsed.call !== named || Object.keys(parsed).some(function (k) { return k !== 'call' && k !== 'args'; })) return null;
     var args = parsed.args && typeof parsed.args === 'object' && !Array.isArray(parsed.args) ? parsed.args : {};
     var verb = m[1];
     var body = {};
@@ -2258,14 +2259,18 @@ function createRelay(rootDir, deps) {
     else body[verb] = args;
     return JSON.stringify({ v: 1, body: body });
   }
-  function openSelfAsk(text, who) {
+  function openSelfAsk(text, who, named) {
+    var notCalled = { refusal: { ok: false, status: 400, error: 'a relay is asked by its verb: the call that names it, its text the same call' } };
     if (seal.isSealed(text)) {
       var mine = auth.loadIdentity(rootDir);
       var got = mine && seal.open(mine.sealPrivateKey, who && who.id, mine.publicKey, text);
       if (!got) return { refusal: { ok: false, status: 400, error: 'this did not open for me' } };
-      return { plain: asCalled(got.text) };
+      var opened = asCalled(got.text, named);
+      return opened === null ? notCalled : { plain: opened };
     }
-    if (isCardAsk(asCalled(text))) return { plain: asCalled(text) };
+    var plainAsk = asCalled(text, named);
+    if (plainAsk === null) return notCalled;
+    if (isCardAsk(plainAsk)) return { plain: plainAsk };
     // The receiver's half of the strict rule, on the relay's own door.
     // A sender-only check is bypassed by not being the sender, and
     // "the relay is the one box everybody can reach" is precisely the
@@ -2590,7 +2595,7 @@ function createRelay(rootDir, deps) {
   var selfFamily = null;
   function relaySelfFamily() {
     if (!selfFamily) {
-      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: RELAY_BRANCH.OWN.filter(function (v) { return v !== 'api' && v !== 'claim'; }) }).verbs; }
+      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1; }) }).verbs; }
       catch (e) { selfFamily = {}; }
     }
     return selfFamily;
@@ -2613,7 +2618,7 @@ function createRelay(rootDir, deps) {
   function relayApi(owner) {
     var family = relaySelfFamily();
     var out = {};
-    RELAY_BRANCH.OWN.filter(function (v) { return v !== 'api' && v !== 'claim' && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
+    RELAY_BRANCH.OWN.filter(function (v) { return ['api', 'claim', 'join', 'joinConfirm'].indexOf(v) === -1 && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
       var read = answerFs('FS.loadJsonValue', { path: v + '.json' });
       var file = read && read.value && typeof read.value === 'object' ? read.value : {};
       out[v] = {
@@ -3106,12 +3111,16 @@ function createRelay(rootDir, deps) {
   //
   // `clientKey` is the address the post came from (relayServer.js), read
   // only for a sender this relay does not hold: the strangers' table.
-  function routePost(fromToken, toToken, text, sig, budgetMs, clientKey) {
+  // named: the relay's own verb a call to this box is (spirit.relay.<verb>, goal/G49.25); none for a post, which never addresses it.
+  function routePost(fromToken, toToken, text, sig, budgetMs, clientKey, named) {
     var to = String(toToken == null ? '' : toToken);
     // AN EMPTY TARGET IS THIS BOX (Andy's decision, goal/G22.6): "A stranger
     // addresses the relay itself with an empty target (to: \"\"), since it
     // does not know the relay's key yet."
     var selfAddressed = to === '' || postedToSelf(to);
+    // ONE SHAPE (goal/G49.25): a post goes to a member, and the relay itself is asked by its verb's own call.
+    if (selfAddressed && !named) return { ok: false, status: 400, error: 'a relay is asked by its verb: call spirit.relay.<verb>, not a post to it' };
+    if (named && !selfAddressed) return { ok: false, status: 400, error: 'a verb of this relay is addressed to this relay' };
     var target = selfAddressed ? null : senderIdentity(to);
 
     // ── WHO IS ASKING: A MEMBER, OR A STRANGER ────────────────────────
@@ -3220,7 +3229,7 @@ function createRelay(rootDir, deps) {
       // OPENED ONCE, AND ONE VERB (goal/G16.2): see openSelfAsk
       // and selfAskVerbCount. Refused before a route is opened, so a second
       // verb never runs by riding along with the first.
-      var asked = openSelfAsk(text, who);
+      var asked = openSelfAsk(text, who, named);
       if (asked.plain != null && selfAskVerbCount(asked.plain) > 1) {
         return { ok: false, status: 400, error: 'one verb per request' };
       }

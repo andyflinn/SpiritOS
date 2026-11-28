@@ -811,8 +811,23 @@ function createHub(rootDir) {
   // Built directly rather than through packet.js, which is the point: the
   // node does not use an app-envelope builder for something that is not
   // an app packet.
-  function systemPayload(body) {
-    return JSON.stringify({ v: 1, body: body });
+  // A RELAY'S OWN VERB BY ITS NAME (goal/G49.25, box v25): { call: "spirit.relay.<verb>", args }, the call the post goes as.
+  function systemCall(verb, args) {
+    return { text: JSON.stringify({ call: 'spirit.relay.' + verb, args: args || {} }), call: 'spirit.relay.' + verb };
+  }
+  // A PAGE'S ASK OF ITS RELAY, BY THE VERB'S NAME (goal/G49.25): a page asks its relay's own verbs (its label, an invite, a revoke) as a
+  // packet for the app relay, { app: "relay", body: { <verb>: args } }, through peer.post; here, the one place each passes, it goes as
+  // that verb's call, spirit.relay.<verb>. Anything else is a post as it was. The card's argument is the card itself, or none.
+  function relayAsked(text) {
+    let p = null;
+    try { p = JSON.parse(String(text || '')); } catch (e) { return null; }
+    const body = p && p.app === 'relay' && p.body && typeof p.body === 'object' && !Array.isArray(p.body) ? p.body : null;
+    if (!body || Object.keys(body).length !== 1) return null;
+    const verb = Object.keys(body)[0];
+    if (!/^[A-Za-z]+$/.test(verb)) return null;
+    const v = body[verb];
+    const args = verb === 'card' ? (typeof v === 'string' ? { card: v } : {}) : (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+    return systemCall(verb, args);
   }
 
   // POST TO A PEER, AND WAIT FOR THE ANSWER. The router's half of the
@@ -965,6 +980,8 @@ function createHub(rootDir) {
         }
         how = Object.assign({ kind: 'background' }, how);
       }
+      const asked = relayAsked(text);
+      if (asked) { text = asked.text; how = Object.assign({}, how, { call: asked.call }); }
       return sendPacket(router, route.relayUrl, to, text, how).then(function (answer) {
         learnPresence(rootDir, to, answer);
         // DELIVERED MEANS THERE (goal/G2.9): an answer that crossed the wire is the relay carrying that peer now,
@@ -1730,7 +1747,8 @@ function createHub(rootDir) {
       // whoever is standing there.
       var relayKey = relayKeys.pinned(rootDir, url);
       if (!relayKey) return Promise.resolve(null);
-      return sendPacket(router, url, relayKey, systemPayload({ search: { q: q } })).then(function (answer) {
+      var asked = systemCall('search', { q: q });
+      return sendPacket(router, url, relayKey, asked.text, { call: asked.call }).then(function (answer) {
         var said = null;
         try { said = JSON.parse((answer && answer.text) || ''); } catch (e) { said = null; }
         var out = (said && said.body) || {};
@@ -2020,9 +2038,9 @@ function createHub(rootDir) {
     if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
     var row = relayKeys.byUrl(rootDir, url);
     if (!row) return Promise.resolve({ ok: false, status: 404, error: 'that relay is not on this node\'s list' });
-    var made = packet.encode('relay', { face: { name: name } });
-    if (!made || !made.ok) return Promise.resolve({ ok: false, status: 500, error: 'the application could not be encoded' });
-    return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
+    // The relay's own verb by its name (goal/G49.25): spirit.relay.face.
+    var made = systemCall('face', { name: name });
+    return sendPacket(deps.router, row.url, row.key, made.text, { call: made.call }).then(function (answer) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
       // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
@@ -2052,9 +2070,9 @@ function createHub(rootDir) {
     var reports = typeof deps.router.relayStatus === 'function' ? (deps.router.relayStatus() || {}) : {};
     if (reports[url]) return Promise.resolve({ ok: false, status: 409, error: 'you own this relay: its owner keeps his seat' });
     var me = auth.loadIdentity(rootDir);
-    var made = packet.encode('relay', { removePeer: { key: me.publicKey } });
-    if (!made || !made.ok) return Promise.resolve({ ok: false, status: 500, error: 'the leave could not be encoded' });
-    return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
+    // The relay's own verb by its name (goal/G49.25): spirit.relay.removePeer.
+    var made = systemCall('removePeer', { key: me.publicKey });
+    return sendPacket(deps.router, row.url, row.key, made.text, { call: made.call }).then(function (answer) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
       // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).

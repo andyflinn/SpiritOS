@@ -16,7 +16,7 @@
 // (Q11, Andy: "same as today."), its answer sealed back on the member's stream.
 require('../../script.js');
 
-const OWN = ['card', 'claim', 'face', 'search', 'rename', 'removePeer', 'invite', 'revoke', 'config', 'debug', 'monitor', 'relayLabel', 'api'];
+const OWN = ['card', 'claim', 'join', 'joinConfirm', 'face', 'search', 'rename', 'removePeer', 'invite', 'revoke', 'config', 'debug', 'monitor', 'relayLabel', 'api'];
 // THE MEMBER BUNDLE (goal/G49.25, box v25: "The member verbs (card, face, removePeer, rename, search, and post, reply, stream, face
 // answer, face stream) sit in one bundle, granted to each key on the relay's member roll as it joins and revoked as it leaves. The
 // owner, by the relay's owner key, holds every verb"): the roll is the grant, a key holds the bundle while it is on it. The relay's
@@ -53,11 +53,12 @@ function verbs(node) {
   // A post answered on itself (R13; goal/G22.6: a card ask, a claim, a stranger's post to a member) stays open until relay.js's held
   // promise settles, with the reply packet or with 504 "no answer yet"; it never rejects. THE ADDRESS IT CAME FROM is read by
   // relay.js only for a sender it does not hold (goal/G22.6).
-  function posted(req, res, to) {
+  // named: the relay's own verb this call is (spirit.relay.<verb>), which the processor checks the opened ask against; none for a post.
+  function posted(req, res, named) {
     readJsonBody(req).then(function (b) {
       const body = b || {};
       const budgetMs = typeof body.budgetMs === 'number' && isFinite(body.budgetMs) ? Math.max(0, body.budgetMs) : undefined;
-      const result = relay.routePost(body.from, to === undefined ? body.to : to, body.text, body.sig, budgetMs, node.clientKeyFor(req));
+      const result = relay.routePost(body.from, body.to, body.text, body.sig, budgetMs, node.clientKeyFor(req), named);
       if (result && result.held && typeof result.held.then === 'function') { result.held.then(function (r) { writePosted(res, r); }); return; }
       writePosted(res, result);
     }).catch(function () { badBody(res); });
@@ -211,8 +212,9 @@ function verbs(node) {
       json(res, 200, { ok: true, loggedIn: false });
     } },
   };
-  // ITS OWN VERBS, today's signed packet addressed to this relay (Q11): the post's own path, to '' (this box), its text naming the verb.
-  OWN.forEach(function (v) { out[v] = { reply: {}, handler: function (req, res) { posted(req, res, ''); } }; });
+  // ITS OWN VERBS, today's signed packet addressed to this relay (Q11): the post's own path, its text naming the verb, which must be
+  // the verb called.
+  OWN.forEach(function (v) { out[v] = { reply: {}, handler: function (req, res) { posted(req, res, 'spirit.relay.' + v); } }; });
   return out;
 }
 

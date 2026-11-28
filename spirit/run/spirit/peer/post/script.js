@@ -651,7 +651,7 @@ function createPeerPost(opts) {
 
     Promise.resolve()
       .then(function () {
-        return request(it.relayUrl, 'POST', '/spirit', { call: 'spirit.relay.post', args: it.payload.body });
+        return request(it.relayUrl, 'POST', '/spirit', { call: it.payload.call || 'spirit.relay.post', args: it.payload.body });
       })
       .then(function (res) {
         var body = {};
@@ -1113,7 +1113,9 @@ function createPeerPost(opts) {
       // What this entry costs while it waits: its payload, which is the
       // whole reason the queue is bounded in bytes rather than in rows.
       bytes: text.length,
-      payload: { hash: hash, body: body },
+      // A RELAY'S OWN VERB GOES BY ITS NAME (goal/G49.25, box v25: "its own, as today's signed packet", called spirit.relay.<verb>):
+      // how.call, when the caller asks the relay itself; every other post is spirit.relay.post.
+      payload: { hash: hash, body: body, call: how && how.call ? String(how.call) : '' },
     });
 
     // WRITTEN DOWN BEFORE IT IS TRIED, for the same reason the waiter is
@@ -1698,19 +1700,22 @@ function createPeerPost(opts) {
 
   function pause(ms) { return new Promise(function (r) { setT(r, ms); }); }
 
-  function publicPost(relayUrl, to, text) {
+  // call: the relay's own verb this is (goal/G49.25): the card ask, a claim, a join or its confirm, each by its name.
+  function publicPost(relayUrl, to, text, call) {
     // The node's key exists from relayAuth's first load (goal/G22.5).
     var id = me();
     var message = auth.postMessage(id.publicKey, to, text);
     var hash = auth.requestHash(message);
     var body = { from: id.publicKey, to: to, text: text, sig: auth.sign(id.privateKey, message) };
+    // A stranger asks the relay itself with no key, as it knows none yet: then the call names no to (goal/G49.25, spirit/relay/script.js).
+    if (call && !to) delete body.to;
     var u = String(relayUrl || '').replace(/\/+$/, '');
     var started = Date.now();
     function attempt() {
       var wait = (publicAskedAt[u] || 0) + STRANGER_GAP_MS - Date.now();
       return (wait > 0 ? pause(wait) : Promise.resolve()).then(function () {
         publicAskedAt[u] = Date.now();
-        return request(u, 'POST', '/spirit', { call: 'spirit.relay.post', args: body });
+        return request(u, 'POST', '/spirit', { call: call || 'spirit.relay.post', args: body });
       }).then(function (res) {
         var said = null;
         try { said = JSON.parse(res.text); } catch (e) { said = null; }
@@ -1770,8 +1775,8 @@ function createPeerPost(opts) {
   var ownerLabelByUrl = Object.create(null);
   function ownerLabelOf(relayUrl) { return String(ownerLabelByUrl[String(relayUrl || '').replace(/\/+$/, '')] || ''); }
   function relayKey(relayUrl) {
-    var ask = JSON.stringify({ v: 1, body: { card: true } });
-    return publicPost(relayUrl, '', ask).then(function (got) {
+    var ask = JSON.stringify({ call: 'spirit.relay.card', args: {} });
+    return publicPost(relayUrl, '', ask, 'spirit.relay.card').then(function (got) {
       var pkt = relayAnswer(got, '');
       var said = null;
       try { said = JSON.parse(pkt.text).body; } catch (e) { said = null; }
@@ -1859,9 +1864,9 @@ function createPeerPost(opts) {
     return keyed.then(function (key) {
       var body = claimBody(name, invite, inviteLabel);
       var wrapped = seal.seal(key.relaySealKey, body.publicKey, key.relayPublicKey,
-        JSON.stringify({ v: 1, body: { claim: body } }));
+        JSON.stringify({ call: 'spirit.relay.claim', args: body }));
       if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
-      return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped)).then(function (got) {
+      return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped), 'spirit.relay.claim').then(function (got) {
         var pkt = relayAnswer(got, key.relayPublicKey);
         var mine = me();
         var plain = pkt.text;
@@ -1902,12 +1907,12 @@ function createPeerPost(opts) {
       var mine = me();
       try { spirit.requireScript('spirit/server/script.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the join still goes */ }
       var card = nodeCard.describe(rootDir);
-      var body = code
-        ? { joinConfirm: { code: String(code), card: card } }
-        : { join: { email: String(email || ''), url: String(link || ''), card: card } };
-      var wrapped = seal.seal(key.relaySealKey, mine.publicKey, key.relayPublicKey, JSON.stringify({ v: 1, body: body }));
+      var call = code
+        ? { call: 'spirit.relay.joinConfirm', args: { code: String(code), card: card } }
+        : { call: 'spirit.relay.join', args: { email: String(email || ''), url: String(link || ''), card: card } };
+      var wrapped = seal.seal(key.relaySealKey, mine.publicKey, key.relayPublicKey, JSON.stringify(call));
       if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
-      return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped)).then(function (got) {
+      return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped), call.call).then(function (got) {
         var pkt = relayAnswer(got, key.relayPublicKey);
         var plain = pkt.text;
         if (seal.isSealed(plain)) {
