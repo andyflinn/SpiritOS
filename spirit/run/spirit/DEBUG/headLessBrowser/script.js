@@ -1,0 +1,47 @@
+'use strict';
+require('../../script.js');
+// spirit/run/spirit/DEBUG/headLessBrowser/script.js
+// THE BARE MOUNT PAGE OF ONE MODULE (goal/G41.19, ./test/script.md), replacing shell/mount.html. Andy: "the response will
+// be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit/script.js"> and the most minimal
+// mount for armingButton.js". Its first user is the shell's general rules (spirit/test/script-sibling-browser.md).
+//
+// The page loads /spirit/script.js, then the module through spirit.requireScript, alone (rule/26). An element
+// is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
+// by the elements own test script"): the element the require hands back,
+// put there by the loader from its module.exports (goal/G49.9, G49.23; Andy, G43.32: "element scripts installed by the above
+// logic place their element-factory at spirit.element.<path-of-fucking-element-script>"); none there fails and says where it looked.
+// /shell.css is the shell's one sheet, a link and not a script. What happened is on
+// window.spiritMount: { state: loading | mounted | failed, error, box, destroy }.
+'use strict';
+
+// The page's script, as the page carries it: no comments, nothing named but what it mounts.
+function mountScript(file) {
+  return '(function () {\n' +
+    'var box = document.getElementById("mount-box");\n' +
+    'var report = window.spiritMount = { state: "loading", error: "", box: box, destroy: null };\n' +
+    'function failed(e) { report.state = "failed"; report.error = String((e && e.message) || e || "failed"); }\n' +
+    'var file = ' + JSON.stringify(file) + ';\n' +
+    'Promise.resolve(spirit.startPage()).then(function () { return spirit.requireScript(file); }).then(function (el) {\n' +
+    // AN INTERFACE IS NO ELEMENT (goal/G49.7; Andy's red on spirit/job/script.js): a branch's api.js stands at its place bound, its
+    // verbs table beside its functions, and a verb named create (job's) is no element's factory; it is judged as no element.
+    // The element is what spirit.requireScript hands back (goal/G49.23), never read at its place.
+    '  if (!el || typeof el.create !== "function" || (el.verbs && typeof el.verbs === "object")) throw new Error(file + " hands back no element with a create");\n' +
+    '  return Promise.resolve(el.create(box)).then(function (m) {\n' +
+    '    if (m && typeof m.destroy === "function") report.destroy = function () { return m.destroy(); };\n' +
+    '    report.state = "mounted";\n' +
+    '  });\n' +
+    '}).then(null, failed);\n' +
+    '}());';
+}
+
+function make(o) {
+  if (o.ext !== 'html') return Promise.resolve(null);
+  const name = o.module.slice(o.module.lastIndexOf('/') + 1);
+  const body = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>' + name + '</title>\n' +
+    '<link rel="stylesheet" href="/spirit/shell/shell.css" />\n' +
+    '<style>html, body { height: 100%; margin: 0; } body { display: flex; flex-direction: column; }</style>\n' +
+    '</head>\n<body>\n<div id="mount-box" class="fill"></div>\n<script src="/spirit/script.js"></script>\n<script>\n' + mountScript(o.module + '.js') + '\n</script>\n</body>\n</html>\n';
+  return Promise.resolve({ type: 'text/html; charset=utf-8', body: body });
+}
+
+module.exports = { make: make };

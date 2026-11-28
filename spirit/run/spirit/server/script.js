@@ -279,7 +279,7 @@ function readBody(stream, opts) {
 // refusing.
 // `opts.max` lifts the bound for ONE caller that has decided it may: the
 // node's own door, which reads before it knows the verb and then applies
-// BODY_MAX to every verb but net.fetch, fs.save and fs.load (server.js). Everybody
+// BODY_MAX to every verb but spirit.net.fetch, spirit.fs.save and spirit.fs.load (server.js). Everybody
 // else reads under BODY_MAX exactly as before. The bytes seen are kept on
 // the request, so the door can judge the body it has already read.
 function readJsonBody(req, opts) {
@@ -659,7 +659,7 @@ const relayKeys = spirit.requireScript('spirit/peer/relay/key/script.js');
 // The owner badge (ownerBadge.js). Required here for one call at boot:
 // a node with no relay is given the kept one (ensureRelays, a relay row
 // of node.db's one table through relayKeys).
-const ownerBadge = spirit.requireScript('spirit/ownerBadge/script.js');
+const ownerBadge = spirit.requireScript('spirit/contact/ownerBadge/script.js');
 // THE BUILD STAMP AND GET /api/version STOOD HERE: the product reads no git and no stamp file of its tree
 // (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!").
 
@@ -694,7 +694,7 @@ common.verifyStartupCwd('spirit/server/script.js', ['spirit']);
 
 const ROOT_DIR = fileSystem.ROOT_DIR;
 
-const hub =spirit.requireScript('spirit/hub/script.js').createHub(ROOT_DIR);
+const hub =spirit.requireScript('spirit/contact/hub/script.js').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.DEFAULT_SPIRIT_PORT;
 // This node's port into spirit/state/environment.json, before any server process starts (goal/G40.6: serveCommon writes
@@ -1015,7 +1015,7 @@ const fsPath = fileSystem.fsPath;
 // the door reads args as its body (serveCommon.useBody). Anything else,
 // the flat { verb, ...args } among it, answers null: the door refuses it.
 // Read with NO bound, so the verb is known before the body is judged;
-// the door then holds every verb but net.fetch to BODY_MAX (below).
+// the door then holds every verb but spirit.net.fetch to BODY_MAX (below).
 function peekCall(req) {
   return readJsonBody(req, { max: Infinity })
     .then(function (body) {
@@ -1375,7 +1375,7 @@ const server = http.createServer((req, res) => {
           return;
         }
         // Every verb but the proxy and the owner's fs.save and fs.load keeps the packet's bound (goal/G33.10).
-        if (['net.fetch', 'spirit.fs.save', 'spirit.fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > spirit.requireScript('spirit/limits/script.js').BODY_MAX) {
+        if (['spirit.net.fetch', 'spirit.fs.save', 'spirit.fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > spirit.requireScript('spirit/limits/script.js').BODY_MAX) {
           res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + spirit.requireScript('spirit/limits/script.js').BODY_MAX);
           return;
@@ -1608,7 +1608,7 @@ catch (e) {
   peerRouter = spirit.requireScript('spirit/peer/post/script.js').createPeerPost({
     rootDir: ROOT_DIR,
     onRelayCard: function (url) { relayChanged(url); },
-    request: spirit.requireScript('spirit/hub/script.js').relayRequest,
+    request: spirit.requireScript('spirit/contact/hub/script.js').relayRequest,
     // THE QUEUE OUTLIVES THE PROCESS (cycle R16). This is the one peerPost
     // the tree builds; a relay builds none since partnering went (goal/G22.6).
     store: nodeStore.open(ROOT_DIR),
@@ -1624,7 +1624,7 @@ catch (e) {
     // while the process runs, and a node that acquired somebody an hour
     // ago must hear them now.
     door: function (from) {
-      return spirit.requireScript('spirit/hub/script.js').frontDoor(ROOT_DIR, from);
+      return spirit.requireScript('spirit/contact/hub/script.js').frontDoor(ROOT_DIR, from);
     },
     // WHERE A VERIFIED CARD IS KEPT (cycle 10, R3). peerPost checks the
     // signature — pure, and correct in a relay as in a node — and hands
@@ -1672,7 +1672,7 @@ catch (e) {
     // EVERY ARRIVAL IS SEEN, whatever the door decides about it; it is no route (goal/G47.1, box v69: "every write of a
     // route (an arrival ...)" goes): the row's lastSeen moves, nothing more.
     noteSeen: function (from, relayUrl) {
-      spirit.requireScript('spirit/hub/script.js').shadow(ROOT_DIR).note(from, { rank: spirit.requireScript('spirit/seenPeers/script.js').ARRIVED });
+      spirit.requireScript('spirit/contact/hub/script.js').shadow(ROOT_DIR).note(from, { rank: spirit.requireScript('spirit/seenPeers/script.js').ARRIVED });
       // AND THE DOT HEARS THE ARRIVAL (goal/G2.9). Andy: "and every incoming request?" — a packet the relay just
       // carried in is that relay saying its sender is there now, the strongest evidence there is; the live table
       // marks the sender at that relay as a broadcast would, and the Contacts dot paints. No unit mounts this
@@ -1682,7 +1682,7 @@ catch (e) {
       }
     },
     remember: function (from, verdict) {
-      return spirit.requireScript('spirit/hub/script.js').remember(ROOT_DIR, from, verdict);
+      return spirit.requireScript('spirit/contact/hub/script.js').remember(ROOT_DIR, from, verdict);
     },
     // AND WHERE AN ADMITTED PACKET GOES. The hook has existed since the
     // router landed and had no caller but a test, so until 2026-09-13 a
@@ -1768,7 +1768,7 @@ catch (e) {
     //
     // A request from the owner's face runs through the door the puppeteer uses above (nodeDoor.call), a file through
     // the browser's own GET (serveGet); faceStream carries what the loopback shell gets. faceHome.js says the rest.
-    faceHome = spirit.requireScript('spirit/faceHome/script.js').createFaceHome({
+    faceHome = spirit.requireScript('spirit/contact/faceHome/script.js').createFaceHome({
       call: function (verb, args) { return nodeDoor.call(verb, args); },
       serveFile: function (rel, res) { serveGet('/' + rel, res); },
       // A face's save in parts lands here (goal/G33.10): the work file copied to the target through the save gate.
@@ -1816,7 +1816,7 @@ catch (e) {
       // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
       post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, how); },
       encode: wire.encode,
-      isKnown: function (key) { return spirit.requireScript('spirit/hub/script.js').frontDoor(ROOT_DIR, key) === 'known'; },
+      isKnown: function (key) { return spirit.requireScript('spirit/contact/hub/script.js').frontDoor(ROOT_DIR, key) === 'known'; },
       // THE GATE'S GRANTS (apiAuth/G1.2, G1.3): a member's paths from node.db, read through apiAuth.js;
       // a store that cannot be read throws, and the gate fails closed.
       auth: spirit.requireScript('spirit/grant/auth/script.js').createApiAuth({ rootDir: ROOT_DIR }),
@@ -1864,11 +1864,11 @@ catch (e) {
       // hands {present, at: <ms>} for an ID it draws; the shadow row takes that word and that moment, and
       // nothing else on the row moves.
       if (what && typeof what.at === 'number') {
-        spirit.requireScript('spirit/hub/script.js').shadow(ROOT_DIR).note(key, { present: what.present === true, seen: what.at });
+        spirit.requireScript('spirit/contact/hub/script.js').shadow(ROOT_DIR).note(key, { present: what.present === true, seen: what.at });
         return;
       }
       // Its label and presence; where it is (at, url) is no route kept (goal/G47.1).
-      spirit.requireScript('spirit/hub/script.js').shadow(ROOT_DIR).note(key, Object.assign({
+      spirit.requireScript('spirit/contact/hub/script.js').shadow(ROOT_DIR).note(key, Object.assign({
         rank: spirit.requireScript('spirit/seenPeers/script.js').HOST,
       }, what || {}));
     },
@@ -1911,7 +1911,7 @@ catch (e) {
     onRoute: function (url, body) {
       if (!body || !body.key) return;
       try {
-        spirit.requireScript('spirit/hub/script.js').shadow(ROOT_DIR).note(body.key, {
+        spirit.requireScript('spirit/contact/hub/script.js').shadow(ROOT_DIR).note(body.key, {
           label: body.label || '',
           rank: spirit.requireScript('spirit/seenPeers/script.js').PROVED,
           // THE WHOLE ROW (R28): a relay announcing a claim or a rename says whether the member is connected right
@@ -1956,7 +1956,7 @@ catch (e) {
   });
   // Which relays hold a seat for this node is asked of each relay's card,
   // through this router (goal/G22.6: GET /spirit/relay/key is closed).
-  peerRouter.startStreams(spirit.requireScript('spirit/hub/script.js').relayKeyAsk(peerRouter)).catch(() => {});
+  peerRouter.startStreams(spirit.requireScript('spirit/contact/hub/script.js').relayKeyAsk(peerRouter)).catch(() => {});
 
   // ── THE CLAIMS, WHERE WHAT THEY NEED IS ────────────────────────────
   //
@@ -2266,7 +2266,7 @@ const startEmail = common.emailFromArgs(process.argv.slice(2));
 // A request Node cannot parse is answered 400, never a reset (goal/G41.30, serveCommon.answerClientErrors).
 common.answerClientErrors(server);
 server.listen(port, BIND_HOST, () => {
-  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.requireScript('spirit/hub/script.js').relayKeyAsk(peerRouter) })
+  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.requireScript('spirit/contact/hub/script.js').relayKeyAsk(peerRouter) })
     .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Contacts instead.'] }; })
     .then(function (r) {
       (r.lines || []).forEach(function (line) { console.log(line); });

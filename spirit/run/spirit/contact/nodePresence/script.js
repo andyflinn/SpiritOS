@@ -18,7 +18,7 @@ require('../../script.js');
 
 const path = require('path');
 const auth = spirit.requireScript('spirit/relayAuth/script.js');
-const ownerBadge = spirit.requireScript('spirit/ownerBadge/script.js');
+const ownerBadge = spirit.requireScript('spirit/contact/ownerBadge/script.js');
 const sseClient = spirit.requireScript('spirit/sseClient/script.js');
 // Which key a relay answers to, pinned when this node took its seat.
 const relayKeys = spirit.requireScript('spirit/peer/relay/key/script.js');

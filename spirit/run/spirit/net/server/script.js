@@ -28,11 +28,11 @@
 //
 // NO SECRETS AND NO ALLOW LIST HERE (goal/G29.20; Andy, 2026-10-18: "remove all the env logic and allow-list crap from it at
 // well"). NEVER THIS MACHINE (Andy, 2026-10-18: "fetch will not be able to reach ports on this machine, and agents may use
-// it."): spirit/netFence/script.js.
+// it."): spirit/net/fence/script.js.
 require('../../script.js');
 const http = require('http');
 const https = require('https');
-const netFence = spirit.requireScript('spirit/netFence/script.js');
+const netFence = spirit.requireScript('spirit/net/fence/script.js');
 
 function verbs(node) {
   if (spirit.IS_RELAY) return {};

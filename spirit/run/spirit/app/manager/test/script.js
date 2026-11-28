@@ -13,7 +13,7 @@ const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const { scratchNode, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
 // put aside, and a server module required after that finds no global spirit.
-const { faceRefuses } = SPIRIT.requireScript('spirit/faceHome/script.js');
+const { faceRefuses } = SPIRIT.requireScript('spirit/contact/faceHome/script.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 async function ask(base, call, args) {

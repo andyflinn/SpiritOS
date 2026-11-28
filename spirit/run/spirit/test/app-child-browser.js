@@ -12,7 +12,7 @@
 //
 // HOW: one scratch node (the tracked files), the server of every app judged turned on when its folder holds one
 // (spirit/app/<name>/<name>.js), and one headless Chrome page. Each script is opened on its bare DEBUG page, spirit.js and
-// that file alone (spirit/DEBUG/headLessBrowser.js); whether it installs an element the page says, no code read. Mounted,
+// that file alone (spirit/DEBUG/headLessBrowser/script.js); whether it installs an element the page says, no code read. Mounted,
 // what it loaded stands at its path on the spirit object (goal/G49.23: no spirit.required): on a bare page nothing else loaded it.
 require('../script.js');
 const fs = require('fs');

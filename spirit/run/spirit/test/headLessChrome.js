@@ -360,7 +360,7 @@ async function scratchFaceRelay(o) {
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const lines = [];
-  // Every mail the relay sent, for a real node joining it and a face logging in (spirit/faceHome/test/script.js).
+  // Every mail the relay sent, for a real node joining it and a face logging in (spirit/contact/faceHome/test/script.js).
   const mailed = [];
   let ready = null;
   const hear = function (m) { if (m && m.ready) ready = m.ready; else if (m && m.mail) mailed.push(m.mail); else if (m && m.stream) lines.push(m); };

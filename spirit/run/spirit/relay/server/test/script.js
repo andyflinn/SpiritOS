@@ -322,7 +322,7 @@ test.run('a scratch relay comes up and hands its garbage list', 0.2, async funct
   const A = relay.auth;
   G.plain = async function () { const r = await raw(base, getHead('/'), '', { ms: PLAIN_MS }); return !!(r && r.status); };
 
-  // 1) INTROSPECT: the relay's own api, as its garbage list (its DEBUG route: spirit/DEBUG/garbageArguments.js over the
+  // 1) INTROSPECT: the relay's own api, as its garbage list (its DEBUG route: spirit/DEBUG/garbageArguments/script.js over the
   // relay's api tree), each entry the ask's body { body: { <verb>: args } }.
   let list = null;
   // The relay is spirit/relay/processor/script.js since goal/G49.12's flag day (box v17: "spirit/relay.js --> spirit/relay/processor/script.js").
@@ -694,7 +694,7 @@ async function answered(headers) {
   const id = line ? (/"id":"([^"]+)"/.exec(line.line) || [])[1] : '';
   if (!id) return { viewer: 0, noCall: true };
   const sig = R.auth.sign(m.privateKey, R.auth.faceMessage(m.publicKey, R.relayKey, id));
-  // The answer as the home node uploads it (spirit/faceHome/script.js): named spirit.relay.faceAnswer in a header, its id beside it.
+  // The answer as the home node uploads it (spirit/contact/faceHome/script.js): named spirit.relay.faceAnswer in a header, its id beside it.
   let head = 'POST /spirit HTTP/1.1\r\nHost: ' + new URL(R.base).host + '\r\nConnection: close\r\nX-Spirit-Call: spirit.relay.faceAnswer\r\nX-Spirit-Id: ' + id + '\r\nX-Spirit-From: ' + m.publicKey + '\r\nX-Spirit-Sig: ' + sig + '\r\n';
   Object.keys(headers).forEach(function (k) { head += k + ': ' + headers[k] + '\r\n'; });
   head += 'Content-Length: 1\r\n\r\n';

@@ -26,7 +26,7 @@ require('../../script.js');
 
 const nodeCard = spirit.requireScript('spirit/nodeCard/script.js');
 const auth = spirit.requireScript('spirit/relayAuth/script.js');
-const ownerBadge = spirit.requireScript('spirit/ownerBadge/script.js');
+const ownerBadge = spirit.requireScript('spirit/contact/ownerBadge/script.js');
 
 function seen(rootDir) { return spirit.requireScript('spirit/nodeStore/script.js').open(rootDir).seen; }
 

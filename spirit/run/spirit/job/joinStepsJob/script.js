@@ -27,7 +27,7 @@ function facts(rootDir) {
   try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
   out.seated = seated.length > 0;
   let listed = [];
-  try { listed = spirit.requireScript('spirit/ownerBadge/script.js').loadRelays(rootDir).map(function (r) { return r.url; }); } catch (e) { listed = []; }
+  try { listed = spirit.requireScript('spirit/contact/ownerBadge/script.js').loadRelays(rootDir).map(function (r) { return r.url; }); } catch (e) { listed = []; }
   out.relayUrl = String(seated[0] || listed[0] || '');
   // THE FACE NAME on that relay, the node's own fact on its row (goal/G40.11).
   if (out.seated) {

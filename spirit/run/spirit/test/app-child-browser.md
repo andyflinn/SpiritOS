@@ -19,7 +19,7 @@ node with its app's server on, is red unless it loaded its own app's api.js and 
 - One scratch node (the tracked files) with the server of every app judged turned on, where the app's folder holds one
   (`spirit/app/<name>/<name>.js`; Andy: *"a server MUST be mounted if a mountable server exists in that app folder before a
   test is conducted"*); no page is opened before each of them answers its interface.
-- Each script is opened alone on its bare DEBUG page, `spirit.js` and that file (`spirit/DEBUG/headLessBrowser.js`). Whether
+- Each script is opened alone on its bare DEBUG page, `spirit.js` and that file (`spirit/DEBUG/headLessBrowser/script.js`). Whether
   it installs an element the page says, no code read.
 - An element, mounted: `spirit/app/<name>/api.js` and `spirit/app/<name>/data.js`, each that the app's folder holds, stand
   in the page's `spirit.required`. On a bare page nothing else loaded them, so a missing one is red at 0.8: it leans on its

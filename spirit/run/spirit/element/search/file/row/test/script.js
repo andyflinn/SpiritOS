@@ -311,7 +311,7 @@ test.run('a file inside carries the colours on its path elements too, and the fi
 }, test.limit.slow);
 // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).
 // goal/G49.23: client is one of word.js's words now (Andy's 29893dfab), and the store stands at spirit.client, so spirit/client
-// is light blue; spirit/hub, which no word names, is the plain folder. spirit/hub.js is spirit/hub/script.js, whose name is a
+// is light blue; spirit/hub, which no word names, is the plain folder. spirit/hub.js is spirit/contact/hub/script.js, whose name is a
 // word, so the plain file is one whose name no word names, spirit/iconSet.json.
 test.run('spirit/hub is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;

@@ -1,0 +1,2204 @@
+'use strict';
+
+// The spirit object first (goal/G43.32): every other part of the tree through spirit.requireScript.
+require('../../script.js');
+const fs = require('fs');
+const path = require('path');
+const { URL } = require('url');
+const auth = require('../../script.js').requireScript('spirit/relayAuth/script.js');
+// seal.js was required here for the sealed claim; the claim is peerPost's
+// since goal/G22.6, and the hub seals nothing.
+// invites.js STOOD HERE, required and never used — it is the relay's
+// waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
+const ownerBadge = require('../../script.js').requireScript('spirit/contact/ownerBadge/script.js');
+const contactBook = require('../../script.js').requireScript('spirit/contact/engine/script.js');
+const relayKeys = require('../../script.js').requireScript('spirit/peer/relay/key/script.js');
+// WHAT A SEARCH LEARNED, kept until it becomes useful. A search answer
+// says where each person lives, and that was thrown away — see
+// seenPeers.js. A row of the one table, never kept: a search result is
+// not a contact, and only the owner's act keeps a row (contacts.js).
+//
+// ── ONE PER NODE HOME, OPENED ON FIRST USE (cycle R26) ────────────
+//
+// This was a module-level singleton built at require time with nothing,
+// which was fine while the rows lived in RAM and impossible once they live
+// on disc: a store needs a home, and this file learns one only when a
+// caller hands it `rootDir`.
+//
+// Keyed by the resolved root rather than remembered from the first call,
+// so nothing depends on which caller happened to arrive first — the same
+// rule relayStore and nodeStore already follow, and the reason a suite can
+// hold two homes at once without them bleeding into each other.
+const shadows = new Map();
+function shadow(rootDir) {
+  const key = require('path').resolve(rootDir);
+  if (!shadows.has(key)) {
+    // THE OWNER'S CAP, read once (R31). spirit/state/node.json when the
+    // owner has written one, the 20 MB default when not — and never
+    // written by this code, because an owner's bound is obeyed rather
+    // than moved (0015).
+    shadows.set(key, require('../../script.js').requireScript('spirit/seenPeers/script.js').createSeenPeers({
+      rootDir: rootDir,
+      maxBytes: require('../../script.js').requireScript('spirit/nodeSettings/script.js').cacheMaxBytes(rootDir),
+    }));
+  }
+  return shadows.get(key);
+}
+
+// ── WHAT A POST'S OUTCOME SAYS ABOUT WHETHER SOMEBODY IS THERE (R30) ──
+//
+//   Andy: "when a request to stranger gets a reply from stranger, no
+//   matter what reply stranger goes green; as soon as stranger cannot be
+//   reached in a post stranger goes NOT-green." — "rule: presence is
+//   always last-known."
+//
+// ANY REPLY IS PRESENCE, whatever it says: a refusal from the person
+// still proves they were there to refuse.
+//
+// A FAILURE SAYS WHAT spiritErrors SAYS IT SAYS, and that is the reason
+// the catalogue exists. A busy refusal is PRESENT (they are there, and
+// occupied); "peer not reachable" is ABSENT (the relay speaking about its
+// own member); running out of time, a partner leg failing or this node's
+// own patience ending say NOTHING and write nothing (R36). A single rule
+// for "failed" would have been wrong two times out of three.
+//
+// NOT FOR THE NODE'S OWN "not reachable right now". That fail() comes
+// from this node reading its own presence picture and finding nobody —
+// writing it back into the shadow would be the node repeating itself as
+// though it were evidence. Only an answer that crossed the wire teaches.
+function learnPresence(rootDir, toKey, answer) {
+  var present;
+  if (answer && answer.ok) {
+    present = true;
+  } else {
+    var meant = require('../../script.js').requireScript('spirit/error/script.js').classifyAnswer(answer);
+    present = meant ? meant.presence : null;
+  }
+  if (present !== true && present !== false) return;
+  try { shadow(rootDir).note(toKey, { present: present }); }
+  catch (e) { /* a cache that will not take a row is not a reason to fail the post */ }
+}
+const peerFile = require('../../script.js').requireScript('spirit/peerFile/script.js');
+// What this node says about itself — the same two fields a stranger is
+// answered with, so the screen that edits them and the wire that sends
+// them cannot drift.
+const nodeCard = require('../../script.js').requireScript('spirit/nodeCard/script.js');
+const limits = require('../../script.js').requireScript('spirit/limits/script.js');
+// goal/G29.6: contact.search ranks with the probability modules.
+const probabilityStringObjectMatch = require('../../script.js').requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('../../script.js').requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
+const MAX_SEARCHED_PEOPLE = 1000;
+// Every label checked at one point (Andy, 2026-10-03, goal/G4.16: "all
+// occurrences of label and description must validate at a central
+// point"). Empty is not a label here but its absence: clearing your own
+// name for somebody, or a pasted key with no label yet.
+// The label's type, by its full path, and the text tidied by the spirit object (goal/G49.13: the old rules file goes).
+const SPIRIT = require('../../script.js');
+const LABEL = SPIRIT.requireScript('spirit/type/string/label/script.js');
+function labelProblem(text) { try { LABEL.isValid(text); return ''; } catch (e) { return (e && e.message) || 'not a label'; } }
+function labelRefusal(text) {
+  return SPIRIT.normalizeString(text) ? labelProblem(text) : '';
+}
+
+// ── packet.js IS BACK, AND THE DELETION IT LOOKS LIKE UNDOING STANDS ──
+//
+// The note where `decorateWithPacket` STOOD, below, records that it was deleted as "the
+// last thing in the node that read an app envelope", under Andy's
+// *"nothing in node and relay should know about apps"*, and that it was
+// "the only reason hub.js required packet.js at all". That require is
+// here again, so the sentence that reconciles them belongs at the line
+// rather than in a commit nobody will find:
+//
+//   **THE NODE MAY BUILD A SYSTEM PACKET WITH THE FACTORY.**
+//   **IT MAY NOT DECODE AN APP'S ENVELOPE.**
+//
+// What was removed was the node PARSING an arriving app payload on
+// behalf of the shell — a layer above deciding what its traffic meant.
+// Composing a packet addressed to NO app is the node's own business, and
+// this file already did it by hand (`systemPayload`, used at the relay
+// search call below).
+//
+// So this replaces a second builder with the one factory rather than
+// reopening a closed question. Ruled by Andy, 2026-09-25: *"agreed. go."*
+//
+// The rule is assertable and wsl-claude holds it: `hub.js` may call
+// `packet.encode` and never `packet.decode`.
+const packet = require('../../script.js').requireScript('spirit/peer/packet/script.js');
+
+// isLoopbackHost, assertRelayUrl and relayRequest MOVED to
+// spirit/relayRequest/script.js on 2026-09-16 (assertRelayUrl on to relayUrl.js, below). They were the node's outbound socket
+// living inside the node's hub, which meant a relay could not reach the
+// one interface AGENT.md says everything must use without requiring the
+// node's machinery — and the only ways out of that are to reach for `http`
+// directly or to go without. Both are the rule being broken.
+//
+// Re-exported below, unchanged, so every existing caller is untouched.
+const wire = require('../../script.js').requireScript('spirit/relayRequest/script.js');
+const relayRequest = wire.relayRequest;
+// THE ADDRESS CHECK IS NOT THE RELAY LIBRARY. Andy's decision (goal/G22.4):
+// "The relay address check (assertRelayUrl) moves out of relayRequest.js
+// into a module of its own, since it sends nothing; the relay library then
+// means only traffic on the wire." The hub checks an address before it
+// hands a claim or a contact to peerPost, and sends nothing itself.
+const assertRelayUrl = require('../../script.js').requireScript('spirit/relayUrl/script.js').assertRelayUrl;
+
+// signedClaim AND sealedClaim STOOD HERE: the claim's body, sealed to the
+// cipher key this node fetched from the relay's public key route, for the
+// relay's public claim route. Both routes are closed (Andy's decision, goal/G22.6),
+// and the claim is a post on the relay's one door, built and sealed by
+// peerPost (peerPost.claim, which keeps sealedClaim's `known` rule: a
+// caller states whether the relay is already pinned or this is first
+// contact; omitting it is not a default).
+
+// ── A RELAY'S KEY, AS THE PROBE AND THE STREAMS ASK IT (goal/G22.6) ──────
+//
+// ownerBadge.probe and presenceNode.start ask each relay who it is with a
+// function `ask(url)` answering { status, text }, where `text` is the
+// relay's signed key statement. That statement is a card ask on the one
+// door now, through peerPost.relayKey, so this turns the router into that
+// function. A relay that does not answer rejects, which the probe reads as
+// a relay that is down.
+function relayKeyAsk(router) {
+  return function (url) {
+    if (!router || typeof router.relayKey !== 'function') {
+      return Promise.reject(new Error('no router to ask the relay with'));
+    }
+    return router.relayKey(url).then(function (said) {
+      return { status: 200, text: JSON.stringify(said) };
+    });
+  };
+}
+
+// signedSend STOOD HERE — the bytes handleSend put on the wire. Its one
+// caller went with the door; see there.
+
+// "Is the peer in this claim response us?" — the browser has no key of its
+// own, so the node answers it here. A 409 on a name someone else holds is
+// not a session; a 409 on our own key is.
+function markMine(rootDir, text) {
+  var id = auth.loadIdentity(rootDir);
+  var parsed;
+  try { parsed = JSON.parse(text); }
+  catch (e) { return text; }
+  if (!parsed || typeof parsed !== 'object') return text;
+  var peer = parsed.peer || parsed;
+  parsed.mine = !!(peer && peer.publicKey === id.publicKey);
+  return JSON.stringify(parsed);
+}
+
+// The first listed relay. Claim, send and inbox once all spoke to it; send,
+// inbox and the mint doors are gone, a claim is aimed (withClaimRelay), and
+// handleContact is the one caller left, when no url is named.
+function loadRelayUrl(rootDir) {
+  var urls = ownerBadge.configuredUrls(rootDir);
+  return urls.length ? urls[0] : null;
+}
+
+
+// How much disk this node is carrying on one peer's behalf.
+//
+// NOT "chat's log for them". Any per-peer file, whoever wrote it.
+// peerFile.js is the single answer to "which file is this peer's" — its
+// own header says so — and every name it makes carries the `peerfile-`
+// prefix precisely so that a per-peer file is recognisable as one. So a
+// walk that looks for that prefix and asks peerFile whose it is stays
+// right the day Chess or a contact-card app keeps its own, and needs no
+// edit here. That is also why this is not in Contacts: Contacts must not
+// know where chat files things (its own comment above says the scope
+// stays shut), and a number that meant "chat only" while being labelled
+// Storage would be a lie the first time a second app wrote anything.
+//
+// Counted, never remembered. A stored counter drifts the moment a log
+// rings (CHAT_LOG_CAP trims at 500), a file is deleted by hand, or an
+// app is uninstalled — and it is the drift, not the count, that people
+// then argue with. A size is the file's own answer and cannot disagree.
+//
+// One walk answers every row: buildPeople calls this once, not per peer.
+// Names only — no file is opened, so nothing here can read a message.
+var PEER_FILE_ROOT = 'shell';
+var PEER_FILE_DEPTH = 4;
+
+function bytesHeldByPeer(rootDir) {
+  var totals = Object.create(null);
+
+  function walk(dir, depth) {
+    var entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+    catch (e) { return; }
+    entries.forEach(function (entry) {
+      var full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (depth > 0) walk(full, depth - 1);
+        return;
+      }
+      if (entry.name.slice(0, peerFile.PREFIX.length) !== peerFile.PREFIX) return;
+      var key = peerFile.keyFromFileName(entry.name);
+      if (!key) return;
+      var size = 0;
+      try { size = fs.statSync(full).size; } catch (e) { return; }
+      totals[key] = (totals[key] || 0) + size;
+    });
+  }
+
+  walk(path.join(rootDir, PEER_FILE_ROOT), PEER_FILE_DEPTH);
+  return totals;
+}
+
+// The people list behind Relay Chat's To control (CYCLE-CONTACTS-IMPL).
+//
+// CONTACTS, not the roll. Everyone who ever claimed on a public
+// mailbox is in `who`; that is a fact about the mailbox, not an address
+// book, and a To list built from it means "everyone who exists" — which
+// is how a friend picks a stranger's john. So the list is contactBook rows
+// this node actually acquired: somebody wrote to it, or consumed an
+// invite it minted, or a human confirmed the key out of band.
+//
+// A peer is a KEY. Two johns are two contacts and stay two rows; the
+// caption is this node's own (myLabel where it has one) and never
+// decides identity.
+//
+// `peers` and `relayUrl` WERE ARGUMENTS, and a roll list was walked
+// here to refresh captions (contactBook.handshake) and to mark each row
+// `onRelay` and `owner`. The roll went on 2026-09-18 and the only
+// caller had passed [] since, so both marks were always false. Deleted
+// 2026-09-19 with the rest of the roster readers — Andy: "nothing is
+// allowed to return a roster." What a contact is doing now is the
+// presence table's (presenceNode.js), fed by broadcasts and searches;
+// who owns a relay is what that relay's owner report says (router.relayStatus), never a row's.
+// ── THE BOOK'S LABEL AND ITS SEARCH, PURE (contact.search, puppets/G2) ─
+//
+// Module level and exported so a suite's fake node answers with exactly
+// what the node would, not a copy of it.
+//
+// THE LABEL IS JSON (goal/G29.6, contact.search changed by Andy's grant: "the changed verb is granted."). Since
+// goal/G40.11 it is one row of the one table: {name, keep, mine, relay, blocked, seated, publicLabel, present,
+// url}. The name is the one the Contacts table always showed: the name I gave them or theirs. The flags are fields,
+// never words in the name (Andy: "no, just a star in the one column, that says it all."; box v24: "each boolean a mark
+// on its row in Contacts"). url is a relay's own address, its direct route; present is last-known, null when nobody
+// has said.
+function contactLabel(p) {
+  var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim() ||
+    // A relay with no name of its own is called by its host, as the relay list always showed it.
+    (p.relay === true ? String(p.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '') : '');
+  // No key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1): a row with no name says so.
+  return JSON.stringify({
+    name: name || '(no name)',
+    keep: p.keep === true, mine: p.mine === true, relay: p.relay === true,
+    blocked: p.blocked === true, seated: p.seated === true,
+    // Their own name beside mine, for a caller matching what they call themselves (the desk onboarding).
+    publicLabel: String(p.publicLabel || ''),
+    present: p.present === true ? true : p.present === false ? false : null,
+    url: String(p.url || ''),
+  });
+}
+// RANKED WITH THE PROBABILITY MODULES (goal/G29.6; Andy: "so hub and relay will use probability search from now on."):
+// every row scored by probabilityStringObjectMatch against the words, over the names I wrote and they did; no words
+// (or '*') is everybody, in the list's order. THE YES-FILTERS (goal/G40.11, box v24): keep, mine, relay, seated,
+// blocked, each beside q; a row passes only with every flag asked for. The answer is a probabilityBucket, cut in bytes
+// to one plaintext.
+var SEARCH_FLAGS = ['keep', 'mine', 'relay', 'seated', 'blocked'];
+var CONTACT_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
+function searchPeople(people, q, filters) {
+  var words = String(q == null ? '' : q).trim();
+  if (/^\*+$/.test(words)) words = '';
+  var f = filters || {};
+  var wanted = SEARCH_FLAGS.filter(function (k) { return f[k] === true; });
+  // The bucket's one limit is bytes (goal/G49.8); the walk stops at MAX_SEARCHED_PEOPLE itself.
+  var bucket = createProbabilityBucket(Infinity);
+  var seen = 0;
+  var cut = false;
+  for (var i = 0; i < (people || []).length; i += 1) {
+    var p = people[i];
+    if (wanted.some(function (k) { return p[k] !== true; })) continue;
+    if (seen >= MAX_SEARCHED_PEOPLE) { cut = true; break; }
+    seen += 1;
+    // THE PERSON AS contact.get SERVES THEM (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served through a single-row \"get\""): the whole row, not four names picked from it.
+    var score = words ? probabilityStringObjectMatch(words, p) : 0;
+    if (words && !(score > 0)) continue;
+    bucket.seatFor(score, { key: p.publicKey, label: contactLabel(p) });
+  }
+  var r = bucket.serialize(null, CONTACT_SEARCH_ROOM);
+  return { items: r.items, more: r.more || cut };
+}
+
+function buildPeople(rootDir) {
+
+  var myKey = auth.loadIdentity(rootDir).publicKey;
+
+  // THE OWNER'S LIST, not just the people this node listens to: the kept and owned, and somebody blocked, who has to stay visible to be unblocked. A row you cannot see is a decision you
+  // cannot reverse. Relays are rows of it like people (goal/G40.11), each with its own address.
+  var bytesHeld = bytesHeldByPeer(rootDir);
+
+  var rows = contactBook.addressBook(rootDir)
+    // No self row. Claiming a name is not meeting somebody, and a list
+    // of people to write to that opens with yourself reads as a mistake.
+    .filter(function (row) { return row.publicKey !== myKey; })
+    .map(function (row) {
+      return {
+        publicKey: row.publicKey,
+        publicLabel: row.publicLabel || '',
+        caption: contactBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
+        // The raw one, beside the resolved caption: an editor has to
+        // show what is stored, not what is shown, or clearing the field
+        // would look like clearing the name.
+        myLabel: row.myLabel || '',
+        // The row's flags, as the table holds them (goal/G40.11).
+        keep: row.keep, mine: row.mine, relay: row.relay, blocked: row.blocked, seated: row.seated, faceable: row.faceable,
+        present: row.present,
+        url: row.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '',
+        // Bytes this node is carrying for them, across every app that
+        // keeps a file per peer. Always a number, 0 for somebody who has
+        // cost nothing yet — an absent field would make the app decide
+        // between "none" and "not asked", which are not the same answer.
+        bytesHeld: bytesHeld[row.publicKey] || 0,
+      };
+    });
+
+  // When two rows would read the same — two johns, neither renamed yet —
+  // they are marked ambiguous. The caption carries no piece of the key:
+  // no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1).
+  var seenCaption = Object.create(null);
+  rows.forEach(function (r) { seenCaption[r.caption] = (seenCaption[r.caption] || 0) + 1; });
+  rows.forEach(function (r) {
+    if (seenCaption[r.caption] > 1) {
+      r.ambiguous = true;
+    }
+  });
+
+  rows.sort(function (a, b) { return String(a.caption).localeCompare(String(b.caption)); });
+  return rows;
+}
+
+// handleMatches STOOD HERE: every roll row whose public label was a handle
+// somebody heard, exactly. Its one caller, peer.find, went on 2026-09-17,
+// and the suite that still asserted it went too, so it was deleted under
+// goal/G19.11. Ranked search (contact.search; peer.search until goal/G30.19) answers the same question: an
+// exact label scores 1.0 and comes first, and two johns stay two results.
+
+// acquireFromInbox STOOD HERE — somebody wrote to this node, the relay's
+// copy of the line carried their key, and that is how a stranger became
+// someone you could answer. Deleted with the ring (R8, 2026-09-15).
+//
+// `remember()` below is the same act on the router's path, and it was
+// already there: peerPost calls it with the verdict frontDoor gave, and
+// since goal/G43.17 a stranger who writes is only marked ignored.
+//
+// ONE DIFFERENCE, NAMED RATHER THAN QUIETLY DROPPED: this captured the
+// sender's `publicLabel` off `m.from`, because the relay stored a line
+// with a label on it. Nothing stores a line any more, so `remember`
+// acquires with an empty label, and the caption comes from what this node
+// learns of that key later: peer.acquire, a search result, or the name a
+// person types (the roll that once filled it in is gone). A contact
+// acquired by being written to is unlabelled until then, where it used to
+// be named on arrival.
+
+// WHAT THIS NODE DOES WITH MAIL FROM SOMEBODY IT HAS NOT ADDED: it ignores it, always; no file and no setting (goal/G43.17).
+// Andy: "ignore or hold are enough, and safer that automatically adding a contact", then "[...] because
+// we know we still have id's in the log" and "so NO, we don't need a "held" "status"". The traffic log keeps the refused
+// id and its relay, without the words, for as long as there is room.
+var STRANGERS = 'drop';
+
+// Who this node will listen to: everyone it has actually acquired, plus
+// itself — a note to yourself is sent and received, and both halves
+// happened.
+//
+// The mailbox needs no exception here. A relay console answer rides back
+// on the send response (relay.js, consoleReply) and is never stored in
+// the ring, so it does not arrive through an inbox read and cannot be
+// dropped by one.
+function listenSet(rootDir) {
+  var allowed = Object.create(null);
+  contactBook.contacts(rootDir).forEach(function (row) { allowed[row.publicKey] = true; });
+  allowed[auth.loadIdentity(rootDir).publicKey] = true;
+  return allowed;
+}
+
+// ── THE FRONT DOOR, FOR THE ROUTER PATH ──────────────────────────────
+//
+// listenSet above is the same question, and for a long time it was asked
+// on one transport only: the `inbox` read, gone with the ring (R8). peerPost.onRequest
+// — where packets actually arrive now — checked that a signature matched
+// the sender it claimed and that the packet was addressed here, and
+// nothing else. A signature proves possession of a key; it proves nothing
+// about whether this node has ever heard of the holder.
+//
+// Andy: "no node, by protocol, should accept requests from unknown."
+//
+// THE EXCEPTION THE INBOX DID NOT NEED. listenSet's own comment says "the
+// mailbox needs no exception here", which was true of a path relay
+// traffic never travelled. This is not that path: a relay may post here
+// in its own name, and a relay is not a contact — its key is in no
+// contactBook. (The device enrolment it once carried was removed by
+// goal/G16.2.) relayKeys.js is what makes that answerable
+// without trusting whatever claims to be a relay, because it holds the
+// keys this node has actually accepted.
+//
+// Answers one of two, and the split between the first and the rest is
+// what makes the floor work:
+//
+//   'known'  already in the book — not a stranger, not rationed
+//   'drop'   a stranger, ignored
+//
+// PURE. It writes nothing, and that is a correction of the first version
+// of this function, which acquired the row here and returned 'known'. The
+// effect was that a stranger became known in the same breath — so the
+// floor, which only binds a non-'known' verdict, never bound at all. The
+// test found it.
+//
+// So the book write moved behind the floor (peerPost calls `remember`
+// once a stranger is within budget), and an over-budget stranger now gets
+// no row either — which is right: a row is a record of somebody worth
+// knowing about, and a flood is not.
+//
+// The FLOOR itself is not here and must not be: how much an unknown
+// sender may spend is an invariant in peerPost, with no file and no
+// setting behind it.
+function frontDoor(rootDir, from) {
+  var key = String(from == null ? '' : from).trim();
+  if (!key) return 'drop';
+
+  // ── BLOCKED IS TURNED AWAY FIRST, WHATEVER THE POLICY (S12) ─────────
+  //
+  // This door once never asked, and a blocked key's words reached apps and
+  // open pages — the one verdict the owner had explicitly refused. Blocking already outranks every
+  // way of arriving in the book (contacts.js: "it must outrank every way of
+  // arriving, including a key confirmed by phone"); it has to outrank the
+  // policy too, or the flag means nothing on the transport that matters.
+  // Answered `drop`, which is this door's word for "hear nothing from them".
+  try {
+    var blockedRow = contactBook.byPublicKey(rootDir, key);
+    if (blockedRow && blockedRow.blocked === true) return 'drop';
+  } catch (e) { /* a book that cannot be read decides nothing here */ }
+
+  // Itself and everyone it has acquired — the same set the inbox uses,
+  // asked here for the first time.
+  //
+  // "Acquired" is narrower than "on record", deliberately: only a row
+  // flagged keep or mine, and not blocked, is listened to (contacts.listens),
+  // so somebody merely SEEN in the shadow is not somebody this node agreed
+  // to hear. Having noticed a stranger exists is not an introduction.
+  if (listenSet(rootDir)[key]) return 'known';
+
+  // A RELAY THIS NODE ACCEPTED is known, and only one it accepted. The
+  // pin is what makes this safe: without relayKeys, "is this a relay?"
+  // could only be answered by asking the thing that wants in.
+  if (relayKeys.acceptedKeys(rootDir)[key]) return 'known';
+
+  return STRANGERS;
+}
+
+// WHAT TO WRITE DOWN ABOUT A STRANGER WHO GOT THROUGH THE FLOOR. Called
+// by peerPost after the budget allowed it, never before — so a flood
+// leaves no rows behind.
+//
+// IT KEEPS NOBODY. Since goal/G43.17 a stranger who writes is only
+// marked ignored (below); nothing here makes a row kept, so writing is
+// not what makes somebody heard next time.
+//
+// NOT THE ROAD THEY CAME DOWN (goal/G47.1, box v69: "The node keeps no route of a peer ... every write of a route (an
+// arrival ...)"): the relay a packet came through is on its traffic-log row and nowhere else.
+//
+// NOT THE LABEL, and that one really is gone. acquireFromInbox read
+// `publicLabel` off the relay's stored copy of the line; nothing stores a
+// line now, and a post carries keys and no captions. The caption comes
+// later, from peer.acquire, a search result or the name a person types, so
+// a contact acquired by being written to is unlabelled until then, where
+// it used to be named on arrival. That is the cost of the relay not reading the payload, which
+// is the point rather than a regression.
+function remember(rootDir, from, verdict) {
+  var key = String(from == null ? '' : from).trim();
+  if (!key) return false;
+
+  try {
+    // ── IGNORED IS A MARK, NOT A FORGETTING (0021) ────────────────────
+    //
+    //   Andy: "ignoring means only: mark this row as "ignored"."
+    //
+    // The row was already remembered (noteSeen, before the floor); this
+    // only says what the door did with it: ignored, "politely refused, no reason given, never shown" (box v24).
+    // Never over somebody the owner has decided about: a blocked person also gets 'drop' from the door, and
+    // what the owner decided outranks what the door did.
+    if (verdict === 'drop') {
+      var was = shadow(rootDir).get(key);
+      if (!was || !(was.keep || was.mine || was.blocked)) shadow(rootDir).set(key, { ignored: true });
+      return true;
+    }
+  } catch (e) {
+    // A book that cannot be written is not a reason to change what
+    // happens to the packet. The verdict already stands.
+    return false;
+  }
+  return false;
+}
+
+// partitionInbox AND holdFromInbox STOOD HERE — the split between what
+// this node asked to hear and what it did not. Deleted with the ring (R8,
+// 2026-09-15).
+//
+// Both are answered per packet now, before anything is filed, which is
+// the better place for them: frontDoor() above returns known or drop from
+// the sender's KEY, and peerPost acts on that verdict at the moment of
+// arrival rather than sorting a batch afterwards.
+//
+// One rule of partitionInbox's is worth not losing to the deletion:
+// A MESSAGE WITH NO KEY CANNOT BE MATCHED AGAINST AN ADDRESS BOOK. The
+// ring let such lines through, because an open or names relay might
+// carry no key and a lab node that showed nothing would look broken.
+// The router cannot produce one — every post is signed by a key and
+// `from` IS that key — so the case is gone rather than handled.
+
+// decorateWithPacket STOOD HERE, and it was the last thing in the node
+// that read an app envelope.
+//
+//   Andy: "nothing in node and relay should know about apps."
+//
+// It parsed an arriving payload and hung `message.packet` on the row so
+// a reader could tell its own traffic from another app’s. That reader
+// is the shell, which loads packet.js itself — so this was the node
+// decoding on behalf of a layer above it, and the only reason hub.js
+// required packet.js at all.
+//
+// The payload travels as signed and is read where it is understood.
+// countInbound AND applyInboxBatch STOOD HERE — the per-peer counter for
+// a fetched batch, and the one function both the browser's poll and the
+// node's 60-second sweep ran so the two could not drift. Deleted with the
+// ring (R8, 2026-09-15).
+//
+// The counting it did went too, with goal/G43.14 (Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!").
+//
+// WHAT WAS LOST ON PURPOSE: the count of strangers. It is not gone from
+// the node: the traffic log keeps each refused id and its relay, without
+// the words, for as long as there is room (goal/G43.17).
+
+function createHub(rootDir) {
+  // A kept rename of a contact, on its way to every open page (the events
+  // family's stream carries it as contact.rename). The same seam shape as
+  // arrivals: the hub notes, the stream fans out, neither knows the other.
+  var contactRenames = require('../../script.js').requireScript('spirit/peer/arrivals/script.js').createFanOut();
+  // A grant revoked because its contact was forgotten (goal/G47.4, Q3; Andy: "When you forget a contact, should the node
+  // revoke all of its grants at once?" "yes. it should."), { key, path }, on its way to the auth tables' job as a revoked
+  // grant (server.js), so every open grants list lets it go.
+  var grantsRevoked = require('../../script.js').requireScript('spirit/peer/arrivals/script.js').createFanOut();
+  function fail(res, status, msg) {
+    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: msg }));
+  }
+
+  // A THROW IN HERE IS AN ANSWER, NEVER A DEAD NODE.
+  //
+  // Found by serverSurface.js's hub sweep on 2026-09-13, which is the
+  // first thing that ever called these routes against a booted process:
+  // `GET /api/hub/inbox` took the whole node down. The identity on that
+  // fixture has a malformed private key, so signing the inbox request
+  // threw ERR_OSSL_ASN1_NOT_ENOUGH_DATA out of a synchronous handler,
+  // where nothing was waiting to catch it.
+  //
+  // A real node writes its own identity.json, so a malformed one means a
+  // torn write rather than an attack — but the difference between a node
+  // that says "I cannot sign" and a node that vanishes is the whole
+  // difference between a person seeing the problem and a person seeing
+  // the shell stop responding.
+  //
+  // 500, not 503: 503 here means "no relay configured", which is a thing
+  // a person can fix in the relay panel. This is not that, and must not read as it.
+  function guarded(res, url, fn) {
+    try { return fn(url); }
+    catch (e) {
+      fail(res, 500, 'this node could not make the request: ' + String(e.message || e));
+      return undefined;
+    }
+  }
+
+  // withRelay STOOD HERE: the first row of the relay list, whatever the
+  // caller meant. handleWho was its last caller; both went under
+  // goal/G19.11.
+
+  // The mailbox a mint is aimed at. The scheme is checked (assertRelayUrl),
+  // so a plain-http row on the relay list is refused here rather than at the socket.
+  function withChosenRelay(res, wanted, fn) {
+    var chosen = ownerBadge.chooseUrl(ownerBadge.configuredUrls(rootDir), wanted);
+    if (!chosen.ok) {
+      fail(res, chosen.status, chosen.error);
+      return;
+    }
+    try { assertRelayUrl(chosen.url); }
+    catch (e) {
+      fail(res, 503, String(e.message || e));
+      return;
+    }
+    // RETURNED, so a caller can await the whole of it — every other
+    // caller ignores the value, as they did when there was none. And
+    // guarded: see `guarded` above.
+    return guarded(res, chosen.url, fn);
+  }
+
+  // ── A CLAIM IS HOW A RELAY GETS ONTO THE LIST (goal/G16.3) ──────────
+  //
+  //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+  //   list relays and remove relay, with a successful claim adding its
+  //   relay? yes."
+  //
+  // So a NAMED url is aimed at even when this node does not list it yet —
+  // the claim is what lists it. Refusing an unlisted url here, as the mint
+  // doors still do through chooseUrl, would leave no way onto the list at
+  // all, because there is no verb that adds one. The url still has to pass
+  // assertRelayUrl, and relay.claim is a loopback verb, so the only caller
+  // that can aim it is this node's own browser. With no url named, the old
+  // fallback stands: the only listed relay, or a refusal.
+  function withClaimRelay(res, wanted, fn) {
+    var named = ownerBadge.normalizeUrl(wanted);
+    if (!named) return withChosenRelay(res, '', fn);
+    try { assertRelayUrl(named); }
+    catch (e) {
+      fail(res, 503, String(e.message || e));
+      return;
+    }
+    return guarded(res, named, fn);
+  }
+
+  // CLAIMING HAPPENS ON ONE RELAY, AND NOW IT SAYS WHICH.
+  //
+  // A claim is aimed at the relay the caller names, as invite, rename and
+  // remove-peer are: a Claim button on one relay's panel that claimed on
+  // another would be worse than no button.
+  //
+  // Not a new switch — the switch is `ownerBadge.chooseUrl`, which has
+  // decided this for three other doors since invites landed. Since
+  // goal/G16.3 a NAMED url is the one exception (withClaimRelay above):
+  // the claim is what lists a relay, so it cannot require one. With nothing wanted
+  // it still falls back to the only row when there is only one, which is
+  // exactly what every existing caller relied on.
+  // ── AND A NODE THAT JUST CLAIMED MUST CONNECT ────────────────────────
+  //
+  //   Andy: "now i have a new 'Jazzy Alexandra' and she's bound to
+  //   spirit-3 but she cannot find anybody in contacts" — "her relay
+  //   shows green."
+  //
+  // She had no `spirit.contact` job at all: nothing started one for the
+  // seat this function had just taken, so the node sat there enrolled and
+  // unconnected until somebody restarted it. (Since goal/G22.5 a node's
+  // identity exists from its first boot, before it listens; what a claim
+  // adds is the seat, and the seat needs its stream.)
+  //
+  // EVERY NEW SEAT GOES THROUGH EXACTLY THAT SEQUENCE. Boot, claim,
+  // nothing. It could not search, could not be posted to, and could not
+  // receive — while looking bound, because the badge is read off the
+  // public roll and `claimed` means "you have a row here", not "you are
+  // connected". Green was telling the truth about a different question.
+  //
+  // `router.startStreams` is safe to call again: presence creates its job
+  // only if it has none and openTo returns early for a url it already
+  // holds. So this is "make sure", not "restart". The streams are the
+  // router's since goal/G19.14; this file never holds them.
+  function handleClaim(req, res, readJsonBody, deps) {
+    var router = deps && deps.router;
+    var probe = deps && deps.probe;
+    readJsonBody(req).then(function (body) {
+      withClaimRelay(res, body && body.url, function (url) {
+        var learnedKey = '';
+        if (!router || typeof router.claim !== 'function') {
+          fail(res, 503, 'this node has no router to claim with');
+          return;
+        }
+        // FIRST CONTACT, STATED. This is the node's own claim: it has no
+        // pin for this relay — the claim is how it gets one — so the
+        // ask-and-trust path is correct here and says so rather than
+        // arriving by omission. Through peerPost, on the relay's one door
+        // (goal/G22.6: "the hub asks peerPost for a relay's key and for a
+        // claim").
+        router.claim(url, body && body.name, body && body.invite, body && body.inviteLabel,
+          'first-contact')
+          .then(function (said) {
+            learnedKey = (said && said.relayPublicKey) || '';
+            // The relay's answer, in the shape the closed route gave the
+            // browser: the peer on success, { error, peer? } otherwise,
+            // under the claim's own status.
+            var payload = said.ok ? (said.peer || {})
+              : (said.peer ? { error: said.error, peer: said.peer } : { error: said.error });
+            return { status: said.status, text: JSON.stringify(payload) };
+          })
+          .then(function (r) {
+            // AFTER THE ANSWER IS WRITTEN, never before: a claim that
+            // worked must be reported even if opening a stream does not,
+            // and connecting is not what the caller asked about.
+            var marked = markMine(rootDir, r.text);
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(marked);
+
+            // A SEAT HELD IS A RELAY USED (goal/G16.3): a new seat, or a 409
+            // that is this node's own key already sitting there, which is
+            // which is read as success too. Either way the relay
+            // goes on the node's own list, which the next contact.search lists.
+            var mineAlready = false;
+            try { mineAlready = r.status === 409 && !!JSON.parse(marked).mine; }
+            catch (e) { mineAlready = false; }
+            if ((r.status >= 200 && r.status < 300) || mineAlready) {
+              try { ownerBadge.addRelay(rootDir, url, '', learnedKey); }
+              catch (e) { /* the claim stands; the list is written on the next claim */ }
+              // A 409 FOR THIS NODE'S OWN KEY IS A SEAT HELD, and is written
+              // down exactly as a 2xx is (goal/G19.1). The seat is held again, so a refusal no longer stands: the
+              // new invite brought it back, and seated says so (goal/G40.11).
+
+              // ── WRITE THE SEAT DOWN, HERE, WHERE IT IS KNOWN ────────
+              //
+              // Everything needed is in hand at this instant: the url, the
+              // label asked for, and a 2xx saying it was granted. Until
+              // 2026-09-18 none of it was recorded, so every subsequent
+              // boot re-derived it by fetching the relay's ENTIRE
+              // membership and looking for itself (ownerBadge.probe) — the
+              // last roll read in the tree, and the only one that was
+              // not a question about other people.
+              //
+              //   Andy: "persist necessary information at claim time,
+              //   re-use that information on boot."
+              //
+              // Before the stream, not after: a claim that worked is a
+              // seat held whether or not connecting succeeds, and the next
+              // boot must know that without asking.
+              try { relayKeys.seat(rootDir, url); }
+              catch (e) { /* the claim stands; a boot can still backfill */ }
+
+              if (router && probe) {
+                try { router.startStreams(probe); }
+                catch (e) { /* the claim stands; the next boot connects */ }
+              }
+            }
+          })
+          .catch(function (err) { fail(res, 502, String(err.message || err)); });
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
+  // What the app hands in, and what the mailbox gets.
+  //
+  // An app says { app, body }; a caller that has not moved yet says
+  // { text } and is sent exactly as before. The envelope is built here
+  // rather than in the browser so that one place decides what a packet
+  // looks like, and so the size limit is enforced before anything leaves
+  // the machine.
+  // ── THE NODE CARRIES A PAYLOAD, IT DOES NOT COMPOSE ONE ──────────────
+  //
+  //   Andy: "that's the shell's point of view, and it has to hand an
+  //   app-containing package to the node as one single payload."
+  //
+  // This had two branches: one that called `packet.encode(body.app, …)`
+  // and one described as the "legacy caller: a bare string". They were
+  // the wrong way round. The bare string is the CORRECT layering — the
+  // shell composes the envelope, because the shell is what routes an
+  // arriving packet by `app` and what knows which app is speaking — and
+  // the branch calling packet.encode was the node reaching a layer up.
+  //
+  // What it cost, beyond tidiness: `hub.js` needed `packet.js`, so a
+  // module about apps sat in the node's dependency set and, through
+  // server.js, on a relay.
+  //
+  // One branch now. `text` arrives whole and leaves whole, and the only
+  // thing the node asks of it is how long it is.
+  function outgoingPayload(body) {
+    return { ok: true, text: String((body && body.text) || '') };
+  }
+
+  // ── AND WHAT THE NODE SENDS ON ITS OWN BEHALF ───────────────────────
+  //
+  // A system call to a relay — `search`, `partners` — originates HERE,
+  // so there is no shell above it to compose anything. It is not an app
+  // packet and must not look like one: no `app`, and no `id`, because a
+  // reply is matched by hash and an id would be a field nobody reads.
+  //
+  // Built directly rather than through packet.js, which is the point: the
+  // node does not use an app-envelope builder for something that is not
+  // an app packet.
+  // A RELAY'S OWN VERB BY ITS NAME (goal/G49.25, box v25): { call: "spirit.relay.<verb>", args }, the call the post goes as.
+  function systemCall(verb, args) {
+    return { text: JSON.stringify({ call: 'spirit.relay.' + verb, args: args || {} }), call: 'spirit.relay.' + verb };
+  }
+  // A PAGE'S ASK OF ITS RELAY, BY THE VERB'S NAME (goal/G49.25): a page asks its relay's own verbs (its label, an invite, a revoke) as a
+  // packet for the app relay, { app: "relay", body: { <verb>: args } }, through peer.post; here, the one place each passes, it goes as
+  // that verb's call, spirit.relay.<verb>. Anything else is a post as it was. The card's argument is the card itself, or none.
+  function relayAsked(text) {
+    let p = null;
+    try { p = JSON.parse(String(text || '')); } catch (e) { return null; }
+    // The api ask is the word api (introSpector's), every other a verb and its arguments.
+    if (p && p.app === 'relay' && p.body === 'api') return systemCall('api', {});
+    const body = p && p.app === 'relay' && p.body && typeof p.body === 'object' && !Array.isArray(p.body) ? p.body : null;
+    if (!body || Object.keys(body).length !== 1) return null;
+    const verb = Object.keys(body)[0];
+    if (!/^[A-Za-z]+$/.test(verb)) return null;
+    const v = body[verb];
+    const args = verb === 'card' ? (typeof v === 'string' ? { card: v } : {}) : (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+    return systemCall(verb, args);
+  }
+
+  // POST TO A PEER, AND WAIT FOR THE ANSWER. The router's half of the
+  // boundary, and the one verb an app should ever need.
+  //
+  // ── WHY IT MOVED HERE ──────────────────────────────────────────────
+  //
+  // Until 2026-09-13 this was the only /api/hub/* route written out
+  // INSIDE server.js's route table — every other one named a handler in
+  // this file. That was backwards twice over: the compliant path was the
+  // one without a home, and the lines in the switchboard were not
+  // plumbing. They decide whether this node is attached to a relay at
+  // all, WHICH RELAY to send through, and what "unreachable" means to a
+  // caller. A routing rule living in the web server could only ever be
+  // exercised by making an HTTP request, which is why its behaviour was
+  // only ever seen live.
+  //
+  // `deps` rather than a closure: peerRouter and presence are built at
+  // the foot of server.js, long after createHub runs, and a setter would
+  // make this file hold state it has no business holding. Handed in at
+  // call time, they are also what lets a suite drive this as a function.
+  // ── WHERE A POST GOES, DECIDED ONCE (puppets/G4) ─────────────────────
+  //
+  //   Andy, 2026-09-26, approving the extraction: "yes, we want that ortho-
+  //   thinggie."
+  //
+  // THIS WAS INSIDE handlePost AND THE CHOICE WAS INTERLEAVED WITH THE SEND,
+  // so a second caller could not reach it without re-deciding. And a second
+  // opinion about reachability is exactly what serverSurface.js:848 refuses:
+  // "peer.post is the only way onto the wire. A second caller is a second
+  // door." An owner command needs a relay for the same reasons a post does —
+  // the same presence, the same `via` rule — so it must ask
+  // this rather than guess.
+  //
+  // PURE, AND THAT IS THE WHOLE OF THE CHANGE. It decides and returns; it does
+  // not send, does not touch the response and does not log. Everything it
+  // knows it knew before, in the same order, with the same fallbacks.
+  //
+  // THE ORDER IS LOAD-BEARING and is preserved exactly:
+  //   1. a relay that NAMES the recipient, narrowed by `via` if one was asked
+  //      for. Present means reachable, and presence is what makes this
+  //      answerable rather than a guess.
+  //   2. otherwise, and ONLY when no `via` was named: the first connected
+  //      relay (no hints since goal/G47.1). A named `via` that
+  //      does not name the peer is a refusal rather than a fallback, because
+  //      the caller asked to measure one path.
+  //   3. otherwise unreachable, which the caller reports.
+  //
+  // ASKED OF THE ROUTER, which holds the streams (goal/G19.14): nobody but
+  // peerPost has a path to presenceNode.
+  function chooseRoute(router, to, via) {
+    var wanted = String(via || '').trim();
+    var where = router.relaysNaming(to).filter(function (url) {
+      return !wanted || url === wanted;
+    });
+    // Posting to a relay itself needs nothing special here. Its own key is in
+    // the OWNER's roster and in no peer's (relay.streamRoster), so presence
+    // answers for it exactly as for any peer.
+    if (where.length) return { relayUrl: where[0] };
+    if (wanted) return { unreachable: true };
+
+    // NO HINTS (goal/G47.1, box v69: "A post carries no hints: the node sends none"): the relay read none since
+    // partnering went (goal/G22.6), and the node keeps no route to make them from.
+    var connected = router.relaysHeld();
+    if (!connected.length) return { unreachable: true };
+    return { relayUrl: connected[0] };
+  }
+
+  function handlePost(req, res, readJsonBody, deps) {
+    var router = deps && deps.router;
+
+    // RETURNED, unlike the older handlers beside it, which fire and
+    // forget. server.js ignores it; a suite awaits it. A handler whose
+    // completion cannot be observed can only be tested by sleeping, and
+    // a test that sleeps is a test that will one day be flaky on a
+    // slower machine.
+    return readJsonBody(req).then(function (body) {
+      if (!router) {
+        fail(res, 503, 'this node is not connected to a relay');
+        return;
+      }
+      var to = String((body && body.to) || '').trim();
+
+      // ── OPAQUE, AND THAT INCLUDES ITS SHAPE ──────────────────────────
+      //
+      //   Andy: "it might be a hex encoded favicon.ico"
+      //
+      // This said wrapping a body into `{app, v, body}` was "the node's
+      // job". It never was — the shell composes the envelope and hands
+      // this one string (see outgoingPayload). And the payload is not
+      // text in any sense the node may rely on: it is whatever the sender
+      // put there, which may be an envelope, a chat line, or a picture in
+      // hex. The wire field is called `text` for historical reasons and
+      // the name promises nothing.
+      //
+      // The only question asked of it below is how long it is.
+      var wrapped = outgoingPayload(body);
+      if (!wrapped.ok) {
+        // Refused here rather than at the relay: an oversize packet is
+        // the app's mistake, and spending a post to be told so would be
+        // this node's. The same call handleSend makes, for the same
+        // reason.
+        fail(res, 400, wrapped.error);
+        return;
+      }
+      var text = wrapped.text;
+      // Which relay to go through. Normally none of an app's business —
+      // a peer reachable two ways is reachable — but a caller may name
+      // one, which is how the cost of each path gets measured rather
+      // than assumed. An unreachable choice is refused like any other.
+      // WHERE IT GOES IS chooseRoute's, NOT THIS FUNCTION'S ANY MORE. The
+      // choice used to be interleaved with the send here, so an owner command
+      // could not reach it without re-deciding — and a second opinion about
+      // reachability is what serverSurface.js:848 refuses. Same presence, same
+      // `via` rule, decided in one place.
+      var route = chooseRoute(router, to, (body && body.via));
+      if (route.unreachable) {
+        // Truthfully, and at once. Presence is what makes this answerable
+        // rather than a guess — and it is why that arc had to come first.
+        fail(res, 503, 'that peer is not reachable right now');
+        return;
+      }
+      // ── PATIENCE, ASKED FOR BY THE PAGE (puppets/G2) ──────────────
+      //
+      //   Andy, 2026-09-27, "go." on: "peer.post takes an optional
+      //   patienceMs (capped at 10 minutes, memory only), so a busy agent
+      //   gets retried instead of your line coming back undelivered."
+      //
+      // Absent, a post gets one attempt, exactly as before. Given, the
+      // scheduler retries a BUSY target with backoff until it is delivered
+      // or the patience is spent; an unreachable one still fails at once
+      // (peerPost's own rule). Capped here, because the queue is in memory
+      // and a page must not park a post for days.
+      var patience = Number(body && body.patienceMs);
+      var how = patience > 0 ? { patienceMs: Math.min(Math.floor(patience), PATIENCE_MAX_MS) } : undefined;
+      // ── THE NO-RUSH WORD (fileTransfer goal/G1.3) ─────────────────
+      //
+      //   Andy, on the scheme in G1.2: "agreed. scheme approved." and
+      //   "same for responses."
+      //
+      // 'background' is the only value and it only demotes: without it a
+      // post stays deliberate, exactly as before, and any other word is
+      // refused here, before anything is posted. The queue already ranks
+      // the two classes (postQueue.js); this is the word reaching it.
+      var kind = body && body.kind;
+      if (kind !== undefined) {
+        if (kind !== 'background') {
+          fail(res, 400, "kind takes 'background' or nothing");
+          return;
+        }
+        how = Object.assign({ kind: 'background' }, how);
+      }
+      const asked = relayAsked(text);
+      if (asked) { text = asked.text; how = Object.assign({}, how, { call: asked.call }); }
+      return sendPacket(router, route.relayUrl, to, text, how).then(function (answer) {
+        learnPresence(rootDir, to, answer);
+        // DELIVERED MEANS THERE (goal/G2.9): an answer that crossed the wire is the relay carrying that peer now,
+        // so the live table hears it at the relay the post went through. A refusal teaches the shadow (above) and
+        // the live table nothing here: its red comes from the relay's own broadcast.
+        if (answer && answer.ok && typeof router.heard === 'function') {
+          try { router.heard(route.relayUrl, to); } catch (e) { /* a witness, never a reason to fail the post */ }
+        }
+        res.writeHead(answer.ok ? 200 : (answer.status || 502),
+          { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(answer));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
+  // THE LOG, READ AS A TABLE, AS IT ONCE WAS (deleted, below). What arrived,
+  // oldest first, from a position — so a page that was shut could catch up
+  // with the same rows a live page was pushed.
+  //
+  //   Andy: "The node will provide client(s) with an api block that
+  //   treats the log like a database file with the primary keys being
+  //   hash, arrival-date."
+  //
+  // DELIBERATELY CONTAINED. `since` and `limit`, or one row by `hash`,
+  // and nothing else — no filter on `packet.app`, ever:
+  //
+  //   Andy: "only an entity that knows the internal package structure
+  //   (shell) can fan out based on the internal package structure, so the
+  //   read-log-interface the node provides should be fairly contained."
+  //
+  // The node keys on public keys and hashes. Routing by app is the
+  // shell's reading, and doing it here would be this layer reaching up.
+  //
+  // Rows come back in the shape the live push sends, decoded envelope
+  // included — one shape to merge rather than two, which is the whole
+  // problem a catching-up client has.
+  // handleArrivals STOOD HERE, and GET /api/hub/arrivals with it.
+  //
+  //   Andy: "api/hub/arrivals must be removed"
+  //
+  // It was the catch-up half of "post to a peer, find out what arrived" —
+  // and it had NO CALLER. Not the shell, not an app, nothing but a test
+  // written against it. The reason is that catch-up was already solved,
+  // better, one layer down: createArrivals.subscribe() asks the log for
+  // un-taken rows the moment a page opens, marks them, and pushes them
+  // down the SAME live channel a new packet arrives on. A page that was
+  // closed gets what it missed without asking a second door a different
+  // question.
+  //
+  // So this was a parallel answer to a question that already had a good
+  // one, and the weaker of the two: it needed the client to remember
+  // where it got to, and to have a clock that agreed with the node's.
+  // `since`, the parameter that made it a table rather than a feed, never
+  // had a caller either.
+  //
+  // rowAsMessage went with it. arrivals.js keeps its own asMessage for
+  // the live path, which is the one shape a client ever sees now.
+
+  // handleMonitor STOOD HERE, proxying a signed verb to the relay
+  // because the browser holds no key.
+  //
+  // Nothing replaced it, which is the shape of a collapse done right. The
+  // panel posts to the relay the way it posts to any peer —
+  // sendMessagePacket('relay', <relay key>, { monitor: … }) — through
+  // handlePost, which already signs with this node's identity for every
+  // other destination. The relay's answer comes back as that post's own
+  // reply, correlated by hash.
+  //
+  // A verb here would have been a third place to shape one request, and
+  // the only thing it added was a second door on the relay to receive it.
+
+  // handleSend STOOD HERE, and POST /api/hub/send with it.
+  //
+  //   Andy: "the ring was a lie all along. it was unable to promise
+  //   reliable delivery anyways, because it dropped entries on overflow."
+  //
+  // This was the node's door onto that ring, and it had NO CALLER — not
+  // the shell, not an app, not device.html. hubPost.js had already been
+  // asserting that for a while: "nothing above the boundary names
+  // /api/hub/send". Relay Chat sends through /api/hub/post, the router.
+  //
+  // So this is the door half of R8, taken early because it costs nothing
+  // and because a door nobody knocks on is the same impurity as a verb
+  // nobody can reach.
+  //
+  // What was left of the ring went together, with R8 (2026-09-15), because
+  // splitting it leaves a signed format guarding an unreachable function:
+  // relay.send, /spirit/relay/send, sendMessage, checkSend, the `messages`
+  // array and inbox.
+
+  // OF THE MINT DOOR (handleInvite, gone with the post-path doors below):
+  // the token is the relay's to generate, never this node's: a token
+  // invented here would not be in the relay's invites and would refuse
+  // the very claim it was made for. The relay is what mints.
+  //
+  // Which mailbox is the caller's to say, not the first relay's to assume.
+  // A node may own several; minting on the first one listed would put the
+  // token on a mailbox the friend was never being invited to, and the
+  // owner would not find out until the claim failed somewhere else.
+
+
+
+  // ── EVERY POST-PATH HANDLER STOOD HERE. ALL FOUR ARE GONE. ────────
+  //
+  //   Andy: "I am aiming to close all post-path doors on node"
+  //
+  // handleInvite, handleRename, handleRemovePeer and handleRevoke. Each
+  // read a JSON body, built one packet body, and handed it to askRelay
+  // -> router.post. That is what a peerPost IS, so each was this node
+  // translating a thing the browser could say for itself.
+  //
+  // WHAT WENT WITH THEM is the part worth noticing: label checks, url
+  // choosing, status codes, response shaping. None of it protocol. All
+  // of it opinions that had to be kept consistent with the relay by
+  // hand — and were not always. handleRename spent a day answering 503
+  // to every call because it had been handed the wrong deps, and nothing
+  // could see it, because a door is easy to wire wrongly and a packet is
+  // not.
+  //
+  // askRelay went with the last of them. It existed to be the shared
+  // half of four near-identical doors; with no doors there is nothing to
+  // share, and `withChosenRelay` keeps its other caller.
+  //
+  // The browser addresses a relay by KEY through handlePost now. A new
+  // relay verb needs no function here at all.
+  // handleWho STOOD HERE (goal/G19.11): the node's own book, its pinned
+  // relay key and its own key, answered for the first relay of the list.
+  // No route served it once contact.search and contact.get took its job.
+  // THE ADDRESS BOOK IS LOCAL, AND ALWAYS WAS (2026-09-18), and that stands:
+  //
+  //   Andy: "there is absolutely no reason for unbound entities to
+  //   conduct surveys of our network." — and on the packet ceiling
+  //   blocking the roll's demotion: "that's the point, so bound
+  //   entities now MUST use alternate interfaces: easy!"
+  //
+  // A node never builds its book out of a relay's membership; a caption
+  // comes from contactBook.labelForKey, locally, preferring the name the
+  // person typed. A survey by a bound entity is still a survey.
+
+  // ── contact.search / contact.get: THE BOOK, SEARCHED (puppets/G2) ──
+  //
+  //   Andy, 2026-09-27: "the verb changes changing list fetches to a
+  //   search(labe) and geKey(key) pair are approved"; for the marks, "go."
+  //   on putting the state in the label ('Bert — blocked'); and "the
+  //   search box below searches all available relays. the box on top,
+  //   should not."
+  //
+  // peer.list answered the whole book at once. contact.search walks the
+  // same book (buildPeople, sorted by caption, which is the scan order)
+  // and answers key/label pairs. Since goal/G29.6 the label is json
+  // (contactLabel) and the words are ranked by the probability modules;
+  // its fields and yes-filters are goal/G40.11's (below).
+  //
+  // ONE SEARCH OVER THE ONE TABLE (goal/G40.11; Andy: "yes. those names." to contact.search covering relays too). Tier
+  // one, at once: the rows the owner's list holds (kept, owned, and blocked to be undone), people and relays alike,
+  // ranked by the words, with the yes-filters keep, mine, relay, seated, blocked (searchPeople). Nobody else, and
+  // ignored never shows. Tier two: the same call starts the network search (walkRelays), whose rows stream as the
+  // 'peer-search' job to the page, which can add them; nothing stores them as listed (goal/G43.17).
+  // ONE NETWORK SEARCH AT A TIME (Andy: "the node also only triggers a peer search if none is in flight."): a search
+  // while one is out is answered from the table and starts nothing; nothing waits for it to return.
+  var networkOut = false;
+  var networkJob = null;
+  function contactSearch(body, deps) {
+    var d = deps || {};
+    var q = String((body && body.q) || '').trim();
+    var r = searchPeople(buildPeople(rootDir), q, body);
+    if (!networkOut && d.jobs) networkSearch(q, d);
+    // No selfTail beside the rows: no key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1: "drop selfTail and
+    // tail from contact.search's answer.").
+    return { ok: true, status: 200, items: r.items, more: r.more };
+  }
+
+  // TIER TWO: the walk, each row noted in the table and sent as one update of the 'peer-search' job, so the page shows it
+  // and can add it (goal/G43.17; Andy: "the search results will be streamed to the UI, so those contacts CAN be added, it
+  // doesn't mean we have to store then in the contact list."). Nothing marks it. d.walk stands in for the relays in a suite;
+  // d.router is the live one.
+  function networkSearch(q, d) {
+    networkOut = true;
+    // A HIT IS NEWS OF spirit.contact (goal/G43.20, Q1: "peer search should generate contact events"): { q, item }.
+    if (!networkJob) networkJob = d.jobs.ownJob('spirit.contact');
+    var ranks = require('../../script.js').requireScript('spirit/seenPeers/script.js');
+    var onRow = function (row) {
+      shadow(rootDir).note(row.publicKey, {
+        at: row.atKey, url: row.relay, label: row.publicLabel,
+        present: true,
+        rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
+      });
+      var found = contactBook.byPublicKey(rootDir, row.publicKey);
+      if (!found || found.blocked) return;
+      var url = found.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '';
+      d.jobs.ownNews('spirit.contact', 'hit', { q: q, item: { key: row.publicKey, label: contactLabel(Object.assign({}, found, { url: url, present: true })) } });
+    };
+    var walk = typeof d.walk === 'function' ? d.walk : function (words, each) { return walkRelays(d.router, words, each); };
+    var going = null;
+    try { going = walk(q, onRow); } catch (e) { going = null; }
+    Promise.resolve(going)
+      .catch(function () { /* a walk that failed found nobody; the next search starts another */ })
+      .then(function () { networkOut = false; });
+  }
+
+  function contactGet(body, deps) {
+    var key = String((body && body.key) || '');
+    if (!key) return { ok: false, status: 400, error: 'key required' };
+    var person = buildPeople(rootDir).filter(function (p) { return p.publicKey === key; })[0];
+    if (!person) return { ok: false, status: 404, error: 'not in the book' };
+    var out = { ok: true, status: 200, key: key, person: person };
+    var bounded = function (o) { return require('../../script.js').requireScript('spirit/limits/script.js').boundedGet(o); };
+    // A RELAY ROW, WHAT relay.get ANSWERED BESIDE IT (goal/G49.11, box v9: relay.get "will merge with contact.get"): the
+    // relay's row as the node holds it (its connection, owned, claimed, services, owner label, face), relay, and that
+    // relay's last stream report, held in the node's memory, report; null where there is none.
+    var row = relayKeys.byKey(rootDir, key);
+    if (!row) return bounded(out);
+    var router = deps && deps.router;
+    return relaySummary(router).then(function (summary) {
+      var reports = router && typeof router.relayStatus === 'function' ? (router.relayStatus() || {}) : {};
+      out.relay = (summary.rows || []).filter(function (r) { return r.url === row.url; })[0] || null;
+      out.report = reports[row.url] || null;
+      return bounded(out);
+    });
+  }
+
+  // ── peer.find STOOD HERE (handleHandle / findHandle), DELETED ──────
+  //     2026-09-17
+  //
+  //   Andy: "handles are not used in keyed mode by definition."
+  //
+  // It fetched the whole roll from `urls[0]` and filtered it down to
+  // rows whose label matched a word exactly — the "is the john I was
+  // told about here" question.
+  //
+  // THE TREE ASKED FOR THIS DECISION and had been waiting on it.
+  // contacts.js, where the caller used to be: "The verb survives it.
+  // `peer.find` is still served by the node and now has no caller in the
+  // tree, which is a thing to decide rather than a thing to leave: it
+  // asks `urls[0]`, so it cannot see a second relay or a partner's
+  // members, and anything that wanted it should want peer.search
+  // instead."
+  //
+  // Superseded rather than merely unused, which is why this is a
+  // deletion and not a retrofit: ranked search answers the same question
+  // strictly better. "An exact handle scores 1.0 and comes first out of
+  // a million, so typing the name you were told IS the handle lookup,
+  // and typing part of it is the other question. One box answers both."
+  // It also crossed relays and partnerships, which this never could.
+  //
+  // `handleMatches`, which this called, outlived it until goal/G19.11.
+
+  // contact.block, unblock, accept, label and forget (server.js's contact
+  // family): yes or no about a person. No mailbox call: whether this node listens
+  // is its own business — the mailbox has no opinion and is not asked
+  // for one.
+  //
+  // Any key can be blocked, not only a contact. An ordinary personal
+  // node can become a nuisance, and being on somebody's list is not what
+  // makes them one; a row this node has never acquired is blocked just
+  // the same, which is why block does not require a rank.
+  //
+  // Block is deliberately not a delete. The row stays, marked, because a
+  // list you can be removed from silently is a list nobody can undo a
+  // mistake in.
+  // ── THE ACTION FIELD IS THE VERB, AND NOW IT IS SPELLED THAT WAY ────
+  //
+  // `{ action: 'block' | 'unblock' | 'accept' | 'label' }` was a verb
+  // inside a body, under a route that was also a verb — a dispatch this
+  // file did by hand, one `indexOf` and one if-chain, beside a dispatch
+  // the door already does for everything else.
+  //
+  // So `contact.block`, `contact.unblock`, `contact.accept` and
+  // `contact.label` are four claims on the table, and the check that
+  // `action` is one of four is gone: an unknown verb is refused at the
+  // door by a table that knows every verb this node answers, rather than
+  // by a string list here that only knows these.
+  //
+  // WHAT DOES NOT CHANGE, and is the reason these are four and not two:
+  // `accept` says listen to this person, `unblock` only takes the block
+  // off. Somebody blocked while still waiting goes back to waiting, not
+  // into the address book — undoing a no is not the same as saying yes.
+  function handlePeer(req, res, readJsonBody, action, deps) {
+    readJsonBody(req).then(function (body) {
+      var publicKey = String((body && body.publicKey) || '').trim();
+      if (!publicKey) { fail(res, 400, 'publicKey required'); return; }
+      if (auth.loadIdentity(rootDir).publicKey === publicKey) {
+        fail(res, 400, 'that key is this node');
+        return;
+      }
+      // Blocking somebody this node has no row for is a real case: they
+      // are in the roll, they have been picked in the list, and they
+      // have never been acquired. A row is made so the block has
+      // somewhere to live and somewhere to be undone from.
+      if (action === 'block' && !contactBook.byPublicKey(rootDir, publicKey)) {
+        var heldLabel = String((body && body.publicLabel) || '');
+        var heldBad = labelRefusal(heldLabel);
+        if (heldBad) { fail(res, 400, heldBad); return; }
+        contactBook.noteLabel(rootDir, publicKey, SPIRIT.normalizeString(heldLabel));
+      }
+      // What YOU call that key. Never uploaded, never seen by the peer,
+      // and the reason contactBook keeps publicLabel separate: the mailbox's
+      // caption is theirs and can change under you, this one is yours.
+      if (action === 'label') {
+        var mine = String((body && body.myLabel) || '');
+        var mineBad = labelRefusal(mine);
+        if (mineBad) { fail(res, 400, mineBad); return; }
+        var row = contactBook.setMyLabel(rootDir, publicKey, SPIRIT.normalizeString(mine));
+        if (!row) { fail(res, 404, 'no row for that key'); return; }
+        var caption = contactBook.labelForKey(rootDir, publicKey, row.publicLabel || '');
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          publicKey: row.publicKey,
+          myLabel: row.myLabel || '',
+          caption: caption,
+        }));
+        // Every label showing this contact redraws (goal/G4.13). The
+        // node's own event, named contact.rename: Andy, 2026-10-03,
+        // "peer labels belong to node." / "so node owns contact.rename".
+        contactRenames.note({ key: row.publicKey, caption: caption });
+        return;
+      }
+
+      // FORGETTING IS NOT BLOCKING, and answers a different shape: there
+      // may be no row left to describe. contactBook keeps a blocked row and
+      // only downgrades it — deleting one would readmit the person the
+      // moment they wrote, because the row IS the refusal.
+      if (action === 'forget') {
+        // A REFUSAL STOOD HERE: Forget answered 409 while `memberOf` named a
+        // relay this node owns. `memberOf` is gone (2026-09-19), and Forget
+        // no longer asks whether a seat exists: contactsDetails removes the
+        // key from every relay this node owns first, and "no such peer" is
+        // simply the answer. We act on what we find (Andy).
+        // A RELAY'S ROW, FORGOTTEN (goal/G49.11, box v9: "contact.forget will be modified to implement the relay.remove part, if
+        // the contact row is a relay"): first off the node's list and its seat record cleared, with remove's refusals
+        // (noderoutes.net, a relay this node owns, a relay still holding this node's seat, the node's last public relay).
+        var relayRow = relayKeys.byKey(rootDir, publicKey);
+        var relayOff = false;
+        if (relayRow && relayRow.keep) {
+          var off = relayRemove({ key: relayRow.url }, deps);
+          if (!off.ok) { fail(res, off.status || 409, off.error || 'that relay stays on the list'); return; }
+          relayOff = true;
+        }
+        // Off the list the relay's row is no longer kept, so the book may find nothing more to forget: it is forgotten all the same.
+        var gone = contactBook.forget(rootDir, publicKey) || (relayOff ? { publicKey: publicKey, forgotten: true } : null);
+        if (!gone) { fail(res, 404, 'no row for that key'); return; }
+        // EVERY GRANT OF THE KEY GOES WITH IT (goal/G47.4, Q3: "yes. it should."), one exact grant row at a time, each told.
+        try {
+          var grantTable = require('../../script.js').requireScript('spirit/nodeStore/script.js').open(rootDir).auth;
+          grantTable.paths(publicKey).forEach(function (p) { if (grantTable.revoke(publicKey, p)) grantsRevoked.note({ key: publicKey, path: p }); });
+        } catch (e) { /* the contact is forgotten; a grant left is the grants list's to revoke */ }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          publicKey: publicKey,
+          forgotten: !!gone.forgotten,
+          // Said plainly rather than implied: a blocked person is still
+          // blocked, and a person on a relay you are on will be findable
+          // again, because a roll is not yours to edit.
+          stillBlocked: !gone.forgotten,
+        }));
+        return;
+      }
+
+      // A FULL MEMORY TAKES NOBODY NEW (0021). Accepting is adding, and so
+      // is unblocking somebody who had been added: both put a row back
+      // under protection. Blocking never needs room — it gives some back.
+      var before = contactBook.byPublicKey(rootDir, publicKey);
+      var adds = action === 'accept' ||
+        (action === 'unblock' && before && before.keep);
+      if (adds && !shadow(rootDir).roomToAdd(publicKey)) {
+        fail(res, 507, 'memory is full of the people you added');
+        return;
+      }
+
+      var row;
+      if (action === 'block') row = contactBook.setBlocked(rootDir, publicKey, true);
+      else if (action === 'unblock') row = contactBook.setBlocked(rootDir, publicKey, false);
+      else row = contactBook.accept(rootDir, publicKey);
+      if (!row) { fail(res, 404, 'no row for that key'); return; }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        publicKey: row.publicKey,
+        keep: row.keep,
+        blocked: contactBook.isBlocked(row),
+      }));
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
+  // 😏 FACEABLE, ON OR OFF (goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key,
+  // faceable}, for a relay this node holds a seat on only; it does what own did", "contact.own goes"). The one writer of
+  // faceable: a faceable relay opens this node's face (faceHome), so it is refused from every face and from every peer
+  // (faceHome.js, apiDoor.js, apiAuth.js). The star is not set here: it is the card's owner (contacts.setCard).
+  function handleFaceable(req, res, readJsonBody) {
+    return readJsonBody(req).then(function (body) {
+      var key = String(body.key);
+      var row = shadow(rootDir).get(key);
+      if (!row) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-such-contact', error: 'no row for that key' })); return; }
+      // A SEATED RELAY ALONE (box v33: "for a relay this node holds a seat on only"; goal/G41.32, Andy: "a relay I'm not a
+      // member of can not be starred (relays i own automatically give me membership)"): a node, or a relay with no seat, is
+      // refused; and only putting it on, so 😏 can always come off.
+      if (body.faceable === true && row.relay !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'not-a-relay', error: 'only a relay can be faceable' })); return; }
+      if (body.faceable === true && row.seated !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-seat', error: 'this node holds no seat on that relay' })); return; }
+      shadow(rootDir).set(key, { faceable: body.faceable === true });
+      // 😏 TAKEN OFF TAKES THE FACE AWAY (goal/G43.18, box v29: "A star taken off a relay that has a face takes that face
+      // away (Q21)", the star's job now faceable's): the face this node holds on that relay is forgotten.
+      if (body.faceable !== true && row.relay === true) { var faceAt = relayKeys.byKey(rootDir, key); if (faceAt && faceAt.url) relayKeys.keepFace(rootDir, faceAt.url, ''); }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ key: key, faceable: body.faceable === true }));
+    });
+  }
+
+  function handleContact(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var publicKey = String((body && body.publicKey) || '').trim();
+      if (!publicKey) {
+        fail(res, 400, 'publicKey required');
+        return;
+      }
+      // A label given by hand is checked before anything is asked or
+      // written (goal/G4.16); none at all is still allowed.
+      var givenBad = labelRefusal((body && body.publicLabel) || '');
+      if (givenBad) { fail(res, 400, givenBad); return; }
+      // ── WHICH ROLL PROVES IT ───────────────────────────────────────
+      //
+      //   Andy: "now we need to be able to add foreign peers to contacts,
+      //   peer post to foreign peers require that."
+      //
+      // The caller names the relay. The key must be listed on that roll, so
+      // a stale page or a mistyped paste cannot write a row for somebody who
+      // is not there.
+      //
+      // `relay: url` is written on the row below, so where a contact was
+      // found is recorded rather than inferred later.
+      var wantedUrl = String((body && body.url) || '').trim().replace(/\/+$/, '');
+      var target = wantedUrl || loadRelayUrl(rootDir);
+      if (!target) { fail(res, 503, 'no relay url in the relay list of this node'); return; }
+      try { assertRelayUrl(target); }
+      catch (e) { fail(res, 503, String(e.message || e)); return; }
+
+      guarded(res, target, function (url) {
+        // -- ASKING ABOUT ONE KEY, NOT READING THE WHOLE LEDGER ---------
+        //
+        // ── IT ASKS THE RELAY NOTHING (2026-09-18) ──────────────────
+        //
+        //   Andy: "callers of the roll have two choices: use other
+        //   interfaces or die."
+        //
+        // It fetched the entire roll to answer yes or no about a single
+        // key, then narrowed to `?key=` for a day. Both were the roll,
+        // and this was the last caller holding the route open.
+        //
+        // The read did two jobs: it CONFIRMED the key was on that relay,
+        // and it lifted `publicLabel` off the row.
+        //
+        // The label travels with the row now. A key reaches this verb
+        // because somebody clicked a thing the relay had already
+        // described — a search result carries `publicLabel`, and Contacts
+        // puts it on the button. Asking the relay to repeat what it just
+        // said is a node spending its own request budget on nothing
+        // (design/principles/THE-REQUESTER-IS-RESPONSIBLE.md).
+        //
+        // THE CONFIRMATION IS GONE, deliberately, and it bought less than
+        // it looked:
+        //
+        // - It never checked the thing that matters. `via: 'handle'` means
+        //   a human compared key endings out loud; the roll only said
+        //   "that key is enrolled here", which a typo landing on a real
+        //   key passes just as well.
+        // - A contacts row is this node's OWN PERCEPTION, in a local file.
+        //   A wrong one is a contact that never answers — honest, visible
+        //   and deletable — which is a small thing against keeping a cheat
+        //   alive to prevent it.
+        // - And posting is the real test: 0006 has the relay deliver or
+        //   refuse instantly, so writing to somebody proves reachability,
+        //   which is more than enrolment ever proved.
+        //
+        // What it still refuses is acquiring THIS NODE, a local check that
+        // needs nobody.
+        if (auth.loadIdentity(rootDir).publicKey === publicKey) {
+          fail(res, 400, 'that key is this node');
+          return;
+        }
+
+        // How the key was confirmed. `handle` is a human comparing key
+        // endings out loud (cut 2). `invite` is the owner recognising a
+        // label they minted, now claimed on their own mailbox. Nothing
+        // else is accepted here: a page cannot promote a stranger by
+        // asking nicely.
+        // The same refusal as accept (0021): adding needs room.
+        if (!shadow(rootDir).roomToAdd(publicKey)) {
+          fail(res, 507, 'memory is full of the people you added');
+          return;
+        }
+        var row = contactBook.acquire(rootDir, {
+          publicKey: publicKey,
+          // Empty is a real answer: a pasted key has no label until its
+          // holder writes to you or you type one yourself. Inventing one
+          // would be worse than an unnamed row.
+          publicLabel: SPIRIT.normalizeString((body && body.publicLabel) || ''),
+          relay: url,
+        });
+
+        // NO ROUTE TO THEM IS KEPT (goal/G47.1, box v69: "every write of a route (... a contact added)"): the relay they
+        // were acquired from is not noted as where they live.
+
+        res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          publicKey: row.publicKey,
+          publicLabel: row.publicLabel,
+          keep: row.keep,
+        }));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
+  // THE DEVICE POLL, ITS WINDOW AND ITS PANEL HANDLERS STOOD HERE. The
+  // device enrolment they served was removed by goal/G16.2.
+
+  // ── THE ROSTER SWEEP STOOD HERE, AND IS GONE (2026-09-19) ────────────
+  //
+  // reconcileMembers, reconcileOrphans and syncMembers read every owned
+  // relay's roll roster: whoever was on it became a contact with
+  // `memberOf`, whoever was on no roster lost it, and a key on no roll
+  // at all was marked `missingSince`. The roll went on 2026-09-18 and a
+  // roster may never be returned again — it is a member list, which 0012
+  // widened forbids, and it breaks PAYLOAD_MAX — so the sweep read []
+  // forever, and pruned every member contact on every probe until a guard
+  // stopped it.
+  //
+  // Andy's rule, which is why it is deleted rather than guarded: "relays
+  // only provide one way to find nodes or relays: SEARCH. What is not found
+  // cannot influence decisions. We design to do the best with what we
+  // find; we won't be bothered with what we can't find or know." And:
+  // "email addresses change, contacts go stale. Deal with it."
+  //
+  // What remains: a new member becomes a contact on the claim event itself
+  // (server.js, onOwnerEvent), from the key and label it names. Forget no longer asks whether a seat exists — it acts
+  // (contactsDetails removes the key from every relay this node owns, and
+  // "no such peer" is simply the answer) and then forgets.
+
+  // ── A NEW MEMBER OF A RELAY I OWN BECOMES A CONTACT ────────────────
+  //
+  //   Andy: "when someone binds to a peer i own, it's because i want
+  //   them as a contact."
+  //
+  // On the claim event itself, with what it names: the key, the label they
+  // chose, the relay it happened on. A broadcast the node receives
+  // passively — Andy: "nodes have two sources of knowledge, search
+  // (active) and broadcasts (passive)". Owner events reach only the owner
+  // of the relay they happened on, so every claim seen here is on a relay
+  // this node owns. The rank records HOW they came, which is history; it
+  // is not a claim that they still hold a seat. Never this node's own
+  // claim. Called by server.js on every owner event.
+  function adoptClaim(ev) {
+    if (!ev || ev.kind !== 'claim' || !ev.key || ev.owner) return null;
+    if (auth.loadIdentity(rootDir).publicKey === String(ev.key)) return null;
+    try {
+      // Not added when there is no room (0021) — the claim still happened,
+      // and the memory still has them as a stranger.
+      if (!shadow(rootDir).roomToAdd(String(ev.key))) return null;
+      return contactBook.acquire(rootDir, {
+        publicKey: String(ev.key), publicLabel: String(ev.label || ''), relay: ev.relay || '',
+      });
+    } catch (e) { return null; }
+  }
+
+  // ── WHAT THIS NODE SAYS ABOUT ITSELF, AT HOME ────────────────────────
+  //
+  //   Andy: "i want an intrinsic app info, in which, for now the user can
+  //   maintain both fields in this file, more to come."
+  //
+  // Read and write of the two fields nodeCard answers to strangers. The
+  // logic is all in nodeCard — these three exist because a loopback verb
+  // needs a req/res pair and that module must not learn what one is: it is
+  // required by peerPost, which is the wire path, and a file that answers
+  // both sides of a question should not also be holding an HTTP response.
+  function handleNodeCard(req, res) {
+    var card = nodeCard.read(rootDir);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(Object.assign({ ok: true }, card)));
+  }
+
+  // A REFUSAL IS A BODY, NOT A STATUS, for both of these. The app draws
+  // `error` under the field that caused it, which is where somebody is
+  // looking — and the label's type already told it the same thing before the
+  // request left, so arriving here means the browser was out of date or
+  // was not the one asking.
+  function handleNodeName(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var said = nodeCard.setName(rootDir, body && body.name);
+      res.writeHead(said.ok ? 200 : said.status,
+        { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(said));
+    }).catch(function () { fail(res, 400, 'Invalid JSON body'); });
+  }
+
+  function handleNodeDescription(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var said = nodeCard.setDescription(rootDir, body && body.description);
+      res.writeHead(said.ok ? 200 : said.status,
+        { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(said));
+    }).catch(function () { fail(res, 400, 'Invalid JSON body'); });
+  }
+
+  // THE NAME ARRIVES IN THE BODY, not on a query string, since the relay
+  // namespace folded onto /spirit. What this buys is that every
+  // loopback verb is now the same shape — a POST with a JSON body — so
+  // there is nothing left for a caller to remember about this one in
+  // particular. `readJsonBody` is memoised on the request, so reading it
+  // here costs nothing even though the door has already peeked at it for
+  // the verb.
+  //
+  // A BODY THAT WILL NOT PARSE IS NOT A REFUSAL HERE, and that is
+  // deliberate. `name` is echoed back, never used to decide anything
+  // (see below), so a missing one degrades to the empty string exactly
+  // as a missing query parameter did. Failing the whole probe over a
+  // caption would take the relay list down for a reason that has
+  // nothing to do with the relays.
+  // ── THE ONE DOOR ONTO THE WIRE ───────────────────────────────────────
+  //
+  // `router.post` is called here and nowhere else in this file, and
+  // serverSurface asserts it by counting:
+  //
+  //   "Every post-path door was deleted on 2026-09-15 so that peer.post is
+  //   the only way onto the wire. A second caller is a second door,
+  //   whether or not a route has been wired to it yet."
+  //
+  // The rule is about paths, not about verbs — so a second CALLER shares
+  // this function rather than reaching past it, and everything that
+  // decides how a packet is shaped stays in one place.
+  function sendPacket(router, relayUrl, toKey, text, how) {
+    return router.post(relayUrl, toKey, text, how);
+  }
+  var PATIENCE_MAX_MS = 10 * 60 * 1000;
+
+  // ── peerOwnerPost — THE OWNER COMMANDS A PUPPET HE OWNS ──────────────
+  //
+  //   Andy, 2026-09-25: "so node only a peerProxy() function that proxies
+  //   the entire node api to manipulate the configuration, contactList
+  //   maybe even relayList for the app" — and, naming it: "the interface
+  //   might better be call peerOwnerPost()", "it's more true."
+  //
+  // NAMED FOR WHAT IT IS, NOT FOR WHAT IT DOES. `proxy` already means one
+  // thing here — the outbound web fetcher, `net.fetch` in
+  // server.js, marked `{ wire: true }` with "it reaches the
+  // internet, so being offline fails it", and `spirit/state/proxy.json`
+  // for which key may go to which website. That proxy points AT the
+  // internet; this one points at a puppet. `peerOwnerPost` names by
+  // family instead: it is `peerPost`, from the owner.
+  //
+  // ── AND THE COMMAND IS RULED, NOT ASSUMED ────────────────────────────
+  //
+  //   Andy, 2026-09-25: "The owner of the pupped can command anything,
+  //   others by default nothing."
+  //
+  // `design/principles/PUPPETS.md` G8. The line `nodeCard.js:13` records
+  // — a relay answers about itself and a node answers nothing — was
+  // already crossed by `nodeCard` itself, whose `:208` returns name,
+  // description, publicKey and sealKey for every node. So there was no
+  // line left to cross, only the question of commands, which is now
+  // answered.
+  //
+  // ── A SYSTEM PACKET, AND WHAT THAT DOES AND DOES NOT BUY ─────────────
+  //
+  // `packet.js:152-154`: "A system packet is now the one with NO app,
+  // which nothing claiming to be an app can forge."
+  //
+  // THAT IS ABOUT DISPATCH, NOT ABOUT SENDERS, and it must not be quoted
+  // as though it meant only an owner can send one (wsl-claude's
+  // correction, 2026-09-25). A hostile peer composes a no-app packet
+  // perfectly well. What it cannot do is be an app AND a system packet at
+  // once — so NO PUPPET CAN INTERCEPT OWNER TRAFFIC, which is the
+  // property this needs. Every app's reader filters on its own app name
+  // and therefore ignores this automatically.
+  //
+  // **THE OWNER-KEY COMPARISON AT THE RECEIVER IS THE WHOLE BOUNDARY.**
+  // Nothing here authenticates anybody; `peerPost` signs every post with
+  // this node's identity and the puppet decides whether that key is its
+  // master's.
+  //
+  // ── BUILT WITH THE FACTORY, packet.encode ────────────────────────────
+  //
+  // A first draft used `systemPayload`, the hand-built `{v, body}` with no
+  // `id`, no bound and no refusal. The command is built with
+  // `packet.encode('', …)` now: the note at the packet.js require, at the
+  // top of this file, says why that undoes nothing (Andy, 2026-09-25:
+  // *"agreed. go."*). `systemPayload` stays for the relay search alone.
+  //
+  // THE RECEIVER IS puppetMode.puppetDoor (puppets/G7), the owner door a
+  // puppet runs: it verifies the owner's signature before a command runs.
+  function peerOwnerPost(rootDir, router, relayUrl, toKey, verb, body) {
+    const named = String(verb || '');
+    if (!named) return Promise.resolve({ ok: false, status: 400, error: 'verb required' });
+    if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
+
+    // ── THE OWNER SIGNS THE COMMAND, AND THAT IS WHAT THE PUPPET CHECKS ──
+    //
+    //   Andy, 2026-09-26: "the puppet is uable to sign any request with the
+    //   owners signature. and that signature must exist before the puppet
+    //   routes the request to loopback." — "the second half counts." — "so we
+    //   must make sure in code, that the signature is verified in the pupped,
+    //   else request is refused."
+    //
+    // WHY THE TRANSPORT SIGNATURE WILL NOT DO. peerPost.js:756 signs every
+    // outgoing post with this node's identity key and no caller can withhold
+    // it, so a puppet posting through its own node gets it for free — and to a
+    // SIBLING puppet under the same owner, that node key IS the owner key. The
+    // forger never signs anything; the router signs for it.
+    //
+    // THE SHAPE IS forwardToMine's, ONE LAYER IN (relay.js:2711-2728): a
+    // signed string travels beside its signature and the receiver verifies
+    // rather than trusting the carrier. Here the signed string is `cmd` and it
+    // is carried verbatim, so the verifier signs over the same bytes without
+    // canonicalising anything.
+    //
+    // THE ID IS MINTED FIRST, because it is inside the signed message and
+    // `encode` would otherwise mint it afterwards — binding the signature to
+    // this envelope and no other.
+    const id = packet.randomId();
+    const cmd = JSON.stringify({ verb: named, body: body || {} });
+    const me = auth.loadIdentity(rootDir);
+    const sig = auth.sign(me.privateKey, auth.commandMessage(me.publicKey, toKey, id, cmd));
+    const made = packet.encode('', { cmd: cmd, sig: sig }, { id: id });
+    // A REFUSAL IS A VALUE, NOT A THROW, and the sentence is the
+    // factory's rather than a second wording of it. THE BOUND IS NOT
+    // CHECKED HERE: `encode` bounds what it builds, which is the whole
+    // reason for using it — an earlier draft carried its own length test
+    // because `systemPayload` bounds nothing, and that was the limit
+    // written down in a second place.
+    // THE FACTORY'S SENTENCE, NOT A SECOND ONE. An earlier draft wrapped
+    // this as "owner command too long: <the factory's words>" and read
+    // "too long: packet too long" — two statements of one refusal, which
+    // is the thing this file spent the day removing elsewhere. The
+    // composer refused; that is the answer.
+    if (!made || !made.ok) {
+      return Promise.resolve({ ok: false, status: 413, error: (made && made.error) || 'packet too long' });
+    }
+    // Through the one door. `serverSurface.js:848`: "peer.post is the only
+    // way onto the wire. A second caller is a second door, whether or not
+    // a route has been wired to it yet."
+    return sendPacket(router, relayUrl, toKey, made.text);
+  }
+
+  // fromMemory STOOD HERE (R39, 0021): the shadow's strangers, ranked beside the book. Gone with goal/G40.11: the
+  // search lists the kept and owned rows of the one table.
+
+  // THE NETWORK SEARCH (goal/G30.19: tier two of contact.search; it was the verb peer.search, deleted with Andy's
+  // approval of the interface reduction). Every configured relay asked once; onRow(row) for each peer found, as it
+  // comes; resolves when every relay has answered or failed. Online only: a relay answers its connected members.
+  function walkRelays(router, q, onRow) {
+    if (!router) return Promise.resolve();
+    var myKey = auth.loadIdentity(rootDir).publicKey;
+    var found = Object.create(null);
+    var labels = Object.create(null);
+    ownerBadge.loadRelays(rootDir).forEach(function (x) { if (x && x.url) labels[x.url] = x.label || ''; });
+    return Promise.all(ownerBadge.configuredUrls(rootDir).map(function (url) {
+      // No pin means this node has never spoken to it; fetching a key from the box asked is how you get answered by
+      // whoever is standing there.
+      var relayKey = relayKeys.pinned(rootDir, url);
+      if (!relayKey) return Promise.resolve(null);
+      var asked = systemCall('search', { q: q });
+      return sendPacket(router, url, relayKey, asked.text, { call: asked.call }).then(function (answer) {
+        var said = null;
+        try { said = JSON.parse((answer && answer.text) || ''); } catch (e) { said = null; }
+        var out = (said && said.body) || {};
+        if (!out || out.ok !== true) return;
+        (out.matches || []).forEach(function (p) {
+          if (!p || !p.publicKey || p.publicKey === myKey || found[p.publicKey]) return;
+          if (p.present === false) return;
+          // THE DOT LEARNS FROM THE ANSWER (goal/G2.9): the relay asked has just carried this row.
+          if (typeof router.heard === 'function') {
+            try { router.heard(url, p.publicKey); } catch (e) { /* a witness to the search, never a reason to fail it */ }
+          }
+          found[p.publicKey] = true;
+          onRow({
+            publicKey: p.publicKey,
+            publicLabel: p.publicLabel || '',
+            // The relay's key is the route: a row with no via is a member of the relay that answered.
+            atKey: p.via || relayKey || '',
+            relay: url,
+            relayLabel: labels[url] || '',
+            present: true,
+            viaPartner: !!p.via,
+          });
+        });
+      }).catch(function () { /* a relay that could not answer adds nobody */ });
+    }));
+  }
+
+
+  function handleStatus(req, res, readJsonBody, deps) {
+    Promise.resolve()
+      .then(function () { return readJsonBody(req); })
+      .catch(function () { return {}; })
+      .then(function (body) { statusFor(res, (body && body.name) || '', deps); });
+  }
+
+  // ── relay.get: ONE OF HIS RELAYS (puppets/G2; the list is contact.search since goal/G40.11) ──
+  //
+  //   Andy, 2026-09-27, "go." on: "key = the relay's url, label = its name
+  //   plus what's true of it, e.g. 'spirit-3 — yours, online', 'lab —
+  //   member, offline'", and relay.get {url} answering one relay's full
+  //   status.
+  //
+  // ── THE LIST ASKS NO RELAY (goal/G22.4) ─────────────────────────────
+  //
+  // Andy's decision: "The relay list (relay.get, relay.search) is a search
+  // over the relays peerPost already knows, from its streams, with no call
+  // to any relay. A relay peerPost has never met shows as not joined." And
+  // peerPost owns every contact with a relay; the hub never touches one.
+  //
+  // It asked every listed relay for its card on each search (the probe,
+  // through peerPost.relayKey, cached 3 s). Now each row is built from
+  // what this node already holds, and nothing is fetched:
+  //
+  //   the row, its label              the node's list (relayKeys.listed, the relays kept)
+  //   online (status 200)             peerPost holds a stream to it (router.relaysHeld)
+  //   owned                           it sent this node the report a relay sends
+  //                                   only to its owner's key, which it does the
+  //                                   moment the owner's stream opens (router.relayStatus)
+  //   claimed                         owned, or seated (relayKeys)
+  //   roll.relayKey                   the key pinned for it (relayKeys.pinned)
+  //   roll.myLabel, claimedLabel      what that relay calls this node: its own name (relayKeys.seatLabel)
+  //   roll.ownerKey, roll.owner       this node's key and that name when owned
+  //
+  // The relay's own label (roll.relayLabel) is what its last card said, kept
+  // by peerPost beside its services (labelOf, goal/G30.7), never fetched
+  // here. Who owns a relay this node does not own (roll.ownerKey,
+  // roll.owner) is not known here and is left empty.
+  function relayRows(router) {
+    var me = auth.loadIdentity(rootDir);
+    var held = Object.create(null);
+    var reports = {};
+    if (router && typeof router.relaysHeld === 'function') {
+      router.relaysHeld().forEach(function (u) { held[ownerBadge.normalizeUrl(u)] = true; });
+    }
+    if (router && typeof router.relayStatus === 'function') reports = router.relayStatus() || {};
+    var seated = Object.create(null);
+    relayKeys.seatedUrls(rootDir).forEach(function (u) { seated[ownerBadge.normalizeUrl(u)] = true; });
+    return ownerBadge.loadRelays(rootDir).map(function (relay) {
+      var url = relay.url;
+      var row = { url: url, label: relay.label, status: held[url] ? 200 : 0, owned: !!reports[url] };
+      // WHAT THE RELAY OFFERS (goal/G30.2), as its last card said, on every row, seated or not: the relay panel
+      // (element/search/contact/detail.js, a relay's details) shows the email field only where services.sendMail is true. Read from what peerPost already knows, never
+      // asked here (goal/G22.4: the relay list asks no relay).
+      row.services = router && typeof router.servicesOf === 'function' ? router.servicesOf(url) : { sendMail: false, face: false };
+      row.claimed = row.owned || !!seated[url];
+      // THE STAR AND WHAT IT RESTS ON (goal/G41.30), on every row, seated or not, for the button beside it: the key to press
+      // it for, whether it is on, and who the relay's last card says owns it, that relay's own word.
+      var starRow = relayKeys.byUrl(rootDir, url);
+      row.key = starRow ? starRow.key : '';
+      row.mine = !!(starRow && starRow.mine);
+      // 😏, whether this node gave that relay full face capability (goal/G47.4, box v33): what the face form reads.
+      row.faceable = !!(starRow && starRow.faceable);
+      row.ownerLabel = router && typeof router.ownerLabelOf === 'function' ? router.ownerLabelOf(url) : '';
+      if (row.claimed) {
+        var seatLabel = relayKeys.seatLabel(rootDir, url);
+        row.roll = {
+          owner: row.owned ? seatLabel : '',
+          ownerKey: row.owned ? me.publicKey : '',
+          relayKey: relayKeys.pinned(rootDir, url),
+          // The relay's own public label, as its card said (goal/G30.7).
+          relayLabel: router && typeof router.labelOf === 'function' ? router.labelOf(url) : '',
+          myLabel: seatLabel,
+        };
+        row.claimedLabel = seatLabel;
+        // THE FACE THIS NODE HOLDS ON THAT RELAY (goal/G30.1), the node's own fact on the relay's row (goal/G40.11), so
+        // the info app shows it again after a restart. The name alone: no email is kept.
+        var face = relayKeys.faceOf(rootDir, url);
+        row.face = { name: face ? face.name : '', email: '' };
+      } else {
+        row.error = 'no row here';
+      }
+      return row;
+    });
+  }
+  function relaySummary(router) {
+    return Promise.resolve(ownerBadge.summarize(relayRows(router)));
+  }
+  // WHAT A RELAY'S ROW CARRIES ON THE STREAM (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must
+  // update instantly"): what relay.get answers, all of it held here, the node's own: the row's face stays the row's, a name,
+  // and error says nothing on a row. Never the report (presenceNode.nudgeStatus says why). null for a relay not on the list.
+  function relayFacts(router, url) {
+    var going = ownerBadge.normalizeUrl(String(url || ''));
+    var row = relayRows(router).filter(function (r) { return r.url === going; })[0];
+    if (!row) return null;
+    var facts = Object.assign({}, row);
+    delete facts.face;
+    delete facts.error;
+    return facts;
+  }
+  // relaySearch STOOD HERE (goal/G19.17): the relays ranked by the words. Gone with goal/G40.11 (Andy: "yes. those
+  // names."): contact.search covers relays too, a relay one row of the one table, and relay: true asks for them alone.
+
+  // ── relay.remove: ONE RELAY OFF THIS NODE'S LIST (goal/G16.3) ────────
+  //
+  //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+  //   list relays and remove relay, with a successful claim adding its
+  //   relay? yes."
+  //
+  // The key is the url (relay.get answers it). Refused when
+  // it would leave no public relay (ownerBadge.canRemoveRelay).
+  //
+  // AND IT GIVES UP THE SEAT (goal/G19.1). Andy, 2026-10-12: "only the
+  // node's user removes a relay, never the last one". The pin stays, so a
+  // later claim there still knows who that relay is.
+  // Owned is what the relay's owner report says, as relaySummary reads it (goal/G30.7: an owned relay stays listed).
+  function relayRemove(body, deps) {
+    var url = ownerBadge.normalizeUrl(String((body && body.key) || ''));
+    var router = deps && deps.router;
+    var reports = router && typeof router.relayStatus === 'function' ? (router.relayStatus() || {}) : {};
+    var out = ownerBadge.removeRelay(rootDir, url, { owned: !!reports[url] });
+    if (out.ok) {
+      try { relayKeys.unseat(rootDir, out.key); }
+      catch (e) { /* the relay is off the list; a seat left on disk is never probed */ }
+    }
+    return out;
+  }
+
+  // ── relay.add: ONE RELAY ONTO THIS NODE'S LIST (goal/G28.1) ──────────
+  //
+  //   Andy, 2026-10-16: "relay.add is approved." and "a relay shows in the list whether or not the node is a member;
+  //   the green dot shows the connection status." A relay goes on the list when its card answers over peerPost, and
+  //   nothing else lists it. Refused with a reason: an address that is not https (or loopback http), an empty or
+  //   invalid private label, and a relay that gives no card.
+  function relayAdd(body, deps) {
+    var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
+    var label = String((body && body.label) || '').trim();
+    if (!label) return Promise.resolve({ ok: false, status: 400, error: 'a label is required' });
+    var labelBad = labelProblem(label);
+    if (labelBad) return Promise.resolve({ ok: false, status: 400, error: labelBad });
+    try { assertRelayUrl(url); }
+    catch (e) { return Promise.resolve({ ok: false, status: 400, error: e.message }); }
+    if (!deps || !deps.router || typeof deps.router.relayKey !== 'function') {
+      return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
+    }
+    return deps.router.relayKey(url).then(function (card) {
+      if (!relayKeys.list(rootDir, url, label, card.relayPublicKey)) {
+        return { ok: false, status: 409, error: 'that relay could not be listed under its key' };
+      }
+      return { ok: true, status: 200, url: url, relayKey: card.relayPublicKey };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no card from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
+  // ── relay.join: THIS NODE JOINS A RELAY BY ITS USER'S EMAIL (goal/G30.2) ──
+  //
+  //   Andy, 2026-10-19, confirmed: relay.join {url, email, code}, owner only, beside relay.add; since goal/G40.10
+  //   {url, email, code, link}. With an email it sends join {email, url: link, card} (the relay mails the caller's
+  //   link with its code and key); with a code, from that link, it sends joinConfirm and the seat is taken at once.
+  // The relay asked last is remembered in memory, so the link's code needs no url; a restart forgets it, and the
+  // code then needs the url again. A seat taken is written down as a claim's is (relay list, seat, streams).
+  var joinAskedOf = '';
+  function relayJoin(body, deps) {
+    var url = String((body && body.url) || '').trim().replace(/\/+$/, '') || (body && body.code ? joinAskedOf : '');
+    var email = String((body && body.email) || '').trim();
+    var code = String((body && body.code) || '').trim();
+    var router = deps && deps.router;
+    if (!url) return Promise.resolve({ ok: false, status: 400, error: 'which relay? give its url' });
+    if (!email && !code) return Promise.resolve({ ok: false, status: 400, error: 'an email to ask with, or the code from the mail' });
+    if (!router || typeof router.join !== 'function') return Promise.resolve({ ok: false, status: 503, error: 'this node has no router to join with' });
+    // THE CALLER'S LINK (goal/G40.10, box v25; Andy: "{email, port, card} just turn into {email, URL, card}"): the link
+    // the asking page's shell wants opened, which only the shell knows; the relay adds its code and key and mails it. A
+    // join with no page behind it (joinAtStart, at boot) gets this node's own face on the loopback.
+    var link = String((body && body.link) || '').trim() ||
+      ('http://127.0.0.1:' + (Number(deps && deps.port) || 0) + '/?app=join');
+    // A router that throws before it answers (no route to the relay) is the same refusal as one that never answers.
+    return Promise.resolve().then(function () { return router.join(url, email, link, code); }).then(function (said) {
+      if (!code) {
+        if (said.ok) joinAskedOf = url;
+        return said.ok ? { ok: true, status: 200, url: url } : { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };
+      }
+      if (!said.ok) return { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };
+      var label = String((said.peer && said.peer.publicLabel) || '');
+      try { ownerBadge.addRelay(rootDir, url, '', said.relayPublicKey || ''); } catch (e) { /* the seat stands; listed on the next join */ }
+      // The seat, and with it any refusal gone (goal/G40.11: seated). NO EMAIL IS KEPT (box v24): "the email address
+      // holds no value to the personal node, it is injected only for seating" (Andy, 2026-10-26).
+      try { relayKeys.seat(rootDir, url); } catch (e) { /* a boot can still backfill */ }
+      if (deps.probe) { try { router.startStreams(deps.probe); } catch (e) { /* the next boot connects */ } }
+      joinAskedOf = '';
+      // The relay's 200 is an email change on a seat already held, its 201 a new seat (goal/G30.1, box v31): passed
+      // on, so the page says Email address verified or Joined.
+      return { ok: true, status: said.status === 200 ? 200 : 201, url: url, label: label };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
+  // ── THE JOIN AT START: node spirit/server/script.js --email <address> (goal/G30.2) ──
+  //
+  // The box: while the node holds no seat it asks its kept relay to join with that email and the port it listens on;
+  // with a seat, --email does nothing. An email is never required (invites stay a way in). It answers the lines
+  // server.js prints before its listening line: that a mail will arrive shortly, or why the join did not start, in a
+  // message that names the relay, what went wrong and what to do next (Andy: "i prefer high-quality error messages").
+  // It asks by relayJoin, the path relay.join takes, so the link's code finishes the join the same way.
+  var JOIN_NEXT = {
+    400: 'Correct the address and start the node again with --email <address>.',
+    409: 'This node already holds a seat there; start it without --email.',
+    429: 'Wait a minute, then start the node again.',
+    502: 'Check the network, then start the node again.',
+    503: 'This relay takes no join by email: ask its owner for an invite and claim a seat with it in Contacts.',
+    507: 'Ask its owner for room, or join another relay from Contacts.',
+  };
+  function joinAtStart(email, deps) {
+    var mail = String(email || '').trim();
+    if (!mail) return Promise.resolve({ lines: [] });
+    var seated = [];
+    try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
+    if (seated.length) return Promise.resolve({ lines: [] });
+    var url = String((deps && deps.keptUrl) || ownerBadge.KEPT_RELAY.url).replace(/\/+$/, '');
+    var host = url.replace(/^https?:\/\//, '');
+    function refusedLine(status, why) { return { lines: [host + ' did not start the join: ' + why + '. ' + (JOIN_NEXT[status] || 'Start the node again, or join a relay from Contacts.')] }; }
+    // THE CARD FIRST (goal/G30.2): a relay whose card does not say services.sendMail takes no join by email, so the
+    // node says so without asking it to join.
+    var router = deps && deps.router;
+    var card = router && typeof router.relayKey === 'function'
+      ? Promise.resolve().then(function () { return router.relayKey(url); })
+      : Promise.resolve(null);
+    return card.then(function (c) {
+      if (c && !(c.services && c.services.sendMail === true)) return refusedLine(503, 'this relay sends no mail, so it takes no join');
+      return askJoin();
+    }, function (e) {
+      return refusedLine(502, 'no answer from that relay: ' + ((e && e.message) || 'no answer'));
+    });
+    function askJoin() {
+      return relayJoin({ url: url, email: mail }, deps).then(function (said) {
+        if (said.ok) {
+          return { lines: ['A mail to ' + mail + ' will arrive shortly from ' + host + '. Open its link on this computer within 10 minutes to connect this node to the network.'] };
+        }
+        return refusedLine(said.status, said.error || 'it refused');
+      });
+    }
+  }
+
+  // ── relay.face: THIS NODE APPLIES TO ONE RELAY FOR A FACE NAME (goal/G30.1) ──
+  //
+  //   Andy, 2026-10-19: "the node, already connected as member on a relay, applies to the relay for a
+  //   DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost
+  //   to the relay itself, and it succeeds or not." and "i agree to the node side verb as well."
+  // The post leaves by the one door (sendPacket). The relay's answer is kept whole on that relay's row by
+  // peerPost.js (keepFaceAnswer) before it comes back here, so this only reports it. Asking again replaces the pair.
+  function relayFace(body, deps) {
+    var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
+    var name = String((body && body.name) || '').trim();
+    // NO EMAIL IN THE ASK (goal/G30.1, box v30, Andy: "the email must be dropped from the verb relay.face"): the
+    // relay pairs the name with the verified email it holds for this node's key, and answers the pair.
+    if (!url || !name) return Promise.resolve({ ok: false, status: 400, error: 'a relay url and a face name are required' });
+    if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
+    var row = relayKeys.byUrl(rootDir, url);
+    if (!row) return Promise.resolve({ ok: false, status: 404, error: 'that relay is not on this node\'s list' });
+    // The relay's own verb by its name (goal/G49.25): spirit.relay.face.
+    var made = systemCall('face', { name: name });
+    return sendPacket(deps.router, row.url, row.key, made.text, { call: made.call }).then(function (answer) {
+      if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
+      var said = null;
+      // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
+      try { var env = require('../../script.js').requireScript('spirit/peer/arrivals/script.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
+      if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
+      if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
+      return { ok: true, status: 200, url: row.url, name: said.name, email: said.email };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
+  // ── relay.leave: THIS NODE GIVES UP ITS SEAT ON ONE RELAY (goal/G40.10) ─
+  //
+  //   Andy, 2026-10-25: "add the leave verb to node. and publish the \"leaving\"", and "go".
+  //
+  // The removal of this node's own key, posted to that relay (removePeer, which a member may ask for itself); on the
+  // relay's yes the seat and the face name on that relay's row are cleared and the relay
+  // stays on the list, so a join can follow. The row's seated changing is on the shadow stream: every screen hears
+  // the leaving. Refused for a relay this node owns: its owner's seat is made at every boot (goal/G30.7).
+  function relayLeave(body, deps) {
+    var url = ownerBadge.normalizeUrl(String((body && body.key) || ''));
+    if (!url) return Promise.resolve({ ok: false, status: 400, error: 'which relay? give its key, its url' });
+    if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
+    var row = relayKeys.byUrl(rootDir, url);
+    if (!row || !row.seated) return Promise.resolve({ ok: false, status: 404, error: 'this node holds no seat on that relay' });
+    var reports = typeof deps.router.relayStatus === 'function' ? (deps.router.relayStatus() || {}) : {};
+    if (reports[url]) return Promise.resolve({ ok: false, status: 409, error: 'you own this relay: its owner keeps his seat' });
+    var me = auth.loadIdentity(rootDir);
+    // The relay's own verb by its name (goal/G49.25): spirit.relay.removePeer.
+    var made = systemCall('removePeer', { key: me.publicKey });
+    return sendPacket(deps.router, row.url, row.key, made.text, { call: made.call }).then(function (answer) {
+      if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
+      var said = null;
+      // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
+      try { var env = require('../../script.js').requireScript('spirit/peer/arrivals/script.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
+      if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
+      if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
+      relayKeys.unseat(rootDir, row.url);
+      // The relay gave up the face it held for this seat too.
+      relayKeys.keepFace(rootDir, row.url, '');
+      return { ok: true, status: 200, key: row.url };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
+  function statusFor(res, name, deps) {
+    // THE KEY, and since R3 it is the only thing probe asks with.
+    //
+    // Both answers come from the roll, by key, so a caller without a key
+    // gets nothing.
+    //
+    // `name` no longer travels at all: it was there to sign a LABEL to
+    // prove a KEY owned a box (ownerBadge, statusPath). It is still read
+    // off the body above, because it is echoed back to the browser as
+    // `name` below, the label the page displays.
+    var me = auth.loadIdentity(rootDir);
+    ownerBadge.probe(rootDir, relayKeyAsk(deps && deps.router), me.publicKey)
+      .then(function (summary) {
+        // The roster sweep that rode this probe is gone (2026-09-19) — see
+        // the note where reconcileMembers stood.
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          name: name,
+          rows: summary.rows,
+          ownedUrls: summary.ownedUrls,
+          // The rows this node HAS, owned or not — the set the page opens a
+          // panel for.
+          claimedUrls: summary.claimedUrls,
+          mustPick: summary.mustPick,
+          // WHAT EACH OWNED RELAY LAST SAID ABOUT ITSELF, pushed down
+          // the stream rather than asked for. Everything else on this
+          // response was fetched by probe() making requests; this was
+          // already here when the question arrived.
+          //
+          // Keyed by relay url, and ABSENT rather than empty for a relay
+          // that has not reported. The two look identical to a careless
+          // reader and mean very different things — "not told yet"
+          // versus "told me nothing" — so a monitor must not draw zeros
+          // for a relay that has simply not spoken.
+          relayStatus: (deps && deps.router && deps.router.relayStatus)
+            ? deps.router.relayStatus()
+            : {},
+        }));
+      })
+      .catch(function (err) { fail(res, 502, String(err.message || err)); });
+  }
+
+  return {
+    // THE OWNER'S COMMAND PATH (PUPPETS.md G4); a puppet's owner door,
+    // puppetMode.puppetDoor, receives it.
+    peerOwnerPost: peerOwnerPost,
+    handleClaim: handleClaim,
+    // The transport. handleSend and handleInbox stood beside it while
+    // there were two, listed together so that was visible; R8 deleted the
+    // other one and this is what a node has.
+    handlePost: handlePost,
+    // The one place that decides where a post goes, shared with
+    // ownerPost.js and puppetStream (server.js hands it) rather than decided twice.
+    chooseRoute: chooseRoute,
+    handleStatus: handleStatus,
+    relayRemove: relayRemove,
+    relayLeave: relayLeave,
+    relayAdd: relayAdd,
+    relayFace: relayFace,
+    relayJoin: relayJoin,
+    joinAtStart: joinAtStart,
+    relayFacts: relayFacts,
+    contactSearch: contactSearch,
+    contactGet: contactGet,
+    handleContact: handleContact,
+    handleFaceable: handleFaceable,
+    handlePeer: handlePeer,
+    // handleInvite, handleRemovePeer, handleRename and handleRevoke were
+    // exported here. Every one of them is a peerPost the browser makes
+    // for itself now — see the note where they stood.
+    handleNodeCard: handleNodeCard,
+    adoptClaim: adoptClaim,
+    handleNodeName: handleNodeName,
+    handleNodeDescription: handleNodeDescription,
+    contactRenames: contactRenames,
+    grantsRevoked: grantsRevoked,
+  };
+}
+
+module.exports = {
+  createHub: createHub,
+  // This node's outbound request to a relay, with the URL assertion that
+  // goes with it. Exported for presenceNode, which needs the same
+  // primitive to probe which relays it holds a row on and must not grow
+  // a second one that asserts less.
+  relayRequest: relayRequest,
+  // THE SEALED CLAIM (sealedClaim) was exported here; it is peerPost.claim
+  // since goal/G22.6, on the relay's one door.
+  // A relay's key, asked through the node's router (peerPost.relayKey), in
+  // the { status, text } shape ownerBadge.probe and presenceNode.start ask
+  // with (goal/G22.6).
+  relayKeyAsk: relayKeyAsk,
+  buildPeople: buildPeople,
+  contactLabel: contactLabel,
+  searchPeople: searchPeople,
+  // The node's own judgement about who it will hear from, exported for
+  // the same reason relayRequest is: peerPost needs it and must not grow
+  // a second answer to the same question.
+  frontDoor: frontDoor,
+  remember: remember,
+  // ONE CACHE, for the reason `remember` and `frontDoor` are here: a
+  // second instance would be a second answer to the same question, and
+  // the half that learned something would not be the half that is asked.
+  // server.js feeds it from route announcements.
+  shadow: shadow,
+  learnPresence: learnPresence,
+  // Listed ONCE. It was here twice — same key, same value, one shadowing
+  // the other in the same object literal — which is what an export block
+  // that grew by accretion does. Spotted while deleting the six ring
+  // exports that surrounded it (R8).
+};

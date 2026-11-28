@@ -87,7 +87,7 @@ Andy, on G41.18:
 
 ### The page it needs: the DEBUG page, `headLessBrowser`
 
-Made by the node from the address (`spirit/run/spirit/DEBUG/headLessBrowser.js`); there is no page file of its own, and
+Made by the node from the address (`spirit/run/spirit/DEBUG/headLessBrowser/script.js`); there is no page file of its own, and
 it names no element (Andy, of the `shell/mount.html` it replaces: *"why are there elements hard-coded in there?"*).
 
 - It loads `/spirit.js` and nothing else of the shell by a tag. Its body holds one box of the whole page, of class

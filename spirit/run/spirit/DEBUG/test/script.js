@@ -139,7 +139,7 @@ async function pairsMet(proto) {
 let gen, PAYLOAD_MAX, args5, plain, pairs0, pairs1, pairs2, pairs3, node, relay, pageR, pageTags, pageLoading, namedIn, wrong, lone, outside, far, STRING_KEYS, badString, badAlone, kindsOf, seen, lacking, strings, lens, big, alone, manifests, loaded, copy, N, off, none, offData, on, upNow, g, list, tree, verbs, unasked, sameShape, kept, keptCount, still, refused, PAGE_FILE, own, served, unfetched, rOff, rNone, R, loginPage, rg, rlist, fwd, ko, rd, uf;
 
 test.run('every entry breaks the shape, or is a bad string alone in the shape kept', 0.2, async function () {
-  gen = SPIRIT.requireScript('spirit/DEBUG/garbageArguments.js');
+  gen = SPIRIT.requireScript('spirit/DEBUG/garbageArguments/script.js');
   PAYLOAD_MAX = SPIRIT.requireScript('spirit/limits/script.js').PAYLOAD_MAX;
   args5 = await entries(P5);
   plain = args5.filter(function (a) { return a !== null && typeof a === 'object' && !Array.isArray(a); });
@@ -305,12 +305,12 @@ test.run('spirit/run/spirit/DEBUG/script.js is there', 0.2, async function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'script.js'))) ? true : false;
 }, test.limit.quick);
 
-test.run('its generator script spirit/run/spirit/DEBUG/headLessBrowser.js is there', 0.2, async function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'headLessBrowser.js'))) ? true : false;
+test.run('its generator script spirit/run/spirit/DEBUG/headLessBrowser/script.js is there', 0.2, async function () {
+  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'headLessBrowser', 'script.js'))) ? true : false;
 }, test.limit.quick);
 
-test.run('its generator script spirit/run/spirit/DEBUG/garbageArguments.js is there', 0.2, async function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js'))) ? true : false;
+test.run('its generator script spirit/run/spirit/DEBUG/garbageArguments/script.js is there', 0.2, async function () {
+  return (fs.existsSync(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments', 'script.js'))) ? true : false;
 }, test.limit.quick);
 
 test.run('shell/mount.html is gone: the page is made from the address', 0.2, async function () {
@@ -544,15 +544,15 @@ test.run('/spirit/DEBUG/script.js cannot be fetched', 0.8, async function () {
   return (uf.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('/spirit/DEBUG/headLessBrowser.js cannot be fetched', 0.8, async function () {
+test.run('/spirit/DEBUG/headLessBrowser/script.js cannot be fetched', 0.8, async function () {
   if (!node || !node.up) return false;
-  uf = await unfetched('/spirit/DEBUG/headLessBrowser.js');
+  uf = await unfetched('/spirit/DEBUG/headLessBrowser/script.js');
   return (uf.fine) ? true : false;
 }, test.limit.quick);
 
-test.run('/spirit/DEBUG/garbageArguments.js cannot be fetched', 0.8, async function () {
+test.run('/spirit/DEBUG/garbageArguments/script.js cannot be fetched', 0.8, async function () {
   if (!node || !node.up) return false;
-  uf = await unfetched('/spirit/DEBUG/garbageArguments.js');
+  uf = await unfetched('/spirit/DEBUG/garbageArguments/script.js');
   return (uf.fine) ? true : false;
 }, test.limit.quick);
 

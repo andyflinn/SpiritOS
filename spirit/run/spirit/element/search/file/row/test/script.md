@@ -51,5 +51,5 @@ not on the spirit object. Each path element is its own element, so its colour is
 
 - `spirit` is light blue. `spirit/app`, `spirit/element` and `spirit/contact` are light blue, as a folder row and in the path of a file inside.
 - Light purple, where red was: the file `api.js` in `spirit/app` (no `spirit.app.api`), and `spirit/job` (a folder, no `spirit.processJob`).
-- A name not reserved has no colour (`spirit/client`, `spirit/hub/script.js`), and outside `spirit/` no word holds (`shell/app`).
+- A name not reserved has no colour (`spirit/client`, `spirit/contact/hub/script.js`), and outside `spirit/` no word holds (`shell/app`).
 - A `word.json` gaining a word turns the open row light purple with no reload, an object at that path makes it light blue, and `word.json` gone takes the colour away.

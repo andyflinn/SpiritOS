@@ -264,7 +264,7 @@ function openFace() {
     resolve(f);
   });
 }
-// The home node's long upload of the face's updates, as spirit/faceHome/script.js sends it: the call spirit.relay.faceFeed named
+// The home node's long upload of the face's updates, as spirit/contact/faceHome/script.js sends it: the call spirit.relay.faceFeed named
 // in its header at the one door, POST /spirit, signed for this relay and 'stream' (goal/G49.25: /spirit/relay/face/stream is gone).
 function feed() {
   const R = F.R; const M = F.M;

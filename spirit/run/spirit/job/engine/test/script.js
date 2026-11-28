@@ -1410,7 +1410,7 @@ test.run('spirit/job/engine/script.js holds neither of its old tree reads', 0.2,
   const c = codeOf('spirit/job/engine/script.js');
   return (c.length > 0 && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
 }, test.limit.quick);
-['spirit/eventEngine/script.js', 'spirit/faceHome/script.js', 'spirit/nodeSearches/script.js'].forEach(function (rel) {
+['spirit/eventEngine/script.js', 'spirit/contact/faceHome/script.js', 'spirit/nodeSearches/script.js'].forEach(function (rel) {
   test.run(rel + ' reads the tree through spirit/fs/dataset/script.js, not through job.js', 0.2, function () {
     const c = codeOf(rel);
     return (c.length > 0 && /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/dataset\/script\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;

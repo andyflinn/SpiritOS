@@ -5,7 +5,7 @@
 // moved whole. serveCommon's scan mounts them under spirit.contact, each call checked against spirit/contact/script.js first.
 //
 //   verbs(node) -> { <verb>: { reply, handler } }; node is what the node server hands every branch (spirit/server/script.js,
-//                  branchNode): here the hub (spirit/hub/script.js), the router, built once the node is up and so asked for at each
+//                  branchNode): here the hub (spirit/contact/hub/script.js), the router, built once the node is up and so asked for at each
 //                  call, the job table, the port, and the relay rows by key. A relay keeps no contacts: none there.
 //
 // THIS NODE'S OWN ADDRESS BOOK (stage 4c, 2026-09-15; Andy: "The user sees it as contact: which is kind of what i prefer."). Every
@@ -19,7 +19,7 @@ function verbs(node) {
   const readJsonBody = node.readJsonBody;
   const router = node.router;
   const port = function () { return Number(node.port) || spirit.DEFAULT_SPIRIT_PORT; };
-  const probe = function () { return spirit.requireScript('spirit/hub/script.js').relayKeyAsk(router()); };
+  const probe = function () { return spirit.requireScript('spirit/contact/hub/script.js').relayKeyAsk(router()); };
   const peer = function (what, extra) { return function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, what, extra && extra()); }; };
   const STANDING = { publicKey: '', keep: false, blocked: false };
   return {

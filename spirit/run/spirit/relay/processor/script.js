@@ -4,7 +4,7 @@ require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const auth = spirit.requireScript('spirit/relayAuth/script.js');
-const invites = spirit.requireScript('spirit/invites/script.js');
+const invites = spirit.requireScript('spirit/relay/invites/script.js');
 // One place decides how big a thing may be, and the browser reads the
 // same file (limits.js, beside this one). A cap the client pre-checks must be the cap
 // the relay enforces, or the pre-check is a lie.
@@ -16,7 +16,7 @@ const routerTable = spirit.requireScript('spirit/router/script.js');
 const relayStatus = spirit.requireScript('spirit/relayStatus/script.js');
 // The relay's data on disc (cycle 3): members and invites.
 const relayStore = spirit.requireScript('spirit/relayStore/script.js');
-const faceRoute = spirit.requireScript('spirit/faceRoute/script.js');
+const faceRoute = spirit.requireScript('spirit/relay/faceRoute/script.js');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
 const relayConfig = spirit.requireScript('spirit/relayConfig/script.js');

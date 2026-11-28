@@ -29,8 +29,8 @@ const RUN = path.join(__dirname, '..', '..');
 // Each generator by its run path, written out and required as it is (goal/G49.13; Andy: "Why would you fucking have that
 // resolve shit on requireScript()"): the address's word picks one of these, and no path is made from it.
 const GENERATORS = {
-  garbageArguments: function () { return spirit.requireScript('spirit/DEBUG/garbageArguments.js'); },
-  headLessBrowser: function () { return spirit.requireScript('spirit/DEBUG/headLessBrowser.js'); },
+  garbageArguments: function () { return spirit.requireScript('spirit/DEBUG/garbageArguments/script.js'); },
+  headLessBrowser: function () { return spirit.requireScript('spirit/DEBUG/headLessBrowser/script.js'); },
 };
 const PREFIX = '/DEBUG/';
 const PART = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;

@@ -35,7 +35,7 @@
   // ITS FACT ROWS FROM spirit/fuckingGarbage/factRow/script.js (goal/G49.23, box v21: "factRow to spirit/fuckingGarbage/factRow/script.js,
   // the contact detail requiring it by that path"), no longer off spirit.shell.
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fuckingGarbage/factRow/script.js');
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/contact/ownerBadge/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/contact/script.js');
   function contacts() { var b = ANSWER['spirit/contact/script.js']; return (b && b.client) || null; }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
@@ -421,7 +421,7 @@ var cdRelay = (function () {
 // What it draws with, it loads itself (rule/26): the join and face forms (goal/G41.3; Andy: "bug: "A face name" doesn't show the
 // faceForm."), the armingButton its are-you-sure buttons are (goal/G41.9), and the icon element its fold marks are
 // (goal/G41.23), each panel drawn again once they are there.
-var iconReady = Promise.all(['spirit/element/icon/script.js', 'spirit/element/joinForm/script.js', 'spirit/element/faceForm/script.js', 'spirit/element/armingButton/script.js', 'spirit/ownerBadge/script.js'].map(function (p) {
+var iconReady = Promise.all(['spirit/element/icon/script.js', 'spirit/element/joinForm/script.js', 'spirit/element/faceForm/script.js', 'spirit/element/armingButton/script.js', 'spirit/contact/ownerBadge/script.js'].map(function (p) {
   return window.spirit && window.spirit.requireScript ? window.spirit.requireScript(p) : null;
 }));
 
@@ -786,7 +786,7 @@ function ndRefusedHtml(refused) {
 // WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7): the one rule the node enforces too,
 // ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
 function ndRemoveRefusal() {
-  var badge = window.spirit && ANSWER['spirit/ownerBadge/script.js'];
+  var badge = window.spirit && ANSWER['spirit/contact/ownerBadge/script.js'];
   if (!badge || typeof badge.removalRefusal !== 'function') return 'this page cannot tell whether it may be removed';
   return badge.removalRefusal(ndRows, ndUrl);
 }

@@ -17,7 +17,7 @@ function verbs(node) {
   const apps = node.appFamily;
   return {
     'search': { reply: node.LIST, handler: node.proxyVerb(function (b) { return apps.search(b); }) },
-    // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/faceHome/script.js.
+    // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/contact/faceHome/script.js.
     'active': { reply: {}, handler: node.proxyVerb(function (b) { return apps.active(b); }) },
     'label': { reply: {}, handler: node.proxyVerb(function (b) { return apps.label(b); }) },
     'icon': { reply: {}, handler: node.proxyVerb(function (b) { return apps.icon(b); }) },

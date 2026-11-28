@@ -298,7 +298,7 @@ function relayWorld(rows, relayStatus) {
         hear: function (fn) { const h = { onRelayEvent: fn }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } };
       // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
       if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING); if (at === 'spirit/fuckingGarbage/factRow/script.js') return Promise.resolve({ factRow: win.spirit.shell.factRow }); /* goal/G49.23: factRow as its require's answer */
-      if (at === 'spirit/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
+      if (at === 'spirit/contact/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
       const b = branchAt(families, at, w);
       return b ? Promise.resolve(b) : new Promise(function () {});
     },

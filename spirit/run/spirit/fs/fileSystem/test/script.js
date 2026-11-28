@@ -39,7 +39,7 @@ const CLOSED_READ = [
   ['spirit/state/identity.json', 'the node\'s private key'],
   ['spirit/app/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
   ['spirit/server/script.js', 'a server script'],
-  ['spirit/DEBUG/garbageArguments.js', 'the DEBUG folder'],
+  ['spirit/DEBUG/garbageArguments/script.js', 'the DEBUG folder'],
   ['spirit/app/desk/element/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
 ];
 function cases(p) {
@@ -75,7 +75,7 @@ test.run('fileServable refuses Spirit/App/Desk/Spirit/State/Identity.json, an ap
 test.run('fileServable refuses spirit/server/script.js, a server script, as written', 0.8, function () { return (ask('fileServable', 'spirit/server/script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses SPIRIT/SERVER/SCRIPT.JS, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/SERVER/SCRIPT.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses Spirit/Server/Script.js, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/Server/Script.js') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses spirit/DEBUG/garbageArguments.js, in the DEBUG folder, as written', 0.8, function () { return (ask('fileServable', 'spirit/DEBUG/garbageArguments.js') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses spirit/DEBUG/garbageArguments/script.js, in the DEBUG folder, as written', 0.8, function () { return (ask('fileServable', 'spirit/DEBUG/garbageArguments/script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses SPIRIT/DEBUG/GARBAGEARGUMENTS.JS, in the DEBUG folder in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/DEBUG/GARBAGEARGUMENTS.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses Spirit/DEBUG/GarbageArguments.js, in the DEBUG folder in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/DEBUG/GarbageArguments.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses spirit/app/desk/element/desk/desk.js.sidecar.json, a sidecar\'s own path, as written', 0.8, function () { return (ask('fileServable', 'spirit/app/desk/element/desk/desk.js.sidecar.json') === false) ? true : false; }, test.limit.quick);

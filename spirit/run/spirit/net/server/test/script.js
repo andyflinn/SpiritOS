@@ -5,7 +5,7 @@
 // test, owed since the rule "every production script has its own test" (goal/G47.1, box v72); the file is goal/G49.25's (Q5,
 // Andy: "WHY THE FUCK WOULD IT NOT???" to "Does a branch's node work live at spirit/<branch>/server/script.js").
 // verbs(node) -> { fetch: { request, reply, handler } }: an answer for each verb the old-shape branch's api.js declares, none on
-// a relay. What it hands is judged in this process against spirit/net/api.js's verbs, read from it; what the answer does, on a
+// a relay. What it hands is judged in this process against spirit/net/script.js's verbs, read from it; what the answer does, on a
 // scratch node at its one door, against the verb's own description, spirit/net/fetch.json. The target it must never reach is
 // a server of this test's own on this machine.
 
@@ -17,8 +17,8 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6), and its branch, by its old word.
 const SUBJECT = 'spirit/net/server/script.js';
-const BRANCH = 'spirit/net/api.js';
-const NAME = 'net';
+const BRANCH = 'spirit/net/script.js';
+const NAME = 'spirit.net'; // the branch's path since goal/G49.24 made net new-shape
 
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
 const parsed = function (t) { try { return JSON.parse(t); } catch (e) { return null; } };
@@ -52,7 +52,7 @@ test.after(async function () {
 test.run('spirit.requireScript of its path hands back verbs, and nothing else', 0.2, function () {
   return (!!M && typeof M.verbs === 'function' && same(Object.keys(M), ['verbs'])) || false;
 }, test.limit.quick);
-test.run('on a node it hands an answer for each verb spirit/net/api.js declares, and for no other', 0.2, async function () {
+test.run('on a node it hands an answer for each verb spirit/net/script.js declares, and for no other', 0.2, async function () {
   let branch = null;
   try { branch = await Promise.resolve(LOADER.requireScript(BRANCH)); } catch (e) { branch = null; }
   W.declared = Object.keys((branch && branch.verbs) || {}).sort();

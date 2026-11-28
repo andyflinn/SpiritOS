@@ -886,7 +886,7 @@ async function session() {
   // NO ELEMENT INSTALLED, KNOWN BY THE PAGE, NOT BY READING ITS CODE (goal/G47.1, box v121: "no code reading: after
   // loading, the page looks at window.spirit.required at the script's own path, where [the loader, since goal/G49.9]
   // puts an element with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
-  // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser.js).
+  // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser/script.js).
   // Since goal/G49.5's step 2 an element stands at its path; since goal/G49.23 the bare page says the file hands back none.
   if (report && report.state === 'failed' && /(?:places|hands back) no element with a create/.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
   if (!report || report.state !== 'mounted') return P;
