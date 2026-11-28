@@ -197,5 +197,6 @@ else if (full) oneFile();
 }
 
 // The names its checks look for (goal/G49.27, Andy: "All, cw's way"): the name rules skip exactly these, in this module's own files.
-const FORBIDS_NAMES = [];
+// shell/js: Andy's words it quotes name the old element home (cw's find: on Windows that quote read as a use of the name).
+const FORBIDS_NAMES = ['shell/js'];
 module.exports = { appliesTo: appliesTo, resource: 'none', own: false, forbids: FORBIDS_NAMES, checks: checks };
