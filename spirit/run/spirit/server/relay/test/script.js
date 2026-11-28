@@ -21,6 +21,20 @@ const FILE = path.join(__dirname, '..', 'script.js');
 
 const src = fs.readFileSync(FILE, 'utf8');
 
+// THE RELAY SAYS IT IS ONE, FIRST (goal/G49.25, box v10: "spirit.server.relay sets spirit.IS_RELAY to true imediately after
+// spirit/script.js is loaded, before spirit.fs is used."): in its code, comments left out, the statement right after its
+// require of spirit/script.js sets the flag true, so nothing of the fs branch runs before it.
+const relayCode = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+test.run('the relay sets spirit.IS_RELAY to true in the statement right after it requires spirit/script.js', 0.2, function () {
+  const at = relayCode.indexOf("require('../../script.js');");
+  if (at === -1) return false;
+  const next = relayCode.slice(at + "require('../../script.js');".length).replace(/^\s+/, '');
+  return /^spirit\.IS_RELAY\s*=\s*true\s*;/.test(next) || false;
+}, test.limit.quick);
+test.run('the relay sets spirit.IS_RELAY nowhere else', 0.2, function () {
+  return (relayCode.match(/spirit\.IS_RELAY\s*=[^=]/g) || []).length === 1 || false;
+}, test.limit.quick);
+
 // THE SAME STATIC RULE AS THE NODE, AND NO LIST (goal/G49.15, box v16: "the static file serving logic should be the exact same on
 // the relay as it is on the node"; "the relay list goes."; "the relay will serve most files outsite of spirit.state"). A
 // scratch relay with one face and a scratch node, each asked the same addresses as a browser asks them: the relay answers

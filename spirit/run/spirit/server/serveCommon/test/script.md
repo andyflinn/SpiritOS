@@ -32,3 +32,11 @@ socket, a scratch home for what it writes, and process.exit planted where it wou
 A body joined chunk by chunk (U+FFFD in a signed request); a refused body that goes on being read; a rate-limit key
 taken from the first, sender-written X-Forwarded-For entry; a NUL or bad escape that kills the process; a restart that
 overwrites a description somebody typed.
+
+## The branches load themselves (goal/G49.25)
+
+The box: *"serveCommon will load the spirit.fs branch explicitly, then load all trunk branches, using the fs-cache"*, *"the
+existing logic is used to identify both old and new branches"*. serveCommon requires spirit/fs/script.js by its path;
+neither spirit/server/node/script.js nor spirit/server/relay/script.js calls mount( itself. A scratch node on a tree with two
+planted trunk branches no script names, spirit/zzLoaded (script.js and client/script.js) and spirit/zzOld (api.js and data.js),
+holds both in its api tree, beside spirit.fs.

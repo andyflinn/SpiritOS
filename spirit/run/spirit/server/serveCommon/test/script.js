@@ -286,3 +286,70 @@ test.run('it holds no page address map: no PAGE_FILES and no pageFile', 0.2, fun
 test.run('debugFirst is DEBUG.js\'s answer, handed every request first', 0.2, function () {
   return C.debugFirst === spirit.requireScript('spirit/DEBUG/script.js').answer || false;
 }, test.limit.quick);
+
+// ── THE BRANCHES LOAD THEMSELVES (goal/G49.25, box v10: "serveCommon will load the spirit.fs branch explicitly, then load all
+// trunk branches, using the fs-cache"; "the existing logic is used to identify both old and new branches and apps"; Andy, of
+// the node mounting branches by name: "WHY WOULD THE MOTHERFUCKING SERVER LOAD MOTHERFUCKING BRANCHES EXPLICITLY????") ──
+function codeOf(rel) {
+  let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; }
+  return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+}
+test.run('serveCommon requires the spirit.fs branch by its path, spirit/fs/script.js', 0.2, function () {
+  return codeOf('spirit/server/serveCommon/script.js').indexOf("requireScript('spirit/fs/script.js')") !== -1 || false;
+}, test.limit.quick);
+test.run('neither the node nor the relay mounts a branch itself: no mount( in spirit/server/node/script.js or spirit/server/relay/script.js', 0.2, function () {
+  const node = codeOf('spirit/server/node/script.js');
+  const relay = codeOf('spirit/server/relay/script.js');
+  return (node.length > 0 && relay.length > 0 && !/\.mount\(/.test(node) && !/\.mount\(/.test(relay)) || false;
+}, test.limit.quick);
+// A scratch node whose tree holds two trunk branches nobody names: spirit/zzLoaded, new shape (script.js and client/script.js,
+// the mark of spirit/fs/filter/branch/script.js), and spirit/zzOld, old shape (api.js and data.js, spirit/fs/filter/api/script.js's).
+// Its api tree, asked as a page asks it, holds both, beside spirit.fs.
+const LAB = LOADER.requireScript('spirit/test/headLessChrome.js');
+function plantBranches(run) {
+  const put = function (rel, text) { const f = path.join(run, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
+  put('spirit/zzLoaded/script.js', "'use strict';\n// a planted trunk branch, new shape (goal/G49.25's test)\n" +
+    "if (typeof require === 'function') require('../script.js').requireScript('spirit/zzLoaded/client/script.js'); else window.spirit.requireScript('spirit/zzLoaded/client/script.js');\n" +
+    "module.exports = { verbs: { get: { id: 'spirit/type/number/integer/script.js' } } };\n");
+  put('spirit/zzLoaded/client/script.js', "'use strict';\n// its client (goal/G49.25's test)\n(function family(given, out) {\n  var OUT = out || {};\n" +
+    "  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;\n" +
+    "  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/client/script.js') : given;\n" +
+    "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }\n" +
+    "  D.handOut(OUT, D.makeFamily('spirit.zzLoaded', function () { return {}; }));\n}());\n");
+  put('spirit/zzLoaded/get.json', JSON.stringify({ description: 'One row by its number.', request: { id: 'spirit/type/number/integer/script.js' } }, null, 2) + '\n');
+  put('spirit/zzOld/api.js', "'use strict';\n// a planted trunk branch, old shape (goal/G49.25's test)\n" +
+    "if (typeof require === 'function') require('../script.js').requireScript('spirit/zzOld/data.js'); else window.spirit.requireScript('spirit/zzOld/data.js');\n" +
+    "module.exports = { verbs: {} };\n");
+  put('spirit/zzOld/data.js', "'use strict';\n// its data (goal/G49.25's test)\n(function family(given, out) {\n  var OUT = out || {};\n" +
+    "  if (!out && typeof module !== 'undefined' && module) module.exports = OUT;\n" +
+    "  var D = typeof require === 'function' ? require('../script.js').requireScript('spirit/client/script.js') : given;\n" +
+    "  if (!D) { window.spirit.requireScript('spirit/client/script.js').then(function (got) { if (got) family(got, OUT); }); return; }\n" +
+    "  D.handOut(OUT, D.makeFamily('spirit.zzOld'));\n}());\n");
+}
+const PLANTED = { node: null, tree: null };
+// An old-shape branch is named in the tree as the node names net, owner and peer today: by its folder alone, or by its path.
+function oldIn(t) { const b = t && (t['spirit.zzOld'] || t.zzOld); return b && typeof b === 'object' && b.ok !== false ? b : null; }
+function askNode(call, args) {
+  return fetch(PLANTED.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+    .then(function (r) { return r.json().then(function (b) { return b; }, function () { return null; }); }, function () { return null; });
+}
+test.run('a scratch node comes up on a tree with two planted trunk branches, spirit/zzLoaded and spirit/zzOld', 0.2, async function () {
+  PLANTED.node = await LAB.scratchNode({ own: true, before: plantBranches });
+  if (!PLANTED.node || !PLANTED.node.up) return false;
+  const end = Date.now() + 30000;
+  while (Date.now() < end) {
+    const t = await askNode('api', {});
+    if (t && t['spirit.fs'] && t['spirit.zzLoaded'] && oldIn(t)) { PLANTED.tree = t; break; }
+    PLANTED.tree = t;
+    await new Promise(function (r) { setTimeout(r, 500); });
+  }
+  return !!(PLANTED.tree && PLANTED.tree['spirit.fs']) || false;
+}, test.limit.long);
+test.run('its api tree holds spirit.zzLoaded, the new-shape branch no script names', 0.2, function () {
+  const t = PLANTED.tree || {};
+  return (!!t['spirit.zzLoaded'] && t['spirit.zzLoaded'].ok !== false) || false;
+}, test.limit.quick);
+test.run('its api tree holds spirit.zzOld, the old-shape branch no script names', 0.2, function () {
+  return !!oldIn(PLANTED.tree) || false;
+}, test.limit.quick);
+test.after(async function () { if (PLANTED.node) { try { await PLANTED.node.release(); } catch (e) { /* the lab frees it */ } } });

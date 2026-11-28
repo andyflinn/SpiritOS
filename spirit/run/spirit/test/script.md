@@ -336,3 +336,8 @@ branch had no listener and nothing was sent. A peer's branch bound from demo's a
 
 - has listener, subscribe and unsubscribe, as it has remote;
 - a call of its listener goes to the peer as demo.listener.
+
+## spirit.IS_RELAY (goal/G49.25)
+
+The box: *"new global, boolean value spirit.IS_RELAY is set to false inside spirit/script.js"*. In a process that requires
+spirit/script.js, and on a page once spirit.js has started, spirit.IS_RELAY is false.

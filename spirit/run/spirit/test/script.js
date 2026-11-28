@@ -945,6 +945,15 @@ test.run('in node, the spirit object has no dataStore', 0.2, function () {
 test.run('on a page, once spirit.js has started, the spirit object has no dataStore', 0.2, function () {
   return (!!T.cq && !('dataStore' in T.cq.spirit)) || false;
 }, test.limit.quick);
+// THE RELAY FLAG (goal/G49.25, box v10: "new global, boolean value spirit.IS_RELAY is set to false inside spirit/script.js";
+// only the relay sets it true). A process that is no relay, and a page, read false.
+test.run('in node, once spirit/script.js is loaded, spirit.IS_RELAY is false', 0.2, function () {
+  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); process.stdout.write(String(s.IS_RELAY === false));", path.join(RUN, 'spirit', 'script.js')], { encoding: 'utf8', timeout: 20000 });
+  return (inProcess.stdout === 'true' && s.IS_RELAY === false) || false;
+}, test.limit.quick);
+test.run('on a page, once spirit.js has started, spirit.IS_RELAY is false', 0.2, function () {
+  return (!!T.cq && T.cq.spirit.IS_RELAY === false) || false;
+}, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
 // loads with a files element (rule/26); spirit.js loads the cache and no data script.
 test.run('on a page spirit.js loads no data script with the cache, and so no spirit/element/search/file/data.js', 0.2, function () {
