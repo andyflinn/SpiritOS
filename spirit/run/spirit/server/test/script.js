@@ -1116,3 +1116,37 @@ test.after(function () {
   if (G.node) letGo(G.node, null);
   G.made.forEach(function (b) { letGo(b, null); });
 });
+
+// ── THE CEREMONIAL KILLING OF THE OWNER BRANCH (goal/G49.24, box v18; Andy: "the \"owner\" shit is already handled by the grant
+// system", "dump that whole owner branch", "put the ceremonial killing of the owner branch in the box, with all the shit that can
+// go, puppet sender and all.") ── Gone: spirit/owner/ whole, spirit/ownerPost/, spirit/puppetStream/, spirit/fuckingGarbage/boxes.js;
+// no product script names the puppet sender, its receiver or the command signing (peerOwnerPost, puppetDoor, ownerCommandIn,
+// commandMessage). Stays: who owns a node, puppetMode's puppetIn.
+['spirit/owner', 'spirit/ownerPost', 'spirit/puppetStream'].forEach(function (d) {
+  test.run(d + '/ is gone, and no product script requires a file of it', 0.4, function () {
+    return (!fs.existsSync(path.join(RUN, d)) && productHits(['-F', "'" + d + '/']).length === 0) || false;
+  }, test.limit.slow);
+});
+test.run('spirit/fuckingGarbage/boxes.js is gone, and no product script names it', 0.4, function () {
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'fuckingGarbage', 'boxes.js')) && productHits(['-F', 'fuckingGarbage/boxes']).length === 0) || false;
+}, test.limit.slow);
+['peerOwnerPost', 'puppetDoor', 'ownerCommandIn', 'commandMessage'].forEach(function (n) {
+  test.run('no product script names ' + n, 0.4, function () {
+    return productHits(['-w', n]).length === 0 || false;
+  }, test.limit.slow);
+});
+test.run('who owns a node stays: puppetMode hands out puppetIn, and it reads owner.json', 0.4, function () {
+  let P = null; try { P = S.requireScript('spirit/puppetMode/script.js'); } catch (e) { P = null; }
+  if (!P || typeof P.puppetIn !== 'function') return false;
+  const t = H.scratchTree();
+  try {
+    const auth = S.requireScript('spirit/relayAuth/script.js');
+    const owner = auth.generateIdentity('zzOwner');
+    const run = t.run;
+    auth.saveIdentity(run, auth.generateIdentity('zzPuppet'));
+    auth.writeOwner(run, owner.publicKey);
+    // puppetIn answers the reader; asked, it says whose this node is: { puppet, owner }.
+    const got = P.puppetIn(run, function () {})();
+    return (!!got && got.puppet === true && got.owner === owner.publicKey) || false;
+  } finally { H.freeTree(t); }
+}, test.limit.slow);

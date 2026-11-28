@@ -165,3 +165,9 @@ What it reports without judging (not a crash, so not red by the box's words): ho
 
 The node's part of spirit/server/script.js, startNode() between its banners "THE NODE" and "THE RELAY", comments left out,
 asks the disc for no file and lists no folder: no existsSync, no readdirSync (until goal/G49.25, spirit/server/node/script.js).
+
+## The owner branch killed (goal/G49.24, box v18)
+
+Gone: spirit/owner/, spirit/ownerPost/, spirit/puppetStream/, spirit/fuckingGarbage/boxes.js, none required by a product script;
+no product script names peerOwnerPost, puppetDoor, ownerCommandIn or commandMessage. Stays: puppetMode's puppetIn, which reads
+who owns a node from owner.json.
