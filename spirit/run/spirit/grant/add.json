@@ -1,5 +1,5 @@
 {
-  "description": "Grant one member's key one api path (a branch, or a branch and its verb): {key, label, path}. The label is the name the table already holds for that key, or else what your contacts call it, or else empty. Refused bad-request without a key and a path, not-a-path (400) when the path is no branch path, owner-only (403) for any spirit.fs path and for contact.faceable, already-granted (409) when the key already holds it, and unknown-path (404) when no server serves the path and no earlier grant names it.",
+  "description": "Grant one member's key one api path (a branch, or a branch and its verb): {key, label, path}. The label is the name the table already holds for that key, or else what your contacts call it, or else empty. Refused bad-request without a key and a path, not-a-path (400) when the path is no branch path, already-granted (409) when the key already holds it, and unknown-path (404) when no server serves the path and no earlier grant names it.",
   "request": {
     "key": "spirit/type/string/IDNew/script.js",
     "path": "spirit/type/string/word/script.js"

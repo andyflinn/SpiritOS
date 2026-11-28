@@ -28,31 +28,17 @@ require('../../script.js');
 // member's every ask is decided by it. No auth handed means no grants
 // readable: the member reads as denied, never as ungated.
 
-// DEBUG is the owner's on every server (Andy, desk/G2.5: "DEBUG verb is never
-// allowed through peerPost()"), granted or not.
-const OWNER_VERBS = ['DEBUG'];
-// No family carries an FS set any more (goal/G43.20), so DEBUG is the one owner verb a server has.
-function ownerVerb(verb) { return OWNER_VERBS.indexOf(String(verb)) !== -1; }
-// 😏 IS THE OWNER'S (goal/G41.30, wsl's review of the star: "A peer can never be granted it"; goal/G47.4, box v33:
-// contact.faceable "does what own did"), granted or not: a faceable relay opens this node's face.
-const OWNER_PATHS = ['spirit.contact.faceable'];
-function ownerPath(app, verb) { return OWNER_PATHS.indexOf(String(app) + '.' + String(verb)) !== -1; }
-// THE fs FAMILY IS THE OWNER'S, hard-coded, granted or not (goal/G33.10). Andy, 2026-10-24: "would i allow a peer fs
-// access, ever? it could un-install apps from my face etc...", and "i want fs to be hard-coded owner only". A grant
-// naming it cannot be made (apiAuth.grant), and one left in the table from before is read as nothing here.
-// spirit.fs, by its path's name since goal/G49.15: the branch, any of its verbs.
-const OWNER_FAMILIES = ['spirit.fs'];
-function ownerFamily(app) { const a = String(app || ''); return OWNER_FAMILIES.some(function (f) { return a === f || a.indexOf(f + '.') === 0; }); }
+// NO VERB IS HARD-CODED THE OWNER'S (goal/G49.25; Andy: "EVERY TIME THIS KIND OF THING COMES UP: We want to protect you from
+// yourself..... it ends up with messy fiascos", "the only thing i'd hard-code protect from is ownership change, and the node has no
+// verbs for that", "they go now"): DEBUG, contact.faceable and the spirit.fs branch, kept from every other node whatever was granted
+// until this item, are granted as any verb is. A member reaches nothing it was not granted; the grant is the protection.
 
 function refusal(code, error) {
   return { status: 403, body: { ok: false, code: code, error: error } };
 }
 
-// A member's api is the tree stripped to its grants (Andy: "apiAuth will
-// strip the app.DEBUG verb the result of returned api trees, including all
-// branches of the tree that don't have a match for the calling ID"): a
-// granted app keeps its verbs but the owner's (DEBUG,
-// contact.faceable); a granted verb keeps that verb alone. Exact strings, no prefix, no case folding.
+// A member's api is the tree stripped to its grants (apiAuth/G1): a granted app keeps its verbs; a granted verb keeps that verb
+// alone. Exact strings, no prefix, no case folding.
 function stripTree(tree, paths) {
   const kept = {};
   Object.keys(tree || {}).forEach(function (app) {
@@ -60,7 +46,6 @@ function stripTree(tree, paths) {
     if (!verbs || typeof verbs !== 'object') return;
     const whole = paths.indexOf(app) !== -1;
     Object.keys(verbs).forEach(function (verb) {
-      if (ownerVerb(verb) || ownerPath(app, verb)) return;
       if (whole || paths.indexOf(app + '.' + verb) !== -1) {
         (kept[app] = kept[app] || {})[verb] = verbs[verb];
       }
@@ -99,7 +84,6 @@ function answer(servers, ask, caller) {
     // The gate fails closed: grants it cannot read grant nothing.
     return Promise.resolve(refusal('store-unavailable', 'the grants cannot be read: ' + e.message));
   }
-  paths = paths.filter(function (p) { return !ownerFamily(p); });
   if (ask === 'api') {
     if (!paths.length) return Promise.resolve(refusal('not-granted', 'no path is granted to this key'));
     return Promise.resolve(servers.ask('api', who)).then(function (r) {
@@ -112,7 +96,6 @@ function answer(servers, ask, caller) {
   // in that family, the family whole or one of its verbs; any other family is refused as its verbs would be.
   if (ask && typeof ask === 'object' && !Array.isArray(ask) && Object.keys(ask).length === 1 && ask.api && typeof ask.api === 'object') {
     const fam = String(ask.api.branch || '');
-    if (ownerFamily(fam)) return Promise.resolve(refusal('owner-only', 'the ' + fam + ' family is the owner\'s alone'));
     const held = paths.some(function (p) { return p === fam || p.indexOf(fam + '.') === 0; });
     if (!fam || !held) return Promise.resolve(refusal('not-granted', 'no grant in the family ' + fam + ' is held by this key'));
     return Promise.resolve(servers.ask({ api: { branch: fam } }, who));
@@ -125,12 +108,10 @@ function answer(servers, ask, caller) {
   const grantedVerb = function (app, verb) { return paths.indexOf(app) !== -1 || paths.indexOf(app + '.' + verb) !== -1; };
   let named = 0;
   for (const app of apps) {
-    if (ownerFamily(app)) return Promise.resolve(refusal('owner-only', 'the ' + app + ' family is the owner\'s alone'));
     const verbs = ask[app];
     if (!verbs || typeof verbs !== 'object') return Promise.resolve(refusal('not-granted', String(app) + ' asks nothing grantable'));
     for (const verb of Object.keys(verbs)) {
       named += 1;
-      if (ownerVerb(verb) || ownerPath(app, verb)) return Promise.resolve(refusal('owner-only', app + '.' + verb + ' is the owner\'s alone'));
       if (!grantedVerb(app, verb)) return Promise.resolve(refusal('not-granted', app + '.' + verb + ' is not granted to this key'));
     }
   }
@@ -139,15 +120,6 @@ function answer(servers, ask, caller) {
 }
 
 // opts: { servers: {ask}, post(relay, toKey, text), encode, decode, isKnown(key), auth: {pathsOf(key)}, log }
-function asksOwnerVerb(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return false;
-  return Object.keys(body).some(function (app) {
-    const v = body[app];
-    return v && typeof v === 'object' && OWNER_VERBS.some(function (verb) {
-      return Object.prototype.hasOwnProperty.call(v, verb);
-    });
-  });
-}
 
 // asksAsOwner STOOD HERE (desk/G2.1): it refused any ask whose arguments said
 // by 'andy', from when the desk took its writer from the arguments. The desk
@@ -189,9 +161,6 @@ function createApiDoor(opts) {
     // forever, about 9 a second (wsl-claude's hand check on a857b52).
     if (info.re) return;
     if (!o.isKnown(message.fromKey)) return;
-    // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5): a member's ask for it on
-    // any server is refused here, by name, granted or not, and never passed on. The owner's own calls on /spirit still reach them.
-    if (asksOwnerVerb(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG is for the owner, on loopback only' });
     return answer(o.servers, info.body, { key: message.fromKey, auth: o.auth }).then(function (r) {
       return reply(message, r ? r.body : null, r && r.kind);
     }, function (e) {

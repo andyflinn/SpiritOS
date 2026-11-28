@@ -193,11 +193,8 @@ function createApiAuth(opts) {
     grant: function (a) {
       if (!text(a.key) || !text(a.path)) return Promise.resolve(refuse('bad-request'));
       if (!PATH.test(a.path)) return Promise.resolve(refuse('not-a-path'));
-      // THE fs FAMILY IS THE OWNER'S (goal/G33.10, Andy: "i want fs to be hard-coded owner only"): never granted.
-      if (a.path === 'spirit.fs' || a.path.indexOf('spirit.fs.') === 0) return Promise.resolve(refuse('owner-only'));
-      // 😏 IS THE OWNER'S (goal/G41.30; goal/G47.4, box v33: contact.faceable "does what own did"): a faceable relay opens
-      // this node's face. Never granted.
-      if (a.path === 'spirit.contact.faceable') return Promise.resolve(refuse('owner-only'));
+      // NO PATH IS HARD-CODED UNGRANTABLE (goal/G49.25; Andy: "the only thing i'd hard-code protect from is ownership change, and
+      // the node has no verbs for that...", "they go now"): spirit.fs and contact.faceable are granted as any path is.
       const s = store();
       if (s.has(a.key, a.path)) return Promise.resolve(refuse('already-granted'));
       // Andy: "only if the path is known from a previous configuration, where owner has not pruned yet", so that

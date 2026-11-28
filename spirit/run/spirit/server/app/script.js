@@ -356,7 +356,7 @@ function shape(v) {
 
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
 // {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
-// process's DEBUG, spirit.debugLog (goal/G40.6). A member never reaches it (apiDoor refuses it by name).
+// process's DEBUG, spirit.debugLog (goal/G40.6). A member reaches it only by a grant, as any verb (goal/G49.25).
 function withDebug(verbs) {
   if (Object.prototype.hasOwnProperty.call(verbs, 'DEBUG')) return verbs;
   const all = Object.assign({}, verbs);
