@@ -440,10 +440,10 @@ test.run('the suite\'s success reaches the node only after every report of its t
 }, test.limit.quick);
 test.after(function () {
   try { if (F.node) F.node.close(); } catch (e) { /* closed */ }
-  try { if (F.tree) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree({ root: F.tree.root }); } catch (e) { /* temp */ }
+  try { if (F.tree) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree({ root: F.tree.root }); } catch (e) { /* temp */ }
 });
 
 test.after(function () {
   try { if (W.node) W.node.close(); } catch (e) { /* closed */ }
-  [W.tree, W.quietTree].forEach(function (t) { try { if (t) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(t); } catch (e) { /* scratch */ } });
+  [W.tree, W.quietTree].forEach(function (t) { try { if (t) SPIRIT.requireScript('spirit/testicle/headLessChrome/script.js').freeTree(t); } catch (e) { /* scratch */ } });
 });
