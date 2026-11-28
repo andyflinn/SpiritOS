@@ -88,8 +88,14 @@ function each(list, judge) {
   const broken = list.map(judge).filter(function (v) { return v !== true; });
   return !broken.length ? true : false;
 }
+// A BRANCH'S VERBS ARE ITS <verb>.json FILES (goal/G49.27, Q4; Andy: "is there not a category for reading script files", "are not
+// api.js file moribound"): read from the folder, never by loading its code; the folder's own <name>.json describes the folder, and a .json with no description is data, no verb (spirit/iconSet.json).
+function verbFiles(dir) {
+  try { return fs.readdirSync(path.join(RUN, dir)).filter(function (f) { return f !== path.basename(dir) + '.json'; }).filter(function (n) { if (!/\.json$/.test(n)) return false; try { const j = JSON.parse(fs.readFileSync(path.join(RUN, dir, n), 'utf8')); return !!j && typeof j.description === 'string'; } catch (e) { return false; } }).map(function (f) { return f.slice(0, -5); }).sort(); } catch (e) { return null; }
+}
 function apiVerbs(f) {
-  try { const mod = require(path.join(RUN, f.api)); return isObj(mod && mod.verbs) ? Object.keys(mod.verbs) : null; } catch (e) { return null; }
+  const v = verbFiles(path.dirname(f.api));
+  return v && v.length ? v : null;
 }
 function appRules(all) {
   // Rules 1 and 2: "sub folders of this folder are meant for plugin-applications." "a manifest called

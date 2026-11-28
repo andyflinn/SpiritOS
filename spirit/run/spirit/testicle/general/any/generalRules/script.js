@@ -386,11 +386,11 @@ if (!String(ARGS[0] || '')) {
     isGone(rel);
   });
   test.run('spirit/contact/script.js is the contact branch\'s interface: the same thirteen verbs as before', 0.2, function () {
-    let m = null;
-    try { m = require(shPath.join(SH.run, 'spirit', 'contact', 'script.js')); } catch (e) { m = null; }
-    const verbs = m && m.verbs;
+    // Its verbs are its <verb>.json files, read, never by loading its code (goal/G49.27, Q4).
+    let verbs = null;
+    try { verbs = shFs.readdirSync(shPath.join(SH.run, 'spirit', 'contact')).filter(function (n) { if (!/\.json$/.test(n) || n === 'contact.json') return false; try { const j = JSON.parse(shFs.readFileSync(shPath.join(SH.run, 'spirit', 'contact', n), 'utf8')); return !!j && typeof j.description === 'string'; } catch (e) { return false; } }).map(function (n) { return n.slice(0, -5); }).sort(); } catch (e) { verbs = null; }
     const want = ['accept', 'add', 'block', 'claim', 'face', 'faceable', 'forget', 'get', 'join', 'label', 'leave', 'search', 'unblock'];
-    return (!!verbs && Object.keys(verbs).sort().join() === want.join()) || false;
+    return (!!verbs && verbs.join() === want.join()) || false;
   }, test.limit.quick);
   // faceable goes by its new name: none names the old contact.faceable any more (and since goal/G49.25 it is granted as any
   // verb, no owner-only check; Andy: "they go now").

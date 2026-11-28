@@ -49,9 +49,13 @@ const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude
 // ── 0. job AND event, SINGULAR ──────────────────────────────────────────────────────────────────────────────────────
 // Andy, the box: "\"jobs\" and it's face spirit/app/jobs/ will be renamed, \"job\" (singular) and the same will happen for
 // \"events\", which will be renamed \"event\"". The decided: the seven verbs renamed, and every file and folder named so.
+// A BRANCH'S VERBS ARE ITS <verb>.json FILES (goal/G49.27, Q4; Andy: "is there not a category for reading script files", "are not
+// api.js file moribound"): read from the folder, never by loading its code; the folder's own <name>.json describes the folder, and a .json with no description is data, no verb (spirit/iconSet.json).
+function verbFiles(dir) {
+  try { return fs.readdirSync(path.join(RUN, dir)).filter(function (f) { return f !== path.basename(dir) + '.json'; }).filter(function (n) { if (!/\.json$/.test(n)) return false; try { const j = JSON.parse(fs.readFileSync(path.join(RUN, dir, n), 'utf8')); return !!j && typeof j.description === 'string'; } catch (e) { return false; } }).map(function (f) { return f.slice(0, -5); }).sort(); } catch (e) { return null; }
+}
 function verbsOf(file, want) {
-  let verbs = null;
-  try { verbs = Object.keys(require(path.join(RUN, file)).verbs || {}); } catch (e) { verbs = null; }
+  const verbs = verbFiles(path.dirname(file));
   const same = !!verbs && want.every(function (v) { return verbs.indexOf(v) !== -1; }) && verbs.length === want.length;
   return same ? true : false;
 }

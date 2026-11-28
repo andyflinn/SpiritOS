@@ -227,7 +227,8 @@ if (apps.length) {
   }, test.limit.quick);
   test.run('its name is no verb of the app branch', 0.4, function () {
     let familyVerbs = [];
-    try { familyVerbs = Object.keys(require(path.join(RUN, 'spirit', 'app', 'script.js')).verbs || {}); } catch (e) { familyVerbs = []; }
+    // Read from its <verb>.json files, never by loading spirit/app/script.js (goal/G49.27, Q4).
+    try { familyVerbs = fs.readdirSync(path.join(RUN, 'spirit', 'app')).filter(function (f) { if (!/\.json$/.test(f) || f === 'app.json') return false; try { const j = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', f), 'utf8')); return !!j && typeof j.description === 'string'; } catch (e) { return false; } }).map(function (f) { return f.slice(0, -5); }); } catch (e) { familyVerbs = []; }
     return overAll(apps, function (b) {
       return familyVerbs.length > 0 && familyVerbs.indexOf(b.name) === -1;
     });
