@@ -17,6 +17,11 @@
 require('../../script.js');
 
 const OWN = ['card', 'claim', 'face', 'search', 'rename', 'removePeer', 'invite', 'revoke', 'config', 'debug', 'monitor', 'relayLabel', 'api'];
+// THE MEMBER BUNDLE (goal/G49.25, box v25: "The member verbs (card, face, removePeer, rename, search, and post, reply, stream, face
+// answer, face stream) sit in one bundle, granted to each key on the relay's member roll as it joins and revoked as it leaves. The
+// owner, by the relay's owner key, holds every verb"): the roll is the grant, a key holds the bundle while it is on it. The relay's
+// gate (spirit/relay/processor/script.js, granted) reads it; post, reply and stream prove their sender a member by its signature.
+const MEMBER = ['card', 'face', 'removePeer', 'rename', 'search', 'post', 'reply', 'stream', 'faceAnswer', 'faceFeed'];
 
 function verbs(node) {
   if (!spirit.IS_RELAY) return {};
@@ -212,4 +217,4 @@ function verbs(node) {
 }
 
 // What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
-module.exports = { verbs: verbs, OWN: OWN };
+module.exports = { verbs: verbs, OWN: OWN, MEMBER: MEMBER };

@@ -211,10 +211,8 @@ function removeRelay(rootDir, url, opts) {
   return { ok: true, status: 200, key: u };
 }
 
-// statusPath STOOD HERE, and it was the badge:
-//
-//   '/spirit/relay/status?name=' + name + '&sig=' +
-//     sign(privateKey, statusMessage(name))
+// statusPath STOOD HERE, and it was the badge: the relay's old status route, the name and a signature over statusMessage(name)
+// in its query (the relay has one door since goal/G49.25, and no route of that name).
 //
 // Deleted 2026-09-15 (R3,
 // design/cycles/2026-09-15-labels-are-not-identities.md).
@@ -250,7 +248,7 @@ function removeRelay(rootDir, url, opts) {
 //
 // ownedFrom ("is my key the one marked owner?"), claimedFrom,
 // claimedLabelFrom and censusFacts — each read a public roll list
-// (`/spirit/relay/who` answering `peers`). The roll went on 2026-09-18;
+// (the relay's old who route, answering `peers`). The roll went on 2026-09-18;
 // `probe` below had already stopped fetching it, and only suites still
 // called these. Andy: "nothing is allowed to return a roster", and a row
 // never says who owns the relay — "ownership is only determined by one

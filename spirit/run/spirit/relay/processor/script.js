@@ -1079,7 +1079,7 @@ function createRelay(rootDir, deps) {
 
 
   // Owner-only, and enforced by the caller: this is reached from
-  // answerSelf's owner gate (OWNER_VERBS), which has already verified the
+  // answerSelf's grant gate (granted), which has already verified the
   // post against the key in owner.json.
   //
   // THE SAME RULE AS ANY OTHER PUBLIC LABEL (the label's type). A relay's
@@ -2124,8 +2124,8 @@ function createRelay(rootDir, deps) {
   // relay a peer rather than giving it a second kind of door.
   //
   // The caller's identity was proved by the post's own signature before
-  // this ran, and which verbs it may ask is the one table MEMBER_VERBS /
-  // OWNER_VERBS (goal/G30.3). There is no second gate and there must not
+  // this ran, and which verbs it may ask is the one grant gate, granted
+  // (goal/G30.3, goal/G49.25). There is no second gate and there must not
   // be: two places deciding who the owner is, is one place to get it wrong.
   // WHO MAY ASK FOR WHAT, and it is per verb now.
   //
@@ -2560,16 +2560,25 @@ function createRelay(rootDir, deps) {
 
   // ── WHAT A CALLER MAY ASK THIS RELAY, AND ITS INTROSPECTION (goal/G30.3) ──
   //
-  //   Andy, 2026-10-19: "The only new component relay needs is introSpector", and "no grants per member. only one
-  //   switch owner | member". The verbs know nothing of callers; this one table does. The owner may call every verb
-  //   below, a member the member verbs. Nothing is stored per member, and an asker learns nothing of why its answer
-  //   is the one it gets ("for the relay the category question is 100% internal").
+  //   Andy, 2026-10-19: "The only new component relay needs is introSpector"; an asker learns nothing of why its answer is
+  //   the one it gets ("for the relay the category question is 100% internal").
+  //
+  // ONE GATE, GRANTS ONLY (goal/G49.25, box v25: "the "owner" verb lists go"; Andy: "the whole "owner"-verb shit is useless, never was,
+  // since the signature on a fucking request already says who the owner is"; "the gate is one rule, grants only, on relay and node
+  // alike. The member verbs ... sit in one bundle, granted to each key on the relay's member roll as it joins and revoked as it
+  // leaves. The owner, by the relay's owner key, holds every verb"): who asks is the post's signature, the owner the caller whose key
+  // is the relay's owner key; a key on the roll holds the member bundle (spirit/relay/server/script.js, MEMBER), on the roll and
+  // off it with the key; a stranger reaches only the card ask and a claim (answerPublic), before this gate.
   //
   // The relay's folder relaySelf/, beside this file (AGENTS.md and one description file per verb) is read through introSpector's FS
   // verbs (goal/G30.4: the AGENTS verbs are gone). FS is an owner verb like the others below; members get nothing of
   // it (Andy, 2026-10-20: "don't build shit nobody asked for.").
-  var MEMBER_VERBS = ['card', 'face', 'removePeer', 'rename', 'search'];
-  var OWNER_VERBS = ['config', 'debug', 'invite', 'monitor', 'relayLabel', 'revoke'];
+  var RELAY_BRANCH = spirit.requireScript('spirit/relay/server/script.js');
+  function granted(who, verb) {
+    if (isOwner(who)) return true;
+    if (!who || who.stranger) return false;
+    return RELAY_BRANCH.MEMBER.indexOf(verb) !== -1;
+  }
   // A REFUSAL SAYS WHY ONLY IN DEBUG (Andy, 2026-10-20: "give good information in DEBUG mode, otherwise just
   // refuse"). Off, a member asking an owner verb gets the plain refusal a verb nobody declared gets; on, the owner
   // diagnosing his relay sees the reason. The verbs themselves are public (the repository), so this hides nothing.
@@ -2581,7 +2590,7 @@ function createRelay(rootDir, deps) {
   var selfFamily = null;
   function relaySelfFamily() {
     if (!selfFamily) {
-      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: MEMBER_VERBS.concat(OWNER_VERBS) }).verbs; }
+      try { selfFamily = spirit.requireScript('spirit/introSpector/script.js').family(path.join(__dirname, '..', '..', 'relaySelf'), { declared: RELAY_BRANCH.OWN.filter(function (v) { return v !== 'api' && v !== 'claim'; }) }).verbs; }
       catch (e) { selfFamily = {}; }
     }
     return selfFamily;
@@ -2598,13 +2607,13 @@ function createRelay(rootDir, deps) {
   //   Andy, 2026-10-20: "the relay will reply to api queries for ALL members, not just the owner", in the same shape
   //   as the node's api ("why would i do that, if not to give the relay-api the same shape as the nodes api?").
   //
-  // The body 'api' answers { relay: { <verb>: { description, request, reply } } }, cut to the caller's category: a
-  // member the member verbs, the owner every verb and the FS verbs. Each entry is read from the verb's file in
+  // The body 'api' answers { relay: { <verb>: { description, request, reply } } }, cut to what the caller holds: a
+  // member the member bundle's own verbs, the owner every verb and the FS verbs. Each entry is read from the verb's file in
   // relaySelf/; a file declares no reply, so reply is {}. FS itself stays the owner's (the gate below).
   function relayApi(owner) {
     var family = relaySelfFamily();
     var out = {};
-    (owner ? MEMBER_VERBS.concat(OWNER_VERBS) : MEMBER_VERBS).forEach(function (v) {
+    RELAY_BRANCH.OWN.filter(function (v) { return v !== 'api' && v !== 'claim' && (owner || RELAY_BRANCH.MEMBER.indexOf(v) !== -1); }).forEach(function (v) {
       var read = answerFs('FS.loadJsonValue', { path: v + '.json' });
       var file = read && read.value && typeof read.value === 'object' ? read.value : {};
       out[v] = {
@@ -2630,11 +2639,11 @@ function createRelay(rootDir, deps) {
     var owner = isOwner(who);
     if (body === 'api') return sendSelfAnswer(hash, who, relayApi(owner));
 
-    // THE GATE comes first (goal/G30.3): a verb outside the caller's category is refused before any verb below can see
-    // it. FS.* is an owner verb (goal/G30.4), answered from the folder.
+    // THE GATE comes first (goal/G30.3; goal/G49.25, grants only): a verb the caller does not hold is refused before any verb
+    // below can see it. FS.* is in no bundle, the owner's alone (goal/G30.4), answered from the folder.
     var only = body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 ? Object.keys(body)[0] : '';
     var isFs = only.indexOf('FS.') === 0;
-    if (only && (isFs || OWNER_VERBS.indexOf(only) !== -1) && !owner) return sendSelfAnswer(hash, who, notGranted());
+    if (only && !granted(who, only)) return sendSelfAnswer(hash, who, notGranted());
     if (isFs) return sendSelfAnswer(hash, who, answerFs(only, body[only]));
     // Set by the search branch: a roll walk to run before anything is sent.
     var searching = null;
@@ -2853,7 +2862,7 @@ function createRelay(rootDir, deps) {
     // keep. And the risk is bounded by who can reach it: only the key
     // owner.json names, which the install wrote (goal/G16.8).
     //
-    // `debug` is in OWNER_VERBS, so a non-owner is refused by the gate at
+    // `debug` is in no member's bundle, so a non-owner is refused by the gate at
     // the top of this function (notGranted) rather than by a second
     // opinion written here.
     if (body && body.debug && owner) {
