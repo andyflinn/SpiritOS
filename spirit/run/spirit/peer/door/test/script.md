@@ -10,18 +10,25 @@ only where a requirement here names it; the rest of the door is specified by its
 Andy: *"those owner only FS verbs are no longer needed, because not the api ID spirit.fs or spirit.api.desk ARE the path
 to all those files, that's why they are now completely redundant."*
 
-- `apiDoor.js` names no `FS.` verb: DEBUG is a server's one owner verb.
+- `apiDoor.js` names no `FS.` verb.
 - A member granted a family reaches its verbs, and is served its tree.
 
-- **The star is the owner's alone** (goal/G41.30; Andy: *"so this button will put the star on relays and puppets. AND
-  take it away."*): a member granted `contact` or `contact.faceable` asking `contact.faceable` is refused `owner-only` with no server
-  asked; the owner reaches it; a member's tree holds no `contact.faceable`.
+### No verb is hard-coded the owner's (goal/G49.25)
+
+Andy: *"the only thing i'd hard-code protect from is ownership change, and the node has no verbs for that"*, and of the
+owner-only guards: *"they go now"*.
+
+- **The star is granted as any verb**: a member granted `spirit.contact` or `spirit.contact.faceable` asking
+  `spirit.contact.faceable` reaches the server; a member granted only `spirit.contact.get` asking it is refused `not-granted`
+  with no server asked; the owner reaches it.
+- A member granted `spirit.contact` is served a tree holding `faceable`; one granted only `spirit.contact.get` a tree holding
+  `get` alone.
 
 ## What its test must try to break
 
-- A grant, of the family or of the exact verb, that lets an FS ask through; a refusal by any code but `owner-only`.
-- A server asked before the refusal.
-- An FS verb left in a member's tree.
+- A granted faceable ask refused, or answered without the server being asked.
+- An ungranted faceable ask let through, refused by any code but `not-granted`, or a server asked before the refusal.
+- `faceable` missing from a granted member's tree, or present in an ungranted one's.
 - The owner refused.
 
 ## A registered server goes by its name

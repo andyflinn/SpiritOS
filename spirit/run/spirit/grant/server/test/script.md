@@ -5,8 +5,8 @@ live at spirit/<branch>/server/script.js, handing its verbs' answers to the scan
 for each verb of `spirit/grant/script.js`, over the owner's allow-table (`spirit/grant/auth/script.js`); none on a relay. Owed
 since the rule *"every production script has its own test"* (goal/G47.1, box v72). The verbs are read from the branch's
 script; what each answer does is judged on a scratch node, at its one door, against the verb's own description,
-`spirit/grant/<verb>.json`. The member is a key made by the test; the path granted is this branch's first verb, the owner-only
-paths are read from `spirit/fs/script.js` and `spirit/contact/script.js`.
+`spirit/grant/<verb>.json`. The member is a key made by the test; the path granted is this branch's first verb; the paths once
+owner-only are read from `spirit/fs/script.js` and `spirit/contact/script.js`.
 
 ## Requirements
 
@@ -15,8 +15,9 @@ paths are read from `spirit/fs/script.js` and `spirit/contact/script.js`.
   reply, an object, and its handler, a function; on a relay (`spirit.IS_RELAY`) none.
 - **get** (`get.json`): `{ allowed }`, false before the grant and after its delete, true while it stands.
 - **add** (`add.json`): `{ key, label, path }`, the label empty for a key nobody named. Refused: a path the key holds
-  (409 already-granted), spirit.fs and a verb of it and contact.faceable (403 owner-only), a path no server serves and no grant
-  names (404 unknown-path).
+  (409 already-granted), a path no server serves and no grant
+  names (404 unknown-path). spirit.fs, a verb of it and contact.faceable are granted as any path, held, and deleted again
+  (goal/G49.25; Andy: *"the only thing i'd hard-code protect from is ownership change"*, *"they go now"*).
 - **search** (`search.json`): with no words every grant, `{ ok, items, more }`; by words the grant they name, its key the key, a
   newline and the path, its label `{ name, key, path }` as JSON.
 - **delete** (`delete.json`): `{ revoked: true }`, get then false; a path a known key (the node's own, from its card) does not
@@ -25,4 +26,4 @@ paths are read from `spirit/fs/script.js` and `spirit/contact/script.js`.
 ## What its test must try to break
 
 - A verb of the branch with no answer, or an answer for a verb the branch does not declare; an answer on a relay.
-- An answer that does not do what its description says; an owner-only path granted.
+- An answer that does not do what its description says; spirit.fs or contact.faceable refused (goal/G49.25).

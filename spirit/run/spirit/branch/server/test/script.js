@@ -135,12 +135,18 @@ test.run('search by text ranks the row its words name first', 0.2, async functio
   const items = (r.body && r.body.items) || [];
   return (r.status === 200 && items.length > 0 && items[0].key === String(W.whole)) || false;
 }, test.limit.quick);
-// "no spirit.fs verb is taken (owner-only)": a verb of spirit.fs, read from its own script.
-test.run('add of a spirit.fs verb is refused owner-only', 0.8, async function () {
+// goal/G49.25: no verb is hard-coded the owner's (Andy: "the only thing i'd hard-code protect from is ownership change, and
+// the node has no verbs for that", "they go now"); add.json names no owner-only refusal. A verb of spirit.fs, read from its own
+// script, is taken as any served verb: {id}, get shows the row, and delete takes it back so the other rows stay as they were.
+test.run('add of a spirit.fs verb is taken as any served verb', 0.8, async function () {
   const fsVerbs = await verbsOf('spirit/fs/script.js');
   if (!W.bundle || !fsVerbs.length) return false;
   const r = await ask(NAME + '.add', { bundle: W.bundle, family: 'spirit.fs', verb: fsVerbs[0] });
-  return (refused(r) && r.body.code === 'owner-only') || false;
+  const id = r.body && r.body.id;
+  const got = id !== undefined ? await ask(NAME + '.get', { id: id }) : null;
+  const del = id !== undefined ? await ask(NAME + '.delete', { id: id }) : null;
+  return (r.status === 200 && !refused(r) && !!got && got.status === 200 && !!got.body && got.body.family === 'spirit.fs' &&
+    got.body.verb === fsVerbs[0] && !!del && del.status === 200) || false;
 }, test.limit.quick);
 // delete.json: "That row alone: {id}; no-such-branch".
 test.run('delete takes that row alone, answering {id}: get then refuses it, the other row stays', 0.2, async function () {

@@ -108,7 +108,9 @@ to all those files, that's why they are now completely redundant."*
 - A boot that adds a kept key twice, keeps a branch the file dropped, leaves a dropped key's bundle or branches, takes
   the owner a row names, touches a user's bundle, or stops at a file that is not valid.
 - A set that renames a bundle, or is told.
-- An FS verb taken into a branch, by add or by set, or granted; a refusal by any code but `owner-only`.
+- An FS verb taken into a branch, by add or by set, or granted.
+- A grant of the fs branch or of `spirit.contact.faceable` refused on a node serving them, or held by a peer it was not
+  granted to (goal/G49.25).
 
 ## goal/G41.32: unique labels, and a user changes node-owned bundles alone
 
@@ -145,9 +147,9 @@ has. The node starts on a fresh table with desk, testicle and files (a node fami
 - files gets no bundle;
 - desk's enableRemote with a branch per verb, as an earlier node made it, is one branch, all of desk, after a restart.
 
-## The line Andy draws (goal/G47.6, box point 2)
+## No path is hard-coded ungrantable (goal/G49.25)
 
-*"Tests assert that neither the fs branch nor contact.faceable can ever be granted to a peer; removing either refusal turns a
-test red. Remote root-style authority is otherwise wanted; these two are the line."* A grant of fs.load, fs.save and fs.delete
-to a peer is refused as owner-only, and the peer holds nothing of fs; a grant of contact.faceable is refused as owner-only, and
-the peer does not hold it.
+Andy: *"the only thing i'd hard-code protect from is ownership change, and the node has no verbs for that"*, and of the
+owner-only guards: *"they go now"*. The line of goal/G47.6 (the fs branch and contact.faceable never granted) is gone: on a
+node serving them, a grant of `spirit.fs.load`, `spirit.fs.save` and `spirit.fs.delete` to a peer is made and the peer holds
+exactly those; a grant of `spirit.contact.faceable` is made and held; a peer not granted holds none of them.

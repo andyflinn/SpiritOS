@@ -83,15 +83,21 @@ test.run('the old auth.grant is no verb of the node any more', 0.2, async functi
   return (r.status >= 400 && r.status < 500) || false;
 }, test.limit.quick);
 
-// FACEABLE STAYS THE OWNER'S UNDER ITS NEW NAME (goal/G49.22, box v16: the contact branch in the new shape, "all verbs do the
-// fucking same shit they did before"): a scratch node serves spirit.contact with faceable, no branch named contact, and
-// refuses to grant spirit.contact.faceable to any key, as it refused contact.faceable.
+// FACEABLE UNDER ITS NEW NAME (goal/G49.22, box v16: the contact branch in the new shape): a scratch node serves spirit.contact
+// with faceable, no branch named contact. Since goal/G49.25 it is granted as any path (Andy: "the only thing i'd hard-code
+// protect from is ownership change, and the node has no verbs for that", "they go now"): spirit.grant.add of it is made and
+// found, and delete takes it back.
 test.run('the node serves spirit.contact with faceable, and no branch named contact', 0.2, function () {
   const b = W.tree && W.tree['spirit.contact'];
   return (!!b && !!b.faceable && !W.tree.contact) || false;
 }, test.limit.quick);
-test.run('spirit.grant.add refuses spirit.contact.faceable to a key: it stays the owner\'s', 0.2, async function () {
+test.run('spirit.grant.add grants spirit.contact.faceable to a key, search finds it, and delete takes it back', 0.2, async function () {
   if (!W.node || !W.node.up) return false;
-  const r = await ask(W.node.base, 'spirit.grant.add', { key: KEY, path: 'spirit.contact.faceable' });
-  return (r.status >= 400 && r.status < 500 && !!r.body && r.body.code === 'owner-only') || false;
+  const FACEABLE = 'spirit.contact.faceable';
+  const has = function (r) { const items = (r.body && r.body.items) || []; return items.some(function (i) { const s = JSON.stringify(i); return s.indexOf(KEY) !== -1 && s.indexOf(FACEABLE) !== -1; }); };
+  const r = await ask(W.node.base, 'spirit.grant.add', { key: KEY, path: FACEABLE });
+  const found = has(await ask(W.node.base, 'spirit.grant.search', { text: FACEABLE }));
+  const del = await ask(W.node.base, 'spirit.grant.delete', { key: KEY, path: FACEABLE });
+  return (r.status === 200 && !!r.body && r.body.code !== 'owner-only' && found && del.status === 200 &&
+    !has(await ask(W.node.base, 'spirit.grant.search', { text: FACEABLE }))) || false;
 }, test.limit.quick);

@@ -90,16 +90,24 @@ test.run('get of the path granted answers {allowed: true}', 0.2, async function 
 test.run('add of a path the key holds already is refused 409 already-granted', 0.2, async function () {
   return refusedAs(await ask(NAME + '.add', { key: MEMBER, path: W.path }), 409, 'already-granted') || false;
 }, test.limit.quick);
-test.run('add of spirit.fs, or a verb of it, is refused 403 owner-only', 0.8, async function () {
+// goal/G49.25: no path is hard-coded ungrantable (Andy: "the only thing i'd hard-code protect from is ownership change, and the
+// node has no verbs for that", "they go now"). spirit.fs, a verb of it and spirit.contact.faceable are granted as any path: add
+// answers {key, label, path}, get answers allowed, and delete takes each back so the table is as before.
+async function grantedAndTaken(p) {
+  const r = await ask(NAME + '.add', { key: MEMBER, path: p });
+  const held = await ask(NAME + '.get', { key: MEMBER, path: p });
+  const del = await ask(NAME + '.delete', { key: MEMBER, path: p });
+  return r.status === 200 && same(r.body, { key: MEMBER, label: '', path: p }) && held.status === 200 && same(held.body, { allowed: true }) && del.status === 200;
+}
+test.run('add of spirit.fs, or a verb of it, grants it as any path', 0.8, async function () {
   const fsVerbs = await verbsOf('spirit/fs/script.js');
   if (!fsVerbs.length) return false;
-  return (refusedAs(await ask(NAME + '.add', { key: MEMBER, path: 'spirit.fs' }), 403, 'owner-only') &&
-    refusedAs(await ask(NAME + '.add', { key: MEMBER, path: 'spirit.fs.' + fsVerbs[0] }), 403, 'owner-only')) || false;
+  return ((await grantedAndTaken('spirit.fs')) && (await grantedAndTaken('spirit.fs.' + fsVerbs[0]))) || false;
 }, test.limit.quick);
-test.run('add of contact.faceable is refused 403 owner-only', 0.8, async function () {
+test.run('add of contact.faceable grants it as any path', 0.8, async function () {
   const contact = await verbsOf('spirit/contact/script.js');
   if (contact.indexOf('faceable') === -1) return false;
-  return refusedAs(await ask(NAME + '.add', { key: MEMBER, path: 'spirit.contact.faceable' }), 403, 'owner-only') || false;
+  return (await grantedAndTaken('spirit.contact.faceable')) || false;
 }, test.limit.quick);
 test.run('add of a path no server serves and no grant names is refused 404 unknown-path', 0.2, async function () {
   return refusedAs(await ask(NAME + '.add', { key: MEMBER, path: 'spirit.zzNoSuchBranch' }), 404, 'unknown-path') || false;

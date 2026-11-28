@@ -2916,7 +2916,8 @@ if (!GIVEN.length) {
     const want = ['accept', 'add', 'block', 'claim', 'face', 'faceable', 'forget', 'get', 'join', 'label', 'leave', 'search', 'unblock'];
     return (!!verbs && Object.keys(verbs).sort().join() === want.join()) || false;
   }, test.limit.quick);
-  // faceable keeps its owner-only checks under its new name: none names the old contact.faceable any more.
+  // faceable goes by its new name: none names the old contact.faceable any more (and since goal/G49.25 it is granted as any
+  // verb, no owner-only check; Andy: "they go now").
   test.run('no product script names faceable by its old name, contact.faceable, only spirit.contact.faceable', 0.2, function () {
     const files = productCode();
     if (files.length < 100) return false;

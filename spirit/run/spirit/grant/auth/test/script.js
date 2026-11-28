@@ -334,23 +334,35 @@ test.run('a grant made from a bundle stays when the bundle goes', 0.2, async fun
   return (JSON.stringify(auth.pathsOf(PEER)) === '["files.read"]') ? true : false;
 }, test.limit.quick);
 
-// THE LINE ANDY DRAWS (goal/G47.6, box point 2: "tests assert that neither the fs branch nor contact.faceable can ever be
-// granted to a peer; removing either refusal turns a test red. Remote root-style authority is otherwise wanted; these two
-// are the line."). Each is asked as a grant to a peer, and refused; the peer holds nothing of it afterwards.
-test.run('a grant of anything in the fs branch to a peer is refused, and the peer holds none of it', 0.8, async function () {
+// NO PATH IS HARD-CODED UNGRANTABLE (goal/G49.25; Andy: "the only thing i'd hard-code protect from is ownership change, and
+// the node has no verbs for that", and of the owner-only guards: "they go now"). The fs branch and spirit.contact.faceable
+// were the line of goal/G47.6; now a grant decides them as any path: on a node serving them, a grant to a peer is made and
+// held, and a peer not granted holds none of it.
+async function lineAuth() {
+  const lineTree = { 'spirit.fs': { load: {}, save: {}, delete: {} }, 'spirit.contact': { faceable: {}, get: {} } };
+  return createApiAuth({ rootDir: ownTemp('spirit-apiAuth-line-'), tree: function () { return Promise.resolve(lineTree); } });
+}
+test.run('a grant of a verb in the fs branch to a peer is made and held, and a peer not granted holds none of it', 0.8, async function () {
   if (!auth || !PEER) return false;
   // The branch by its path on the wire, spirit.fs (goal/G49.15; Andy: "THE NAME ON THE MOTHERCUKING WIRE IS "spirit.fs"").
+  const la = await lineAuth();
+  const other = SPIRIT.requireScript('spirit/relayAuth/script.js').generateIdentity('').publicKey;
   const tries = ['spirit.fs.load', 'spirit.fs.save', 'spirit.fs.delete'];
   const answers = [];
-  for (const p of tries) answers.push(await auth.grant({ key: PEER, path: p }));
-  const held = auth.pathsOf(PEER).filter(function (p) { return p === 'spirit.fs' || p.indexOf('spirit.fs.') === 0; });
-  return (answers.every(function (r) { return !!r && r.refusal === 'owner-only'; }) && held.length === 0) ? true : false;
+  for (const p of tries) answers.push(await la.grant({ key: PEER, path: p }));
+  const made = answers.every(function (r, i) { return !!r && !r.refusal && r.key === PEER && r.path === tries[i]; });
+  const held = la.pathsOf(PEER).filter(function (p) { return p.indexOf('spirit.fs.') === 0; }).sort();
+  const otherHeld = la.pathsOf(other).filter(function (p) { return p === 'spirit.fs' || p.indexOf('spirit.fs.') === 0; });
+  return (made && JSON.stringify(held) === JSON.stringify(tries.slice().sort()) && otherHeld.length === 0) ? true : false;
 }, test.limit.quick);
 // goal/G49.22: faceable is spirit.contact.faceable (was contact.faceable).
-test.run('a grant of spirit.contact.faceable to a peer is refused, and the peer does not hold it', 0.8, async function () {
+test.run('a grant of spirit.contact.faceable to a peer is made and held, and a peer not granted does not hold it', 0.8, async function () {
   if (!auth || !PEER) return false;
-  const r = await auth.grant({ key: PEER, path: 'spirit.contact.faceable' });
-  return (!!r && r.refusal === 'owner-only' && auth.pathsOf(PEER).indexOf('spirit.contact.faceable') === -1) ? true : false;
+  const la = await lineAuth();
+  const other = SPIRIT.requireScript('spirit/relayAuth/script.js').generateIdentity('').publicKey;
+  const r = await la.grant({ key: PEER, path: 'spirit.contact.faceable' });
+  return (!!r && !r.refusal && r.path === 'spirit.contact.faceable' && la.pathsOf(PEER).indexOf('spirit.contact.faceable') !== -1 &&
+    la.pathsOf(other).indexOf('spirit.contact.faceable') === -1) ? true : false;
 }, test.limit.quick);
 
 // Every change is told, row by row, for the stream.
